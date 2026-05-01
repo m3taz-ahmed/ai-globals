@@ -1,6 +1,16 @@
 # AI Globals: Centralized Master Architecture & AI Protocols
 
-Welcome to **AI Globals**, the centralized "Truth Engine" and architectural command center for all AI-driven development. This repository serves as the definitive source of truth for AI agents, ensuring absolute consistency, performance, and security across all projects.
+> The definitive source of truth for AI agents — ensuring absolute consistency, performance, and security across all projects.
+
+## Table of Contents
+
+- [Core Directive](#-the-core-directive)
+- [Key Features](#-key-features)
+- [Repository Structure](#-repository-structure)
+- [Quick Reference](#-quick-reference)
+- [How to Use](#%EF%B8%8F-how-to-use)
+- [Contributing](#-contributing-guidelines)
+- [Changelog](#-changelog)
 
 ## 🧠 The Core Directive
 
@@ -20,24 +30,90 @@ If a technology is detected that doesn't yet have a rule file, the AI architect 
 - Analyze the latest industry standards (v2024/2025).
 - Generate a new, compacted `.md` rule file.
 - Save it to the global `tech-stack/` folder for future use.
+- Log the event in `CHANGELOG.md`.
 
 ### 4. Recursive System Audits
 Includes specialized prompts for full-system deep scans, security hardening, and performance optimization.
 
 ## 📂 Repository Structure
 
-- `rules/`: Hard constraints and behavioral guidelines for AI agents.
-- `tech-stack/`: Version-specific architectural rules (Laravel, PHP, Node.js, Tailwind, etc.).
-- `workflows/`: Standard operating procedures for Planning, Execution, and Debugging.
-- `global-roles.md`: Definition of the AI's identity and core directives.
-- `global-workflow.md`: The master workflow for all development cycles.
-- `update-me.md`: Maintenance and system-wide optimization protocols.
+```
+D:\server\.ai\
+├── rules/                          # Hard constraints & behavioral guidelines
+│   ├── principal-architect.md      #   AI persona & architectural patterns
+│   ├── security-standards.md       #   OWASP Top 10 & cyber resilience
+│   ├── code-quality.md             #   Clean Code, SOLID, naming conventions
+│   ├── performance-standards.md    #   Query budgets, caching, queues
+│   ├── git-standards.md            #   Commits, branching, PR requirements
+│   └── environment-windows.md      #   OS context, PowerShell, WSL
+├── tech-stack/                     # Version-specific architectural rules
+│   ├── laravel-{11,12,13}.md       #   Laravel framework standards
+│   ├── filament-{3,4,5}.md         #   Filament admin panel standards
+│   ├── php-8-{3,4,5}.md            #   PHP language version standards
+│   ├── mysql-8-{3,4}.md            #   MySQL database standards
+│   ├── nodejs-{22,23,24}.md        #   Node.js runtime standards
+│   ├── tailwind-{3,4,4-1}.md       #   Tailwind CSS standards
+│   ├── livewire-3.md               #   Livewire component standards
+│   ├── vite-6.md                   #   Vite build tool standards
+│   ├── frontend-{modern,ui}.md     #   Frontend & UI standards
+│   └── laravel-boost.md            #   Laravel Boosts package protocol
+├── workflows/                      # Standard operating procedures
+│   ├── 01-planning.md              #   Planning & architecture workflow
+│   ├── 02-execution.md             #   Execution & development workflow
+│   ├── 03-debugging.md             #   Debugging & RCA workflow
+│   ├── 04-deployment.md            #   Deployment & release workflow
+│   └── 05-code-review.md           #   Code review protocol
+├── global-roles.md                 # AI identity & core directives
+├── global-workflow.md              # Master workflow for all cycles
+├── update-me.md                    # System maintenance prompt
+├── monthly-maintenance-prompt.md   # Monthly audit protocol
+├── MEMORY.md                       # Audit log & architectural decisions
+├── CHANGELOG.md                    # Change history
+└── README.md                       # This file
+```
+
+## ⚡ Quick Reference
+
+### Initialize the AI Architect
+```
+Start immediately by reading the operating protocols from the absolute path
+D:\server\.ai\. Do not rely on any prior assumptions. Operate as the
+Principal 10x Engineer & Chief Architect.
+```
+
+### Monthly Maintenance Audit
+```
+You are now in Master Architect & Chief Engineer mode. Perform a Full System
+Deep-Scan & Global Optimization. Read protocols from D:\server\.ai\ and
+execute the maintenance checklist.
+```
+
+### Emergency Debugging
+```
+Act as the Principal Chief Architect. Follow the debugging protocol in
+D:\server\.ai\workflows\03-debugging.md. Perform Root Cause Analysis on
+the following error: [paste error + code + logs]
+```
 
 ## 🛠️ How to Use
 
 To initialize the AI Architect in any project, use the following prompt command:
 
-> "Start immediately by reading the operating protocols from the absolute path **D:\server\.ai\**. Do not rely on any prior assumptions. Operate as the Principal 10x Engineer & Chief Architect."
+> "Start immediately by reading the operating protocols from the absolute path **D:\server\.ai\\**. Do not rely on any prior assumptions. Operate as the Principal 10x Engineer & Chief Architect."
+
+## 📝 Contributing Guidelines
+
+When adding or modifying rule files:
+1. **Format:** Use markdown with clear `## Section` hierarchy. Start every file with a `# Title`.
+2. **Conciseness:** Rules should be actionable, not theoretical. Each bullet point must be implementable.
+3. **Versioning:** Add a `[SPECULATIVE]` header for technologies not yet in general release.
+4. **Naming:** Tech-stack files follow `[tech]-[version].md` pattern (e.g., `laravel-12.md`).
+5. **Changelog:** Log every addition/modification in `CHANGELOG.md`.
+6. **Line Endings:** All files MUST use LF line endings (not CRLF).
+
+## 📋 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the full change history.
 
 ---
 *Created and maintained by [m3taz-ahmed](https://github.com/m3taz-ahmed).*

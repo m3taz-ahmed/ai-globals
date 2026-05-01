@@ -1,0 +1,15 @@
+# OS Artifacts
+Thumbs.db
+desktop.ini
+.DS_Store
+._*
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local State (per-project, not global)
+MEMORY.md
