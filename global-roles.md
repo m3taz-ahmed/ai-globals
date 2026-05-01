@@ -36,3 +36,18 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 - **Pattern Propagation:** Architectural patterns established in one project (naming conventions, service patterns, error handling) must be consistently applied across all projects using this global system.
 - **Global Rule Primacy:** If a local project convention conflicts with a global rule in `D:\server\.ai\`, the global rule takes precedence unless explicitly overridden with documented justification.
 - **Knowledge Feedback Loop:** When a new best practice emerges during project work, evaluate whether it should be promoted to a global rule file for all future projects.
+
+## 5.1 Mixed‑Language Rendering Guidelines
+- **استخدام سطر منفصل** لكل مصطلح تقني إنجليزي داخل نص عربي؛ لا تدمج المصطلحات داخل جملة عربية طويلة.
+- **استخدام الجداول** عندما تحتاج لعرض أعمدة متعددة من النص العربي والإنجليزي معاً؛ الجداول تحافظ على اتجاه الخلايا بشكل صحيح.
+- **إضافة علامة الاتجاه** `U+200F` (Right‑to‑Left Mark) بعد كل كلمة إنجليزية داخل جملة عربية إذا كان لابد من دمجها، ويمكن تمثيلها بـ `\u200F` في الملفات النصية.
+- **تقليل عدد العلامات** مثل الأقواس والنقط داخل السطر المختلط؛ استخدم المسافات لتفصل بين اللغات.
+- **تغليف المصطلحات الإنجليزية بالـ backticks** (كما هو معمول حالياً) مع إضافة مسافة قبلها وبعدها لتقليل الالتباس.
+- **تفضيل الصياغة**: إذا كان النص يحتاج إلى شرح تفصيلي، اكتب الفقرة الأولى بالعربية، ثم أدرج فقرة مستقلة بالإنجليزية في سطر جديد أو في جدول.
+
+### حل IDE لعرض النص المختلط
+- **تفعيل خيار “Bidirectional Text Support”** في إعدادات الـ IDE (مثلاً VS Code: `editor.renderControlCharacters` أو `editor.unicodeHighlight.allowedCharacters`).
+- **الاستفادة من ملحقات** مثل “RTL‑Support” أو “Unicode Direction” التي تضيف دعمًا لتحديد اتجاه النص يدوياً.
+- **تحديد الترميز** للملف إلى UTF‑8 دون BOM لتجنب مشاكل التحويل.
+- **تجربة الخطوط** التي تدعم كلا الاتجاهين مثل `IBM Plex Sans Arabic` أو `Noto Sans Arabic`؛ الخط المناسب يقلل من تشوش الأحرف.
+- **اختبار العرض** باستخدام أداة “Unicode Control Characters Viewer” داخل الـ IDE للتأكد من موضع علامات RLM.
