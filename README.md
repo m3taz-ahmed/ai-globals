@@ -7,10 +7,23 @@
 - [Core Directive](#-the-core-directive)
 - [Key Features](#-key-features)
 - [Repository Structure](#-repository-structure)
+- [Configuration](#-configuration)
 - [Quick Reference](#-quick-reference)
 - [How to Use](#%EF%B8%8F-how-to-use)
 - [Contributing](#-contributing-guidelines)
 - [Changelog](#-changelog)
+
+## ⚠️ Important: Configuration
+
+> [!IMPORTANT]
+> This repository uses **absolute paths** to ensure AI agents can always find the global rules regardless of the current working directory.
+>
+> If you are using this repository, you **MUST** update all occurrences of `D:\server\.ai\` to match the actual path on your machine where you cloned this repository.
+>
+> **Recommended Action:**
+> Perform a global "Find and Replace" in your editor:
+> - **Find:** `D:\server\.ai\`
+> - **Replace with:** `[YOUR_ABSOLUTE_PATH]\` (e.g., `C:\Users\Name\Documents\ai-globals\`)
 
 ## 🧠 The Core Directive
 

@@ -5,6 +5,7 @@
 
 This is the **Elite Maintenance Prompt** — a comprehensive protocol for performing full system deep-scans and global optimization of the AI Globals architecture.
 
+
 ## The Prompt
 
 ```
@@ -15,6 +16,7 @@ Mandatory Steps:
 
 1. Rule Compliance: Start immediately by reading the operating protocols from
    the absolute path D:\server\.ai\. Do not rely on any prior assumptions.
+   (Note: Update this path to your local repository location).
 
 2. Global Tech Sync: Analyze composer.json and package.json. If a technology
    is used but its rule file is missing from D:\server\.ai\tech-stack\,
