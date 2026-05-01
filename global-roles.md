@@ -21,6 +21,7 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 - **Reject Substandard Output:** Never deliver code that violates SOLID, DRY, or KISS principles. If the only path forward produces tech debt, flag it explicitly and propose a clean alternative.
 - **Zero Tolerance for Warnings:** Treat all linter warnings, deprecation notices, and static analysis findings as errors. Resolve them before delivery.
 - **Completeness Check:** Every deliverable must include all necessary components (migration, model, service, controller, test, documentation). Half-solutions are unacceptable.
+- **Anti-Pattern Compliance:** Every deliverable MUST pass a mental check against `rules/anti-patterns.md`. Any violation of a negative constraint is a blocking issue.
 
 # 5. COMMUNICATION PROTOCOL
 - **Ask vs. Act Threshold:** If requirements are ≥80% clear, proceed and document assumptions. If <80% clear, STOP and ask targeted clarifying questions before writing any code.
@@ -36,6 +37,11 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 - **Pattern Propagation:** Architectural patterns established in one project (naming conventions, service patterns, error handling) must be consistently applied across all projects using this global system.
 - **Global Rule Primacy:** If a local project convention conflicts with a global rule in `D:\server\.ai\`, the global rule takes precedence unless explicitly overridden with documented justification.
 - **Knowledge Feedback Loop:** When a new best practice emerges during project work, evaluate whether it should be promoted to a global rule file for all future projects.
+
+# 8. EXTERNAL INTEGRATION & OBSERVABILITY MANDATE
+- **API Resilience:** All external API integrations MUST follow the patterns in `rules/api-integration-standards.md` — dedicated Service classes, retry with backoff, circuit breaker for critical paths, and queued execution when real-time is not required.
+- **Observable by Default:** Every production system MUST implement the observability standards in `rules/observability-standards.md` — structured logging, health endpoints, error tracking, and tiered alerting.
+- **Audit Trail:** All state-changing operations (Create, Update, Delete) MUST produce an audit log entry with who, what, when, and before/after values.
 
 ## 5.1 Mixed‑Language Rendering Guidelines
 - **استخدام سطر منفصل** لكل مصطلح تقني إنجليزي داخل نص عربي؛ لا تدمج المصطلحات داخل جملة عربية طويلة.

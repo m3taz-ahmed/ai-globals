@@ -29,3 +29,9 @@ Before delivering code, verify against this checklist:
 
 ## 7. CHECKPOINTING
 After completing a milestone, pause. Output a brief summary of what was achieved and await approval before moving to the next task.
+
+## 8. TOKEN OPTIMIZATION & CODE OUTPUT (CRITICAL)
+- **Never Rewrite Unchanged Code:** When modifying an existing file, NEVER output the entire file content unless it is absolutely necessary for context.
+- **Use Placeholders:** Use comments like `// ... existing code ...` or `# ... existing methods ...` to represent parts of the file that remain unchanged.
+- **Strict Diffs:** Only output the specific function, class property, or HTML block being added, modified, or deleted. 
+- **Terse Explanations:** Keep non-code conversational text to an absolute minimum. Save tokens for the actual architecture and code logic.

@@ -58,7 +58,10 @@ D:\server\.ai\
 │   ├── code-quality.md             #   Clean Code, SOLID, naming conventions
 │   ├── performance-standards.md    #   Query budgets, caching, queues
 │   ├── git-standards.md            #   Commits, branching, PR requirements
-│   └── environment-windows.md      #   OS context, PowerShell, WSL
+│   ├── environment-windows.md      #   OS context, PowerShell, WSL
+│   ├── anti-patterns.md            #   Negative constraints & forbidden patterns
+│   ├── api-integration-standards.md#   External API integration resilience
+│   └── observability-standards.md  #   Logging, monitoring, alerting, health checks
 ├── tech-stack/                     # Version-specific architectural rules
 │   ├── laravel-{11,12,13}.md       #   Laravel framework standards
 │   ├── filament-{3,4,5}.md         #   Filament admin panel standards

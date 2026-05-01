@@ -3,6 +3,18 @@
 All notable changes to the AI Globals system are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [2.1.0] — 2026-05-01
+
+### Added
+- `rules/anti-patterns.md` — Comprehensive negative constraints & forbidden patterns (7 categories: code structure, error handling, security, performance, database, testing, AI workflow)
+- `rules/api-integration-standards.md` — External API integration standards (HTTP client, error handling, retry/resilience, authentication, webhook handling, response caching, versioning)
+- `rules/observability-standards.md` — Observability & monitoring standards (structured logging, health endpoints, error tracking, alerting strategy, development observability, audit trails)
+
+### Changed
+- `global-roles.md` — Added §8 External Integration & Observability Mandate. Added Anti-Pattern Compliance to §4 Quality Gates.
+- `global-workflow.md` — Added Anti-Pattern Cross-Check and External Integration Check to Step 2 (THINK). Updated Base Context list in Step 1 with new rule files.
+- `README.md` — Updated repository tree with 3 new rule files.
+
 ## [2.0.0] — 2026-05-01
 
 ### Added

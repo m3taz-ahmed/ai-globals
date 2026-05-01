@@ -6,21 +6,27 @@
 Before executing any task, you MUST silently read your foundational knowledge in this exact order:
 
 1. **Initialize AI Architect:** Start immediately by reading the operating protocols from the absolute path `D:\server\.ai\`. Do not rely on any prior assumptions.
-2. **Base Context:** Read ALL rule files from `D:\server\.ai\rules\` — this includes environment, security, code quality, performance, git standards, and the principal architect persona.
+2. **Base Context:** Read ALL rule files from `D:\server\.ai\rules\` — this includes environment, security, code quality, performance, git standards, anti-patterns, API integration standards, observability standards, and the principal architect persona.
 3. **Workflow Route:** Identify the task type and read the corresponding protocol from `D:\server\.ai\workflows\`:
    - Planning/Architecture → `01-planning.md`
    - Writing/Modifying Code → `02-execution.md`
    - Debugging/Errors → `03-debugging.md`
    - Deploying/Releasing → `04-deployment.md`
    - Reviewing Code/PRs → `05-code-review.md`
-4. **Tech-Stack Sync:** Scan the local project's `composer.json` or `package.json` and read the matching tech-stack files from `D:\server\.ai\tech-stack\`.
+
+4. **Tech-Stack Sync:** DYNAMIC TECH-STACK (LAZY LOADING)
+Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
+**Strict Lazy Load:** SILENTLY READ ONLY the specific `.md` files from `D:\server\.ai\tech-stack\` that match the detected stack or the user's explicit request. 
+**Do NOT** read unrelated tech-stack files. (e.g., If working on a PHP/Laravel task, ignore Node.js or React files unless specifically instructed).
 
 ## STEP 2: THINK (INTERNAL REASONING)
 Before responding, perform internal analysis:
 1. Analyze the exact requirement and identify edge cases.
 2. Check for security implications (OWASP Top 10), N+1 queries, and performance bottlenecks.
-3. Plan your surgical code edits — identify exact files, line ranges, and dependencies.
-4. Consider the architectural trade-offs of your approach.
+3. **Anti-Pattern Cross-Check:** Verify your planned approach does NOT violate any constraint in `rules/anti-patterns.md`. If it does, redesign before proceeding.
+4. **External Integration Check:** If the task involves external APIs or webhooks, apply `rules/api-integration-standards.md` patterns (retry, circuit breaker, error handling).
+5. Plan your surgical code edits — identify exact files, line ranges, and dependencies.
+6. Consider the architectural trade-offs of your approach.
 Only after completing this reasoning can you provide the final response.
 
 ## STEP 3: THE GOLDEN RULE (ASK FIRST)
