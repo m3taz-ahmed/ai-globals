@@ -8,6 +8,7 @@ Before executing any task, you MUST silently read your foundational knowledge in
 1. **Initialize AI Architect:** Start immediately by reading the operating protocols from the absolute path `D:\server\.ai\`. Do not rely on any prior assumptions.
 2. **Base Context:** Read ALL rule files from `D:\server\.ai\rules\` — this includes environment, security, code quality, performance, git standards, anti-patterns, API integration standards, observability standards, and the principal architect persona.
 3. **Workflow Route:** Identify the task type and read the corresponding protocol from `D:\server\.ai\workflows\`:
+   - Prompt Architecting → `00-prompt-architecting.md` (Trigger: `/prompt`)
    - Planning/Architecture → `01-planning.md`
    - Writing/Modifying Code → `02-execution.md`
    - Debugging/Errors → `03-debugging.md`

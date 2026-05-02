@@ -3,6 +3,12 @@
 All notable changes to the AI Globals system are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [Unreleased] - 2026-05-02
+### Added
+- **New Workflow:** `00-prompt-architecting.md` for refining user prompts before execution.
+- **Triggers:** Simplified to a single trigger `/prompt` for the global workflow routing.
+- **Role Expansion:** Defined "Prompt Architecting Mode" in `global-roles.md`.
+
 ## [3.0.0] — 2026-05-02
 ### Added
 - **New Tech-Stacks:** `pest-4.md`, `spatie-permission.md`, `spatie-activitylog.md`, `filament-shield.md`, `vite-7.md`, `alpine-3.md`, `postcss-8.md`.

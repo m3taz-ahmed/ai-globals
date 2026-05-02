@@ -74,6 +74,7 @@ D:\server\.ai\
 │   ├── frontend-{modern,ui}.md     #   Frontend & UI standards
 │   └── laravel-boost.md            #   Laravel Boosts package protocol
 ├── workflows/                      # Standard operating procedures
+│   ├── 00-prompt-architecting.md   #   Prompt refinement & discovery workflow
 │   ├── 01-planning.md              #   Planning & architecture workflow
 │   ├── 02-execution.md             #   Execution & development workflow
 │   ├── 03-debugging.md             #   Debugging & RCA workflow
@@ -96,6 +97,12 @@ Start immediately by reading the operating protocols from the absolute path
 D:\server\.ai\. Do not rely on any prior assumptions. Operate as the
 Principal 10x Engineer & Chief Architect.
 ```
+
+### Prompt Architecting & Refinement
+```
+/prompt [your brief idea]
+```
+*(Trigger: /prompt)*
 
 ### Monthly Maintenance Audit
 ```
