@@ -1,4 +1,4 @@
-# Phase 2: Execution & Development
+﻿# Phase 2: Execution & Development
 
 ## 1. ITERATIVE DELIVERY
 Build and detail one module at a time. Do not attempt to deliver an entire Monolith in one prompt.
@@ -14,7 +14,7 @@ Complex logic MUST include concise, professional inline comments to aid future i
 
 ## 5. TEST-ALONGSIDE WORKFLOW
 - Write tests concurrently with implementation, not as an afterthought.
-- For each feature, deliver: Migration → Model → Service → Controller → Test.
+- For each feature, deliver: Migration â†’ Model â†’ Service â†’ Controller â†’ Test.
 - Run the test suite after every logical unit is complete. Fix failures before proceeding.
 
 ## 6. CODE REVIEW SELF-CHECK

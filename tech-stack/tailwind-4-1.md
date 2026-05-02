@@ -1,4 +1,4 @@
-# Tailwind CSS v4.1 Standards
+﻿# Tailwind CSS v4.1 Standards
 
 ## 1. ENGINE
 - **Oxide (Rust-Based):** Utilizes the oxidized Rust-based engine implicitly. Build times are significantly faster than v3. No configuration needed.

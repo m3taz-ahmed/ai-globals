@@ -1,4 +1,4 @@
-# Phase 4: Deployment & Release
+﻿# Phase 4: Deployment & Release
 
 ## 1. PRE-DEPLOYMENT CHECKLIST
 Before any deployment to staging or production, verify:

@@ -1,29 +1,21 @@
-# Code Quality & Clean Code Standards
+﻿# Code Quality & Clean Architecture
 
 ## 1. NAMING CONVENTIONS
-- **PHP (PSR-12):** Classes in `PascalCase`, methods/variables in `camelCase`, constants in `UPPER_SNAKE_CASE`.
-- **JavaScript/TypeScript:** Variables/functions in `camelCase`, classes in `PascalCase`, constants in `UPPER_SNAKE_CASE`, files in `kebab-case`.
-- **Database:** Tables in `snake_case` (plural: `bookings`), columns in `snake_case`, pivot tables alphabetical (`booking_service`).
-- **Descriptive Names:** Names must reveal intent. `$bookingTotalAmount` not `$bta`. `calculateInvoiceTotal()` not `calc()`.
+- **Services:** `[Feature]Service` (e.g., `InvoiceService`). Focused on business logic.
+- **Actions:** `[Verb][Entity]Action` (e.g., `CreateInvoiceAction`). Single-purpose classes.
+- **DTOs:** `[Entity]Data` (e.g., `InvoiceData`). Typed objects for data transfer.
+- **Models:** Singular PascalCase (e.g., `User`).
 
-## 2. FUNCTION & METHOD DESIGN
-- **Single Responsibility:** Each function/method does ONE thing. If you can't describe it without "and", split it.
-- **Length Limit:** Prefer functions under 30 lines. If a function exceeds 50 lines, it MUST be refactored.
-- **Cyclomatic Complexity:** Maximum complexity of 10 per function. Use early returns and guard clauses to reduce nesting.
-- **Parameter Count:** Maximum 4 parameters. Beyond that, use a DTO/Value Object/Config object.
+## 2. SOLID PRINCIPLES
+- **Single Responsibility:** A class should have one, and only one, reason to change.
+- **Open/Closed:** Classes should be open for extension but closed for modification.
+- **Interface Segregation:** Prefer many small, client-specific interfaces over one large, general-purpose interface.
 
-## 3. CODE ORGANIZATION
-- **File Length:** If a class exceeds 300 lines, evaluate splitting into collaborators or extracting concerns into traits/mixins.
-- **Import Order:** Group imports: 1) Framework/vendor, 2) Application, 3) Relative. Alphabetize within groups.
-- **Dead Code:** Zero tolerance for commented-out code, unused imports, unreachable branches, or orphaned methods. Delete, don't comment.
+## 3. FUNCTION DESIGN
+- **Length:** Methods should not exceed 30 lines.
+- **Arguments:** Limit to 3 arguments. Use DTOs for more complex signatures.
+- **Strict Typing:** All methods MUST have parameter and return types defined.
 
-## 4. COMMENTS & DOCUMENTATION
-- **Comment the "Why":** Explain design decisions, trade-offs, and non-obvious business rules. Never comment the "what" — the code itself should be clear.
-- **PHPDoc:** Required for all public methods with `@param`, `@return`, and `@throws` tags. Not needed if native types fully describe the signature.
-- **TODO/FIXME:** Allowed only with a linked ticket/issue number: `// TODO(FS-42): Refactor when Daftra API v3 lands`.
-
-## 5. PRINCIPLES ENFORCEMENT
-- **SOLID:** Every class and module must adhere to Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion.
-- **DRY:** If code is duplicated 3+ times, extract it into a shared service, helper, or base class.
-- **KISS:** Choose the simplest solution that meets requirements. Over-engineering is a code smell.
-- **YAGNI:** Do not build features or abstractions "just in case". Build for current requirements, design for extension.
+## 4. PHPDOC & DOCUMENTATION
+- **Clarity:** Use PHPDoc to explain *why*, not *what* (the code should explain the *what*).
+- **API Documentation:** Ensure all public API endpoints are documented with parameters and response examples.

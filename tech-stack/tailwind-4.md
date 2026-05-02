@@ -1,4 +1,4 @@
-# Tailwind CSS v4 & Frontend UI
+﻿# Tailwind CSS v4 & Frontend UI
 
 ## 1. CSS ARCHITECTURE (OXIDE ENGINE)
 - Tailwind v4 relies on CSS variables and a zero-config approach via `@theme`. Minimize the use of custom configuration files (`tailwind.config.js`) unless absolutely necessary.

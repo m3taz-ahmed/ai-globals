@@ -1,4 +1,4 @@
-# PHP 8.5 Architecture Standards
+﻿# PHP 8.5 Architecture Standards
 > [!SPECULATIVE] PHP 8.5 is not yet released. Rules are based on RFC proposals and preview documentation. Verify against official release notes before applying.
 
 ## 1. PATTERN MATCHING & ENUMS

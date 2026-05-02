@@ -1,4 +1,4 @@
-# Modern Frontend & UI Standards
+﻿# Modern Frontend & UI Standards
 - **Framework:** Tailwind CSS 4.0+.
 - **Configuration:** Use CSS-first configuration (`@theme` blocks in CSS) instead of JS-based `tailwind.config.js` where possible.
 - **Component Design:** Favor atomic component structures. Every UI element must be reusable and self-contained.

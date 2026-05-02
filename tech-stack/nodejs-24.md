@@ -1,8 +1,8 @@
-# Node.js 24 LTS Strict Standards
+﻿# Node.js 24 LTS Strict Standards
 
 ## 1. TYPESCRIPT NATIVE
 - **Direct Execution:** Run TypeScript natively using `node --experimental-strip-types`. No need for `ts-node`, `tsx`, or `esbuild` for development.
-- **Limitations:** Type-stripping only — no `enum`, `namespace`, or `const enum`. Use string union types as alternatives.
+- **Limitations:** Type-stripping only â€” no `enum`, `namespace`, or `const enum`. Use string union types as alternatives.
 - **tsconfig:** Still required for editor support and strict type checking. Set `"target": "ES2024"`.
 
 ## 2. BUILT-IN SQLITE

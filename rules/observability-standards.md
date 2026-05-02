@@ -1,23 +1,23 @@
-# Observability & Monitoring Standards
+﻿# Observability & Monitoring Standards
 
 > A system without observability is a system operated by luck. Every production application MUST be observable: logging, monitoring, alerting, and health checks are non-negotiable.
 
 ## 1. STRUCTURED LOGGING
 
 - **Format:** Use structured (JSON) logging in production. Human-readable format is acceptable in local development only.
-- **Log Levels (RFC 5424) — use correctly:**
-  - `DEBUG` — Detailed diagnostic info. **Local/staging only**, never in production.
-  - `INFO` — Normal operational events: user login, job dispatched, payment processed.
-  - `WARNING` — Unexpected but recoverable: deprecated API used, cache miss on expected key, slow query detected.
-  - `ERROR` — Failures requiring attention: external API failure, validation exception in an unexpected place, job failure.
-  - `CRITICAL` — System-level failures: database connection lost, queue worker crash, disk full.
+- **Log Levels (RFC 5424) â€” use correctly:**
+  - `DEBUG` â€” Detailed diagnostic info. **Local/staging only**, never in production.
+  - `INFO` â€” Normal operational events: user login, job dispatched, payment processed.
+  - `WARNING` â€” Unexpected but recoverable: deprecated API used, cache miss on expected key, slow query detected.
+  - `ERROR` â€” Failures requiring attention: external API failure, validation exception in an unexpected place, job failure.
+  - `CRITICAL` â€” System-level failures: database connection lost, queue worker crash, disk full.
 - **Context is mandatory.** Every log entry MUST include relevant context. Bare messages are useless:
 
 ```php
-// ❌ Useless
+// âŒ Useless
 Log::error('Invoice creation failed');
 
-// ✅ Actionable
+// âœ… Actionable
 Log::error('Invoice creation failed', [
     'booking_id' => $booking->id,
     'client_id'  => $booking->client_id,
@@ -64,28 +64,28 @@ Log::error('Invoice creation failed', [
 - **Use a dedicated error tracking service** (Sentry, Bugsnag, Flare, or equivalent) in all non-local environments.
 - **Configuration:**
   - Capture all unhandled exceptions automatically.
-  - Attach user context (user ID, role) to error reports — but never PII.
+  - Attach user context (user ID, role) to error reports â€” but never PII.
   - Group similar errors to prevent alert fatigue.
   - Set up release tracking to correlate errors with deployments.
 - **Operational Discipline:**
   - New errors must be triaged within 24 hours: assign, prioritize, or mark as expected.
   - Recurring unresolved errors must be reviewed in the monthly audit.
-  - Resolved errors should be verified as actually fixed — not just marked and forgotten.
+  - Resolved errors should be verified as actually fixed â€” not just marked and forgotten.
 
 ## 4. ALERTING STRATEGY
 
-- **Tiered Alerting — don't alert on everything:**
+- **Tiered Alerting â€” don't alert on everything:**
 
 | Severity | Condition | Action | Channel |
 |---|---|---|---|
-| 🔴 CRITICAL | App down, DB unreachable, data loss risk | Immediate page/call | SMS, Phone |
-| 🟠 HIGH | Error rate > 5%, queue stalled, disk > 90% | Respond within 1 hour | Slack, Email |
-| 🟡 WARNING | Error rate > 1%, p95 > 2s, failed job | Respond within 24 hours | Slack |
-| ℹ️ INFO | Deployment completed, scheduled task ran | No action needed | Log only |
+| ðŸ”´ CRITICAL | App down, DB unreachable, data loss risk | Immediate page/call | SMS, Phone |
+| ðŸŸ  HIGH | Error rate > 5%, queue stalled, disk > 90% | Respond within 1 hour | Slack, Email |
+| ðŸŸ¡ WARNING | Error rate > 1%, p95 > 2s, failed job | Respond within 24 hours | Slack |
+| â„¹ï¸ INFO | Deployment completed, scheduled task ran | No action needed | Log only |
 
 - **Anti-alert-fatigue rules:**
   - Never alert on expected behavior (scheduled maintenance, known transient errors).
-  - Use rate limiting on alerts — max 1 alert per unique issue per 15 minutes.
+  - Use rate limiting on alerts â€” max 1 alert per unique issue per 15 minutes.
   - Review and prune alert rules monthly. If an alert never fires, consider removing it. If it fires constantly, fix the root cause or adjust the threshold.
 
 ## 5. DEVELOPMENT OBSERVABILITY (LOCAL)

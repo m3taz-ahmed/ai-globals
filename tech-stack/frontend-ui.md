@@ -1,4 +1,4 @@
-# Frontend UI & JavaScript Standards
+﻿# Frontend UI & JavaScript Standards
 
 ## 1. JAVASCRIPT ECOSYSTEM (ALPINE.JS FIRST)
 - **Primary Tool:** For dynamic UI interactions within Blade/Filament, ALWAYS default to `Alpine.js` (`x-data`, `x-show`, `x-on`, etc.).

@@ -1,4 +1,4 @@
-# Vite 6.x Build & Asset Standards
+﻿# Vite 6.x Build & Asset Standards
 
 ## 1. CONFIGURATION
 - **Laravel Integration:** Use `laravel-vite-plugin` for seamless integration. Define entry points in `vite.config.js`:

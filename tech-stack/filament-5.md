@@ -1,4 +1,4 @@
-# Filament v5.x Architecture Rules
+﻿# Filament v5.x Architecture Rules
 > [!SPECULATIVE] Filament v5 is not yet released. Rules are based on community previews and announced roadmap. Verify against official release notes before applying.
 
 ## 1. ASYNC-FIRST ARCHITECTURE

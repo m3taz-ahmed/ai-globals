@@ -1,4 +1,4 @@
-# Node.js 22 LTS Standards
+﻿# Node.js 22 LTS Standards
 
 ## 1. EXECUTION & SCRIPTS
 - **Script Runner:** Utilize `node --run` for executing package.json scripts (faster than `npm run`, no npm overhead).

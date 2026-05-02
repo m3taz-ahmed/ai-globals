@@ -1,4 +1,4 @@
-# Filament v3 Best Practices
+﻿# Filament v3 Best Practices
 
 ## 1. PERFORMANCE FIRST
 - Filament tables can become very slow with large datasets. Always optimize `query()` methods.

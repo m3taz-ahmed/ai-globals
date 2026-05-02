@@ -1,4 +1,4 @@
-# Laravel 11 Architecture Standards
+﻿# Laravel 11 Architecture Standards
 
 ## 1. STRUCTURE & BOOTSTRAPPING
 - Laravel 11 features a streamlined directory structure. `App\Http\Kernel` and `App\Console\Kernel` are gone. Configuration is heavily centralized in `bootstrap/app.php`.

@@ -1,4 +1,4 @@
-# Security & Cyber Resilience (OWASP Top 10)
+﻿# Security & Cyber Resilience (OWASP Top 10)
 - **Mindset:** Implement "Zero-Trust" architecture. Never assume an internal request is safe.
 
 ## 1. DATA PROTECTION
@@ -20,16 +20,16 @@
 - **Filament Security:** Secure resources by strictly defining `canViewAny()`, `canEdit()`, and `canDelete()` based on role-based access control (RBAC).
 
 ## 5. RATE LIMITING & DDoS MITIGATION
-- **API Throttling:** ALL API routes MUST use Laravel's `ThrottleRequests` middleware. Default: 60 requests/minute per user, stricter for auth endpoints (5/minute for login/register).
-- **Abuse Detection:** Log and monitor repeated failed authentication attempts. Implement progressive lockout (exponential backoff).
-- **Resource Limits:** Set maximum request body sizes, upload limits, and pagination caps to prevent resource exhaustion attacks.
+- **API Throttling:** ALL API routes MUST use Laravel's `ThrottleRequests` middleware. Default: 60 requests/minute per user.
+- **Abuse Detection:** Implement progressive lockout (exponential backoff) for failed auth attempts.
+- **Resource Limits:** Set maximum request body sizes and upload limits to prevent resource exhaustion.
 
-## 6. CORS & HEADERS POLICY
-- **Strict Origins:** Never use `*` for `Access-Control-Allow-Origin`. Explicitly whitelist allowed domains.
-- **Security Headers:** Every response MUST include: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Strict-Transport-Security` (HSTS), and `Content-Security-Policy`.
-- **Cookie Security:** All cookies must use `Secure`, `HttpOnly`, and `SameSite=Strict` flags.
+## 6. JWT & SESSION SECURITY
+- **JWT Storage:** Never store JWTs in `localStorage`. Use `HttpOnly`, `Secure` cookies.
+- **Revocation:** Implement a blacklist or JTI-based revocation for JWTs.
+- **Session Regeneration:** Call `Session::regenerate()` after every login to prevent session fixation.
 
-## 7. DEPENDENCY SECURITY
-- **Automated Audits:** Run `composer audit` and `npm audit` in every CI/CD pipeline. Fail the build on HIGH/CRITICAL vulnerabilities.
-- **Version Pinning:** Lock dependency versions in `composer.lock` and `package-lock.json`. Never use wildcard (`*`) version constraints in production.
-- **Supply Chain:** Verify package integrity. Prefer well-maintained packages with active security policies. Avoid packages with no updates in >12 months.
+## 7. CLOUD & INFRASTRUCTURE SECURITY
+- **Storage Privacy:** Ensure all cloud storage buckets (S3/Azure) are PRIVATE by default. Use Signed URLs for temporary access.
+- **Identity & Access (IAM):** Use "Least Privilege" IAM roles for app servers. Never use root account credentials.
+- **Dependency Audits:** Run `composer audit` and `npm audit` in CI/CD. Fail on HIGH/CRITICAL issues.

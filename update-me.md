@@ -1,9 +1,9 @@
-# System Maintenance & Optimization Protocol
+﻿# System Maintenance & Optimization Protocol
 > **Last Updated:** 2026-05-01 | **Audit Frequency:** Monthly | **Maintainer:** m3taz-ahmed
 
 ## Purpose
 
-This is the **Elite Maintenance Prompt** — a comprehensive protocol for performing full system deep-scans and global optimization of the AI Globals architecture.
+This is the **Elite Maintenance Prompt** â€” a comprehensive protocol for performing full system deep-scans and global optimization of the AI Globals architecture.
 
 
 ## The Prompt

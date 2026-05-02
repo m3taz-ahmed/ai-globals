@@ -1,4 +1,4 @@
-# MySQL 8.3 Architecture Standards
+﻿# MySQL 8.3 Architecture Standards
 
 ## 1. REPLICATION & HIGH AVAILABILITY
 - **GTID:** Utilize GTID-based replication enhancements for read-replicas. All transactions must be GTID-compatible.

@@ -1,7 +1,18 @@
-# Laravel 12.x Strict Standards
-- **Routing:** Prefer PHP Attributes for routing directly in Controllers (e.g., `#[Get('/api/resource')]`) to co-locate logic and routes.
-- **Model Strictness:** `Model::shouldBeStrict()` MUST be enabled globally to crash on N+1 queries, silent discards, and lazy loading during development.
-- **Architecture:** Enforce "Thin Controllers, Fat Services". Controllers should only handle input/output and delegation. All business logic belongs in `App\Services`.
-- **Database:** Use Laravel 12's improved concurrency and task batching for long-running processes or bulk updates.
-- **API Resources:** All external outputs MUST use Laravel API Resources to ensure a consistent, versioned JSON structure.
-- **Websockets:** Default to Laravel Reverb for real-time features.
+﻿# Laravel 12.x Architectural Standards
+
+## 1. NATIVE TYPE ENFORCEMENT
+- **Dependency Injection:** Use native type-hints for all constructor and method injection. Avoid `resolve()` or `app()` where possible.
+- **ReturnType:** Every Controller method, Service method, and Job `handle()` MUST have a native return type.
+
+## 2. MODERN ROUTING & VALIDATION
+- **FormRequests:** Every POST/PUT/PATCH request MUST use a dedicated `FormRequest` class.
+- **Rule Objects:** Prefer custom `Rule` objects over complex regex or closure-based validation.
+
+## 3. ASYNC & PERFORMANCE
+- **Queue by Default:** Any operation exceeding 100ms (emails, external APIs) MUST be queued.
+- **Batching:** Use `Bus::batch()` for complex, multi-stage background processes.
+- **Caching:** Use `Cache::remember()` for expensive calculations or third-party API results.
+
+## 4. UI & ASSETS
+- **Vite:** Follow `vite-7.md` for asset bundling.
+- **Livewire:** Follow `livewire-3.md` for reactive components.

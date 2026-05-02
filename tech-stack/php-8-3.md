@@ -1,4 +1,4 @@
-# PHP 8.3 Architecture Standards
+﻿# PHP 8.3 Architecture Standards
 
 ## 1. TYPE SYSTEM ENHANCEMENTS
 - **Typed Class Constants:** Enforce Typed Class Constants (`public const string STATUS = 'active';`). No untyped constants in new code.
@@ -10,7 +10,7 @@
 - **Error Handling:** When decoding, use `json_decode($str, true, 512, JSON_THROW_ON_ERROR)` to get exceptions instead of silent `null` returns.
 
 ## 3. OVERRIDE SAFETY
-- **`#[\Override]` Attribute:** MANDATORY for all overridden parent methods. This ensures compile-time safety — if the parent method signature changes or is removed, you get an immediate error instead of a silent bug.
+- **`#[\Override]` Attribute:** MANDATORY for all overridden parent methods. This ensures compile-time safety â€” if the parent method signature changes or is removed, you get an immediate error instead of a silent bug.
 
 ## 4. RANDOMIZER & CRYPTOGRAPHY
 - **Randomizer Class:** Use `Random\Randomizer` for all random value generation. Supports `getBytesFromString()`, `getFloat()`, and `nextFloat()`.

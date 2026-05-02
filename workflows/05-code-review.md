@@ -1,9 +1,9 @@
-# Phase 5: Code Review Protocol
+﻿# Phase 5: Code Review Protocol
 
 ## 1. REVIEW SCOPE & MINDSET
 - **Purpose:** Code review is a quality gate, not a gatekeeping exercise. Focus on correctness, security, performance, and maintainability.
-- **Scope:** Review every line that changed. Understand the context — read surrounding code, not just the diff.
-- **Tone:** Constructive and specific. "This could cause N+1 — use `with('relation')` here" not "This is wrong".
+- **Scope:** Review every line that changed. Understand the context â€” read surrounding code, not just the diff.
+- **Tone:** Constructive and specific. "This could cause N+1 â€” use `with('relation')` here" not "This is wrong".
 
 ## 2. SECURITY-FIRST REVIEW
 Priority checks (block the PR if any fail):
@@ -15,7 +15,7 @@ Priority checks (block the PR if any fail):
 - [ ] File uploads validated for type, size, and stored outside web root.
 
 ## 3. PERFORMANCE REVIEW
-- [ ] No N+1 queries — all relationship access uses eager loading.
+- [ ] No N+1 queries â€” all relationship access uses eager loading.
 - [ ] Database queries are bounded (pagination, limits, chunking for batch operations).
 - [ ] No unnecessary loops that could be replaced with Collection methods or SQL.
 - [ ] Heavy operations are queued, not executed synchronously in HTTP requests.
@@ -23,9 +23,9 @@ Priority checks (block the PR if any fail):
 
 ## 4. CODE QUALITY REVIEW
 - [ ] Follows the project's naming conventions (PSR-12 for PHP, project-specific for JS).
-- [ ] Functions/methods are focused — one responsibility, reasonable length (<30 lines preferred).
+- [ ] Functions/methods are focused â€” one responsibility, reasonable length (<30 lines preferred).
 - [ ] No dead code, commented-out blocks, or `TODO` without a linked ticket.
-- [ ] Error handling is explicit — no empty catch blocks, no `@` suppression.
+- [ ] Error handling is explicit â€” no empty catch blocks, no `@` suppression.
 - [ ] Tests exist and meaningfully cover the new behavior.
 
 ## 5. ARCHITECTURE REVIEW

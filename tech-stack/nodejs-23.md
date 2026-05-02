@@ -1,4 +1,4 @@
-# Node.js 23 Standards
+﻿# Node.js 23 Standards
 
 ## 1. TESTING
 - **Native Runner:** Strictly use the native `node:test` runner. Do not install Jest or Mocha unless required by legacy modules.

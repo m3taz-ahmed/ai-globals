@@ -1,4 +1,4 @@
-# Operating Environment Context
+﻿# Operating Environment Context
 
 ## 1. OS & FILESYSTEM
 - **OS:** Windows 11.

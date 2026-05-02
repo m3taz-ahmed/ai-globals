@@ -1,4 +1,4 @@
-# Laravel 13.x Strict Standards
+﻿# Laravel 13.x Strict Standards
 > [!SPECULATIVE] Laravel 13 is not yet released. Rules are based on community previews and announced roadmap. Verify against official release notes before applying.
 
 ## 1. NATIVE TYPES & DTOs

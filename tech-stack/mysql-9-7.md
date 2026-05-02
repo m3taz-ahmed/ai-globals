@@ -1,4 +1,4 @@
-# MySQL 9.7.0 Advanced Schema Rules
+﻿# MySQL 9.7.0 Advanced Schema Rules
 > [!SPECULATIVE] This version is not yet in general production use. Rules are based on preview/RC documentation. Verify against official release notes before applying.
 
 ## 1. VECTOR SEARCH & AI INTEGRATION

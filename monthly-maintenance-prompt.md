@@ -1,4 +1,4 @@
-# Monthly Maintenance Audit Protocol
+﻿# Monthly Maintenance Audit Protocol
 > **Frequency:** First week of every month | **Role:** Principal Chief Architect
 
 ## Purpose
@@ -8,20 +8,20 @@ Perform a structured monthly audit to catch regressions, dependency vulnerabilit
 ## Audit Checklist
 
 ### 1. Dependency Security
-- [ ] Run `composer audit` — check for known vulnerabilities in PHP packages.
-- [ ] Run `npm audit` — check for known vulnerabilities in Node.js packages.
-- [ ] Run `composer outdated` / `npm outdated` — identify packages with pending updates.
+- [ ] Run `composer audit` â€” check for known vulnerabilities in PHP packages.
+- [ ] Run `npm audit` â€” check for known vulnerabilities in Node.js packages.
+- [ ] Run `composer outdated` / `npm outdated` â€” identify packages with pending updates.
 - [ ] Review any critical/high severity advisories and create upgrade tickets.
 
 ### 2. Code Quality & Smells
 - [ ] Review the latest major features added since last audit.
-- [ ] Check for bloated controllers (>200 lines) — extract to Services.
+- [ ] Check for bloated controllers (>200 lines) â€” extract to Services.
 - [ ] Identify slow queries using Telescope/Debugbar logs or slow query log.
 - [ ] Scan for N+1 issues in new Eloquent code.
 - [ ] Check for dead code, unused imports, and orphaned routes.
 
 ### 3. Database Optimization
-- [ ] Review new tables/columns added — verify indexes exist for filtered/sorted columns.
+- [ ] Review new tables/columns added â€” verify indexes exist for filtered/sorted columns.
 - [ ] Recommend 3 specific indexes or query refactors based on slow query analysis.
 - [ ] Check for missing foreign key constraints on new relationship columns.
 - [ ] Verify migration rollbacks are properly defined for all new migrations.
@@ -47,7 +47,7 @@ Perform a structured monthly audit to catch regressions, dependency vulnerabilit
 
 After completing the audit, produce a structured report:
 ```markdown
-# Monthly Audit Report — [Month Year]
+# Monthly Audit Report â€” [Month Year]
 
 ## Summary
 [1-2 sentence overview]

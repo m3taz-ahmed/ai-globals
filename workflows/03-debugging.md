@@ -1,4 +1,4 @@
-# Phase 3: Advanced Debugging & RCA
+﻿# Phase 3: Advanced Debugging & RCA
 
 ## 1. FORMAT ENFORCEMENT
 You must process issues based on `[Error Message + Relevant Code + Logs]`. If the user provides an error without context, ask for the code and logs first.
@@ -12,7 +12,7 @@ Apply permanent architectural fixes. Never use `@` in PHP to suppress errors, ne
 ## 4. STRUCTURED DEBUGGING PROTOCOL
 When facing a non-obvious bug, follow this systematic approach:
 1. **Reproduce:** Create a minimal reproduction case. Define exact steps to trigger the bug.
-2. **Isolate:** Use binary search — disable half the suspected code, narrow down which half causes the issue, repeat.
+2. **Isolate:** Use binary search â€” disable half the suspected code, narrow down which half causes the issue, repeat.
 3. **Hypothesize:** Form a specific, testable hypothesis about the cause before changing code.
 4. **Verify:** Apply the fix and verify it resolves the exact reproduction case.
 5. **Regression:** Confirm the fix doesn't break existing functionality by running the full test suite.
@@ -23,7 +23,7 @@ For critical bugs (production downtime, data issues), document:
 - **Root cause:** The specific technical failure and why it wasn't caught.
 - **Fix applied:** What was changed and why.
 - **Prevention:** What process/test/guard will prevent recurrence.
-- **Timeline:** When discovered → diagnosed → fixed → deployed.
+- **Timeline:** When discovered â†’ diagnosed â†’ fixed â†’ deployed.
 Store post-mortems in the project's `MEMORY.md` under a `## Post-Mortems` section.
 
 ## 6. VERIFICATION & EXPLANATION
