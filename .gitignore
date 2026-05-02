@@ -13,3 +13,6 @@ desktop.ini
 
 # Local State (per-project, not global)
 MEMORY.md
+
+
+/scripts/*
