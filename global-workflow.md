@@ -1,4 +1,4 @@
-﻿# Master Global Workflow
+# Master Global Workflow
 > [!NOTE]
 > Update `D:\server\.ai\` in the paths below if your repository is located elsewhere.
 
@@ -6,15 +6,15 @@
 Before executing any task, you MUST silently read your foundational knowledge in this exact order:
 
 1. **Initialize AI Architect:** Start immediately by reading the operating protocols from the absolute path `D:\server\.ai\`. Do not rely on any prior assumptions.
-2. **Base Context:** Read ALL rule files from `D:\server\.ai\rules\` â€” this includes environment, security, code quality, performance, git standards, anti-patterns, API integration standards, observability standards, and the principal architect persona.
+2. **Base Context:** Read ALL rule files from `D:\server\.ai\rules\` — this includes environment, security, code quality, performance, git standards, anti-patterns, API integration standards, observability standards, and the principal architect persona.
 3. **Workflow Route:** Identify the task type and read the corresponding protocol from `D:\server\.ai\workflows\`:
-   - Planning/Architecture â†’ `01-planning.md`
-   - Writing/Modifying Code â†’ `02-execution.md`
-   - Debugging/Errors â†’ `03-debugging.md`
-   - Deploying/Releasing â†’ `04-deployment.md`
-   - Reviewing Code/PRs â†’ `05-code-review.md`
-   - System Maintenance/Audit â†’ `06-maintenance.md`
-   - Security Audit/Hardening â†’ `07-security-audit.md`
+   - Planning/Architecture → `01-planning.md`
+   - Writing/Modifying Code → `02-execution.md`
+   - Debugging/Errors → `03-debugging.md`
+   - Deploying/Releasing → `04-deployment.md`
+   - Reviewing Code/PRs → `05-code-review.md`
+   - System Maintenance/Audit → `06-maintenance.md`
+   - Security Audit/Hardening → `07-security-audit.md`
 
 4. **Tech-Stack Sync:** DYNAMIC TECH-STACK (LAZY LOADING)
 Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
@@ -27,19 +27,19 @@ Before responding, perform internal analysis:
 2. Check for security implications (OWASP Top 10), N+1 queries, and performance bottlenecks.
 3. **Anti-Pattern Cross-Check:** Verify your planned approach does NOT violate any constraint in `rules/anti-patterns.md`. If it does, redesign before proceeding.
 4. **External Integration Check:** If the task involves external APIs or webhooks, apply `rules/api-integration-standards.md` patterns (retry, circuit breaker, error handling).
-5. Plan your surgical code edits â€” identify exact files, line ranges, and dependencies.
+5. Plan your surgical code edits — identify exact files, line ranges, and dependencies.
 6. Consider the architectural trade-offs of your approach.
 Only after completing this reasoning can you provide the final response.
 
 ## STEP 3: THE GOLDEN RULE (ASK FIRST)
-Do NOT generate massive blocks of code blindly. If requirements are ambiguous, or if multiple architectural paths exist, ask clarifying questions first. Reference the Communication Protocol in `global-roles.md` Â§5 for the ask-vs-act threshold.
+Do NOT generate massive blocks of code blindly. If requirements are ambiguous, or if multiple architectural paths exist, ask clarifying questions first. Reference the Communication Protocol in `global-roles.md` §5 for the ask-vs-act threshold.
 
 ## STEP 4: EXECUTE & DELIVER
 When producing code:
 1. Follow the active workflow protocol (planning/execution/debugging/deployment/review).
-2. Deliver iteratively â€” one module or logical unit at a time.
+2. Deliver iteratively — one module or logical unit at a time.
 3. Include all necessary components (migrations, models, services, tests).
-4. Apply surgical diffs â€” never rewrite entire files unless explicitly requested.
+4. Apply surgical diffs — never rewrite entire files unless explicitly requested.
 
 ## STEP 5: VERIFY & VALIDATE
 After making any changes, you MUST verify before reporting completion:

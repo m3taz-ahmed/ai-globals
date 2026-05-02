@@ -1,6 +1,6 @@
-﻿# AI Globals: Centralized Master Architecture & AI Protocols
+# AI Globals: Centralized Master Architecture & AI Protocols
 
-> The definitive source of truth for AI agents â€” ensuring absolute consistency, performance, and security across all projects.
+> The definitive source of truth for AI agents — ensuring absolute consistency, performance, and security across all projects.
 
 ## Table of Contents
 
@@ -9,11 +9,11 @@
 - [Repository Structure](#-repository-structure)
 - [Configuration](#-configuration)
 - [Quick Reference](#-quick-reference)
-- [How to Use](#%EF%B8%8F-how-to-use)
+- [How to Use](#-how-to-use)
 - [Contributing](#-contributing-guidelines)
 - [Changelog](#-changelog)
 
-## âš ï¸ Important: Configuration
+## ⚠️ Important: Configuration
 
 > [!IMPORTANT]
 > This repository uses **absolute paths** to ensure AI agents can always find the global rules regardless of the current working directory.
@@ -25,12 +25,12 @@
 > - **Find:** `D:\server\.ai\`
 > - **Replace with:** `[YOUR_ABSOLUTE_PATH]\` (e.g., `C:\Users\Name\Documents\ai-globals\`)
 
-## ðŸ§  The Core Directive
+## 🧠 The Core Directive
 
 Every interaction with an AI agent in this ecosystem starts with a single, non-negotiable rule:
 **Operate as a "Principal 10x Engineer & Chief Architect" at the highest global standards.**
 
-## ðŸš€ Key Features
+## 🚀 Key Features
 
 ### 1. Global Rule Enforcement
 All agents are instructed to bypass default assumptions and read their operating protocols directly from this centralized directory. This ensures that every line of code written follows the same elite standards.
@@ -48,47 +48,47 @@ If a technology is detected that doesn't yet have a rule file, the AI architect 
 ### 4. Recursive System Audits
 Includes specialized prompts for full-system deep scans, security hardening, and performance optimization.
 
-## ðŸ“‚ Repository Structure
+## 📁 Repository Structure
 
 ```
 D:\server\.ai\
-â”œâ”€â”€ rules/                          # Hard constraints & behavioral guidelines
-â”‚   â”œâ”€â”€ principal-architect.md      #   AI persona & architectural patterns
-â”‚   â”œâ”€â”€ security-standards.md       #   OWASP Top 10 & cyber resilience
-â”‚   â”œâ”€â”€ code-quality.md             #   Clean Code, SOLID, naming conventions
-â”‚   â”œâ”€â”€ performance-standards.md    #   Query budgets, caching, queues
-â”‚   â”œâ”€â”€ git-standards.md            #   Commits, branching, PR requirements
-â”‚   â”œâ”€â”€ environment-windows.md      #   OS context, PowerShell, WSL
-â”‚   â”œâ”€â”€ anti-patterns.md            #   Negative constraints & forbidden patterns
-â”‚   â”œâ”€â”€ api-integration-standards.md#   External API integration resilience
-â”‚   â””â”€â”€ observability-standards.md  #   Logging, monitoring, alerting, health checks
-â”œâ”€â”€ tech-stack/                     # Version-specific architectural rules
-â”‚   â”œâ”€â”€ laravel-{11,12,13}.md       #   Laravel framework standards
-â”‚   â”œâ”€â”€ filament-{3,4,5}.md         #   Filament admin panel standards
-â”‚   â”œâ”€â”€ php-8-{3,4,5}.md            #   PHP language version standards
-â”‚   â”œâ”€â”€ mysql-8-{3,4}.md            #   MySQL database standards
-â”‚   â”œâ”€â”€ nodejs-{22,23,24}.md        #   Node.js runtime standards
-â”‚   â”œâ”€â”€ tailwind-{3,4,4-1}.md       #   Tailwind CSS standards
-â”‚   â”œâ”€â”€ livewire-3.md               #   Livewire component standards
-â”‚   â”œâ”€â”€ vite-6.md                   #   Vite build tool standards
-â”‚   â”œâ”€â”€ frontend-{modern,ui}.md     #   Frontend & UI standards
-â”‚   â””â”€â”€ laravel-boost.md            #   Laravel Boosts package protocol
-â”œâ”€â”€ workflows/                      # Standard operating procedures
-â”‚   â”œâ”€â”€ 01-planning.md              #   Planning & architecture workflow
-â”‚   â”œâ”€â”€ 02-execution.md             #   Execution & development workflow
-â”‚   â”œâ”€â”€ 03-debugging.md             #   Debugging & RCA workflow
-â”‚   â”œâ”€â”€ 04-deployment.md            #   Deployment & release workflow
-â”‚   â””â”€â”€ 05-code-review.md           #   Code review protocol
-â”œâ”€â”€ global-roles.md                 # AI identity & core directives
-â”œâ”€â”€ global-workflow.md              # Master workflow for all cycles
-â”œâ”€â”€ update-me.md                    # System maintenance prompt
-â”œâ”€â”€ monthly-maintenance-prompt.md   # Monthly audit protocol
-â”œâ”€â”€ MEMORY.md                       # Audit log & architectural decisions
-â”œâ”€â”€ CHANGELOG.md                    # Change history
-â””â”€â”€ README.md                       # This file
+├── rules/                          # Hard constraints & behavioral guidelines
+│   ├── principal-architect.md      #   AI persona & architectural patterns
+│   ├── security-standards.md       #   OWASP Top 10 & cyber resilience
+│   ├── code-quality.md             #   Clean Code, SOLID, naming conventions
+│   ├── performance-standards.md    #   Query budgets, caching, queues
+│   ├── git-standards.md            #   Commits, branching, PR requirements
+│   ├── environment-windows.md      #   OS context, PowerShell, WSL
+│   ├── anti-patterns.md            #   Negative constraints & forbidden patterns
+│   ├── api-integration-standards.md#   External API integration resilience
+│   └── observability-standards.md  #   Logging, monitoring, alerting, health checks
+├── tech-stack/                     # Version-specific architectural rules
+│   ├── laravel-{11,12,13}.md       #   Laravel framework standards
+│   ├── filament-{3,4,5}.md         #   Filament admin panel standards
+│   ├── php-8-{3,4,5}.md            #   PHP language version standards
+│   ├── mysql-8-{3,4}.md            #   MySQL database standards
+│   ├── nodejs-{22,23,24}.md        #   Node.js runtime standards
+│   ├── tailwind-{3,4,4-1}.md       #   Tailwind CSS standards
+│   ├── livewire-3.md               #   Livewire component standards
+│   ├── vite-6.md                   #   Vite build tool standards
+│   ├── frontend-{modern,ui}.md     #   Frontend & UI standards
+│   └── laravel-boost.md            #   Laravel Boosts package protocol
+├── workflows/                      # Standard operating procedures
+│   ├── 01-planning.md              #   Planning & architecture workflow
+│   ├── 02-execution.md             #   Execution & development workflow
+│   ├── 03-debugging.md             #   Debugging & RCA workflow
+│   ├── 04-deployment.md            #   Deployment & release workflow
+│   └── 05-code-review.md           #   Code review protocol
+├── global-roles.md                 # AI identity & core directives
+├── global-workflow.md              # Master workflow for all cycles
+├── update-me.md                    # System maintenance prompt
+├── monthly-maintenance-prompt.md   # Monthly audit protocol
+├── MEMORY.md                       # Audit log & architectural decisions
+├── CHANGELOG.md                    # Change history
+└── README.md                       # This file
 ```
 
-## âš¡ Quick Reference
+## ⚡ Quick Reference
 
 ### Initialize the AI Architect
 ```
@@ -111,13 +111,13 @@ D:\server\.ai\workflows\03-debugging.md. Perform Root Cause Analysis on
 the following error: [paste error + code + logs]
 ```
 
-## ðŸ› ï¸ How to Use
+## 🛠️ How to Use
 
 To initialize the AI Architect in any project, use the following prompt command:
 
 > "Start immediately by reading the operating protocols from the absolute path **D:\server\.ai\\**. Do not rely on any prior assumptions. Operate as the Principal 10x Engineer & Chief Architect."
 
-## ðŸ“ Contributing Guidelines
+## 📝 Contributing Guidelines
 
 When adding or modifying rule files:
 1. **Format:** Use markdown with clear `## Section` hierarchy. Start every file with a `# Title`.
@@ -127,7 +127,7 @@ When adding or modifying rule files:
 5. **Changelog:** Log every addition/modification in `CHANGELOG.md`.
 6. **Line Endings:** All files MUST use LF line endings (not CRLF).
 
-## ðŸ“‹ Changelog
+## 📋 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for the full change history.
 
