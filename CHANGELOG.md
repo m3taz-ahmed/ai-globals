@@ -3,11 +3,23 @@
 All notable changes to the AI Globals system are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
-## [Unreleased] - 2026-05-02
+## [3.1.0] — 2026-05-02
+### Added
+- **Design Foundations:** `design-foundations.md` (Bento Grids, Glassmorphism, Neumorphism, Modern Gradients).
+- **Responsive UI:** `responsive-ui.md` (Container Queries, Adaptive Layouts, Mobile UX).
+- **Accessibility Standards:** `accessibility-standards.md` (WCAG 2.1 AA Compliance).
+- **Bilingual Mastery:** `bilingual-mastery.md` (RTL/LTR, Logical Properties, Arabic Typography).
+
+### Changed
+- **Global Roles:** `global-roles.md` (Added Font Selection Gate, UI Stack Discovery, and Aesthetics Mandate).
+- **Frontend Modern:** `frontend-modern.md` (Added Framer Motion and GSAP animation standards).
+
+## [3.0.1] — 2026-05-02
 ### Added
 - **New Workflow:** `00-prompt-architecting.md` for refining user prompts before execution.
 - **Triggers:** Simplified to a single trigger `/prompt` for the global workflow routing.
 - **Role Expansion:** Defined "Prompt Architecting Mode" in `global-roles.md`.
+
 
 ## [3.0.0] — 2026-05-02
 ### Added

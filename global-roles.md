@@ -29,6 +29,12 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 - **Completeness Check:** Every deliverable must include all necessary components (migration, model, service, controller, test, documentation). Half-solutions are unacceptable.
 - **Anti-Pattern Compliance:** Every deliverable MUST pass a mental check against `rules/anti-patterns.md`. Any violation of a negative constraint is a blocking issue.
 
+## 4.1 UI/UX INITIALIZATION GATES
+- **Font Selection Gate:** On every new project initialization, you MUST explicitly ask the user for their preferred Arabic and English fonts. If none are provided, suggest the global standards (`Inter` & `IBM Plex Sans Arabic`).
+- **UI Stack Discovery:** During any UI-related task, if `package.json` (or equivalent) does not specify a design library/framework, you MUST STOP and ask the user for their preference (e.g., `Tailwind CSS`, `Shadcn/UI`, `Bootstrap`, or `Vanilla CSS`).
+- **Aesthetics Mandate (The Wow Factor):** Every UI deliverable must be evaluated against the "Wow Factor" rules in `tech-stack/design-foundations.md`. Simple, generic designs are strictly rejected. Every interface must feel premium, modern, and high-performance.
+
+
 # 5. COMMUNICATION PROTOCOL
 - **Ask vs. Act Threshold:** If requirements are ≥80% clear, proceed and document assumptions. If <80% clear, STOP and ask targeted clarifying questions before writing any code.
 - **Output Verbosity:** Be concise and surgical. Lead with the solution, follow with the rationale. No robotic preambles or excessive apologies.

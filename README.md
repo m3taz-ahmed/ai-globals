@@ -1,6 +1,12 @@
 # AI Globals: Centralized Master Architecture & AI Protocols
 
 > The definitive source of truth for AI agents — ensuring absolute consistency, performance, and security across all projects.
+>
+> ---
+> ### 🌟 Featured Update: Global Design System (v3.1.0)
+> We just launched a comprehensive expansion of our design technology stack. Now featuring specialized rules for `Bento Grids`, `Glassmorphism`, `Bilingual (RTL/LTR) Mastery`, and `Accessibility Gates`. Every project initialized with AI Globals now starts with a world-class UI/UX foundation.
+> ---
+
 
 ## Table of Contents
 
@@ -45,7 +51,14 @@ If a technology is detected that doesn't yet have a rule file, the AI architect 
 - Save it to the global `tech-stack/` folder for future use.
 - Log the event in `CHANGELOG.md`.
 
-### 4. Recursive System Audits
+### 4. Global Design Systems Architecture (v3.1.0)
+The system now enforces world-class UI/UX standards via specialized design stacks. It includes:
+- **Aesthetics Mandate:** Enforces the "Wow Factor" (Bento, Glassmorphism, Neumorphism).
+- **Responsive Mastery:** Adaptive layouts using `Container Queries` and `Mobile-First` logic.
+- **Bilingual (RTL/LTR) Precision:** Native mirroring and logical property enforcement.
+- **Accessibility Gate:** Strict `WCAG 2.1 AA` compliance by default.
+
+### 5. Recursive System Audits
 Includes specialized prompts for full-system deep scans, security hardening, and performance optimization.
 
 ## 📁 Repository Structure
@@ -63,6 +76,10 @@ D:\server\.ai\
 │   ├── api-integration-standards.md#   External API integration resilience
 │   └── observability-standards.md  #   Logging, monitoring, alerting, health checks
 ├── tech-stack/                     # Version-specific architectural rules
+│   ├── design-foundations.md       #   [NEW] Bento, Glass, Neumorphism rules
+│   ├── responsive-ui.md            #   [NEW] Container Queries & Adaptive UX
+│   ├── accessibility-standards.md  #   [NEW] WCAG 2.1 AA compliance
+│   ├── bilingual-mastery.md        #   [NEW] RTL/LTR & Arabic Typography
 │   ├── laravel-{11,12,13}.md       #   Laravel framework standards
 │   ├── filament-{3,4,5}.md         #   Filament admin panel standards
 │   ├── php-8-{3,4,5}.md            #   PHP language version standards
@@ -88,6 +105,7 @@ D:\server\.ai\
 ├── CHANGELOG.md                    # Change history
 └── README.md                       # This file
 ```
+
 
 ## ⚡ Quick Reference
 
