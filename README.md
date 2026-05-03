@@ -3,8 +3,8 @@
 > The definitive source of truth for AI agents — ensuring absolute consistency, performance, and security across all projects.
 >
 > ---
-> ### 🌟 Featured Update: Global Design System (v3.1.0)
-> We just launched a comprehensive expansion of our design technology stack. Now featuring specialized rules for `Bento Grids`, `Glassmorphism`, `Bilingual (RTL/LTR) Mastery`, and `Accessibility Gates`. Every project initialized with AI Globals now starts with a world-class UI/UX foundation.
+> ### 🌟 Featured Update: React & Native Mastery (v3.2.0)
+> We have successfully integrated a unified architectural standard for the React ecosystem. This covers `Next.js 15 (App Router)`, `Vite 6`, and `Expo SDK 52` for mobile development. Now, every React project is governed by god-tier patterns for state management (`TanStack Query`), styling (`Tailwind v4`), and mobile-first UX.
 > ---
 
 
@@ -58,7 +58,13 @@ The system now enforces world-class UI/UX standards via specialized design stack
 - **Bilingual (RTL/LTR) Precision:** Native mirroring and logical property enforcement.
 - **Accessibility Gate:** Strict `WCAG 2.1 AA` compliance by default.
 
-### 5. Recursive System Audits
+### 5. React & Native Mastery (v3.2.0)
+A sovereign reference for modern frontend and mobile development, ensuring 100% consistency between web and native projects using:
+- **Web:** Next.js 15 & Vite 6 standards.
+- **Mobile:** Expo SDK 52 & Expo Router.
+- **State:** Mandatory TanStack Query v5 & Zustand.
+
+### 6. Recursive System Audits
 Includes specialized prompts for full-system deep scans, security hardening, and performance optimization.
 
 ## 📁 Repository Structure
@@ -88,6 +94,7 @@ D:\server\.ai\
 │   ├── tailwind-{3,4,4-1}.md       #   Tailwind CSS standards
 │   ├── livewire-3.md               #   Livewire component standards
 │   ├── vite-6.md                   #   Vite build tool standards
+│   ├── react-ecosystem.md          #   [NEW] Next.js, Vite, Expo, Zustand rules
 │   ├── frontend-{modern,ui}.md     #   Frontend & UI standards
 │   └── laravel-boost.md            #   Laravel Boosts package protocol
 ├── workflows/                      # Standard operating procedures
