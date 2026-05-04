@@ -22,14 +22,10 @@
 ## ⚠️ Important: Configuration
 
 > [!IMPORTANT]
-> This repository uses **absolute paths** to ensure AI agents can always find the global rules regardless of the current working directory.
+> This repository is designed to be a **Sovereign Global Store**. While internal files now use **relative paths** for portability, your AI entry point (e.g., your IDE's global rules or project `GEMINI.md`) still needs an **absolute path** to locate this store on your machine.
 >
-> If you are using this repository, you **MUST** update all occurrences of `D:\server\.ai\` to match the actual path on your machine where you cloned this repository.
->
-> **Recommended Action:**
-> Perform a global "Find and Replace" in your editor:
-> - **Find:** `D:\server\.ai\`
-> - **Replace with:** `[YOUR_ABSOLUTE_PATH]\` (e.g., `C:\Users\Name\Documents\ai-globals\`)
+> **Setup Step:**
+> If you clone this repository, you **MUST** update the entry point directives below to match your actual path.
 
 ## 🧠 The Core Directive
 
@@ -69,48 +65,35 @@ Includes specialized prompts for full-system deep scans, security hardening, and
 
 ## 📁 Repository Structure
 
-```
-D:\server\.ai\
+```text
+[AI_GLOBALS_ROOT]\                  # Your local path (e.g., D:\server\.ai\)
 ├── rules/                          # Hard constraints & behavioral guidelines
-│   ├── principal-architect.md      #   AI persona & architectural patterns
-│   ├── security-standards.md       #   OWASP Top 10 & cyber resilience
-│   ├── code-quality.md             #   Clean Code, SOLID, naming conventions
-│   ├── performance-standards.md    #   Query budgets, caching, queues
-│   ├── git-standards.md            #   Commits, branching, PR requirements
-│   ├── environment-windows.md      #   OS context, PowerShell, WSL
-│   ├── anti-patterns.md            #   Negative constraints & forbidden patterns
-│   ├── api-integration-standards.md#   External API integration resilience
-│   └── observability-standards.md  #   Logging, monitoring, alerting, health checks
+│   ├── principal-architect.md      #   Persona & architectural patterns
+│   ├── security-standards.md       #   OWASP Top 10 & resilience
+│   ├── code-quality.md             #   Clean Code, SOLID, naming
+│   ├── performance-standards.md    #   Query budgets & caching
+│   ├── git-standards.md            #   Commits & PR requirements
+│   ├── anti-patterns.md            #   Negative constraints (Forbidden patterns)
+│   ├── api-integration-standards.md#   Resilient API patterns
+│   └── observability-standards.md  #   Logging & health checks
 ├── tech-stack/                     # Version-specific architectural rules
-│   ├── design-foundations.md       #   [NEW] Bento, Glass, Neumorphism rules
-│   ├── responsive-ui.md            #   [NEW] Container Queries & Adaptive UX
-│   ├── accessibility-standards.md  #   [NEW] WCAG 2.1 AA compliance
-│   ├── bilingual-mastery.md        #   [NEW] RTL/LTR & Arabic Typography
-│   ├── laravel-{11,12,13}.md       #   Laravel framework standards
-│   ├── filament-{3,4,5}.md         #   Filament admin panel standards
-│   ├── php-8-{3,4,5}.md            #   PHP language version standards
-│   ├── mysql-8-{3,4}.md            #   MySQL database standards
-│   ├── nodejs-{22,23,24}.md        #   Node.js runtime standards
-│   ├── tailwind-{3,4,4-1}.md       #   Tailwind CSS standards
-│   ├── livewire-3.md               #   Livewire component standards
-│   ├── vite-6.md                   #   Vite build tool standards
-│   ├── react-ecosystem.md          #   [NEW] Next.js, Vite, Expo, Zustand rules
-│   ├── frontend-{modern,ui}.md     #   Frontend & UI standards
-│   └── laravel-boost.md            #   Laravel Boosts package protocol
-├── workflows/                      # Standard operating procedures
-│   ├── 00-prompt-architecting.md   #   Prompt refinement & discovery workflow
-│   ├── 01-planning.md              #   Planning & architecture workflow
-│   ├── 02-execution.md             #   Execution & development workflow
-│   ├── 03-debugging.md             #   Debugging & RCA workflow
-│   ├── 04-deployment.md            #   Deployment & release workflow
-│   └── 05-code-review.md           #   Code review protocol
-├── global-roles.md                 # AI identity & core directives
-├── global-workflow.md              # Master workflow for all cycles
-├── update-me.md                    # System maintenance prompt
-├── monthly-maintenance-prompt.md   # Monthly audit protocol
-├── MEMORY.md                       # Audit log & architectural decisions
-├── CHANGELOG.md                    # Change history
-└── README.md                       # This file
+│   ├── design-foundations.md       #   Bento, Glass, Neumorphism rules
+│   ├── responsive-ui.md            #   Container Queries & Adaptive UX
+│   ├── accessibility-standards.md  #   WCAG 2.1 AA compliance
+│   ├── bilingual-mastery.md        #   RTL/LTR & Arabic Typography
+│   ├── laravel-{11,12,13}.md       #   Laravel standards
+│   ├── tailwind-{3,4}.md           #   Tailwind CSS standards
+│   └── ...                         #   (Auto-generated by AI during sync)
+├── workflows/                      # Standard Operating Procedures (SOPs)
+│   ├── 00-prompt-architecting.md   #   Requirement discovery process
+│   ├── 01-planning.md              #   Architecture & design phase
+│   ├── 02-execution.md             #   Coding & implementation phase
+│   ├── 03-debugging.md             #   RCA & error resolution
+│   └── ...                         #   (Maintenance, Security, Review, etc.)
+├── global-roles.md                 # Entry: AI identity & core directives
+├── global-workflow.md              # Entry: Master cycle synchronization
+├── CHANGELOG.md                    # System-wide update history
+└── README.md                       # This documentation
 ```
 
 
@@ -143,11 +126,23 @@ D:\server\.ai\workflows\03-debugging.md. Perform Root Cause Analysis on
 the following error: [paste error + code + logs]
 ```
 
-## 🛠️ How to Use
+## ⚙️ Setup for AI Agents (One-Time Copy)
 
-To initialize the AI Architect in any project, use the following prompt command:
+To activate this architecture, copy the block below into your AI's global instructions (e.g., IDE `.cursorrules`, `GEMINI.md`, or System Prompt).
 
-> "Start immediately by reading the operating protocols from the absolute path **D:\server\.ai\\**. Do not rely on any prior assumptions. Operate as the Principal 10x Engineer & Chief Architect."
+> [!TIP]
+> **Path Setup:** You only need to change the path on the **first line** below. The AI will resolve all other resources relatively.
+
+```markdown
+### 🌍 GLOBAL AI OPERATING SYSTEM
+- **Root Path:** `D:\server\.ai\` (UPDATE THIS TO YOUR PATH)
+- **Identity & Rules:** Initialize by reading `global-roles.md` and `./rules/` from the root.
+- **Master Workflow:** Sync execution cycles using `./workflows/` and `global-workflow.md`.
+- **Tech Sync:** Auto-save missing tech-stack rules to `./tech-stack/` and log to `./CHANGELOG.md`.
+```
+
+### 🧠 Why this works?
+This block acts as a "Sovereign Entry Point". By defining the `Root Path` once, you establish a central source of truth. The AI is instructed to prioritize these global protocols over its default assumptions, ensuring consistent, high-performance output across all your projects.
 
 ## 📝 Contributing Guidelines
 

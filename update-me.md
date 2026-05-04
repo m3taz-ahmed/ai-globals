@@ -1,4 +1,4 @@
-﻿# System Maintenance & Optimization Protocol
+# System Maintenance & Optimization Protocol
 > **Last Updated:** 2026-05-01 | **Audit Frequency:** Monthly | **Maintainer:** m3taz-ahmed
 
 ## Purpose
@@ -15,11 +15,10 @@ perform a (Full System Deep-Scan & Global Optimization).
 Mandatory Steps:
 
 1. Rule Compliance: Start immediately by reading the operating protocols from
-   the absolute path D:\server\.ai\. Do not rely on any prior assumptions.
-   (Note: Update this path to your local repository location).
+   the root of this repository. Do not rely on any prior assumptions.
 
 2. Global Tech Sync: Analyze composer.json and package.json. If a technology
-   is used but its rule file is missing from D:\server\.ai\tech-stack\,
+   is used but its rule file is missing from `./tech-stack/`,
    generate it immediately based on modern global standards (v2024/2025).
 
 3. Recursive Audit: Navigate through every single folder without exception.
