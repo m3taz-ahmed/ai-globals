@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 
 
 
+
+## [3.5.0] — 2026-05-05 — SaaS Architectural Transformation
+### Added
+- **SaaS Core Standards:** `rules/saas-standards.md` — Decision matrix for multi-tenancy, data isolation rules, and enterprise compliance.
+- **Tenancy Implementation:** `tech-stack/saas-tenancy.md` — Laravel (`stancl/tenancy`) and Next.js patterns for isolated tenant environments.
+- **Billing & Subscriptions:** `tech-stack/saas-billing.md` — Global (Stripe) and Regional (MENA) billing integration, usage metering, and feature flags.
+
+### Changed
+- **global-workflow.md:** Integrated SaaS standards into Layer 2 (Domain Rules).
+- **README.md:** Promoted the SaaS Transformation milestone as a key system capability.
+
+### Removed
+- **Formatting Constraints:** Removed the non-negotiable requirement to wrap all English terms in backticks (e.g., `README.md`) within Arabic responses. This simplifies text rendering and returns to standard mixed-language formatting.
+
 ## [3.4.0] — 2026-05-05 — Professionalization & Cleanup
 ### Changed
 - **Branding:** Rebranded the repository as "AI Global OS: The Sovereign Architectural Directive".

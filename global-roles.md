@@ -39,7 +39,7 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 # 5. COMMUNICATION PROTOCOL
 - **Ask vs. Act Threshold:** If requirements are ≥80% clear, proceed and document assumptions. If <80% clear, STOP and ask targeted clarifying questions before writing any code.
 - **Output Verbosity:** Be concise and surgical. Lead with the solution, follow with the rationale. No robotic preambles or excessive apologies.
-- **Language & Formatting:** Respond in the same language the user uses. Technical terms (function names, CLI commands, patterns, file names) MUST remain in English and MUST be wrapped in backticks (e.g., `README.md`) to prevent RTL/LTR alignment issues, especially in Arabic responses.
+- **Language & Formatting:** Respond in the same language the user uses. Technical terms (function names, CLI commands, patterns, file names) MUST remain in English for clarity.
 
 # 6. ERROR HANDLING & TESTING MANDATE
 - **Exception Hierarchy:** All projects must define a base `AppException` class. Domain-specific exceptions extend it. Never throw generic `\Exception`.
@@ -66,18 +66,3 @@ These rules are **working correctly** if you observe:
 - ✅ **Assumptions are stated explicitly** — Before any code is written
 
 If these metrics are NOT met, the agent must self-correct immediately.
-
-## 5.1 Mixed-Language Rendering Guidelines
-- **استخدام سطر منفصل** لكل مصطلح تقني إنجليزي داخل نص عربي؛ لا تدمج المصطلحات داخل جملة عربية طويلة.
-- **استخدام الجداول** عندما تحتاج لعرض أعمدة متعددة من النص العربي والإنجليزي معاً؛ الجداول تحافظ على اتجاه الخلايا بشكل صحيح.
-- **إضافة علامة الاتجاه** `U+200F` (Right-to-Left Mark) بعد كل كلمة إنجليزية داخل جملة عربية إذا كان لابد من دمجها، ويمكن تمثيلها بـ `\u200F` في الملفات النصية.
-- **تقليل عدد العلامات** مثل الأقواس والنقط داخل السطر المختلط؛ استخدم المسافات لتفصل بين اللغات.
-- **تغليف المصطلحات الإنجليزية بالـ backticks** (كما هو معمول حالياً) مع إضافة مسافة قبلها وبعدها لتقليل الالتباس.
-- **تفضيل الصياغة**: إذا كان النص يحتاج إلى شرح تفصيلي، اكتب الفقرة الأولى بالعربية، ثم أدرج فقرة مستقلة بالإنجليزية في سطر جديد أو في جدول.
-
-### حل IDE لعرض النص المختلط
-- **تفعيل خيار “Bidirectional Text Support”** في إعدادات الـ IDE (مثلاً VS Code: `editor.renderControlCharacters` أو `editor.unicodeHighlight.allowedCharacters`).
-- **الاستفادة من ملحقات** مثل “RTL-Support” أو “Unicode Direction” التي تضيف دعماً لتحديد اتجاه النص يدوياً.
-- **تحديد الترميز** للملف إلى UTF-8 دون BOM لتجنب مشاكل التحويل.
-- **تجربة الخطوط** التي تدعم كلا الاتجاهين مثل `IBM Plex Sans Arabic` أو `Noto Sans Arabic`؛ الخط المناسب يقلل من تشوش الأحرف.
-- **اختبار العرض** باستخدام أداة “Unicode Control Characters Viewer” داخل الـ IDE للتأكد من موضع علامات RLM.

@@ -12,6 +12,7 @@ We have upgraded the cognitive core of this system. It no longer just follows ru
 - **Layered Context Loading:** A hierarchical loading strategy that reduces context consumption by ~60%, making interactions faster and more precise.
 - **Goal-Driven Execution:** Mandatory success criteria for every task. The AI doesn't just "fix" things; it defines verifiable goals and loops until they are met.
 - **Real-World Pattern Library:** Over 12KB of `❌ Mistakes vs ✅ Correct` code examples in PHP/Laravel and JavaScript.
+- **SaaS Transformation (NEW):** Comprehensive standards for multi-tenancy, subscription billing (Stripe/MENA), and enterprise compliance (GDPR/SOC2).
 
 ---
 
@@ -44,11 +45,14 @@ Hardened standards for OWASP Top 10, resilient API patterns (Circuit Breakers), 
 │   ├── llm-behavioral-guidelines.md#   [v3.3] Meta-cognitive reasoning rules
 │   ├── principal-architect.md      #   Persona & architectural patterns
 │   ├── anti-patterns.md            #   69+ forbidden coding patterns
+│   ├── saas-standards.md           #   [v3.5] Multi-tenancy & SaaS Core
 │   └── ... (Security, Performance, API, Observability)
 ├── tech-stack/                     # Version-specific Architectural Rules
 │   ├── react-ecosystem.md          #   Next.js 15, Vite 6, Expo 52
 │   ├── laravel-12.md               #   Laravel 12+ elite standards
 │   ├── design-foundations.md       #   Bento, Glassmorphism, Premium UI
+│   ├── saas-tenancy.md             #   [v3.5] Multi-tenant implementation
+│   ├── saas-billing.md             #   [v3.5] Billing, Metering & Gating
 │   └── ... (Tailwind v4, PHP 8.4, MySQL 8.4, etc.)
 ├── workflows/                      # Standard Operating Procedures
 │   ├── 00-prompt-architecting.md   #   Requirement discovery & Master Prompts

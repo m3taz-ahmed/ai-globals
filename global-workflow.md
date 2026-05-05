@@ -22,6 +22,7 @@ Read ONLY when the task involves the relevant domain:
 - Monitoring/Logging → `rules/observability-standards.md`
 - Performance work → `rules/performance-standards.md`
 - Git/PR work → `rules/git-standards.md`
+- SaaS/Multi-tenancy → `rules/saas-standards.md`
 - Architecture review → `rules/principal-architect.md`
 - Code quality audit → `rules/code-quality.md`
 - Windows environment → `rules/environment-windows.md`
@@ -83,7 +84,7 @@ After making any changes, you MUST verify before reporting completion:
 2. **Static Analysis:** Run linters/analyzers if configured (`phpstan`, `eslint`, etc.).
 ## STEP 6: VERIFICATION & FORMATTING
 1. **Verification:** Run tests and build checks. Never deliver unverified code.
-2. **Formatting:** If responding in Arabic, strictly follow the `global-roles.md` formatting rules for English terms (use backticks) to ensure correct text alignment.
+2. **Formatting:** Use the same language as the user. Technical terms remain in English. No additional strict formatting is required for English terms within Arabic text.
 
 ## STEP 7: DOCUMENTATION SYNC
 1. Update the local project's `MEMORY.md` with accomplishments and decisions.
