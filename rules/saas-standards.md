@@ -1,4 +1,7 @@
 # SaaS Architectural Standards
+> [!NOTE]
+> **TRIGGER:** LOAD ON TENANT ARCHITECTURE, SUBSCRIPTION, OR MULTI-TENANCY TASKS.
+> **SCOPE:** TENANCY MODELS, BILLING, AND ENTERPRISE SECURITY.
 
 ## 1. Tenancy Model Decision Matrix
 Before implementation, evaluate based on these signals:
@@ -29,3 +32,11 @@ Before implementation, evaluate based on these signals:
 - **Source of Truth:** External gateway (Stripe/Paddle) is the master.
 - **Webhooks:** Mandatory for state synchronization.
 - **TTV:** Minimize steps to first value (< 30s provisioning).
+
+---
+
+## 🏢 SAAS COMPLIANCE CHECK (Mandatory)
+- [ ] **Scoping:** Does every new query/model include a `tenant_id` scope?
+- [ ] **Provisioning:** Is the tenant creation process handled asynchronously?
+- [ ] **Security:** Are roles/permissions verified to be tenant-isolated?
+- [ ] **Billing:** Is the feature gated correctly based on the tenant's subscription?

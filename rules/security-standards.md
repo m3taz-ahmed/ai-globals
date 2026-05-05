@@ -1,4 +1,8 @@
-﻿# Security & Cyber Resilience (OWASP Top 10)
+# Security & Cyber Resilience (OWASP Top 10)
+> [!NOTE]
+> **TRIGGER:** LOAD ON API DESIGN, AUTHENTICATION, OR DATABASE SCHEMA TASKS.
+> **SCOPE:** PRODUCTION-GRADE SECURITY STANDARDS.
+
 - **Mindset:** Implement "Zero-Trust" architecture. Never assume an internal request is safe.
 
 ## 1. DATA PROTECTION
@@ -33,3 +37,11 @@
 - **Storage Privacy:** Ensure all cloud storage buckets (S3/Azure) are PRIVATE by default. Use Signed URLs for temporary access.
 - **Identity & Access (IAM):** Use "Least Privilege" IAM roles for app servers. Never use root account credentials.
 - **Dependency Audits:** Run `composer audit` and `npm audit` in CI/CD. Fail on HIGH/CRITICAL issues.
+
+---
+
+## 🕵️ SECURITY VERIFICATION (Mandatory)
+- [ ] **Validation:** Is every input passing through a strict `FormRequest`?
+- [ ] **Exposure:** Are any sensitive keys or PII being logged/exposed in the API?
+- [ ] **Permissions:** Is the default behavior "Deny All" for this new route?
+- [ ] **SQLi:** Have I verified that no raw strings are being passed to database queries?

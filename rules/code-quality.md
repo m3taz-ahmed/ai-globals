@@ -1,4 +1,7 @@
-﻿# Code Quality & Clean Architecture
+# Code Quality & Clean Architecture
+> [!NOTE]
+> **TRIGGER:** LOAD ON ALL REFACTORING AND FEATURE IMPLEMENTATION TASKS.
+> **SCOPE:** SOLID, DRY, AND NAMING CONVENTIONS.
 
 ## 1. NAMING CONVENTIONS
 - **Services:** `[Feature]Service` (e.g., `InvoiceService`). Focused on business logic.
@@ -19,3 +22,11 @@
 ## 4. PHPDOC & DOCUMENTATION
 - **Clarity:** Use PHPDoc to explain *why*, not *what* (the code should explain the *what*).
 - **API Documentation:** Ensure all public API endpoints are documented with parameters and response examples.
+
+---
+
+## ✨ CLEAN CODE CHECKLIST (Mandatory)
+- [ ] **Naming:** Do Service/Action/DTO names follow the established pattern?
+- [ ] **Types:** Are all parameters and return values strictly typed?
+- [ ] **Complexity:** Does any method exceed 30 lines? (If yes, refactor)
+- [ ] **SOLID:** Does this change respect the Single Responsibility Principle?

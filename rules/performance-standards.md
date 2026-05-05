@@ -1,4 +1,7 @@
-﻿# Performance & Scalability Standards
+# Performance & Scalability Standards
+> [!NOTE]
+> **TRIGGER:** LOAD ON DATABASE SCHEMA DESIGN, OPTIMIZATION, OR QUEUE TASKS.
+> **SCOPE:** N+1 PREVENTION, INDEXING, AND CACHING.
 
 ## 1. DATABASE PERFORMANCE
 - **N+1 Prevention:** Never execute queries inside loops. Use Eager Loading (`with()`).
@@ -21,3 +24,11 @@
 - **Asset Loading:** Use Vite for code-splitting and minification.
 - **Critical CSS:** Inline critical CSS to improve First Contentful Paint (FCP).
 - **Lazy Loading:** Use native `loading="lazy"` for images and `wire:navigate` for fast page transitions.
+
+---
+
+## ⚡ PERFORMANCE CHECKLIST (Mandatory)
+- [ ] **Queries:** Did I check for N+1 issues and use `with()` where needed?
+- [ ] **Indexing:** Are all columns in the `WHERE` clause indexed?
+- [ ] **Async:** Are long-running tasks (Emails/PDFs) pushed to the queue?
+- [ ] **Cache:** Is any redundant computation or external fetch cached with a TTL?

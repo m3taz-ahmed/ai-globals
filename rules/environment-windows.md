@@ -1,4 +1,7 @@
-﻿# Operating Environment Context
+# Operating Environment Context
+> [!NOTE]
+> **TRIGGER:** LOAD ON CLI COMMAND EXECUTION, SCRIPTING, OR PATH HANDLING.
+> **SCOPE:** WINDOWS 11 COMPATIBILITY AND POWERSHELL BEST PRACTICES.
 
 ## 1. OS & FILESYSTEM
 - **OS:** Windows 11.
@@ -20,3 +23,11 @@
 - **When Available:** If WSL 2 is installed, prefer it for running Linux-native tools (Docker, shell scripts, make). Use `wsl` prefix to invoke Linux commands from PowerShell.
 - **File Access:** Access Windows files from WSL via `/mnt/c/`. Access WSL files from Windows via `\\wsl$\`. Avoid cross-filesystem I/O for performance-sensitive operations.
 - **Docker:** If Docker Desktop is running on WSL 2 backend, Docker commands work natively in both PowerShell and WSL terminals.
+
+---
+
+## 🖥️ WINDOWS RELIABILITY CHECK (Mandatory)
+- [ ] **Paths:** Did I use `\` for Windows CLI commands and quote paths with spaces?
+- [ ] **Encoding:** Is PowerShell output set to BOM-less UTF-8?
+- [ ] **WSL:** If a Linux-native tool is needed, did I check for WSL availability?
+- [ ] **Line Endings:** Are new files using `LF` instead of `CRLF`?
