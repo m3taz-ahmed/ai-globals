@@ -3,6 +3,27 @@
 All notable changes to the AI Globals system are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+
+
+## [3.4.0] — 2026-05-05 — Professionalization & Cleanup
+### Changed
+- **Branding:** Rebranded the repository as "AI Global OS: The Sovereign Architectural Directive".
+- **README.md:** Complete professional rewrite highlighting Layered Loading and Behavioral Sovereignty.
+- **Cleanup:** Removed all external attributions (Karpathy references) across the entire system.
+- **Visuals:** Removed decorative emoji clutter from core protocol headers to ensure a clean, high-performance interface.
+
+## [3.3.0] — 2026-05-05 — High-Performance Behavioral Integration
+### Added
+- **LLM Behavioral Guidelines:** `rules/llm-behavioral-guidelines.md` — 4 principles (Think First, Simplicity First, Surgical Changes, Goal-Driven Execution) with self-tests.
+- **Core Behavioral Compact:** `rules/core-behavioral-compact.md` — Ultra-compact Layer 0 (< 50 lines) loaded on every task.
+- **EXAMPLES.md:** Real-world code examples (PHP/Laravel + JS) showing ❌ LLM mistakes vs ✅ correct approaches across all 4 principles.
+- **Observable Metrics:** `global-roles.md` §9 — Self-test checklist to verify behavioral guidelines are working.
+- **Success Criteria Framework:** `global-workflow.md` Step 4 — Mandatory verifiable goal definition before any code is written.
+
+### Changed
+- **global-workflow.md:** Replaced flat "read everything" with **Layered Context Loading** (Layer 0 → Layer 1 → Layer 2 → Layer 3) for context efficiency.
+- **global-roles.md:** Added Behavioral Compliance to Quality Gates (§4). Added Observable Metrics (§9).
+
 ## [3.1.0] — 2026-05-02
 ### Added
 - **Design Foundations:** `design-foundations.md` (Bento Grids, Glassmorphism, Neumorphism, Modern Gradients).

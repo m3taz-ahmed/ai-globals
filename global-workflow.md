@@ -1,13 +1,33 @@
-# 🔄 GLOBAL WORKFLOW SYNCHRONIZATION
+# GLOBAL WORKFLOW SYNCHRONIZATION
 > [!IMPORTANT]
 > **Workflow Discovery:** Every execution plan must start by scanning the `workflows/` directory in this Global AI Operating System. Use these as the primary blueprint for task execution.
 
-## STEP 1: ROUTE & READ (CONTEXT GATHERING)
-Before executing any task, you MUST silently read your foundational knowledge in this exact order:
+## STEP 1: ROUTE & READ (LAYERED CONTEXT LOADING)
+Before executing any task, you MUST silently load context in **layers** — from lightweight behavioral core to domain-specific depth:
 
-1. **Initialize AI Architect:** Start immediately by reading the operating protocols from the root of this Global AI Operating System. Do not rely on any prior assumptions.
-2. **Base Context:** Read ALL rule files from the global `./rules/` directory — this includes environment, security, code quality, performance, git standards, anti-patterns, API integration standards, observability standards, and the principal architect persona.
-3. **Workflow Route:** Identify the task type and read the corresponding protocol from the global `./workflows/` directory:
+### Layer 0 — ALWAYS (Behavioral Core)
+Read FIRST, on every task, no exceptions:
+- `rules/core-behavioral-compact.md` — The 4 non-negotiable behavioral principles (< 50 lines)
+- `global-roles.md` — Architectural identity, quality gates, communication protocol
+
+### Layer 1 — ALWAYS (Structural Rules)
+Read immediately after Layer 0:
+- `rules/anti-patterns.md` — Hard-stop negative constraints
+- `rules/llm-behavioral-guidelines.md` — Expanded behavioral guidelines with self-tests
+
+### Layer 2 — ON-DEMAND (Domain Rules)
+Read ONLY when the task involves the relevant domain:
+- Security-related → `rules/security-standards.md`
+- External APIs → `rules/api-integration-standards.md`
+- Monitoring/Logging → `rules/observability-standards.md`
+- Performance work → `rules/performance-standards.md`
+- Git/PR work → `rules/git-standards.md`
+- Architecture review → `rules/principal-architect.md`
+- Code quality audit → `rules/code-quality.md`
+- Windows environment → `rules/environment-windows.md`
+
+### Layer 3 — ON-DEMAND (Workflow + Tech-Stack)
+1. **Workflow Route:** Identify the task type and read the corresponding protocol:
    - Prompt Architecting → `00-prompt-architecting.md` (Trigger: `/prompt`)
    - Planning/Architecture → `01-planning.md`
    - Writing/Modifying Code → `02-execution.md`
@@ -17,10 +37,10 @@ Before executing any task, you MUST silently read your foundational knowledge in
    - System Maintenance/Audit → `06-maintenance.md`
    - Security Audit/Hardening → `07-security-audit.md`
 
-4. **Tech-Stack Sync:** DYNAMIC TECH-STACK (LAZY LOADING)
-Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
-**Strict Lazy Load:** SILENTLY READ ONLY the specific `.md` files from `./tech-stack/` that match the detected stack or the user's explicit request. 
-**Do NOT** read unrelated tech-stack files. (e.g., If working on a PHP/Laravel task, ignore Node.js or React files unless specifically instructed).
+2. **Tech-Stack Sync (Lazy Loading):**
+   Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
+   **Strict Lazy Load:** SILENTLY READ ONLY the specific `.md` files from `./tech-stack/` that match the detected stack or the user's explicit request.
+   **Do NOT** read unrelated tech-stack files.
 
 ## STEP 2: THINK (INTERNAL REASONING)
 Before responding, perform internal analysis:
@@ -36,11 +56,26 @@ Only after completing this reasoning can you provide the final response.
 Do NOT generate massive blocks of code blindly. If requirements are ambiguous, or if multiple architectural paths exist, ask clarifying questions first. Reference the Communication Protocol in `global-roles.md` §5 for the ask-vs-act threshold.
 
 ## STEP 4: EXECUTE & DELIVER
+
+### Success Criteria Framework (Mandatory)
+Before writing ANY code, define verifiable success criteria:
+```
+1. [Step] → verify: [specific check]
+2. [Step] → verify: [specific check]
+3. [Step] → verify: [specific check]
+```
+Transform vague tasks into testable goals:
+- "Fix X" → "Write a test that reproduces X, then make it pass"
+- "Add Y" → "Write tests for Y's expected behavior, then implement"
+- "Refactor Z" → "Ensure tests pass before AND after refactoring"
+
+### Execution Rules
 When producing code:
 1. Follow the active workflow protocol (planning/execution/debugging/deployment/review).
 2. Deliver iteratively — one module or logical unit at a time.
 3. Include all necessary components (migrations, models, services, tests).
 4. Apply surgical diffs — never rewrite entire files unless explicitly requested.
+5. Refer to `EXAMPLES.md` for correct patterns when in doubt about LLM behavioral pitfalls.
 
 ## STEP 5: VERIFY & VALIDATE
 After making any changes, you MUST verify before reporting completion:

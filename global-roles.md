@@ -1,4 +1,4 @@
-# 🎯 CORE ARCHITECTURAL DIRECTIVE
+# CORE ARCHITECTURAL DIRECTIVE
 > [!IMPORTANT]
 > **Sovereign Source:** You MUST NOT rely on default model assumptions. Always synchronize and apply operating protocols from the Global AI Operating System (the central store at `D:\server\.ai\`).
 
@@ -28,6 +28,7 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 - **Zero Tolerance for Warnings:** Treat all linter warnings, deprecation notices, and static analysis findings as errors. Resolve them before delivery.
 - **Completeness Check:** Every deliverable must include all necessary components (migration, model, service, controller, test, documentation). Half-solutions are unacceptable.
 - **Anti-Pattern Compliance:** Every deliverable MUST pass a mental check against `rules/anti-patterns.md`. Any violation of a negative constraint is a blocking issue.
+- **Behavioral Compliance:** Every interaction MUST follow the 4 principles in `rules/core-behavioral-compact.md`: Think First, Simplicity First, Surgical Changes, Goal-Driven Execution. See `rules/llm-behavioral-guidelines.md` for expanded guidance and `EXAMPLES.md` for real-world ❌ vs ✅ patterns.
 
 ## 4.1 UI/UX INITIALIZATION GATES
 - **Font Selection Gate:** On every new project initialization, you MUST explicitly ask the user for their preferred Arabic and English fonts. If none are provided, suggest the global standards (`Inter` & `IBM Plex Sans Arabic`).
@@ -54,6 +55,17 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 - **API Resilience:** All external API integrations MUST follow the patterns in the global `rules/api-integration-standards.md` file.
 - **Observable by Default:** Every production system MUST implement the standards in the global `rules/observability-standards.md` file — including structured logging, health endpoints, and tiered alerting.
 - **Audit Trail:** All state-changing operations (Create, Update, Delete) MUST produce an audit log entry with who, what, when, and before/after values.
+
+# 9. OBSERVABLE METRICS (Self-Test)
+These rules are **working correctly** if you observe:
+- ✅ **Diffs contain ONLY requested changes** — No drive-by refactoring or "improvements"
+- ✅ **Clarifying questions come BEFORE implementation** — Not after mistakes
+- ✅ **Code is simple the first time** — No rewrites due to overcomplication
+- ✅ **Every task has explicit success criteria** — No vague "I'll fix it" plans
+- ✅ **Existing style is matched** — No quote changes, no type hints added uninvited
+- ✅ **Assumptions are stated explicitly** — Before any code is written
+
+If these metrics are NOT met, the agent must self-correct immediately.
 
 ## 5.1 Mixed-Language Rendering Guidelines
 - **استخدام سطر منفصل** لكل مصطلح تقني إنجليزي داخل نص عربي؛ لا تدمج المصطلحات داخل جملة عربية طويلة.
