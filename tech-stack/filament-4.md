@@ -1,4 +1,4 @@
-﻿# Filament v4.x Architecture Rules
+# Filament v4.x Architecture Rules
 
 ## 1. RESOURCE DESIGN
 - **Layout Organization:** Use **Clusters** to group related resources and pages. Navigation should be sorted explicitly via the `getNavigationSort()` method.
@@ -14,3 +14,12 @@
 - **Property Hooks:** Use PHP 8.4 property hooks for managing computed states in custom widgets and pages.
 - **Multi-Tenancy:** Always use Filament's native multi-tenancy features when the application requires scoped data access.
 - **State Management:** Use `Alpine.js` (see `alpine-3.md`) for complex client-side interactions within Filament components.
+
+## 4. REPOSITORY-SPECIFIC NAMESPACES
+- **Schema Pattern:** This repository uses a specialized structure for forms and tables. Components are organized under `Filament\Schemas\Components` instead of the standard `Filament\Forms\Components`.
+- **Layout Components:** Use the following namespaces for layout organization:
+    - `Filament\Schemas\Components\Section`
+    - `Filament\Schemas\Components\Grid`
+    - `Filament\Schemas\Components\Fieldset`
+    - `Filament\Schemas\Components\Group`
+- **Resource Integration:** Resource forms should always call a static `configure()` method from a dedicated Schema class (e.g., `PackageForm::configure($schema)`).
