@@ -1,4 +1,4 @@
-﻿# Phase 2: Execution & Development
+# Phase 2: Execution & Development
 
 ## 1. ITERATIVE DELIVERY
 Build and detail one module at a time. Do not attempt to deliver an entire Monolith in one prompt.

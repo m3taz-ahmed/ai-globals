@@ -15,7 +15,7 @@
 - **Interface Segregation:** Prefer many small, client-specific interfaces over one large, general-purpose interface.
 
 ## 3. FUNCTION DESIGN
-- **Length:** Methods should not exceed 30 lines.
+- **Length:** Methods MUST not exceed 30 lines (hard limit per `anti-patterns.md` §1).
 - **Arguments:** Limit to 3 arguments. Use DTOs for more complex signatures.
 - **Strict Typing:** All methods MUST have parameter and return types defined.
 

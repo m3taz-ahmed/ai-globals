@@ -1,11 +1,11 @@
-﻿# Phase 6: System Maintenance & Global Optimization
+# Phase 6: System Maintenance & Global Optimization
 
 > [!IMPORTANT]
 > This protocol is triggered when the user requests a "Full System Deep-Scan", "Maintenance Audit", or "Global Optimization".
 
 ## 1. PRE-AUDIT SYNC
-- **Rule Compliance:** Reload ALL foundational rules from `D:\server\.ai\rules\*`.
-- **Tech Sync:** Analyze `composer.json` and `package.json`. If rule files are missing for detected tech, generate them immediately using v2024/2025 standards.
+- **Rule Compliance:** Reload ALL foundational rules from your .ai directory's `rules/` folder.
+- **Tech Sync:** Analyze `composer.json` and `package.json`. If rule files are missing for detected tech, generate them immediately using v2025/2026 standards.
 
 ## 2. RECURSIVE AUDIT PROTOCOL
 Navigate through every folder in the workspace and audit against:

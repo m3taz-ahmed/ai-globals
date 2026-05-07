@@ -6,6 +6,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 
 
 
+## [4.0.0] — 2026-05-06 — Precision Architecture Enforcement
+
+### Added
+- **Filament v4 Architecture Rules:** `tech-stack/filament-4.md` — Cluster organization, Schema pattern, PHP 8.4 property hooks, and repository-specific namespace standards.
+- **Mandatory Performance Standards:** Performance and architectural verification checklists added across all rule files.
+- **Security Hardening:** Automated verification checklists for zero-trust compliance.
+
+### Changed
+- **Method Length Standard:** Aligned to 30-line hard limit across `anti-patterns.md` and `code-quality.md` (previously contradictory: 50 vs 30).
+- **$guarded Policy:** Aligned to strict prohibition — `$fillable` only (previously `security-standards.md` implied `$guarded` was acceptable).
+- **Principle Naming:** Normalized "THINK FIRST" to "Think Before Coding" across all behavioral files for consistency.
+- **Encoding:** Fixed all mojibake artifacts and stripped UTF-8 BOM from 36 files.
+- **Validation Script:** `validate-globals.ps1` now writes BOM-less UTF-8 and includes BOM/mojibake detection checks.
+- **Workflow Routing:** Added `08-onboarding.md` to Layer 3 routing in `global-workflow.md`.
+- **Workflow Steps:** Merged overlapping Steps 5 and 6 into single "VERIFY, VALIDATE & FORMAT" step.
+
+### Fixed
+- **vite-7.md:** Corrected PostCSS claim — PostCSS is optional with Tailwind v4, not required.
+- **saas-standards.md:** Corrected RLS claim — MySQL does not support native RLS; application-level enforcement required.
+- **README.md:** Removed undocumented references (Anime.js, React 19), updated WCAG 2.1 to 2.2, updated system map.
+- **Hardcoded paths:** Replaced remaining absolute paths with portable references.
+
 ## [3.5.0] — 2026-05-05 — SaaS Architectural Transformation
 ### Added
 - **SaaS Core Standards:** `rules/saas-standards.md` — Decision matrix for multi-tenancy, data isolation rules, and enterprise compliance.
@@ -28,7 +50,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 
 ## [3.3.0] — 2026-05-05 — High-Performance Behavioral Integration
 ### Added
-- **LLM Behavioral Guidelines:** `rules/llm-behavioral-guidelines.md` — 4 principles (Think First, Simplicity First, Surgical Changes, Goal-Driven Execution) with self-tests.
+- **LLM Behavioral Guidelines:** `rules/llm-behavioral-guidelines.md` — 4 principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution) with self-tests.
 - **Core Behavioral Compact:** `rules/core-behavioral-compact.md` — Ultra-compact Layer 0 (< 50 lines) loaded on every task.
 - **EXAMPLES.md:** Real-world code examples (PHP/Laravel + JS) showing ❌ LLM mistakes vs ✅ correct approaches across all 4 principles.
 - **Observable Metrics:** `global-roles.md` §9 — Self-test checklist to verify behavioral guidelines are working.
@@ -42,7 +64,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 ### Added
 - **Design Foundations:** `design-foundations.md` (Bento Grids, Glassmorphism, Neumorphism, Modern Gradients).
 - **Responsive UI:** `responsive-ui.md` (Container Queries, Adaptive Layouts, Mobile UX).
-- **Accessibility Standards:** `accessibility-standards.md` (WCAG 2.1 AA Compliance).
+- **Accessibility Standards:** `accessibility-standards.md` (WCAG 2.2 AA Compliance).
 - **Bilingual Mastery:** `bilingual-mastery.md` (RTL/LTR, Logical Properties, Arabic Typography).
 
 ### Changed
@@ -64,7 +86,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 
 ### Changed
 - **Core Protocols:** `global-roles.md` (added Proactive Auditing), `global-workflow.md` (added Maintenance routing).
-- **Rule Hardening:** `security-standards.md`, `performance-standards.md`, `code-quality.md` updated to elite 2025 standards.
+- **Rule Hardening:** `security-standards.md`, `performance-standards.md`, `code-quality.md` updated to elite 2026 standards.
 - **Tech-Stack Refinement:** Expanded `php-8-4.md`, `mysql-8-4.md`, `filament-4.md`, `laravel-12.md`.
 - **Hygiene:** Normalized all file line endings to LF.
 

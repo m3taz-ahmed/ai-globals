@@ -1,11 +1,11 @@
-# React & React Native Ecosystem (2025 Standards)
+# React & React Native Ecosystem (2026 Standards)
 
 > [!IMPORTANT]
 > This is the sovereign reference for all React-based development. Before starting any task, the agent MUST ask the user to choose between the frameworks/libraries listed below if not specified in `package.json`.
 
 ## 1. Web Frameworks
 - **Next.js 15+ (App Router)**: Standard for SSR/SSG projects. Use `Server Components` by default.
-- **Vite 6+**: Standard for SPA (Single Page Applications) or lightweight client-side tools.
+- **Vite 7+**: Standard for SPA (Single Page Applications) or lightweight client-side tools.
 
 ## 2. Mobile (Native)
 - **Expo SDK 52+**: The only managed workflow allowed.

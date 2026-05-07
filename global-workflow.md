@@ -37,6 +37,7 @@ Read ONLY when the task involves the relevant domain:
    - Reviewing Code/PRs → `05-code-review.md`
    - System Maintenance/Audit → `06-maintenance.md`
    - Security Audit/Hardening → `07-security-audit.md`
+- Project Onboarding → `08-onboarding.md`
 
 2. **Tech-Stack Sync (Lazy Loading):**
    Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
@@ -78,19 +79,17 @@ When producing code:
 4. Apply surgical diffs — never rewrite entire files unless explicitly requested.
 5. Refer to `EXAMPLES.md` for correct patterns when in doubt about LLM behavioral pitfalls.
 
-## STEP 5: VERIFY & VALIDATE
+## STEP 5: VERIFY, VALIDATE & FORMAT
 After making any changes, you MUST verify before reporting completion:
 1. **Tests:** Run the project's test suite (`php artisan test`, `npm test`, etc.) and confirm all tests pass.
-2. **Static Analysis:** Run linters/analyzers if configured (`phpstan`, `eslint`, etc.).
-## STEP 6: VERIFICATION & FORMATTING
-1. **Verification:** Run tests and build checks. Never deliver unverified code.
-2. **Formatting:** Use the same language as the user. Technical terms remain in English. No additional strict formatting is required for English terms within Arabic text.
+2. **Static Analysis:** Run linters/analyzers if configured (`phpstan`, `eslint`, etc.). Never deliver unverified code.
+3. **Formatting:** Use the same language as the user. Technical terms remain in English. No additional strict formatting is required for English terms within Arabic text.
 
-## STEP 7: DOCUMENTATION SYNC
+## STEP 6: DOCUMENTATION SYNC
 1. Update the local project's `MEMORY.md` with accomplishments and decisions.
 2. If a global rule was modified, update `./CHANGELOG.md`.
 3. Update relevant inline docs, README, or API docs.
 
-## STEP 8: HANDOFF PROTOCOL
+## STEP 7: HANDOFF PROTOCOL
 1. Summarize state, remaining tasks, and blockers.
 2. Ensure `MEMORY.md` is current for the next agent.

@@ -3,7 +3,7 @@
 
 ## Purpose
 
-This is the **Elite Maintenance Prompt** â€” a comprehensive protocol for performing full system deep-scans and global optimization of the AI Globals architecture.
+This is the **Elite Maintenance Prompt** â€— a comprehensive protocol for performing full system deep-scans and global optimization of the AI Globals architecture.
 
 
 ## The Prompt
@@ -19,7 +19,7 @@ Mandatory Steps:
 
 2. Global Tech Sync: Analyze composer.json and package.json. If a technology
    is used but its rule file is missing from `./tech-stack/`,
-   generate it immediately based on modern global standards (v2024/2025).
+   generate it immediately based on modern global standards (v2025/2026).
 
 3. Recursive Audit: Navigate through every single folder without exception.
    Compare the current code against Clean Code principles, Security Hardening,

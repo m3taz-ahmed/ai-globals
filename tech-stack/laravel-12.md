@@ -1,4 +1,4 @@
-﻿# Laravel 12.x Architectural Standards
+# Laravel 12.x Architectural Standards
 
 ## 1. NATIVE TYPE ENFORCEMENT
 - **Dependency Injection:** Use native type-hints for all constructor and method injection. Avoid `resolve()` or `app()` where possible.

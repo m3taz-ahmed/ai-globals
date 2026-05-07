@@ -2,7 +2,7 @@
 
 > These 4 principles are NON-NEGOTIABLE. Read them before every task.
 
-## 1. THINK FIRST
+## 1. Think Before Coding
 - State assumptions before coding. If uncertain → **ask**, don't guess.
 - If ambiguous → list interpretations, let user choose.
 - If a simpler approach exists → say so. Push back on unnecessary complexity.

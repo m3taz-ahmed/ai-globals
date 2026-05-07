@@ -1,4 +1,4 @@
-﻿# Spatie Laravel Activitylog Standards
+# Spatie Laravel Activitylog Standards
 
 ## 1. MODEL CONFIGURATION
 - **Trait:** Use `LogsActivity` trait on all business-critical models.

@@ -15,4 +15,5 @@ desktop.ini
 MEMORY.md
 
 
-/scripts/*
+# Local-only scripts (versioned scripts are tracked by git)
+# /scripts/*.local

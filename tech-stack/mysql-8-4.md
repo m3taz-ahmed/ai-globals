@@ -1,4 +1,4 @@
-﻿# MySQL 8.4 Architecture & Optimization
+# MySQL 8.4 Architecture & Optimization
 
 ## 1. SCHEMA DESIGN
 - **Datatypes:** Use precise types (`INT` vs `BIGINT`, `VARCHAR` limits). Always use `TIMESTAMP` or `DATETIME` correctly.

@@ -15,7 +15,7 @@ Before implementation, evaluate based on these signals:
 
 ## 2. Shared Schema (Single DB)
 - **Constraint:** Every model MUST use `BelongsToTenant` trait.
-- **Security:** Enable Row-Level Security (RLS) at DB level.
+- **Security:** Enforce tenant isolation at the application level using global scopes (e.g., `BelongsToTenant` trait). Note: MySQL does not support native Row-Level Security — application-level enforcement is required.
 - **Indexing:** `tenant_id` MUST be indexed on all scoped tables.
 
 ## 3. Separate Schema/DB

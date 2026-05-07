@@ -1,4 +1,4 @@
-﻿# Filament Shield Standards
+# Filament Shield Standards
 
 ## 1. INTEGRATION
 - **Resource Security:** Automatically generate permissions for all Resources and Pages.

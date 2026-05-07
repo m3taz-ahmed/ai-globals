@@ -17,7 +17,7 @@
 
 ## 3. DATABASE SECURITY
 - **SQL Injection:** Never use raw string concatenation in queries. Always use Eloquent, Query Builder, or PDO Parameterized Queries.
-- **Mass Assignment:** Strictly protect Models by defining `$fillable` or carefully using `$guarded`.
+- **Mass Assignment:** Strictly protect Models by defining `$fillable` explicitly. NEVER use `$guarded = []` (see `anti-patterns.md` §1).
 
 ## 4. AUTHORIZATION
 - **Default Deny:** Access should be denied by default. Explicitly grant permissions using Laravel Policies or Gates.

@@ -1,4 +1,4 @@
-﻿# Alpine.js v3.x Standards
+# Alpine.js v3.x Standards
 
 ## 1. COMPONENT DESIGN
 - **Self-Contained:** Keep logic inside the `x-data` attribute for simple components.

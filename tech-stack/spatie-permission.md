@@ -1,4 +1,4 @@
-﻿# Spatie Laravel Permission Standards
+# Spatie Laravel Permission Standards
 
 ## 1. CONFIGURATION
 - **Middleware:** Use `role` and `permission` middleware in routes.

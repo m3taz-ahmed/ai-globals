@@ -1,4 +1,4 @@
-﻿# PHP 8.4 Bleeding Edge Standards
+# PHP 8.4 Bleeding Edge Standards
 
 ## 1. MODERN SYNTAX
 - **Property Hooks:** Use property hooks (get/set) instead of boilerplate getter/setter methods for virtual or validated properties.

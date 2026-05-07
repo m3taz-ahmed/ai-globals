@@ -12,7 +12,7 @@
 - **NEVER** use `$guarded = []` on any Eloquent Model. Always define `$fillable` explicitly.
 - **NEVER** use `Model::all()` on tables expected to exceed 1,000 rows. Use pagination, `chunk()`, or `cursor()`.
 - **NEVER** create "God Classes" exceeding 300 lines. Split into focused collaborators.
-- **NEVER** create functions/methods exceeding 50 lines. Refactor into smaller, named units.
+- **NEVER** create functions/methods exceeding 30 lines. Refactor into smaller, named units. See `code-quality.md` §3 for function design standards.
 - **NEVER** use magic strings for statuses, types, or categories. Use PHP 8.1+ Enums or class constants.
 - **NEVER** duplicate code across 3+ locations. Extract into a shared Service, Trait, or Helper.
 - **NEVER** leave commented-out code in the codebase. Delete it — Git preserves history.

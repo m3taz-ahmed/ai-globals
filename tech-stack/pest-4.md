@@ -1,4 +1,4 @@
-﻿# Pest v4.x Testing Standards
+# Pest v4.x Testing Standards
 > [!NOTE]
 > Pest 4 focuses on speed, architecture testing, and native PHP 8.4 support.
 
