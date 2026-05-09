@@ -21,4 +21,3 @@
 - **Complex Orchestration:** Use `Framer Motion` (React) or `GSAP` (Vanilla/Blade) for entry animations, scroll-triggered reveals, and complex UI sequencing.
 - **Performance:** Ensure animations use `transform` and `opacity` to keep them on the GPU (60fps mandate).
 - **Reduced Motion:** Always respect `prefers-reduced-motion` media queries.
-

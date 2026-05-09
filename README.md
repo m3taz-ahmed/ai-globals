@@ -1,9 +1,25 @@
-# 🌌 AI Global OS: Precision-Guided Sovereignty (v4.3.0)
+# 🌌 AI Global OS: Precision-Guided Sovereignty (v4.5.0)
 
 **The definitive architectural engine for autonomous AI agents.**  
 A centralized, high-performance operating system that transforms AI from a "code generator" into a **Principal Architect** with surgical precision and automated compliance.
 
----
+## ⚡ v4.5.0 Milestone: Self-Healing Sovereignty
+We have reached the "Self-Healing" architectural tier.
+- **Self-Healing Validation:** `validate-globals.ps1` v4.5.0 can now auto-fix line endings, encoding, and broken cross-references.
+- **Contextual Interlocks:** Resolved logical friction between Resilience, Performance, and Aesthetics with cross-domain enforcement rules.
+- **Integrity Guard:** Automated secret scanning and rule propagation hardened to v4.5.0.
+
+## ⚡ v4.4.0 Milestone: Deep Structural Integrity
+We have transitioned from passive validation to **Active Structural Enforcement**.
+- **Cross-Reference Verification:** Automated detection of broken internal documentation links.
+- **Secret Guard:** Real-time entropy scanning to prevent credential leakage.
+- **Rule Propagation:** Core rule changes now trigger mandatory global re-validation.
+
+## ⚡ v4.3.1 Milestone: Architectural Hardening
+We have initiated a "Devil's Advocate" audit of the global tech-stack to eliminate performance fallacies and address domain-specific gaps.
+- **Fallacy Resolution:** Fixed double-parsing patterns in JSON standards.
+- **Bilingual Integrity:** Mandated `mb_str_pad` for RTL/Arabic UI alignment.
+- **Override Enforcement:** Shifted `#[\Override]` from a "request" to a static-analysis-enforced mandate.
 
 ## ⚡ v4.3.0 Milestone: Architectural Resilience
 We have pivoted from micro-optimizations to higher-impact architectural shifts.

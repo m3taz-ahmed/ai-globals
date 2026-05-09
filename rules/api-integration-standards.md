@@ -95,6 +95,7 @@ Http::macro('daftra', function () {
   - Entity data (invoices, clients): TTL 5–30 minutes, with event-driven invalidation.
 - **Use tagged caching** for easy invalidation: `Cache::tags(['daftra', 'invoices'])->remember(...)`.
 - **Never cache authentication tokens or user-specific sensitive data** beyond their natural expiry.
+- **Cache-Retry Interlock:** Retries MUST NOT be attempted on cached stale data unless the `FORCE_REFRESH` header is present. This prevents "Retry Storms" when a backend is partially recovered but the cache is serving near-expiry stale results.
 
 ## 7. VERSIONING & DOCUMENTATION
 

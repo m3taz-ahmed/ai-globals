@@ -16,3 +16,7 @@
 - **English Fonts:** Primary: `Inter`, `Outfit`, or `Geist`.
 - **Arabic Fonts:** Primary: `IBM Plex Sans Arabic`, `Readex Pro`, or `Noto Sans Arabic`.
 - **Harmony:** Ensure font-weight and line-height are balanced between languages. Arabic typically requires `1.5` to `1.7` line-height for readability.
+
+## 4. PERFORMANCE-AESTHETIC INTERLOCK
+- **Critical Path Protection:** High-fidelity animations or heavy 3D/Spline assets MUST use `requestIdleCallback` or `IntersectionObserver` to ensure they do not block the critical rendering path.
+- **Zero-Layout-Shift:** Always define `aspect-ratio` or explicit dimensions for Bento card containers to prevent cumulative layout shift (CLS) when assets load.

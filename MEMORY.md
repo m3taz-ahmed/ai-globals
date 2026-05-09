@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-05-09 — Self-Healing Sovereignty (v4.5.0)
+
+**Scope:** Resolution of cross-domain logical friction and implementation of automated healing.
+**Trigger:** Manual — /critic + Deep Structural Integrity
+**Agent:** Antigravity (Gemini 3 Flash)
+
+### Findings Summary
+| Category | Issue | Resolution |
+|---|---|---|
+| Logic | Resilience/Cache Conflict | Implemented Cache-Retry Interlock. |
+| Logic | Aesthetic/Perf Conflict | Implemented Critical Path Protection mandate. |
+| Integrity | Manual Maintenance | Implemented `-Fix` mode in `validate-globals.ps1`. |
+
+### Actions Taken
+- Upgraded `validate-globals.ps1` to v4.5.0.
+- Injected 3 Contextual Interlocks across rule files.
+- Synchronized all version strings.
+
+---
+
+## 2026-05-09 — Full System Deep-Scan & Hardening (v4.4.0)
+
+**Scope:** Critical audit of tech-stack rules to resolve performance fallacies and domain gaps.
+**Trigger:** Manual — /critic (Devil's Advocate review)
+**Agent:** Antigravity (Gemini 3 Flash)
+
+### Findings Summary
+| Category | Issue | Resolution |
+|---|---|---|
+| Performance | `json_validate` double-parsing fallacy | Gated usage to pass-through only |
+| Bilingual UX | Missing `mb_str_pad` standard | Added as mandatory for UI alignment |
+| Resilience | Weak `#[\Override]` enforcement | Mandated static analysis check in CI |
+| Architecture | Missing Anon Readonly classes | Integrated into PHP 8.3 spec |
+
+### Actions Taken
+- Hardened `tech-stack/php-8-3.md` with high-fidelity standards.
+- Synchronized `CHANGELOG.md` to v4.4.0.
+- Updated system integrity manifest.
+
+---
+
 ## 2026-05-09 — Architectural Resilience Upgrade (v4.3.0)
 
 **Scope:** Pivot from micro-optimizations (parallelization) to architectural resilience (incremental validation, hardened loops).

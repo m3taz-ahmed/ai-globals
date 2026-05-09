@@ -14,6 +14,7 @@
 - **L2 Cache (Distributed):** Use Redis for cross-request caching.
 - **Tags:** Use cache tags (`Cache::tags()`) for grouped invalidation.
 - **TTL:** Set explicit Time-To-Live for all cache entries. Avoid indefinite caching.
+- **TTL:** Set explicit Time-To-Live for all cache entries. Avoid indefinite caching.
 
 ## 3. ASYNC PROCESSING
 - **Queue Everything:** Offload any task longer than 100ms to background queues (Emails, PDFs, API calls).
@@ -25,6 +26,9 @@
 - **Critical CSS:** Inline critical CSS to improve First Contentful Paint (FCP).
 - **Lazy Loading:** Use native `loading="lazy"` for images and `wire:navigate` for fast page transitions.
 
+## 5. LOGIC-LOGGING INTERLOCK
+- **Contextual Sequence:** When performing destructive parsing (e.g., PHP 8.3 `json_decode` with local consumption), the RAW payload MUST be logged *before* transformation if the logic fails. 
+- **Just-In-Time Serialization:** Avoid serializing entire "God Objects" into logs. Log only the surgical context required to reproduce the failure.
 ---
 
 ## ⚡ PERFORMANCE CHECKLIST (Mandatory)

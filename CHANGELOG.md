@@ -1,10 +1,41 @@
 # Changelog
 
+## [v4.5.0] - 2026-05-09 - Self-Healing Sovereignty
+
+### Added
+- **Self-Healing Mode:** `validate-globals.ps1` v4.5.0 now includes a `-Fix` flag to auto-correct encoding artifacts, line endings, and broken cross-references using fuzzy resolution logic.
+- **Contextual Interlocks:** Added cross-domain logical rules to resolve friction between Performance, Resilience, and Aesthetics (e.g. Cache-Retry Interlock).
+- **Idle-Callback Mandate:** High-fidelity UI assets must now use non-blocking initialization to protect the critical rendering path.
+
+### Changed
+- **Performance Standards:** Integrated Logic-Logging interlocks for optimized parsing vs debugging context.
+
+## [v4.4.0] - 2026-05-09 - Deep Structural Integrity
+
+### Added
+- **Cross-Reference Verification:** `validate-globals.ps1` v4.4.0 now performs deep structural analysis, verifying every `ref: ... §N` section link across the entire repository.
+- **Secret Guard:** Implemented automated entropy and pattern-based secret scanning in the validation engine to prevent accidental credential commits.
+- **Rule Propagation logic:** The validation script now detects changes in core rules and forces a full system scan, preventing manifest-based bypasses of new standards.
+
+### Changed
+- **php-8-3.md:** Integrated anonymous `readonly` class support and hardened type system standards.
+- **validate-globals.ps1:** Complete refactor of version detection and integrity manifest logic.
+
+## [v4.3.1] - 2026-05-09 - Architectural Hardening (Audit v1)
+
+### Changed
+- **php-8-3.md:** Hardened standards following `/critic` audit. 
+    - Resolved `json_validate()` performance fallacy (double-parsing).
+    - Added mandatory `mb_str_pad()` for bilingual UI integrity.
+    - Mandated static analysis enforcement for `#[\Override]`.
+    - Simplified Randomizer engine requirements.
+    - Added guidance for anonymous `readonly` classes.
+
 ## [v4.3.0] - 2026-05-09 - Architectural Resilience
 
 ### Added
 - **Incremental Validation:** `validate-globals.ps1` v4.3.0 now uses SHA-256 manifests to skip unchanged files, significantly improving validation speed for small edits.
-- **Audit-Driven Upgrades:** `security-standards.md §8` — Formalized protocol for dependency upgrades, mandating impact analysis for major version jumps instead of hard pinning.
+- **Audit-Driven Upgrades:** `rules/security-standards.md §8` — Formalized protocol for dependency upgrades, mandating impact analysis for major version jumps instead of hard pinning.
 - **Hardened Execution Loop:** `global-workflow.md Step 4` — Integrated high-fidelity verification patterns (Refactor, UI, API) and a mandatory "Surgical Test" check directly into the core protocol.
 
 ### Changed
@@ -17,7 +48,7 @@
 - **Behavioral Deduplication:** `llm-behavioral-guidelines.md` now references `core-behavioral-compact.md` for base principles, providing only expanded self-tests and guidance (~70% duplication eliminated).
 - **global-roles.md §9:** Replaced inline self-test checklist with reference to behavioral rule files.
 - **global-roles.md §8:** Trimmed to reference domain rules instead of restating their content.
-- **principal-architect.md §6/§7:** Added cross-references to `anti-patterns.md` to reduce overlap.
+- **principal-architect.md §6/§7:** Added cross-references to `rules/anti-patterns.md` to reduce overlap.
 - **validate-globals.ps1:** Replaced double-pass file reading with single-pass content caching.
 - **CHANGELOG:** Normalized all version headers to use `v` prefix consistently.
 - **README:** Updated version from v4.0.0 to v4.2.0. Updated Layer descriptions to reflect new Layer 1/2 structure.
