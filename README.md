@@ -1,7 +1,18 @@
-# 🌌 AI Global OS: Precision-Guided Sovereignty (v4.5.0)
+<div align="center">
+  <img src="logo.png" width="160" alt="AI Global OS Logo">
+  <h1>🌌 AI Global OS: Precision-Guided Sovereignty</h1>
+  <p><b>The definitive architectural engine for autonomous AI agents.</b></p>
 
-**The definitive architectural engine for autonomous AI agents.**  
-A centralized, high-performance operating system that transforms AI from a "code generator" into a **Principal Architect** with surgical precision and automated compliance.
+  <p>
+    <img src="https://img.shields.io/badge/Version-4.5.0-blue?style=for-the-badge&logo=ai" alt="Version">
+    <img src="https://img.shields.io/badge/Status-Self--Healing-green?style=for-the-badge" alt="Status">
+    <img src="https://img.shields.io/badge/Architecture-Sovereign-gold?style=for-the-badge" alt="Architecture">
+  </p>
+
+  <p><i>A centralized, high-performance operating system that transforms AI from a "code generator" into a <b>Principal Architect</b> with surgical precision and automated compliance.</i></p>
+</div>
+
+---
 
 ## ⚡ v4.5.0 Milestone: Self-Healing Sovereignty
 We have reached the "Self-Healing" architectural tier.
