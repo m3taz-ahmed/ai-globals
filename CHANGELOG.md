@@ -1,5 +1,16 @@
 # Changelog
 
+## [v4.3.0] - 2026-05-09 - Architectural Resilience
+
+### Added
+- **Incremental Validation:** `validate-globals.ps1` v4.3.0 now uses SHA-256 manifests to skip unchanged files, significantly improving validation speed for small edits.
+- **Audit-Driven Upgrades:** `security-standards.md §8` — Formalized protocol for dependency upgrades, mandating impact analysis for major version jumps instead of hard pinning.
+- **Hardened Execution Loop:** `global-workflow.md Step 4` — Integrated high-fidelity verification patterns (Refactor, UI, API) and a mandatory "Surgical Test" check directly into the core protocol.
+
+### Changed
+- **validate-globals.ps1:** Added `-Force` switch to bypass incremental skipping and run a full scan.
+- **README:** Updated version to v4.3.0 and highlighted Resilience milestones.
+
 ## [v4.2.0] - 2026-05-09 - Refactor / Security / Optimize Deep-Scan
 
 ### Refactored

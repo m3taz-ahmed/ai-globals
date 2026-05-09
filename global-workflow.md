@@ -61,24 +61,27 @@ Do NOT generate massive blocks of code blindly. If requirements are ambiguous, o
 ## STEP 4: EXECUTE & DELIVER
 
 ### Success Criteria Framework (Mandatory)
-Before writing ANY code, define verifiable success criteria:
+Before writing ANY code, define verifiable success criteria. Transform vague tasks into testable goals:
+
+**Example Patterns:**
+- **Refactor:** `1. Run baseline tests -> verify: pass` | `2. Apply surgical edit -> verify: no side-effects` | `3. Run target tests -> verify: pass`.
+- **UI/UX:** `1. Implement component -> verify: responsive at 375px/1440px` | `2. Add Framer Motion -> verify: 60fps animation`.
+- **API/Logic:** `1. Write failing test -> verify: 422 Unprocessed` | `2. Implement logic -> verify: 201 Created` | `3. Check DB -> verify: record exists`.
+
 ```
 1. [Step] → verify: [specific check]
 2. [Step] → verify: [specific check]
 3. [Step] → verify: [specific check]
 ```
-Transform vague tasks into testable goals:
-- "Fix X" → "Write a test that reproduces X, then make it pass"
-- "Add Y" → "Write tests for Y's expected behavior, then implement"
-- "Refactor Z" → "Ensure tests pass before AND after refactoring"
 
 ### Execution Rules
 When producing code:
 1. Follow the active workflow protocol (planning/execution/debugging/deployment/review).
 2. Deliver iteratively — one module or logical unit at a time.
 3. Include all necessary components (migrations, models, services, tests).
-4. Apply surgical diffs — never rewrite entire files unless explicitly requested.
-5. Refer to `EXAMPLES.md` for correct patterns when in doubt about LLM behavioral pitfalls.
+4. **Surgical Testing:** Ensure tests match the scope of changes. Do not run the entire suite for a single-line fix; use `--filter` or specific file paths.
+5. Apply surgical diffs — never rewrite entire files unless explicitly requested.
+6. Refer to `EXAMPLES.md` for correct patterns when in doubt about LLM behavioral pitfalls.
 
 ## STEP 5: VERIFY, VALIDATE & FORMAT
 After making any changes, you MUST verify before reporting completion:

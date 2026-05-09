@@ -40,8 +40,17 @@
 
 ---
 
+## 8. DEPENDENCY EVOLUTION & AUDIT GATES
+- **Audit-Driven Upgrades:** Avoid hard-pinning core frameworks to allow for security patches. However, moving to a new **MAJOR** version (e.g., Laravel 11→12, Tailwind 3→4) requires a mandatory "Breaking Change Impact Analysis".
+- **Verified Window:** Prioritize versions within the "LTS" or "Stable" window.
+- **Speculative Tech:** Rules for tech marked `[!SPECULATIVE]` must only be applied to research branches or explicitly approved experimental projects. Never merge speculative standards into the `main` production branch.
+- **Transitive Security:** Before adding a new package, analyze its dependency tree for "Phantom Maintenance" (deep dependencies that are unmaintained).
+
+---
+
 ## 🕵️ SECURITY VERIFICATION (Mandatory)
 - [ ] **Validation:** Is every input passing through a strict `FormRequest`?
 - [ ] **Exposure:** Are any sensitive keys or PII being logged/exposed in the API?
 - [ ] **Permissions:** Is the default behavior "Deny All" for this new route?
 - [ ] **SQLi:** Have I verified that no raw strings are being passed to database queries?
+- [ ] **Upgrade Audit:** If a dependency was upgraded, have I reviewed the breaking changes?
