@@ -28,8 +28,8 @@
 
 ## 6. ERROR HANDLING PHILOSOPHY
 - **Custom Exception Hierarchy:** Define domain-specific exceptions extending a base `AppException`. Never throw generic `\Exception` or `Error` without context.
-- **Fail Fast, Fail Loud:** Errors must be caught, logged with full context (stack trace, request data, user ID), and surfaced appropriately. Never use `@` error suppression in PHP or empty `catch {}` blocks.
-- **Graceful Degradation:** External API failures must trigger fallback behavior (cached responses, retry queues) — never crash the user experience.
+- **Fail Fast, Fail Loud:** Errors must be caught, logged with full context, and surfaced appropriately. See `rules/anti-patterns.md` §2 for complete error handling constraints.
+- **Graceful Degradation:** External API failures must trigger fallback behavior (cached responses, retry queues) — never crash the user experience. See `rules/api-integration-standards.md` §3 for retry/resilience patterns.
 - **Idempotency:** Critical operations (payments, status changes) must be designed to be safely retried without duplication.
 
 ## 7. TESTING STANDARDS
@@ -37,7 +37,7 @@
 - **Testing Stack:** Use PHPUnit or Pest for PHP backends, `node:test` or Jest for JavaScript/TypeScript.
 - **Test Types:** Unit tests for business logic (Services, Actions), Feature tests for HTTP endpoints, Integration tests for external API interactions.
 - **Arrange-Act-Assert:** Follow the AAA pattern strictly. Each test must test ONE behavior.
-- **Test Data:** Use Factories and Seeders for realistic test data. Never hardcode IDs or timestamps in tests.
+- **Test Data:** Use Factories and Seeders for realistic test data. Never hardcode IDs or timestamps in tests. See `rules/anti-patterns.md` §6 for complete testing constraints.
 
 ---
 

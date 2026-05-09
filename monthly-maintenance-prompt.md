@@ -47,7 +47,7 @@ Perform a structured monthly audit to catch regressions, dependency vulnerabilit
 
 After completing the audit, produce a structured report:
 ```markdown
-# Monthly Audit Report â€— [Month Year]
+# Monthly Audit Report — [Month Year]
 
 ## Summary
 [1-2 sentence overview]

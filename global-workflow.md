@@ -13,10 +13,10 @@ Read FIRST, on every task, no exceptions:
 ### Layer 1 — ALWAYS (Structural Rules)
 Read immediately after Layer 0:
 - `rules/anti-patterns.md` — Hard-stop negative constraints
-- `rules/llm-behavioral-guidelines.md` — Expanded behavioral guidelines with self-tests
 
 ### Layer 2 — ON-DEMAND (Domain Rules)
 Read ONLY when the task involves the relevant domain:
+- Behavioral review/onboarding → `rules/llm-behavioral-guidelines.md`
 - Security-related → `rules/security-standards.md`
 - External APIs → `rules/api-integration-standards.md`
 - Monitoring/Logging → `rules/observability-standards.md`
@@ -39,10 +39,11 @@ Read ONLY when the task involves the relevant domain:
    - Security Audit/Hardening → `07-security-audit.md`
 - Project Onboarding → `08-onboarding.md`
 
-2. **Tech-Stack Sync (Lazy Loading):**
-   Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
-   **Strict Lazy Load:** SILENTLY READ ONLY the specific `.md` files from `./tech-stack/` that match the detected stack or the user's explicit request.
-   **Do NOT** read unrelated tech-stack files.
+  2. **Tech-Stack Sync (Lazy Loading):**
+Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
+**Strict Lazy Load:** SILENTLY READ ONLY the specific `.md` files from `./tech-stack/` that match the detected stack or the user's explicit request.
+**Do NOT** read unrelated tech-stack files.
+> **Speculative Files:** Files marked `[!SPECULATIVE]` (e.g., `php-8-5.md`, `laravel-13.md`, `filament-5.md`, `mysql-9-7.md`) should only be loaded when explicitly working with pre-release versions. Skip them by default to avoid applying unconfirmed standards.
 
 ## STEP 2: THINK (INTERNAL REASONING)
 Before responding, perform internal analysis:

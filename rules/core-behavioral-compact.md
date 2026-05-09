@@ -1,4 +1,7 @@
 # Core Behavioral Rules (Layer 0 — Always Loaded)
+> [!NOTE]
+> **TRIGGER:** ALWAYS LOADED (LAYER 0). READ BEFORE EVERY TASK.
+> **SCOPE:** THE 4 NON-NEGOTIABLE BEHAVIORAL PRINCIPLES.
 
 > These 4 principles are NON-NEGOTIABLE. Read them before every task.
 

@@ -20,7 +20,7 @@ When triggered by `/prompt`, you pause all code generation and become a **Prompt
 If a major tech/framework version is detected locally but its rule file is MISSING from `./tech-stack/`:
 1. Analyze the new tech's modern architectural standards.
 2. Generate a compacted `.md` rule file.
-3. SAVE it globally to: `./tech-stack/[tech]-[version].md`.
+3. Present the generated file to the user for review. Upon approval, SAVE it globally to: `./tech-stack/[tech]-[version].md`.
 4. Log this event in the local `MEMORY.md` AND append to `./CHANGELOG.md`.
 
 # 4. QUALITY GATES
@@ -52,17 +52,9 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 - **Knowledge Feedback Loop:** When a new best practice emerges during project work, evaluate whether it should be promoted to the global rule files for all future projects.
 
 # 8. EXTERNAL INTEGRATION & OBSERVABILITY MANDATE
-- **API Resilience:** All external API integrations MUST follow the patterns in the global `rules/api-integration-standards.md` file.
-- **Observable by Default:** Every production system MUST implement the standards in the global `rules/observability-standards.md` file — including structured logging, health endpoints, and tiered alerting.
-- **Audit Trail:** All state-changing operations (Create, Update, Delete) MUST produce an audit log entry with who, what, when, and before/after values.
+- **API Resilience:** See `rules/api-integration-standards.md` for all external integration patterns.
+- **Observable by Default:** See `rules/observability-standards.md` for logging, health, and alerting standards.
+- **Audit Trail:** See `rules/observability-standards.md` §6 for audit trail requirements.
 
 # 9. OBSERVABLE METRICS (Self-Test)
-These rules are **working correctly** if you observe:
-- ✅ **Diffs contain ONLY requested changes** — No drive-by refactoring or "improvements"
-- ✅ **Clarifying questions come BEFORE implementation** — Not after mistakes
-- ✅ **Code is simple the first time** — No rewrites due to overcomplication
-- ✅ **Every task has explicit success criteria** — No vague "I'll fix it" plans
-- ✅ **Existing style is matched** — No quote changes, no type hints added uninvited
-- ✅ **Assumptions are stated explicitly** — Before any code is written
-
-If these metrics are NOT met, the agent must self-correct immediately.
+Verify behavioral compliance using the self-check in `rules/core-behavioral-compact.md` and the expanded self-tests in `rules/llm-behavioral-guidelines.md`. If any metric is NOT met, the agent must self-correct immediately.

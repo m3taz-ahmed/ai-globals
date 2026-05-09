@@ -10,11 +10,12 @@ desktop.ini
 *.swp
 *.swo
 *~
-.env*
+.env
+.env.*
 
 # Local State (per-project, not global)
-MEMORY.md
+# MEMORY.md is tracked — it contains cross-session audit history valuable for all users
 
 
-# Local-only scripts (versioned scripts are tracked by git)
-# /scripts/*.local
+# Generated artifacts
+integrity.manifest

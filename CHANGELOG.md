@@ -1,5 +1,36 @@
 # Changelog
 
+## [v4.2.0] - 2026-05-09 - Refactor / Security / Optimize Deep-Scan
+
+### Refactored
+- **Behavioral Deduplication:** `llm-behavioral-guidelines.md` now references `core-behavioral-compact.md` for base principles, providing only expanded self-tests and guidance (~70% duplication eliminated).
+- **global-roles.md §9:** Replaced inline self-test checklist with reference to behavioral rule files.
+- **global-roles.md §8:** Trimmed to reference domain rules instead of restating their content.
+- **principal-architect.md §6/§7:** Added cross-references to `anti-patterns.md` to reduce overlap.
+- **validate-globals.ps1:** Replaced double-pass file reading with single-pass content caching.
+- **CHANGELOG:** Normalized all version headers to use `v` prefix consistently.
+- **README:** Updated version from v4.0.0 to v4.2.0. Updated Layer descriptions to reflect new Layer 1/2 structure.
+
+### Fixed
+- **Mojibake:** Replaced `â€—` with proper em-dash `—` in `monthly-maintenance-prompt.md`.
+- **Trigger Headers:** Added `[!NOTE]` trigger header to `rules/core-behavioral-compact.md`.
+
+### Added
+- **validate-globals.ps1 v4.2.0:** Added `-DryRun` switch for safe-write mode.
+- **validate-globals.ps1 v4.2.0:** Added `-GenerateManifest` switch for SHA-256 integrity checking.
+- **validate-globals.ps1 v4.2.0:** Added path validation guard and `-Encoding UTF8` on all reads.
+- **validate-globals.ps1 v4.2.0:** Added version consistency check across README, CHANGELOG, and script.
+- **validate-globals.ps1 v4.2.0:** Improved mojibake detection with broader patterns + Unicode U+FFFD check.
+- **validate-globals.ps1 v4.2.0:** Expanded cross-reference regex to cover `ref`, `per`, `in`, and `§N.N` sub-sections.
+- **global-roles.md §3:** Added user confirmation step before auto-discovery saves generated files.
+- **global-workflow.md:** Moved `llm-behavioral-guidelines.md` from Layer 1 to Layer 2 (on-demand).
+- **global-workflow.md:** Added speculative file skip guidance for Layer 3 tech-stack loading.
+
+### Changed
+- **.gitignore:** Fixed `.env*` → `.env` + `.env.*` (more precise pattern).
+- **.gitignore:** Removed `MEMORY.md` exclusion (now tracked for cross-session value).
+- **Layer 0 context size:** Reduced by ~88 lines by moving behavioral guidelines to Layer 2.
+
 ## [v4.1.0] - 2026-05-09 - Global Hardening & Deep Scan
 
 ### 🚀 Refactoring & Optimization
@@ -22,7 +53,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 
 
 
-## [4.0.0] — 2026-05-06 — Precision Architecture Enforcement
+## [v4.0.0] — 2026-05-06 — Precision Architecture Enforcement
 
 ### Added
 - **Filament v4 Architecture Rules:** `tech-stack/filament-4.md` — Cluster organization, Schema pattern, PHP 8.4 property hooks, and repository-specific namespace standards.
@@ -44,7 +75,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 - **README.md:** Removed undocumented references (Anime.js, React 19), updated WCAG 2.1 to 2.2, updated system map.
 - **Hardcoded paths:** Replaced remaining absolute paths with portable references.
 
-## [3.5.0] — 2026-05-05 — SaaS Architectural Transformation
+## [v3.5.0] — 2026-05-05 — SaaS Architectural Transformation
 ### Added
 - **SaaS Core Standards:** `rules/saas-standards.md` — Decision matrix for multi-tenancy, data isolation rules, and enterprise compliance.
 - **Tenancy Implementation:** `tech-stack/saas-tenancy.md` — Laravel (`stancl/tenancy`) and Next.js patterns for isolated tenant environments.
@@ -57,14 +88,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 ### Removed
 - **Formatting Constraints:** Removed the non-negotiable requirement to wrap all English terms in backticks (e.g., `README.md`) within Arabic responses. This simplifies text rendering and returns to standard mixed-language formatting.
 
-## [3.4.0] — 2026-05-05 — Professionalization & Cleanup
+## [v3.4.0] — 2026-05-05 — Professionalization & Cleanup
 ### Changed
 - **Branding:** Rebranded the repository as "AI Global OS: The Sovereign Architectural Directive".
 - **README.md:** Complete professional rewrite highlighting Layered Loading and Behavioral Sovereignty.
 - **Cleanup:** Removed all external attributions (Karpathy references) across the entire system.
 - **Visuals:** Removed decorative emoji clutter from core protocol headers to ensure a clean, high-performance interface.
 
-## [3.3.0] — 2026-05-05 — High-Performance Behavioral Integration
+## [v3.3.0] — 2026-05-05 — High-Performance Behavioral Integration
 ### Added
 - **LLM Behavioral Guidelines:** `rules/llm-behavioral-guidelines.md` — 4 principles (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution) with self-tests.
 - **Core Behavioral Compact:** `rules/core-behavioral-compact.md` — Ultra-compact Layer 0 (< 50 lines) loaded on every task.
@@ -76,7 +107,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 - **global-workflow.md:** Replaced flat "read everything" with **Layered Context Loading** (Layer 0 → Layer 1 → Layer 2 → Layer 3) for context efficiency.
 - **global-roles.md:** Added Behavioral Compliance to Quality Gates (§4). Added Observable Metrics (§9).
 
-## [3.1.0] — 2026-05-02
+## [v3.1.0] — 2026-05-02
 ### Added
 - **Design Foundations:** `design-foundations.md` (Bento Grids, Glassmorphism, Neumorphism, Modern Gradients).
 - **Responsive UI:** `responsive-ui.md` (Container Queries, Adaptive Layouts, Mobile UX).
@@ -87,14 +118,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 - **Global Roles:** `global-roles.md` (Added Font Selection Gate, UI Stack Discovery, and Aesthetics Mandate).
 - **Frontend Modern:** `frontend-modern.md` (Added Framer Motion and GSAP animation standards).
 
-## [3.0.1] — 2026-05-02
+## [v3.0.1] — 2026-05-02
 ### Added
 - **New Workflow:** `00-prompt-architecting.md` for refining user prompts before execution.
 - **Triggers:** Simplified to a single trigger `/prompt` for the global workflow routing.
 - **Role Expansion:** Defined "Prompt Architecting Mode" in `global-roles.md`.
 
 
-## [3.0.0] — 2026-05-02
+## [v3.0.0] — 2026-05-02
 ### Added
 - **New Tech-Stacks:** `pest-4.md`, `spatie-permission.md`, `spatie-activitylog.md`, `filament-shield.md`, `vite-7.md`, `alpine-3.md`, `postcss-8.md`.
 - **New Workflows:** `06-maintenance.md` (System Maintenance), `07-security-audit.md` (Security Audit), `08-onboarding.md` (Project Onboarding).
@@ -106,7 +137,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 - **Tech-Stack Refinement:** Expanded `php-8-4.md`, `mysql-8-4.md`, `filament-4.md`, `laravel-12.md`.
 - **Hygiene:** Normalized all file line endings to LF.
 
-## [2.1.0] — 2026-05-01
+## [v2.1.0] — 2026-05-01
 
 ### Added
 - `rules/anti-patterns.md` — Comprehensive negative constraints & forbidden patterns (7 categories: code structure, error handling, security, performance, database, testing, AI workflow)
@@ -118,7 +149,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 - `global-workflow.md` — Added Anti-Pattern Cross-Check and External Integration Check to Step 2 (THINK). Updated Base Context list in Step 1 with new rule files.
 - `README.md` — Updated repository tree with 3 new rule files.
 
-## [2.0.0] — 2026-05-01
+## [v2.0.0] — 2026-05-01
 
 ### Added
 - `.gitignore` — OS/editor artifact prevention
@@ -155,7 +186,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional
 ### Removed
 - `monthely-maintenance-prompt.md` — Replaced by `monthly-maintenance-prompt.md` (typo fix + expansion)
 
-## [1.0.0] — 2026-05-01
+## [v1.0.0] — 2026-05-01
 
 ### Added
 - Initial repository structure with rules, tech-stack, and workflows

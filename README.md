@@ -1,11 +1,11 @@
-# 🌌 AI Global OS: Precision-Guided Sovereignty (v4.0.0)
+# 🌌 AI Global OS: Precision-Guided Sovereignty (v4.2.0)
 
 **The definitive architectural engine for autonomous AI agents.**  
 A centralized, high-performance operating system that transforms AI from a "code generator" into a **Principal Architect** with surgical precision and automated compliance.
 
 ---
 
-## ⚡ v4.0.0 Milestone: The Precision Architecture
+## ⚡ v4.2.0 Milestone: Refactor / Security / Optimize
 We have transitioned from passive instructions to **Active Architectural Enforcement**. The system now operates with a "Trust but Verify" mindset.
 
 ### 🎯 Context Triggers (Smart Loading)
@@ -21,11 +21,12 @@ Fully integrated standards for multi-tenancy models, enterprise security, and ME
 
 ## 🚀 Key Pillars
 
-### AI Globals — Sovereign OS v4.1.0
+### AI Globals — Sovereign OS v4.2.0
 
 ## Key Pillars
 - **Layer 0 (Identity):** `rules/core-behavioral-compact.md` + `global-roles.md` — The core personality and mindset.
-- **Layer 1 (Safety):** `rules/anti-patterns.md`, `rules/llm-behavioral-guidelines.md`, `rules/principal-architect.md` — Strict constraints and behavioral rails.ted detection.
+- **Layer 1 (Safety):** `rules/anti-patterns.md`, `rules/principal-architect.md` — Strict constraints and architectural identity.
+- **Layer 2 (On-Demand):** `rules/llm-behavioral-guidelines.md` — Expanded self-tests (loaded on behavioral review/onboarding). Context-specific triggers for Security, Performance, and Observability.
 - **Layer 2 (Precision):** Context-specific triggers for Security, Performance, and Observability.
 - **Layer 3 (Ecosystem):** Dynamic tech-stack discovery (Laravel 12, React, Tailwind v4).
 
