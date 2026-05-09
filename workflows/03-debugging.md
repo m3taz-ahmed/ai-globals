@@ -12,7 +12,7 @@ Apply permanent architectural fixes. Never use `@` in PHP to suppress errors, ne
 ## 4. STRUCTURED DEBUGGING PROTOCOL
 When facing a non-obvious bug, follow this systematic approach:
 1. **Reproduce:** Create a minimal reproduction case. Define exact steps to trigger the bug.
-2. **Isolate:** Use binary search â€— disable half the suspected code, narrow down which half causes the issue, repeat.
+2. **Isolate:** Use binary search — disable half the suspected code, narrow down which half causes the issue, repeat.
 3. **Hypothesize:** Form a specific, testable hypothesis about the cause before changing code.
 4. **Verify:** Apply the fix and verify it resolves the exact reproduction case.
 5. **Regression:** Confirm the fix doesn't break existing functionality by running the full test suite.

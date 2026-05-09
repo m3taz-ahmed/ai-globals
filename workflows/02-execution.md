@@ -14,7 +14,7 @@ Complex logic MUST include concise, professional inline comments to aid future i
 
 ## 5. TEST-ALONGSIDE WORKFLOW
 - Write tests concurrently with implementation, not as an afterthought.
-- For each feature, deliver: Migration â†’ Model â†’ Service â†’ Controller â†’ Test.
+- For each feature, deliver: Migration → Model → Service → Controller → Test.
 - Run the test suite after every logical unit is complete. Fix failures before proceeding.
 
 ## 6. CODE REVIEW SELF-CHECK

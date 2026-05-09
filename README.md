@@ -21,9 +21,11 @@ Fully integrated standards for multi-tenancy models, enterprise security, and ME
 
 ## 🚀 Key Pillars
 
-### 1. Multi-Layered Cognitive DNA
-- **Layer 0 (Identity):** `principal-architect.md` — The core personality and mindset.
-- **Layer 1 (Safety):** `anti-patterns.md` — 70+ forbidden patterns with automated detection.
+### AI Globals — Sovereign OS v4.1.0
+
+## Key Pillars
+- **Layer 0 (Identity):** `rules/core-behavioral-compact.md` + `global-roles.md` — The core personality and mindset.
+- **Layer 1 (Safety):** `rules/anti-patterns.md`, `rules/llm-behavioral-guidelines.md`, `rules/principal-architect.md` — Strict constraints and behavioral rails.ted detection.
 - **Layer 2 (Precision):** Context-specific triggers for Security, Performance, and Observability.
 - **Layer 3 (Ecosystem):** Dynamic tech-stack discovery (Laravel 12, React, Tailwind v4).
 

@@ -2,8 +2,8 @@
 
 ## 1. REVIEW SCOPE & MINDSET
 - **Purpose:** Code review is a quality gate, not a gatekeeping exercise. Focus on correctness, security, performance, and maintainability.
-- **Scope:** Review every line that changed. Understand the context â€— read surrounding code, not just the diff.
-- **Tone:** Constructive and specific. "This could cause N+1 â€— use `with('relation')` here" not "This is wrong".
+- **Scope:** Review every line that changed. Understand the context — read surrounding code, not just the diff.
+- **Tone:** Constructive and specific. "This could cause N+1 — use `with('relation')` here" not "This is wrong".
 
 ## 2. SECURITY-FIRST REVIEW
 Priority checks (block the PR if any fail):

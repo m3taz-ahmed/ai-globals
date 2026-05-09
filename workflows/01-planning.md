@@ -21,7 +21,7 @@ Flag anything rated HIGH to the user before proceeding.
 Before adding or upgrading any dependency:
 - Run `composer outdated` / `npm outdated` to assess the current dependency landscape.
 - Check the new dependency's maintenance status (last commit, open issues, security advisories).
-- Evaluate the dependency's transitive dependency tree â€— avoid packages that pull in heavy, unnecessary sub-dependencies.
+- Evaluate the dependency's transitive dependency tree — avoid packages that pull in heavy, unnecessary sub-dependencies.
 - Document the justification for adding any new dependency.
 
 ## 6. DATA MODELING & STRESS TESTING

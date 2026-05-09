@@ -1,5 +1,21 @@
 # Changelog
 
+## [v4.1.0] - 2026-05-09 - Global Hardening & Deep Scan
+
+### 🚀 Refactoring & Optimization
+- **Mojibake Round 2:** Cleared 20+ residual encoding artifacts (`â€—`, `â†'`) across 11 files (Workflows, Tech-stack, Maintenance prompts).
+- **Maintenance Consolidation:** Merged redundant content between `update-me.md` and `monthly-maintenance-prompt.md`. `update-me.md` now acts as a high-speed trigger with a pointer to the main checklist.
+- **Layer 0 Alignment:** Fixed `README.md` to correctly reflect Layer 0 as `core-behavioral-compact.md` + `global-roles.md`, ensuring architectural truth matches operational workflow.
+
+### 🛡️ Security & Reliability
+- **Script Hardening:** Upgraded `validate-globals.ps1` to v4.1.0:
+    - Expanded scan scope to include root-level `.md` files.
+    - Added **Cross-Reference Validation**: Automated detection of broken `§` section links between files.
+    - Added exit code reporting and a detailed scan summary.
+- **Git Protection:** Added `.env*` to `.gitignore` to enforce the global "No Secrets" policy by default.
+- **Historical Accuracy:** Corrected `MEMORY.md` logs regarding WCAG versions.
+
+
 All notable changes to the AI Globals system are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 

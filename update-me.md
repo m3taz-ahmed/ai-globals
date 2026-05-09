@@ -3,8 +3,13 @@
 
 ## Purpose
 
-This is the **Elite Maintenance Prompt** â€— a comprehensive protocol for performing full system deep-scans and global optimization of the AI Globals architecture.
+This is the **Elite Maintenance Prompt** — a comprehensive protocol for performing full system deep-scans and global optimization of the AI Globals architecture.
 
+## Trigger & Usage
+When you are asked to `/refactor`, `/security`, or `/optimizecode` the global project, or when a monthly audit is due.
+
+> [!NOTE]
+> This file contains the "Quick Trigger" prompt. For the detailed audit checklist, refer to [monthly-maintenance-prompt.md](./monthly-maintenance-prompt.md).
 
 ## The Prompt
 

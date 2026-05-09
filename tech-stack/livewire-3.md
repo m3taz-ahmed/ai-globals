@@ -6,9 +6,9 @@
 - **Full-Page Components:** Use Livewire full-page components with `#[Layout('layouts.app')]` attribute for standalone pages.
 
 ## 2. DATA BINDING & REACTIVITY
-- **`wire:model.live`:** Use for real-time reactivity (search fields, filters). Adds a network request on every keystroke â€— use sparingly.
+- **`wire:model.live`:** Use for real-time reactivity (search fields, filters). Adds a network request on every keystroke — use sparingly.
 - **`wire:model.blur`:** Prefer for form inputs where instant feedback is not needed. Reduces server round-trips.
-- **`wire:model` (default):** Deferred binding â€— syncs on form submission. Use for standard forms.
+- **`wire:model` (default):** Deferred binding — syncs on form submission. Use for standard forms.
 - **Computed Properties:** Use `#[Computed]` attribute for derived data. Results are cached for the request lifecycle.
 
 ## 3. PERFORMANCE
