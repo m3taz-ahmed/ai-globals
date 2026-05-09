@@ -1,5 +1,30 @@
 # Changelog
 
+> All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
+
+## [v4.5.1] - 2026-05-09 - Marketing & Professionalism Audit
+
+### Added
+- **README.md:** Complete overhaul — premium shield badges with `labelColor`, "Why This Matters" section, 3-step surgical Quick Start, collapsible milestone history, and contribution links.
+- **CONTRIBUTING.md:** Professional contributor onboarding — prerequisites, workflow, Conventional Commits convention, PR checklist, and "First Contribution" guide.
+- **SECURITY.md:** Vulnerability disclosure policy with supported versions table, private disclosure process, and response timeline SLAs.
+- **CODE_OF_CONDUCT.md:** Contributor Covenant 2.1 adapted for a technical engineering community.
+- **`.github/ISSUE_TEMPLATE/bug_report.md`:** Structured bug report template with severity triage.
+- **`.github/ISSUE_TEMPLATE/feature_request.md`:** Feature request template requiring ❌/✅ examples.
+- **`.github/ISSUE_TEMPLATE/tech_stack_request.md`:** Dedicated template for tech-stack rule file requests.
+- **`.github/PULL_REQUEST_TEMPLATE.md`:** PR checklist enforcing validation, changelog, and quality gates.
+- **`rules/README.md`:** Explains the layered constraint loading system with file reference table.
+- **`tech-stack/README.md`:** Explains the lazy-loading RAG pattern, naming conventions, and full coverage table.
+- **`workflows/README.md`:** Explains the routing map, trigger conditions, and execution model.
+- **`scripts/README.md`:** Documents `validate-globals.ps1` with all flags, exit codes, and CI integration example.
+
+### Changed
+- **`workflows/08-onboarding.md`:** Redesigned for fastest possible "Aha! moment" — 60-Second Activation box, visual context-loading checklist, and mandatory structured Handoff Summary output.
+- **`EXAMPLES.md`:** Added Quick Reference summary table at top. Added 3 new high-value sections: §5 Laravel 12 mass-assignment & N+1, §6 React XSS & data exposure, §7 SQL injection prevention. Updated Anti-Patterns Summary table to cover all 9 patterns with severity ratings.
+- **`CHANGELOG.md`:** Moved preamble to line 1 (was incorrectly positioned at line 92).
+
+---
+
 ## [v4.5.0] - 2026-05-09 - Self-Healing Sovereignty
 
 ### Added
@@ -87,12 +112,6 @@
     - Added exit code reporting and a detailed scan summary.
 - **Git Protection:** Added `.env*` to `.gitignore` to enforce the global "No Secrets" policy by default.
 - **Historical Accuracy:** Corrected `MEMORY.md` logs regarding WCAG versions.
-
-
-All notable changes to the AI Globals system are documented here.
-Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
-
-
 
 
 ## [v4.0.0] — 2026-05-06 — Precision Architecture Enforcement
