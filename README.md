@@ -1,10 +1,12 @@
+# ?? AI Global OS
+
 <div align="center">
   <img src="logo.png" width="160" alt="AI Global OS Logo">
   <h1>🌌 AI Global OS</h1>
   <p><b>The Sovereign Architectural Engine for Autonomous AI Agents.</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-4.5.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.5.0">
+    <img src="https://img.shields.io/badge/Version-4.5.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.5.0">
     <img src="https://img.shields.io/badge/Status-Self--Healing-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="Status: Self-Healing">
     <img src="https://img.shields.io/badge/Architecture-Sovereign-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="Architecture: Sovereign">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -189,3 +191,6 @@ We welcome contributions that raise the standard. Please read:
 ---
 
 *Engineered with precision by [m3taz-ahmed](https://github.com/m3taz-ahmed). Built for engineers who refuse to settle for mediocre AI output.*
+
+
+
