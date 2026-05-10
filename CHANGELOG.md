@@ -2,6 +2,31 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.7.0] - 2026-05-10 - Bleeding-Edge Audit & Supply Chain Hardening
+
+### Changed
+- **tech-stack/laravel-octane.md:** Added Driver Selection Matrix (FrankenPHP vs RoadRunner vs Swoole), `--max-requests` lifecycle management, memory leak detection strategy, HTTP/3 protocol support, graceful deployment/reload patterns, and persistent connection guidance.
+- **rules/devops-standards.md:** Added Progressive Delivery (canary deployments, feature flags), Chaos Engineering as continuous practice, GitOps with drift detection, self-healing infrastructure, OIDC keyless authentication, Platform Engineering golden paths, and Policy-as-Code (OPA/Kyverno).
+- **rules/caching-standards.md:** Added Cache-Aside/Write-Through/Write-Behind pattern matrix, Redis Cluster/Sentinel HA guidance, graceful cache degradation with circuit breakers, serialization standards (MessagePack/igbinary), payload compression (LZ4/zstd), and TTL policy framework.
+- **rules/database-scaling.md:** Added PostgreSQL 17-specific features: `JSON_TABLE`, `sslnegotiation=direct`, redesigned vacuum (20x lighter), `pg_wait_events`, incremental backups. Added JSONB/GIN indexing strategy, aggressive autovacuum tuning, advisory locks, Aurora I/O-Optimized, and Aurora Global Database multi-region DR.
+- **rules/ci-cd-standards.md:** Added OIDC Keyless Authentication, SLSA Level 3 provenance (slsa-github-generator + Sigstore/Cosign), SHA-pinned GitHub Actions, SBOM generation (syft/trivy), ephemeral runners, least-privilege GITHUB_TOKEN permissions, environment-scoped secrets, deployment risk tags, and DORA metrics tracking.
+
+### Research Basis
+- 10 targeted web searches covering Laravel 13 (released March 2026), PostgreSQL 17, AWS EKS/Aurora 2026 best practices, CI/CD supply chain security (SLSA/OIDC), and modern DevOps (progressive delivery, chaos engineering, GitOps).
+
+---
+
+## [v4.6.0] - 2026-05-10 - High-Scale SaaS Blueprint
+
+### Added
+- **Tech-Stack:** 22 new comprehensive rule files covering Next.js 15, TypeScript 5, PostgreSQL 17, Redis 7, Laravel Octane/Horizon/Reverb, Clerk Auth, Shadcn/ui, Zustand, TanStack Query, Zod, Docker, AWS Infrastructure, Cloudflare Edge, Terraform, GitHub Actions, Sentry, Meilisearch, ClickHouse, Stripe, and Framer Motion.
+- **Rules:** 5 new architectural standards covering Testing, DevOps, Caching, Database Scaling, and CI/CD Governance.
+
+### Changed
+- **README.md:** Updated version to v4.6.0, updated the Tech-Stack badges to reflect the new stack (Next.js 15 / Laravel 12 / PostgreSQL 17), and highlighted the new SaaS blueprint milestone.
+
+---
+
 ## [v4.5.1] - 2026-05-09 - Marketing & Professionalism Audit
 
 ### Added
