@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.5.0
+# AI Globals Validation Script (PowerShell) v4.5.1
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -19,7 +19,7 @@ if (-not $GlobalPath -or -not (Test-Path -LiteralPath $GlobalPath)) {
 $RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
 $RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
 
-Write-Host "Starting AI Globals Validation v4.5.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.5.1 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ScannedCount = 0; $SkippedCount = 0; $ErrorCount = 0; $WarningCount = 0; $FixedCount = 0
 
@@ -211,3 +211,4 @@ if (-not $DryRun -and $ErrorCount -eq 0) {
 
 Write-Host "`nSummary: Scanned=$ScannedCount, Skipped=$SkippedCount, Errors=$ErrorCount, Warnings=$WarningCount, Healed=$FixedCount"
 exit [int]($ErrorCount -gt 0)
+
