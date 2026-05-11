@@ -4,7 +4,7 @@
   <p><b>Stop letting AI write spaghetti code. Turn it into your Principal Architect.</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-4.8.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.8.0">
+    <img src="https://img.shields.io/badge/Version-4.9.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.9.0">
     <img src="https://img.shields.io/badge/Status-Self--Healing-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="Status: Self-Healing">
     <img src="https://img.shields.io/badge/Architecture-Sovereign-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="Architecture: Sovereign">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -104,7 +104,7 @@ This OS doesn't just manage prompts; it enforces the highest echelons of modern 
 - **Bleeding-Edge Frontend:** Next.js 15 (`"use cache"`), Tailwind CSS v4, and aggressive WCAG 2.2 AA accessibility mandates.
 - **High-Scale Backend:** Laravel 12/13 with Octane (FrankenPHP) for sub-millisecond response times.
 - **Deep Observability:** OpenTelemetry (W3C Trace Context) and AI-driven telemetry (Sentry Session Replay).
-- **Self-Healing Manifests:** Built-in `.ps1` scripts dynamically validate rule integrity, fix broken cross-references, and prevent configuration drift.
+- **Self-Healing Manifests:** Built-in `.ps1` scripts dynamically validate rule integrity, fix broken cross-references, and provide an interactive self-healing mode.
 
 ---
 

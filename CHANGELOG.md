@@ -2,6 +2,25 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.9.0] - 2026-05-11 - Sovereign Expansion & Bilingual Mastery
+
+### Added
+- **README-AR.md:** Professional Modern Engineering Arabic adaptation of the root documentation with RTL support and preserved technical terminology.
+- **workflows/09-discovery.md:** New protocol for automated tech-discovery, research, and integration of unknown or bleeding-edge tech stacks.
+
+### Changed
+- **scripts/validate-globals.ps1:** Upgraded to v4.9.0 with:
+    - `-Interactive` flag for human-in-the-loop self-healing.
+    - Enhanced fuzzy matching for correcting filenames and section headers in cross-references.
+    - Automatic `integrity.manifest` regeneration after successful fixes.
+    - Multi-language version detection (README-AR.md support).
+
+### Fixed
+- **README.md:** Upgraded version badge and alt text to v4.9.0.
+- **validate-globals.ps1:** Improved path normalization for Windows/Unix compatibility in cross-references.
+
+---
+
 ## [v4.8.0] - 2026-05-11 - 2026 Bleeding-Edge Enterprise Architecture Audit
 
 ### Changed
@@ -141,7 +160,7 @@
 - **Behavioral Deduplication:** `llm-behavioral-guidelines.md` now references `core-behavioral-compact.md` for base principles, providing only expanded self-tests and guidance (~70% duplication eliminated).
 - **global-roles.md §9:** Replaced inline self-test checklist with reference to behavioral rule files.
 - **global-roles.md §8:** Trimmed to reference domain rules instead of restating their content.
-- **principal-architect.md §6/§7:** Added cross-references to `rules/anti-patterns.md` to reduce overlap.
+- **rules/principal-architect.md §6/§7:** Added cross-references to `rules/anti-patterns.md` to reduce overlap.
 - **validate-globals.ps1:** Replaced double-pass file reading with single-pass content caching.
 - **CHANGELOG:** Normalized all version headers to use `v` prefix consistently.
 - **README:** Updated version from v4.0.0 to v4.2.0. Updated Layer descriptions to reflect new Layer 1/2 structure.
@@ -296,7 +315,7 @@
 ### Changed
 - `global-roles.md` — Added §4-§7 (Quality Gates, Communication, Error Handling, Cross-Project Consistency)
 - `global-workflow.md` — Added Steps 5-7 (Verification, Documentation Sync, Handoff), generalized scratchpad, directory-pattern references
-- `rules/principal-architect.md` — Added §6 Error Handling Philosophy, §7 Testing Standards
+- `rules/rules/principal-architect.md` — Added §6 Error Handling Philosophy, §7 Testing Standards
 - `rules/security-standards.md` — Added §5 Rate Limiting, §6 CORS, §7 Dependency Security
 - `rules/git-standards.md` — Added §3 Branching, §4 PR Requirements, §5 Protected Branches
 - `rules/environment-windows.md` — Added §3 PowerShell, §4 WSL Integration

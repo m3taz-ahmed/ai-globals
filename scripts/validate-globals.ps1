@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.8.0
+# AI Globals Validation Script (PowerShell) v4.9.0
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -6,7 +6,8 @@ param(
     [switch]$DryRun,
     [switch]$GenerateManifest,
     [switch]$Force,
-    [switch]$Fix
+    [switch]$Fix,
+    [switch]$Interactive
 )
 
 $GlobalPath = $PSScriptRoot | Split-Path
@@ -16,10 +17,27 @@ if (-not $GlobalPath -or -not (Test-Path -LiteralPath $GlobalPath)) {
     exit 1
 }
 
+# Fuzzy Match Helper
+function Get-FuzzyMatch($Target, $List) {
+    # 1. Exact match
+    if ($List -contains $Target) { return $Target }
+    
+    # 2. Case-insensitive basename match
+    $TargetBase = [System.IO.Path]::GetFileName($Target)
+    $Match = $List | Where-Object { [System.IO.Path]::GetFileName($_) -eq $TargetBase } | Select-Object -First 1
+    if ($Match) { return $Match }
+
+    # 3. Fuzzy search (partial match)
+    $Match = $List | Where-Object { $_ -like "*$TargetBase*" } | Select-Object -First 1
+    if ($Match) { return $Match }
+
+    return $null
+}
+
 $RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
 $RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
 
-Write-Host "Starting AI Globals Validation v4.8.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.9.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ScannedCount = 0; $SkippedCount = 0; $ErrorCount = 0; $WarningCount = 0; $FixedCount = 0
 
@@ -116,40 +134,63 @@ foreach ($Entry in $FileData.GetEnumerator()) {
     }
 
     # 3. Secret Scanner
-    # Constructed dynamically to avoid literal curly braces confusing IDE syntax highlighters
     $SecretRegex = '(?i)(password|api_key|secret|token|private_key|ssh-rsa|BEGIN\s+RSA\s+PRIVATE)\s*[:=]\s*[\x22\x27]?([a-zA-Z0-9\/\+]' + [char]123 + '20,' + [char]125 + ')'
     if ($Content -match $SecretRegex) {
         Write-Error "Potential SECRET detected in ${FileName}: $($Matches[0])"
         $ErrorFound = $true; $ErrorCount++
     }
 
-
-    # 4. H1 Title
-    if ($Content -notmatch "^# ") {
+    # 4. H1 Title (Support Markdown # and HTML <h1>)
+    if ($Content -notmatch "(?m)^#\s+.+" -and $Content -notmatch "(?i)<h1>.+</h1>") {
         Write-Error "Missing H1 title in $FileName"
         $ErrorFound = $true; $ErrorCount++
     }
 
-    # 5. Cross-Reference Self-Healing
+    # 5. Cross-Reference Self-Healing (Enhanced with Fuzzy Matching & Interaction)
     $Refs = [regex]::Matches($Content, "([\w\-\./]+\.md)\s+[§S]\s*(\d+(?:\.\d+)?)")
     foreach ($Ref in $Refs) {
-        $TargetFile = $Ref.Groups[1].Value.Replace("/", "\")
+        $RawTargetFile = $Ref.Groups[1].Value
+        $TargetFile = $RawTargetFile.Replace("/", "\")
         $SectionNum = $Ref.Groups[2].Value
         
-        $ResolvedPath = if ($GlobalHeaders.ContainsKey($TargetFile)) { $TargetFile }
-                        else { ($GlobalHeaders.Keys | Where-Object { $_ -like "*\$TargetFile" -or $_ -eq $TargetFile }) | Select-Object -First 1 }
+        $ResolvedPath = Get-FuzzyMatch $TargetFile $GlobalHeaders.Keys
 
         if (-not $ResolvedPath) {
             Write-Error "Broken Reference in ${FileName}: Target '$TargetFile' not found."
             $ErrorFound = $true; $ErrorCount++
         } elseif ($GlobalHeaders[$ResolvedPath] -notcontains $SectionNum) {
-            Write-Error "Broken Reference in ${FileName}: Section '§$SectionNum' not found in '$ResolvedPath'."
-            $ErrorFound = $true; $ErrorCount++
+            # Fuzzy match for section header (if SectionNum is slightly off, e.g. 1.1 instead of 1)
+            $NearMatch = $GlobalHeaders[$ResolvedPath] | Where-Object { $_ -like "$SectionNum*" -or $SectionNum -like "$_*" } | Select-Object -First 1
+            
+            if ($Fix -and $NearMatch) {
+                $ShouldApply = $true
+                if ($Interactive) {
+                    $choice = Read-Host "Found broken section §$SectionNum in $FileName (referencing $ResolvedPath). Suggesting fix to §$NearMatch. Apply? [Y/N]"
+                    if ($choice -ne 'Y') { $ShouldApply = $false }
+                }
+                
+                if ($ShouldApply) {
+                    $Content = $Content.Replace("$RawTargetFile §$SectionNum", "$RawTargetFile §$NearMatch")
+                    $FileModified = $true; $FixedCount++
+                    Write-Host "Healed section: §$SectionNum -> §$NearMatch in $FileName" -ForegroundColor Gray
+                }
+            } else {
+                Write-Error "Broken Reference in ${FileName}: Section '§$SectionNum' not found in '$ResolvedPath'."
+                $ErrorFound = $true; $ErrorCount++
+            }
         } elseif ($Fix -and $TargetFile -ne $ResolvedPath) {
-            # Auto-Fix Path (e.g. anti-patterns.md -> rules\anti-patterns.md)
-            $Content = $Content.Replace("$TargetFile §$SectionNum", "$ResolvedPath §$SectionNum")
-            $FileModified = $true; $FixedCount++
-            Write-Host "Healed link: $TargetFile -> $ResolvedPath in $FileName" -ForegroundColor Gray
+            # Auto-Fix Path
+            $ShouldApply = $true
+            if ($Interactive) {
+                $choice = Read-Host "Found broken path '$TargetFile' in $FileName. Suggesting fix to '$ResolvedPath'. Apply? [Y/N]"
+                if ($choice -ne 'Y') { $ShouldApply = $false }
+            }
+
+            if ($ShouldApply) {
+                $Content = $Content.Replace($RawTargetFile, $ResolvedPath.Replace("\", "/"))
+                $FileModified = $true; $FixedCount++
+                Write-Host "Healed path: $TargetFile -> $ResolvedPath in $FileName" -ForegroundColor Gray
+            }
         }
     }
 
@@ -195,7 +236,7 @@ foreach ($Entry in $FileData.GetEnumerator()) {
 
 # 7. Version Consistency
 $VersionPattern = '(\d+\.\d+\.\d+)'
-$ReadmeVersion = if ((Get-Content "$GlobalPath\README.md" -Raw -Encoding UTF8) -match "Sovereignty\s*\(v?$VersionPattern\)") { $Matches[1] } else { "NF" }
+$ReadmeVersion = if ((Get-Content "$GlobalPath\README.md" -Raw -Encoding UTF8) -match "badge/.*?-$VersionPattern") { $Matches[1] } else { "NF" }
 $ChangelogVersion = if ((Get-Content "$GlobalPath\CHANGELOG.md" -Raw -Encoding UTF8) -match "(?m)^##\s*\[v?$VersionPattern\]") { $Matches[1] } else { "NF" }
 $ScriptVersion = if ((Get-Content "$GlobalPath\scripts\validate-globals.ps1" -Raw -Encoding UTF8) -match "Validation.*?v(\d+\.\d+\.\d+)") { $Matches[1] } else { "NF" }
 
@@ -203,8 +244,9 @@ $Versions = @($ReadmeVersion, $ChangelogVersion, $ScriptVersion) | Where-Object 
 if ($Versions.Count -ne 1) { Write-Error "Version Mismatch! README=$ReadmeVersion, CL=$ChangelogVersion, Script=$ScriptVersion"; $ErrorCount++ }
 else { Write-Host "Version: $($Versions -join '')" -ForegroundColor Green }
 
-# 8. Manifest Update
-if (-not $DryRun -and $ErrorCount -eq 0) {
+# 8. Manifest Update (Automatic regeneration after fixes)
+if (-not $DryRun -and ($ErrorCount -eq 0 -or $Fix)) {
+    Write-Host "Updating integrity.manifest..." -ForegroundColor Cyan
     $ManifestOutput = $NewManifest.Keys | Sort-Object | ForEach-Object { "$($NewManifest[$_])  $_" }
     [System.IO.File]::WriteAllLines($ManifestPath, $ManifestOutput, [System.Text.UTF8Encoding]::new($false))
 }

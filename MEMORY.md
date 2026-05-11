@@ -71,7 +71,7 @@
 - Added "Surgical Test" mandate to reduce testing overhead.
 
 #### Security (Audit-Driven Upgrades)
-- Added `security-standards.md §8`.
+- Added `rules/security-standards.md §8`.
 - Established "Breaking Change Impact Analysis" as the gate for major version jumps.
 - Formalized the "Speculative Tech" vs. "Production-Ready" branch policy.
 
@@ -322,7 +322,7 @@
 - `global-workflow.md`: Added routing for `06-maintenance.md` and `07-security-audit.md`.
 
 #### Rules Upgraded (3 files)
-- `security-standards.md`: Added §6 JWT & Session Security, §7 Cloud & Infrastructure (AWS/Azure).
+- `rules/security-standards.md`: Added §6 JWT & Session Security, §7 Cloud & Infrastructure (AWS/Azure).
 - `performance-standards.md`: Added §1 Database Partitioning, §2 L1/L2 Caching, §4 Critical CSS.
 - `code-quality.md`: Added explicit naming for DTOs, Actions, and Services.
 
@@ -370,7 +370,7 @@
 
 #### Rules Upgraded (4 files)
 - `principal-architect.md`: Added §6 Error Handling Philosophy, §7 Testing Standards.
-- `security-standards.md`: Added §5 Rate Limiting, §6 CORS & Headers, §7 Dependency Security.
+- `rules/security-standards.md`: Added §5 Rate Limiting, §6 CORS & Headers, §7 Dependency Security.
 - `git-standards.md`: Added §3 Branching Strategy, §4 PR Requirements, §5 Protected Branches.
 - `environment-windows.md`: Added §3 PowerShell Best Practices, §4 WSL Integration.
 
