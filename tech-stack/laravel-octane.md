@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON backend scaling, API performance tuning, Laravel deployment, Octane configuration.
-> **SCOPE:** Laravel 12/13 with FrankenPHP, RoadRunner, or Swoole.
+> **SCOPE:** Laravel 12/13 with FrankenPHP, RoadRunner, or Swoole. Caching patterns: ref `rules/caching-standards.md`.
 
 ## 1. Driver Selection Matrix
 

@@ -1,4 +1,4 @@
-# ?? AI Global OS
+# AI Global OS
 
 <div align="center">
   <img src="logo.png" width="160" alt="AI Global OS Logo">
@@ -6,7 +6,7 @@
   <p><b>The Sovereign Architectural Engine for Autonomous AI Agents.</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-4.7.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.6.0">
+    <img src="https://img.shields.io/badge/Version-4.7.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.7.1">
     <img src="https://img.shields.io/badge/Status-Self--Healing-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="Status: Self-Healing">
     <img src="https://img.shields.io/badge/Architecture-Sovereign-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="Architecture: Sovereign">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -28,7 +28,7 @@
 
 **This system solves the fundamental problem:** how do you guarantee that every AI response — across every project, every session, every agent — meets the same elite architectural standard?
 
-The answer is **Sovereignty**: a single, version-controlled source of truth that the AI *must* read before executing any task. Not a suggestion. A mandate.
+The answer is **Sovereignty (v4.7.1)**: a single, version-controlled source of truth that the AI *must* read before executing any task. Not a suggestion. A mandate.
 
 | Without AI Global OS | With AI Global OS |
 |---|---|
@@ -68,7 +68,7 @@ Operate as the Principal 10x Engineer & Chief Architect. Do not rely on prior as
 
 ---
 
-## ⚡ v4.7.0 Milestone: Bleeding-Edge Audit & Supply Chain Hardening
+## ⚡ v4.7.1 Milestone: Tech-Stack Quality Audit & Best-Practice Alignment
 
 Research-driven audit of all SaaS configuration standards against 2026 industry intelligence:
 

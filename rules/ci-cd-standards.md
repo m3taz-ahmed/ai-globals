@@ -1,8 +1,8 @@
-# Tech-Stack: CI/CD Standards
+# CI/CD Governance & Supply Chain Security
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON GitHub Actions configuration, deployment workflows, PR reviews, supply chain security.
-> **SCOPE:** CI/CD governance, Branch strategies, Supply Chain Security (SLSA), OIDC, Automated pipelines.
+> **SCOPE:** CI/CD governance, Branch strategies, Supply Chain Security (SLSA), OIDC, Automated pipelines (ref: `tech-stack/github-actions-ci.md`).
 
 ## 1. Branch Strategy & PRs
 
@@ -51,7 +51,7 @@
 
 ---
 
-## ✅ CI/CD STANDARDS COMPLIANCE CHECK (Mandatory)
+## ✅ CI/CD GOVERNANCE COMPLIANCE CHECK (Mandatory)
 - [ ] **Governance:** Are branch protection rules active enforcing tests and approvals?
 - [ ] **Supply Chain:** Are all third-party Actions pinned by full commit SHA (not tags)?
 - [ ] **OIDC:** Is keyless authentication configured for all CI/CD → cloud interactions?

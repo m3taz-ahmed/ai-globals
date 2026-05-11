@@ -1,8 +1,8 @@
-# Tech-Stack: Caching Standards
+# Caching Standards & Topology
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON performance optimization, cache implementation, state management, Redis configuration.
-> **SCOPE:** L1/L2 Caching, Redis 7, Octane Cache, Cache Topology & Resilience.
+> **SCOPE:** L1/L2 Caching, Redis 7 (ref: `tech-stack/redis-7.md`), Octane Cache (ref: `tech-stack/laravel-octane.md`), Cache Topology & Resilience.
 
 ## 1. Caching Architecture & Topology
 

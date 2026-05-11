@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON caching implementation, rate limiting, session management, job queues.
-> **SCOPE:** Redis 7 patterns, ElastiCache cluster mode integration.
+> **SCOPE:** Redis 7 patterns, ElastiCache cluster mode integration. Caching topology: ref `rules/caching-standards.md`.
 
 ## 1. Data Structures & Usage
 - Use **Strings** for basic key-value caching (e.g., session state, serialized objects).

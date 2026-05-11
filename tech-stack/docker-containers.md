@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON deployment setup, local environment creation, CI/CD pipeline building.
-> **SCOPE:** Docker for SaaS, Multi-stage builds, PHP 8.4/8.5, FrankenPHP Octane, Node.js.
+> **SCOPE:** Docker for SaaS, Multi-stage builds, PHP 8.4/8.5, FrankenPHP Octane, Node.js. CI/CD: ref `rules/ci-cd-standards.md`.
 
 ## 1. Build Optimization
 - ALWAYS use Multi-stage Dockerfiles. Build assets in one stage (Node.js) and copy only the artifacts to the production image (PHP/FrankenPHP).

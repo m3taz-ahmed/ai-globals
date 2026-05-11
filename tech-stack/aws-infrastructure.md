@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON cloud architecture, infrastructure provisioning, Terraform module updates.
-> **SCOPE:** AWS ECS, ALB, RDS Aurora, ElastiCache, S3, IAM.
+> **SCOPE:** AWS ECS, ALB, RDS Aurora, ElastiCache, S3, IAM. IaC: ref `tech-stack/terraform-iac.md`. DevOps: ref `rules/devops-standards.md`.
 
 ## 1. Compute & Networking
 - Deploy applications to **ECS Fargate** to abstract underlying EC2 management.

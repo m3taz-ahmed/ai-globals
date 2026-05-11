@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON database migrations, query optimization, backend data modeling.
-> **SCOPE:** PostgreSQL 17 for SaaS, Aurora Serverless v2 patterns.
+> **SCOPE:** PostgreSQL 17 for SaaS, Aurora Serverless v2 patterns. Scaling: ref `rules/database-scaling.md`.
 
 ## 1. Data Modeling & Types
 - Leverage `JSONB` for schema-less attributes, but prefer relational columns for highly queried or indexed fields.

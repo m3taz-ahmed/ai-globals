@@ -1,8 +1,8 @@
-# Tech-Stack: DevOps Standards
+# DevOps Standards & Infrastructure Resilience
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON deployment planning, disaster recovery setup, infrastructure changes, platform engineering.
-> **SCOPE:** Containerization, Progressive Delivery, Chaos Engineering, Self-Healing Infrastructure, GitOps.
+> **SCOPE:** Containerization (ref: `tech-stack/docker-containers.md`), Progressive Delivery, Chaos Engineering, Self-Healing Infrastructure, GitOps, IaC (ref: `tech-stack/terraform-iac.md`).
 
 ## 1. Deployment & Infrastructure
 

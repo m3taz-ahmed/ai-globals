@@ -31,6 +31,11 @@ Rules are loaded in a strict priority order to minimize context window usage:
 | `saas-standards.md` | SaaS | Multi-tenancy decision matrix, billing core |
 | `llm-behavioral-guidelines.md` | Behavior | Expanded self-tests for behavioral compliance |
 | `environment-windows.md` | DevEnv | Windows/WSL/PowerShell compatibility rules |
+| `caching-standards.md` | Caching | L1/L2 topology, Redis HA, stampede prevention, serialization |
+| `ci-cd-standards.md` | CI/CD | SLSA Level 3, OIDC keyless auth, SBOM, supply chain security |
+| `database-scaling.md` | Database | PG17 tuning, read replicas, connection pooling, vacuum strategy |
+| `devops-standards.md` | DevOps | Progressive delivery, chaos engineering, GitOps, self-healing |
+| `testing-standards.md` | Testing | Test pyramid, Pest/Vitest/Playwright, TDD, coverage enforcement |
 
 ## Contributing a New Rule
 

@@ -1,8 +1,8 @@
-# Tech-Stack: Database Scaling
+# Database Scaling & Operations
 
 > [!NOTE]
 > **TRIGGER:** LOAD ON database architecture, query optimization, high-load scaling, PostgreSQL tuning.
-> **SCOPE:** PostgreSQL 17, Aurora Serverless v2, Laravel 12/13, Advanced Indexing & Vacuuming.
+> **SCOPE:** PostgreSQL 17 (ref: `tech-stack/postgresql-17.md`), Aurora Serverless v2, Laravel 12/13, Advanced Indexing & Vacuuming.
 
 ## 1. Connection & Routing
 

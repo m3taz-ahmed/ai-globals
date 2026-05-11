@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.5.1
+# AI Globals Validation Script (PowerShell) v4.7.1
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]

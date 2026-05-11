@@ -2,6 +2,29 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.7.1] - 2026-05-11 - Tech-Stack Quality Audit & Best-Practice Alignment
+
+### Fixed
+- **rules/:** Corrected H1 titles in `caching-standards.md`, `ci-cd-standards.md`, `database-scaling.md`, `devops-standards.md`, and `testing-standards.md` from `Tech-Stack:` to proper domain-specific titles matching the rules directory convention.
+- **tech-stack/README.md:** Updated coverage table from 37 files to 60 files, added all 22 new tech-stack files to the category table, updated lazy-loading note.
+- **rules/README.md:** Added 5 new rule files (`caching-standards.md`, `ci-cd-standards.md`, `database-scaling.md`, `devops-standards.md`, `testing-standards.md`) to the file reference table.
+- **README.md:** Fixed version alt text (4.6.0 → 4.7.0) and added version tag to Sovereignty line for validation script compatibility.
+
+### Changed
+- **tech-stack/nextjs-15.md:** Expanded from 34 to 70 lines. Added Partial Prerendering (PPR), `after()` API, Turbopack dev server, `next.config.ts` enforcement, React 19 `use()` hook, `dynamicIO` config, and new compliance checks.
+- **rules/testing-standards.md:** Expanded from 33 to 82 lines. Added Vitest/React Testing Library patterns, Playwright Page Object Model, visual regression guidance, coverage enforcement tooling, snapshot management, frontend testing standards, and 4 new compliance checks.
+- **tech-stack/shadcn-ui.md:** Fixed deprecated CLI command (`shadcn-ui` → `shadcn`), added Shadcn CLI v2 init/diff/registry patterns, added new hard constraint for deprecated command, added compliance check.
+- **tech-stack/clerk-auth.md:** Expanded from 31 to 62 lines. Added Organizations and multi-tenancy (webhooks, membership roles, `<OrganizationSwitcher>`), session token management, `publicMetadata` vs `privateMetadata` safety, `auth()` vs `currentUser()` guidance, and 2 new compliance checks.
+- **tech-stack/zod-validation.md:** Updated for Zod v4. Added Zod Mini (`zod/v4/mini`), `z.interface()`, `z.file()`/`z.blob()`, improved `flatten()`/`format()` API, `errorMap`, Server Action typing, v3 migration constraint, and bundle size compliance check.
+- **tech-stack/typescript-5.md:** Added `using` keyword (Explicit Resource Management), `--isolatedDeclarations`, `--module NodeNext`, native TC39 decorators vs legacy `experimentalDecorators`, `Symbol.metadata`, and 2 new compliance checks.
+- **tech-stack/tanstack-query.md:** Replaced query key factory with `queryOptions()` pattern (v5 best practice). Added `useSuspenseQuery()` for Suspense integration, `useMutationState()`, and SSR/Suspense-specific hard constraints and compliance checks.
+- **tech-stack/framer-motion.md:** Added `motion` component (v11+ replacing `m`), React 19 support, `LazyMotion` with `domAnimation` for bundle optimization, Next.js SSR isolation rules (Client Component boundary), and SSR safety compliance check.
+
+### Added
+- Cross-references added between related rule and tech-stack files: `caching-standards.md` ↔ `redis-7.md`/`laravel-octane.md`, `database-scaling.md` ↔ `postgresql-17.md`, `devops-standards.md` ↔ `docker-containers.md`/`terraform-iac.md`, `ci-cd-standards.md` ↔ `github-actions-ci.md`, and reverse references.
+
+---
+
 ## [v4.7.0] - 2026-05-10 - Bleeding-Edge Audit & Supply Chain Hardening
 
 ### Changed
