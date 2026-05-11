@@ -1,9 +1,9 @@
-# Security & Cyber Resilience (OWASP Top 10)
+# Security & Cyber Resilience (OWASP Top 10 & OWASP 2026 Agentic)
 > [!NOTE]
-> **TRIGGER:** LOAD ON API DESIGN, AUTHENTICATION, OR DATABASE SCHEMA TASKS.
+> **TRIGGER:** LOAD ON API DESIGN, AUTHENTICATION, DATABASE SCHEMA, OR AI AGENT TASKS.
 > **SCOPE:** PRODUCTION-GRADE SECURITY STANDARDS.
 
-- **Mindset:** Implement "Zero-Trust" architecture. Never assume an internal request is safe.
+- **Mindset:** Implement "Zero-Trust" & "Identity-First" architecture. Never assume an internal request or AI agent is safe.
 
 ## 1. DATA PROTECTION
 - **Encryption at Rest:** Sensitive database fields MUST be encrypted using Laravel's encryption or database-level encryption.
@@ -40,7 +40,15 @@
 
 ---
 
-## 8. DEPENDENCY EVOLUTION & AUDIT GATES
+## 8. AGENTIC AI SECURITY (OWASP 2026)
+- **Agentic Top 10:** Adhere strictly to the OWASP Top 10 for Agentic Applications (2026).
+- **Goal Hijacking Prevention:** Sanitize all external prompts to prevent Agent Goal Hijacking and Prompt Injection.
+- **Inter-Agent Communication:** All machine-to-machine (M2M) and inter-agent API calls MUST be mutually authenticated (mTLS) and strictly scoped.
+- **LLM Output Validation:** Treat LLM outputs as untrusted user input. Enforce strict JSON Schema validation before processing AI responses.
+
+---
+
+## 9. DEPENDENCY EVOLUTION & AUDIT GATES
 - **Audit-Driven Upgrades:** Avoid hard-pinning core frameworks to allow for security patches. However, moving to a new **MAJOR** version (e.g., Laravel 11→12, Tailwind 3→4) requires a mandatory "Breaking Change Impact Analysis".
 - **Verified Window:** Prioritize versions within the "LTS" or "Stable" window.
 - **Speculative Tech:** Rules for tech marked `[!SPECULATIVE]` must only be applied to research branches or explicitly approved experimental projects. Never merge speculative standards into the `main` production branch.

@@ -31,7 +31,7 @@ Log::error('Invoice creation failed', [
 ```
 
 - **Sensitive data prohibition:** NEVER log passwords, API keys, tokens, credit card numbers, or raw PII. Mask or omit them.
-- **Correlation IDs:** For request tracing across services, attach a unique `request_id` (UUID) to every log entry within a single HTTP request or job execution. Use middleware to generate and propagate it.
+- **Distributed Tracing (OTel):** Use **OpenTelemetry (OTel)** with W3C Trace Context to automatically propagate `trace_id` and `span_id` across all microservices, queues, and API boundaries. Never rely on proprietary APM agents if OTel is supported natively.
 
 ## 2. APPLICATION MONITORING
 
@@ -60,10 +60,9 @@ Log::error('Invoice creation failed', [
   - **Queue Processing Time:** Average time per job. Alert if > 60 seconds.
   - **Failed Jobs:** Count in `failed_jobs` table. Alert on any new failed job.
   - **Database Connections:** Active connection count. Alert if approaching pool limit.
-  - **Disk Usage:** Alert if > 85% on any mount point.
   - **Memory Usage:** PHP worker memory. Alert if consistently > 80% of limit.
 
-## 3. ERROR TRACKING
+## 3. OPEN TELEMETRY & ERROR TRACKING
 
 - **Use a dedicated error tracking service** (Sentry, Bugsnag, Flare, or equivalent) in all non-local environments.
 - **Configuration:**

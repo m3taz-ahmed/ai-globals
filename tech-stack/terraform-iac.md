@@ -11,13 +11,14 @@
 - Utilize data sources to reference existing infrastructure rather than hardcoding IDs.
 
 ## 2. State & Environment Management
-- ALWAYS use remote state storage. Configure an S3 backend with DynamoDB locking for concurrency control.
+- ALWAYS use remote state storage. **Native S3 Locking:** Use Terraform 1.10+ or OpenTofu's native S3 locking feature (strongly-consistent conditional writes) to remove the legacy DynamoDB requirement.
+- **State Encryption:** Utilize OpenTofu native state encryption or Terraform ephemeral values to prevent leaking secrets in state files.
 - Use Terragrunt to keep multi-environment configurations DRY (Don't Repeat Yourself) by inheriting common settings.
 - Avoid using Terraform Workspaces for separate environments; use separate directory structures or Terragrunt instead.
 
 ## 3. Workflow & Lifecycle
 - Define lifecycle rules (e.g., `prevent_destroy = true`) for stateful resources like RDS databases and S3 buckets containing user data.
-- Use the `terraform import` command to bring existing unmanaged resources under IaC control.
+- **Native Testing:** Use the native test framework (`terraform test` or `tofu test`) combined with `.tftest.hcl` files for unit testing modules before plans are generated.
 - Enforce the `plan -> apply` workflow via CI/CD, never from local machines for production environments.
 
 ## 4. Hard Constraints

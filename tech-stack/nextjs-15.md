@@ -8,6 +8,7 @@
 - Default to React Server Components (RSC). Only use `'use client'` when state, lifecycle hooks, or browser APIs are required.
 - Use Server Actions for data mutations instead of API routes where possible. Ensure actions validate input using Zod (ref: `zod-validation.md`).
 - Pass plain objects or simple primitives from Server Components to Client Components to avoid serialization errors.
+- **React Compiler:** Fully rely on the stable React Compiler. Eliminate manual `useMemo` and `useCallback` hooks to prevent code bloat.
 - Use React 19's `use()` hook to unwrap promises and contexts in Server Components for cleaner async data flow.
 
 ## 2. Partial Prerendering (PPR)
@@ -18,7 +19,7 @@
 ## 3. Routing & Data Fetching
 - Use Parallel Routes (`@folder`) for independent UI areas (e.g., sidebars, modals).
 - Use Intercepting Routes (`(..)folder`) for contextual views like feed image modals.
-- Leverage `fetch` with Next.js extended options (`next: { revalidate: 3600 }`) for Incremental Static Regeneration (ISR).
+- **Explicit Caching:** Abandon implicit fetch caching. Use the explicit `"use cache"` directive for functions and components to generate predictable cache keys (Next.js 15/16 standard).
 - Implement streaming using `loading.tsx` and React `<Suspense>` boundaries to improve Time to First Byte (TTFB).
 - Use the `after()` API for post-response work (analytics, logging, cache revalidation) that does not block the user response.
 

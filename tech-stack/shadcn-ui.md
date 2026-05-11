@@ -10,11 +10,11 @@
 - Customize themes heavily using CSS variables (`--primary`, `--radius`) in `globals.css`.
 - Support seamless Dark Mode using `next-themes` and Tailwind's `dark:` variant.
 
-## 2. Component Composition
+## 2. Component Composition & Blocks
 - Treat Shadcn files as a starting point; extend and modify them as project requirements evolve.
 - Maintain Accessibility (a11y) defaults provided by Radix UI primitives (e.g., keyboard navigation, ARIA attributes).
 - Use the `cn()` utility (clsx + tailwind-merge) for clean, dynamic class name resolution.
-- Use Shadcn's built-in component blocks and patterns (sidebar, charts, data-table) when available rather than building from scratch.
+- **Shadcn Blocks:** Leverage `npx shadcn@latest add blocks` to rapidly scaffold complex, pre-designed layouts (authentication forms, dashboards, charts) rather than assembling primitives manually.
 
 ## 3. CLI & Registry
 - Use `npx shadcn@latest add` (NOT `shadcn-ui@latest`) — the CLI was renamed to `shadcn`.
@@ -30,7 +30,7 @@
 - NEVER wrap Shadcn components in extra generic `div` tags just for spacing; use layout components.
 - NEVER strip Radix UI accessibility features (like `Dialog.Title` or `aria-describedby`).
 - ALWAYS run `npx shadcn@latest add <component>` rather than copy-pasting from the docs to ensure versions match.
-- NEVER use the deprecated `shadcn-ui` CLI command; use `shadcn` instead.
+- **React Compiler Safety:** Do not refactor inner Shadcn components using manual `useMemo`/`useCallback` unless explicitly proven to bypass React 19 Compiler constraints.
 
 ---
 

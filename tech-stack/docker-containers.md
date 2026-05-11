@@ -6,6 +6,8 @@
 
 ## 1. Build Optimization
 - ALWAYS use Multi-stage Dockerfiles. Build assets in one stage (Node.js) and copy only the artifacts to the production image (PHP/FrankenPHP).
+- **Automated Attestations:** Use Docker BuildKit to automatically generate SBOM and Provenance data (`--sbom=true --provenance=mode=max`) for all production images.
+- **Multi-Arch Builds:** Use `docker buildx` to output multi-arch images (`linux/amd64`, `linux/arm64`) to support local dev and Graviton4 production.
 - Optimize layer caching by copying `composer.json`/`package.json` and installing dependencies before copying the rest of the application code.
 - Implement strict `.dockerignore` files to prevent uploading `.git`, `node_modules`, and local `.env` files to the daemon.
 

@@ -17,7 +17,7 @@
 - Define a clear Hotfix workflow bypassing standard staging if absolutely necessary, but maintaining automated testing and requiring post-deployment verification.
 - Integrate dependency audits (`composer audit`, `npm audit`) directly into the CI pipeline, failing the build on critical/high vulnerabilities.
 - Enforce **Docker image scanning** (Trivy or Grype) in CI before pushing to ECR. Block deployments with critical CVEs.
-- Generate a **Software Bill of Materials (SBOM)** for every production build using `syft` or `trivy sbom` to maintain a complete inventory of all dependencies.
+- **SBOM Generation:** Generate a Software Bill of Materials (SBOM) using Docker BuildKit natively. Use `trivy` or `syft` only as secondary validation.
 
 ## 3. Supply Chain Security (SLSA Level 3)
 

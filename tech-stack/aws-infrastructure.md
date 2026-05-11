@@ -6,6 +6,7 @@
 
 ## 1. Compute & Networking
 - Deploy applications to **ECS Fargate** to abstract underlying EC2 management.
+- **Graviton4 (ARM64) First:** Set `runtimePlatform.cpuArchitecture` to `ARM64` for all tasks to leverage Graviton4 processors. This is the 2026 standard for superior price-to-performance.
 - Configure distinct Task Definitions for Web (Octane), Queue Workers (Horizon), and Schedulers.
 - Route traffic through an Application Load Balancer (ALB) configured with Target Groups, SSL termination (ACM), and strict Health Checks.
 - Configure ECS Auto-scaling based on CPU/Memory utilization or request counts.

@@ -1,7 +1,8 @@
 # Node.js 24 LTS Strict Standards
 
-## 1. TYPESCRIPT NATIVE
+## 1. TYPESCRIPT & ECMASCRIPT
 - **Direct Execution:** Run TypeScript natively using `node --experimental-strip-types`. No need for `ts-node`, `tsx`, or `esbuild` for development.
+- **Temporal API:** Completely abandon the legacy `Date` object. Use the new `Temporal` API for robust dates, times, and time zones (Native in Node 26, polyfill for Node 24).
 - **Limitations:** Type-stripping only — no `enum`, `namespace`, or `const enum`. Use string union types as alternatives.
 - **tsconfig:** Still required for editor support and strict type checking. Set `"target": "ES2024"`.
 
@@ -15,6 +16,7 @@
 - **Package Defaults:** `"type": "module"` is expected. Dual-publishing (CJS + ESM) only for library authors.
 
 ## 4. SECURITY & PERMISSIONS
+- **Cryptography:** Rely on OpenSSL 3.5 with security level 2 (Node 24+ defaults) for stricter cryptographic enforcement.
 - **Permission Model (Stable):** Use `--permission` (no longer experimental) to restrict file system (`--allow-fs-read`, `--allow-fs-write`) and network access.
 - **URLPattern:** Use the global `URLPattern` API for safe URL matching and routing instead of regex.
 

@@ -1,9 +1,9 @@
 # Laravel 13.x Strict Standards
-> [!SPECULATIVE] Laravel 13 is not yet released. Rules are based on community previews and announced roadmap. Verify against official release notes before applying.
+> [!IMPORTANT] Laravel 13 is STABLE (Released March 2026). Minimum requirement is PHP 8.3+.
 
-## 1. NATIVE TYPES & DTOs
-- **PHP 8.5 Native Types:** Rely entirely on PHP 8.5 native types; strip redundant validation rules if handled by DTOs/Value Objects.
-- **Data Objects:** Prefer typed Data Transfer Objects over raw arrays for inter-layer communication.
+## 1. NATIVE TYPES & ARCHITECTURE
+- **Native PHP Attributes:** Replace legacy array/property configurations with native PHP attributes across Models, Controllers, Jobs, and Listeners.
+- **Data Objects:** Prefer typed Data Transfer Objects (DTOs) over raw arrays for inter-layer communication, utilizing PHP 8.3/8.4+ typing.
 
 ## 2. CONTEXT API
 - **Tracing:** Utilize the native `Context` API deeply for logging and tracing across background jobs and requests.
@@ -14,6 +14,7 @@
 - **Zero Dead Providers:** Remove any service providers that are not actively used. Every provider adds boot overhead.
 
 ## 4. AI & LLM INTEGRATION
-- **Pipeline Routing:** If integrating AI, use standard Laravel pipeline routing for prompt engineering and vector DB interactions.
-- **Rate Limiting:** Apply separate rate limits for AI endpoints (token-based, not just request-based).
+- **Native Vector Search:** Utilize Laravel 13's native semantic/vector search capabilities (e.g., `whereVectorSimilarTo()`) instead of custom implementations.
+- **Passkey Authentication:** Enforce Laravel 13's native Passkey authentication for high-privilege AI administrative actions.
+- **Rate Limiting:** Apply separate token-based rate limits for AI endpoints.
 - **Streaming Responses:** Use Laravel's streaming response capabilities for LLM outputs to reduce time-to-first-token.

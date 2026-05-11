@@ -14,11 +14,11 @@
 - Add custom context and tags (e.g., `tenant_id`, `subscription_tier`) to aid debugging.
 - Ensure breadcrumbs (DB queries, HTTP requests, UI clicks) are actively recorded leading up to an exception.
 
-## 3. Performance & Alerts
-- Enable Sentry Performance Monitoring to track transactions and spans (e.g., slow database queries or API endpoints).
+## 3. Performance, Session Replay & AI
+- Enable Sentry Performance Monitoring and link it natively to OpenTelemetry spans to track database queries or API endpoints seamlessly.
+- **Session Replay:** Enable Session Replay with strict privacy masking (mask all text by default) to visually reproduce frontend errors.
+- **AI Autofix:** Utilize Sentry's AI root-cause analysis and Autofix pipelines to triage generic errors before manual engineering review.
 - Configure Issue Grouping rules to prevent alert fatigue from similar but distinct error messages.
-- Set up Alert Rules to notify the engineering team via Slack/Discord for new issues or spikes in error rates.
-- Implement the User Feedback widget on 500 error pages.
 
 ## 4. Hard Constraints
 - NEVER log Personally Identifiable Information (PII) or sensitive data (passwords, credit cards) to Sentry. Use SDK data scrubbers.

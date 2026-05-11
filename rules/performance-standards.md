@@ -4,10 +4,10 @@
 > **SCOPE:** N+1 PREVENTION, INDEXING, AND CACHING.
 
 ## 1. DATABASE PERFORMANCE
-- **N+1 Prevention:** Never execute queries inside loops. Use Eager Loading (`with()`).
+- **N+1 Prevention:** Never execute queries inside loops. Use Eager Loading (`with()`) and strict mode `Model::shouldBeStrict()`.
 - **Indexing:** Every column in a `WHERE`, `JOIN`, or `ORDER BY` clause MUST be indexed.
 - **Partitioning:** For tables exceeding 10M rows, implement database-level partitioning by date or ID range.
-- **Query Budgets:** No single query should exceed 100ms in production. Use `EXPLAIN` to optimize slow queries.
+- **Query Budgets:** No single query should exceed 50ms in production. Use `EXPLAIN ANALYZE` to optimize slow queries.
 
 ## 2. CACHING STRATEGY
 - **L1 Cache (In-Memory):** Use Laravel's `array` driver for request-lifecycle caching.
@@ -21,10 +21,11 @@
 - **Concurrency:** Configure multiple queue workers to handle high throughput.
 - **Throttling:** Use `RateLimited` jobs for external APIs to prevent 429 errors.
 
-## 4. FRONTEND OPTIMIZATION
-- **Asset Loading:** Use Vite for code-splitting and minification.
+## 4. FRONTEND & EDGE OPTIMIZATION
+- **Asset Loading:** Use Vite and Turbopack for code-splitting and minification.
 - **Critical CSS:** Inline critical CSS to improve First Contentful Paint (FCP).
-- **Lazy Loading:** Use native `loading="lazy"` for images and `wire:navigate` for fast page transitions.
+- **Edge Caching:** Push heavily read APIs to CDN Edge nodes using `Stale-While-Revalidate`.
+- **React Compiler:** Rely on React Compiler (Next.js 15+) for automatic memoization rather than manual `useMemo`.
 
 ## 5. LOGIC-LOGGING INTERLOCK
 - **Contextual Sequence:** When performing destructive parsing (e.g., PHP 8.3 `json_decode` with local consumption), the RAW payload MUST be logged *before* transformation if the logic fails. 

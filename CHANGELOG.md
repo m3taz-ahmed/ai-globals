@@ -2,6 +2,26 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.8.0] - 2026-05-11 - 2026 Bleeding-Edge Enterprise Architecture Audit
+
+### Changed
+- **rules/security-standards.md:** Integrated OWASP Top 10 for Agentic Applications (2026), adding standards for goal hijacking prevention, LLM output validation, and Identity-First zero-trust architecture.
+- **tech-stack/laravel-13.md:** Upgraded to stable release status, enforced PHP 8.3/8.4, and added Native Attributes and Vector Search capabilities.
+- **tech-stack/postgresql-17.md:** Enforced UUIDv7 for primary keys, BRIN indexing for time-series data, and updated 2026 memory tuning standards.
+- **tech-stack/nextjs-15.md:** Adopted React Compiler for automatic memoization and replaced `fetch` caching with the explicit `"use cache"` directive.
+- **tech-stack/tailwind-4.md:** Implemented OKLCH color defaults and mandated Container Queries.
+- **tech-stack/nodejs-24.md:** Adopted Temporal API for date handling and enforced OpenSSL 3.5 cryptographic standards.
+- **tech-stack/aws-infrastructure.md:** Mandated ARM64/Graviton4 architecture for ECS Fargate for 2026 performance and cost standards.
+- **tech-stack/docker-containers.md:** Required SBOM and Provenance attestations directly via Docker BuildKit. Added multi-arch building constraints.
+- **rules/ci-cd-standards.md:** Shifted SBOM generation native to BuildKit rather than post-build secondary tools.
+- **tech-stack/terraform-iac.md:** Enforced native S3 locking (removing DynamoDB), native state encryption, and native `terraform test` commands for IaC.
+- **rules/performance-standards.md:** Injected OpenTelemetry profiling, React Compiler edge optimization, and reduced max query budgets to 50ms.
+- **rules/observability-standards.md:** Integrated OpenTelemetry as the vendor-neutral 2026 observability standard with W3C Trace Context.
+- **tech-stack/shadcn-ui.md:** Added Shadcn blocks pattern scaffolding and React 19 Compiler safety constraints.
+- **tech-stack/sentry-tracking.md:** Upgraded standards to mandate Session Replay with privacy masking and Sentry AI root-cause Autofix.
+
+---
+
 ## [v4.7.1] - 2026-05-11 - Tech-Stack Quality Audit & Best-Practice Alignment
 
 ### Fixed
