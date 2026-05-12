@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.9.0
+# AI Globals Validation Script (PowerShell) v4.10.0
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -37,7 +37,7 @@ function Get-FuzzyMatch($Target, $List) {
 $RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
 $RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
 
-Write-Host "Starting AI Globals Validation v4.9.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.10.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ScannedCount = 0; $SkippedCount = 0; $ErrorCount = 0; $WarningCount = 0; $FixedCount = 0
 

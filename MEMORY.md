@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-05-12 — Artifacts Management Decision
+
+**Scope:** Standardizing the exclusion of local AI session artifacts.
+**Trigger:** User request during AI-Globals architectural planning.
+**Agent:** Antigravity (Gemini 3.1 Pro)
+
+### Actions Taken
+- Added `brain/` directory to `.gitignore` to prevent tracking of local Antigravity session artifacts.
+- Established a mandatory rule to ALWAYS add any newly generated workspace artifact folders to `.gitignore` automatically in future sessions.
+
+---
+
 ## 2026-05-09 — Self-Healing Sovereignty (v4.5.0)
 
 **Scope:** Resolution of cross-domain logical friction and implementation of automated healing.
@@ -403,3 +415,16 @@
 1. **Directory-pattern references over hardcoded paths** — global-workflow.md now reads `D:\server\.ai\rules\*` instead of listing individual files, making it resilient to file additions/renames.
 2. **[SPECULATIVE] headers** — unreleased tech versions are marked clearly so agents don't treat experimental features as production standards.
 3. **MEMORY.md excluded from git** — per `.gitignore`, because it contains per-project local state that shouldn't be committed to the global repo.
+
+## 2026-05-12 — AI-Globals Sovereignty Protocol & Architectural Core (v4.10.0)
+
+**Scope:** Architecting AI-Globals Enterprise Core & Rule Set Hardening
+**Trigger:** Manual — User Objective implementation
+**Agent:** Antigravity (Gemini 3 Flash)
+
+### Actions Taken
+- **`.gitignore` Update:** Added `brain/` directory to prevent tracking temporary Agentic AI local session states.
+- **Rule Core Addition (`rules/ai-integration-standards.md`):** Mandated Asynchronous AI Processing via Redis Queues, SSE streaming for one-way time-to-first-token optimization, Sliding Window context retention, and Semantic Caching similarity constraints.
+- **Tech-Stack Integration (`tech-stack/qdrant-rag.md`):** Established definitive standard for Qdrant vector database implementations covering dimensional metrics, Cosine distance functions, character chunk overlap controls, and tenant metadata isolation.
+- **Security Protocols Enhancement (`rules/security-standards.md`):** Mandated `UUIDv4` over integer ID sequences (`chatId`) to neutralize IDOR attacks, and enforced Token-Bucket Rate Limiting via Redis against EDoS vectors.
+- **System Verification:** Fully synchronized version definitions to `v4.10.0` across `README.md`, `README-AR.md`, `CHANGELOG.md`, and `validate-globals.ps1`, executing validation tests with 100% success and recalculating integrity manifest sha256 sums perfectly.

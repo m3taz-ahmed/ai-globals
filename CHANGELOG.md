@@ -2,6 +2,17 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.10.0] - 2026-05-12 - AI-Globals Enterprise Architectural Core
+
+### Added
+- **rules/ai-integration-standards.md:** New core architectural mandate enforcing Asynchronous AI Processing via Redis Queues, SSE streaming ($T_{TTFT}$ optimization), Sliding Window context compression, and Semantic Caching similarity checks.
+- **tech-stack/qdrant-rag.md:** Official technical standard for Qdrant vector database implementations covering collection dimensions, Cosine metric mapping, overlapping character chunking, and strict multi-tenant metadata filtering.
+
+### Changed
+- **rules/security-standards.md:** Injected mandatory protections for Agentic AI interfaces, specifically mandating `UUIDv4` over auto-incrementing integers (`chatId`) to eliminate IDOR vectors, and implementing Redis token-bucket Rate Limiting against Economic Denial of Sustainability (EDoS) attacks.
+
+---
+
 ## [v4.9.0] - 2026-05-11 - Sovereign Expansion & Bilingual Mastery
 
 ### Added
