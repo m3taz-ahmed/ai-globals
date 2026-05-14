@@ -2,6 +2,34 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.12.0] - 2026-05-14 - Laravel 13 & Filament v5 Enterprise Architect Activation
+
+### Added
+- **tech-stack/laravel-ai.md:** New canonical standard for the first-party `laravel/ai` SDK (stable, Laravel 13). Covers provider-agnostic LLM interface, RAG/vector search with `pgvector`, AI Agent scaffolding, EDoS rate limiting, streaming SSE responses, and Laravel MCP integration.
+
+### Changed
+- **tech-stack/filament-5.md:** Promoted from `[!SPECULATIVE]` to `[!NOTE] STABLE` (released January 2026). Rebuilt around Livewire v4 Islands architecture, deferred filter patterns, model-ID-only state binding, and mandatory 5-method Resource authorization.
+- **tech-stack/laravel-13.md:** Expanded to full production standard. Added PHP 8.4 recommendation, AI SDK integration mandate (`laravel/ai`), `Cache::touch()` and JSON:API resource patterns, Context API distributed tracing code example, and compliance checklist.
+
+### Research Basis
+- 5 targeted real-time web searches validating: Laravel 13 stable (March 2026), Filament v5 stable (January 2026, Livewire v4 Islands), Laravel AI SDK stable (first-party, provider-agnostic), PHP 8.4 property hooks/asymmetric visibility for DTOs, and FrankenPHP/Octane 2026 production patterns.
+
+---
+
+## [v4.11.0] - 2026-05-14 - Sovereign Architectural Auditing & Convergence
+
+### Added
+- **Inter-Agent Saga Reconciliation:** Established explicit collaboration handshake standards in `security-standards.md` and `global-workflow.md` requiring state machine tracking and validation upon subagent task delegation.
+- **Cache-Retry Interlocks:** Enforced custom HTTP/RPC tracking headers (`X-Cache-Lookup`, `X-Cache-Interlock`) in `caching-standards.md` to prevent cascading redundant retry requests on near-expiry stale cache resources.
+- **General File Mapping Scanning:** Extended `validate-globals.ps1` to parse and resolve general file link targets in addition to specific section cross-references.
+
+### Changed
+- **validate-globals.ps1:** Enhanced version consistency verification to enforce strict quad-parity across `README.md`, `README-AR.md`, `CHANGELOG.md`, and the validation script header.
+- **global-workflow.md:** Modernized speculative file loading examples to remove `laravel-13.md` as it is fully standard.
+- **Documentation:** Synchronized root English and Arabic documentation versions to **v4.11.0** showcasing convergence across the Analyst, System Design, Refactor, and Critic personas.
+
+---
+
 ## [v4.10.0] - 2026-05-12 - AI-Globals Enterprise Architectural Core
 
 ### Added

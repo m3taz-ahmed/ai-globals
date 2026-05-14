@@ -44,6 +44,7 @@
 - **Agentic Top 10:** Adhere strictly to the OWASP Top 10 for Agentic Applications (2026).
 - **Goal Hijacking Prevention:** Sanitize all external prompts to prevent Agent Goal Hijacking and Prompt Injection.
 - **Inter-Agent Communication:** All machine-to-machine (M2M) and inter-agent API calls MUST be mutually authenticated (mTLS) and strictly scoped.
+  - **Inter-Agent Collaboration Handshake:** Require strict state machine/Saga reconciliation verification upon delegating subtasks between subagents to prevent persistent multi-agent state fragmentation during parallel execution.
 - **LLM Output Validation:** Treat LLM outputs as untrusted user input. Enforce strict JSON Schema validation before processing AI responses.
 - **Secure Identifiers (UUIDv4 Mandate):** Never use auto-incrementing integers (`chatId`) for public-facing AI resources. Always use unpredictable `UUIDv4` strings to prevent Insecure Direct Object References (IDOR).
 - **Economic Denial of Sustainability (EDoS) & Rate Limiting:** Apply advanced rate limiting via Redis on all AI endpoints to prevent abusive API consumption and model cost exhaustion.

@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.10.0
+# AI Globals Validation Script (PowerShell) v4.11.0
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -37,7 +37,7 @@ function Get-FuzzyMatch($Target, $List) {
 $RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
 $RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
 
-Write-Host "Starting AI Globals Validation v4.10.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.11.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ScannedCount = 0; $SkippedCount = 0; $ErrorCount = 0; $WarningCount = 0; $FixedCount = 0
 
@@ -194,6 +194,42 @@ foreach ($Entry in $FileData.GetEnumerator()) {
         }
     }
 
+    # 5b. General File Reference Validation
+    $IgnoredFileRefs = @(
+        'monthely-maintenance-prompt.md',
+        'nuxt-4.md',
+        'bun-1.md',
+        'drizzle-orm.md',
+        '09-ai-review.md',
+        'mobile-standards.md',
+        'GEMINI.md',
+        'workflows\NN-name.md',
+        'tech-stack\xxx.md',
+        'verification-patterns.md',
+        'filename.md',
+        'bug_report.md',
+        'feature_request.md',
+        'tech_stack_request.md',
+        'PULL_REQUEST_TEMPLATE.md'
+    )
+    $FileRefs = [regex]::Matches($Content, "(?i)\b([\w\-\./]+\.md)\b")
+    foreach ($FileRef in $FileRefs) {
+        $RawTargetFile = $FileRef.Groups[1].Value
+        # Skip if it's followed by section markers, as that's handled above
+        $IndexAfter = $FileRef.Index + $FileRef.Length
+        if ($IndexAfter -lt $Content.Length -and $Content.Substring($IndexAfter) -match "^\s+[§S]\s*\d+") { continue }
+        
+        $TargetFile = $RawTargetFile.Replace("/", "\")
+        $BaseTargetFile = [System.IO.Path]::GetFileName($TargetFile)
+        if ($IgnoredFileRefs -contains $TargetFile -or $IgnoredFileRefs -contains $BaseTargetFile) { continue }
+
+        $ResolvedPath = Get-FuzzyMatch $TargetFile $GlobalHeaders.Keys
+        if (-not $ResolvedPath) {
+            Write-Error "Broken File Reference in ${FileName}: Target '$TargetFile' not found."
+            $ErrorFound = $true; $ErrorCount++
+        }
+    }
+
     # 6. Mojibake
     if ($Content -match '(\xC3\xA2\x80\x9C|\xC3\xA2\x80\x9D|\xE2\x80\x9C|\xE2\x80\x9D|\uFFFD)') {
         Write-Error "Encoding artifact (mojibake) found in $FileName."
@@ -237,11 +273,12 @@ foreach ($Entry in $FileData.GetEnumerator()) {
 # 7. Version Consistency
 $VersionPattern = '(\d+\.\d+\.\d+)'
 $ReadmeVersion = if ((Get-Content "$GlobalPath\README.md" -Raw -Encoding UTF8) -match "badge/.*?-$VersionPattern") { $Matches[1] } else { "NF" }
+$ReadmeArVersion = if ((Get-Content "$GlobalPath\README-AR.md" -Raw -Encoding UTF8) -match "badge/.*?-$VersionPattern") { $Matches[1] } else { "NF" }
 $ChangelogVersion = if ((Get-Content "$GlobalPath\CHANGELOG.md" -Raw -Encoding UTF8) -match "(?m)^##\s*\[v?$VersionPattern\]") { $Matches[1] } else { "NF" }
 $ScriptVersion = if ((Get-Content "$GlobalPath\scripts\validate-globals.ps1" -Raw -Encoding UTF8) -match "Validation.*?v(\d+\.\d+\.\d+)") { $Matches[1] } else { "NF" }
 
-$Versions = @($ReadmeVersion, $ChangelogVersion, $ScriptVersion) | Where-Object { $_ -ne "NF" } | Select-Object -Unique
-if ($Versions.Count -ne 1) { Write-Error "Version Mismatch! README=$ReadmeVersion, CL=$ChangelogVersion, Script=$ScriptVersion"; $ErrorCount++ }
+$Versions = @($ReadmeVersion, $ReadmeArVersion, $ChangelogVersion, $ScriptVersion) | Where-Object { $_ -ne "NF" } | Select-Object -Unique
+if ($Versions.Count -ne 1) { Write-Error "Version Mismatch! README=$ReadmeVersion, README-AR=$ReadmeArVersion, CL=$ChangelogVersion, Script=$ScriptVersion"; $ErrorCount++ }
 else { Write-Host "Version: $($Versions -join '')" -ForegroundColor Green }
 
 # 8. Manifest Update (Automatic regeneration after fixes)

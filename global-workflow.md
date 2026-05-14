@@ -43,7 +43,7 @@ Read ONLY when the task involves the relevant domain:
 Scan the local workspace's `composer.json` or `package.json` to detect the exact stack.
 **Strict Lazy Load:** SILENTLY READ ONLY the specific `.md` files from `./tech-stack/` that match the detected stack or the user's explicit request.
 **Do NOT** read unrelated tech-stack files.
-> **Speculative Files:** Files marked `[!SPECULATIVE]` (e.g., `php-8-5.md`, `laravel-13.md`, `filament-5.md`, `mysql-9-7.md`) should only be loaded when explicitly working with pre-release versions. Skip them by default to avoid applying unconfirmed standards.
+> **Speculative Files:** Files marked `[!SPECULATIVE]` (e.g., `php-8-5.md`, `filament-5.md`, `mysql-9-7.md`) should only be loaded when explicitly working with pre-release versions. Skip them by default to avoid applying unconfirmed standards.
 
 ## STEP 2: THINK (INTERNAL REASONING)
 Before responding, perform internal analysis:
@@ -51,8 +51,9 @@ Before responding, perform internal analysis:
 2. Check for security implications (OWASP Top 10), N+1 queries, and performance bottlenecks.
 3. **Anti-Pattern Cross-Check:** Verify your planned approach does NOT violate any constraint in `rules/anti-patterns.md`. If it does, redesign before proceeding.
 4. **External Integration Check:** If the task involves external APIs or webhooks, apply `rules/api-integration-standards.md` patterns (retry, circuit breaker, error handling).
-5. Plan your surgical code edits — identify exact files, line ranges, and dependencies.
-6. Consider the architectural trade-offs of your approach.
+5. **Inter-Agent Collaboration Check:** If delegating tasks to subagents, ensure strict Saga state machine synchronization and verification handshakes to maintain sovereign state integrity.
+6. Plan your surgical code edits — identify exact files, line ranges, and dependencies.
+7. Consider the architectural trade-offs of your approach.
 Only after completing this reasoning can you provide the final response.
 
 ## STEP 3: THE GOLDEN RULE (ASK FIRST)

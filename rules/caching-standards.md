@@ -21,6 +21,7 @@
 
 - Implement **Cache Warming** strategies for critical paths (e.g., warming the dashboard cache via a scheduled job after deployments or data migrations).
 - Prevent **Cache Stampedes** using atomic locking (`Cache::lock()`) when regenerating expensive cached data. Use probabilistic early expiration (PER) for ultra-high-traffic keys.
+- Establish **Cache-Retry Interlocks**: Inject deterministic `X-Cache-Lookup` and `X-Cache-Interlock` custom HTTP/RPC tracking headers to prevent cascading redundant retry requests on near-expiry stale cached resources.
 - Ensure **Tenant-Scoped Cache Isolation** to prevent cross-tenant data leaks. All multi-tenant cache keys MUST include the tenant identifier.
 - Implement **Event-Driven Cache Invalidation** (e.g., clearing the user profile cache when the `UserUpdated` event fires). Never rely solely on TTL for mutable data.
 - For large cached payloads (>1KB), apply **compression** (LZ4 or zstd) before storing in Redis to reduce memory footprint and network transfer.

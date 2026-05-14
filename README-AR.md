@@ -4,7 +4,7 @@
   <p><b>توقف عن السماح للذكاء الاصطناعي بكتابة كود "سباغيتي". حوله إلى مهندس برمجيات رئيسي (Principal Architect).</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/الإصدار-4.10.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.10.0">
+    <img src="https://img.shields.io/badge/الإصدار-4.12.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.12.0">
     <img src="https://img.shields.io/badge/الحالة-تصحيح_ذاتي-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
     <img src="https://img.shields.io/badge/المعمارية-سيادية-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
     <img src="https://img.shields.io/badge/الرخصة-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
@@ -100,17 +100,18 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 
 ---
 
-## 🔥 الإصدار 4.10.0: المخطط الهندسي للمؤسسات 2026
+## 🔥 الإصدار 4.12.0: المخطط الهندسي للمؤسسات 2026
 
 هذا النظام لا يدير الموجهات فحسب؛ بل يفرض أعلى مستويات هندسة البرمجيات الحديثة:
 
 - **تكامل سيادي للذكاء الاصطناعي:** دعم أصلي لتدفق البيانات عالي الإنتاجية عبر (SSE)، ذاكرة RAG محلية مخصصة عبر Qdrant، ضغط وحفظ السياق (Sliding Window)، وتمرير المهام الخلفية عبر Redis Queues.
+- **مصافحات تعاونية بين الوكلاء (Inter-Agent Handshakes):** ضوابط صارمة تفرض مزامنة وتتبع آلة الحالة (Saga Reconciliation) بين الوكلاء الفرعيين أثناء التنفيذ المتوازي لمنع انقسام حالة النظام.
 - **بنية تحتية من الجيل القادم:** PostgreSQL 17 (UUIDv7, BRIN)، AWS Graviton4 (ARM64)، و Docker SBOMs أصلية.
 - **واجهة أمامية متطورة:** Next.js 15 (`"use cache"`)، Tailwind CSS v4، وتفويضات وصول صارمة WCAG 2.2 AA.
-- **خلفية عالية النطاق:** Laravel 12/13 مع Octane (FrankenPHP) لأوقات استجابة أقل من المللي ثانية.
+- **خلفية عالية النطاق:** Laravel 12/13 مع Octane (FrankenPHP) مقترنة بأقفال إعادة المحاولة (Cache-Retry Interlocks) لمنع تدافع الطلبات على الكاش منتهي الصلاحية.
 - **قابلية ملاحظة عميقة:** OpenTelemetry (W3C Trace Context) وتتبع مدعوم بالذكاء الاصطناعي (Sentry Session Replay).
 - **واجهات تخاطب محصنة:** فرض مسارات تعريفية مشفرة بـ `UUIDv4` لمنع ثغرات (IDOR)، مقترنة بخوارزمية (Token-Bucket) عبر Redis لتحديد معدل الطلبات (Rate Limiting) وحماية النظام من هجمات الاستنزاف الاقتصادي (EDoS).
-- **بيانات التصحيح الذاتي:** نصوص `.ps1` مدمجة تحقق ديناميكياً من نزاهة القواعد، وتصلح المراجع المكسورة، وتمنع انحراف الإعدادات.
+- **بيانات التصحيح الذاتي:** نصوص `.ps1` مدمجة تتحقق ديناميكياً من نزاهة القواعد، تضمن تطابق إصدارات اللغتين الإنجليزية والعربية، تفحص روابط الملفات العامة، تصلح المراجع المكسورة، وتوفر وضعاً تفاعلياً للتصحيح الذاتي.
 
 ---
 
