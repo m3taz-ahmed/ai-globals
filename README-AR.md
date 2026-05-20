@@ -4,7 +4,7 @@
   <p><b>توقف عن السماح للذكاء الاصطناعي بكتابة كود "سباغيتي". حوله إلى مهندس برمجيات رئيسي (Principal Architect).</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/الإصدار-4.12.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.12.0">
+    <img src="https://img.shields.io/badge/الإصدار-4.13.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.13.0">
     <img src="https://img.shields.io/badge/الحالة-تصحيح_ذاتي-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
     <img src="https://img.shields.io/badge/المعمارية-سيادية-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
     <img src="https://img.shields.io/badge/الرخصة-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
@@ -92,15 +92,17 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 │   ├── 01-planning.md            # البوابات المعمارية والاستراتيجية
 │   ├── 02-execution.md           # حلقات التنفيذ الجراحية
 │   ├── 07-security-audit.md      # بروتوكول التقوية الأمنية
+│   ├── 10-saga-reconciliation.md # تنسيق ومزامنة الـ Saga
 │   └── ... (تصحيح الأخطاء، النشر، مراجعة الكود)
 │
 └── scripts/                      # 🔧 عمليات التصحيح الذاتي
-    └── validate-globals.ps1      # فحص العشوائية ومدقق النزاهة
+    ├── validate-globals.ps1      # مدقق النزاهة بـ PowerShell
+    └── validate-globals.py       # مدقق النزاهة متعدد المنصات بـ Python
 ```
 
 ---
 
-## 🔥 الإصدار 4.12.0: المخطط الهندسي للمؤسسات 2026
+## 🔥 الإصدار 4.13.0: المخطط الهندسي للمؤسسات 2026
 
 هذا النظام لا يدير الموجهات فحسب؛ بل يفرض أعلى مستويات هندسة البرمجيات الحديثة:
 
@@ -111,7 +113,7 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 - **خلفية عالية النطاق:** Laravel 12/13 مع Octane (FrankenPHP) مقترنة بأقفال إعادة المحاولة (Cache-Retry Interlocks) لمنع تدافع الطلبات على الكاش منتهي الصلاحية.
 - **قابلية ملاحظة عميقة:** OpenTelemetry (W3C Trace Context) وتتبع مدعوم بالذكاء الاصطناعي (Sentry Session Replay).
 - **واجهات تخاطب محصنة:** فرض مسارات تعريفية مشفرة بـ `UUIDv4` لمنع ثغرات (IDOR)، مقترنة بخوارزمية (Token-Bucket) عبر Redis لتحديد معدل الطلبات (Rate Limiting) وحماية النظام من هجمات الاستنزاف الاقتصادي (EDoS).
-- **بيانات التصحيح الذاتي:** نصوص `.ps1` مدمجة تتحقق ديناميكياً من نزاهة القواعد، تضمن تطابق إصدارات اللغتين الإنجليزية والعربية، تفحص روابط الملفات العامة، تصلح المراجع المكسورة، وتوفر وضعاً تفاعلياً للتصحيح الذاتي.
+- **بيانات التصحيح الذاتي:** نصوص برمجية مدمجة (`.ps1`/`.py`) للتحقق ديناميكياً من نزاهة القواعد، تضمن تطابق إصدارات اللغتين الإنجليزية والعربية، تفحص روابط الملفات العامة، تصلح المراجع المكسورة، وتوفر وضعاً تفاعلياً للتصحيح الذاتي.
 
 ---
 

@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.11.0
+# AI Globals Validation Script (PowerShell) v4.13.0
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -37,7 +37,7 @@ function Get-FuzzyMatch($Target, $List) {
 $RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
 $RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
 
-Write-Host "Starting AI Globals Validation v4.11.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.13.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ScannedCount = 0; $SkippedCount = 0; $ErrorCount = 0; $WarningCount = 0; $FixedCount = 0
 
@@ -276,9 +276,10 @@ $ReadmeVersion = if ((Get-Content "$GlobalPath\README.md" -Raw -Encoding UTF8) -
 $ReadmeArVersion = if ((Get-Content "$GlobalPath\README-AR.md" -Raw -Encoding UTF8) -match "badge/.*?-$VersionPattern") { $Matches[1] } else { "NF" }
 $ChangelogVersion = if ((Get-Content "$GlobalPath\CHANGELOG.md" -Raw -Encoding UTF8) -match "(?m)^##\s*\[v?$VersionPattern\]") { $Matches[1] } else { "NF" }
 $ScriptVersion = if ((Get-Content "$GlobalPath\scripts\validate-globals.ps1" -Raw -Encoding UTF8) -match "Validation.*?v(\d+\.\d+\.\d+)") { $Matches[1] } else { "NF" }
+$PyScriptVersion = if ((Get-Content "$GlobalPath\scripts\validate-globals.py" -Raw -Encoding UTF8) -match "Validation.*?v(\d+\.\d+\.\d+)") { $Matches[1] } else { "NF" }
 
-$Versions = @($ReadmeVersion, $ReadmeArVersion, $ChangelogVersion, $ScriptVersion) | Where-Object { $_ -ne "NF" } | Select-Object -Unique
-if ($Versions.Count -ne 1) { Write-Error "Version Mismatch! README=$ReadmeVersion, README-AR=$ReadmeArVersion, CL=$ChangelogVersion, Script=$ScriptVersion"; $ErrorCount++ }
+$Versions = @($ReadmeVersion, $ReadmeArVersion, $ChangelogVersion, $ScriptVersion, $PyScriptVersion) | Where-Object { $_ -ne "NF" } | Select-Object -Unique
+if ($Versions.Count -ne 1) { Write-Error "Version Mismatch! README=$ReadmeVersion, README-AR=$ReadmeArVersion, CL=$ChangelogVersion, Script=$ScriptVersion, PyScript=$PyScriptVersion"; $ErrorCount++ }
 else { Write-Host "Version: $($Versions -join '')" -ForegroundColor Green }
 
 # 8. Manifest Update (Automatic regeneration after fixes)

@@ -20,3 +20,5 @@ desktop.ini
 # Generated artifacts
 integrity.manifest
 brain/
+graphify-out/
+.agents/

@@ -2,6 +2,19 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.13.0] - 2026-05-20 - Multi-Agent Cross-Platform Validation & Saga Protocol
+
+### Added
+- **scripts/validate-globals.py:** New cross-platform Python implementation of the validation framework featuring regex + Shannon-entropy based secret scanning.
+- **workflows/10-saga-reconciliation.md:** Technical workflow specifying the Saga State Machine and handshake protocols for parallel subagents.
+
+### Changed
+- **scripts/validate-globals.ps1:** Upgraded to v4.13.0, incorporating validate-globals.py into the version parity checks.
+- **rules/security-standards.md:** Linked Section 8 (Inter-Agent Collaboration Handshake) to workflows/10-saga-reconciliation.md.
+- **Documentation:** Synchronized English (README.md) and Arabic (README-AR.md) versions to v4.13.0 with directory map updates.
+
+---
+
 ## [v4.12.0] - 2026-05-14 - Laravel 13 & Filament v5 Enterprise Architect Activation
 
 ### Added

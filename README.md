@@ -4,7 +4,7 @@
   <p><b>Stop letting AI write spaghetti code. Turn it into your Principal Architect.</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-4.12.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.12.0">
+    <img src="https://img.shields.io/badge/Version-4.13.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.13.0">
     <img src="https://img.shields.io/badge/Status-Self--Healing-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="Status: Self-Healing">
     <img src="https://img.shields.io/badge/Architecture-Sovereign-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="Architecture: Sovereign">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -90,15 +90,17 @@ AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context
 │   ├── 01-planning.md            # Architectural gating & strategy
 │   ├── 02-execution.md           # Surgical implementation loops
 │   ├── 07-security-audit.md      # Security hardening protocol
+│   ├── 10-saga-reconciliation.md # Saga coordination & reconciliation
 │   └── ... (Debugging, Deployment, Code Review)
 │
 └── scripts/                      # 🔧 Self-Healing Operations
-    └── validate-globals.ps1      # Entropy scanning & integrity validator
+    ├── validate-globals.ps1      # PowerShell integrity validator
+    └── validate-globals.py       # Cross-platform Python validator
 ```
 
 ---
 
-## 🔥 v4.12.0: The 2026 Enterprise Blueprint
+## 🔥 v4.13.0: The 2026 Enterprise Blueprint
 
 This OS doesn't just manage prompts; it enforces the highest echelons of modern software engineering:
 
@@ -109,7 +111,7 @@ This OS doesn't just manage prompts; it enforces the highest echelons of modern 
 - **High-Scale Backend:** Laravel 12/13 with Octane (FrankenPHP) paired with deterministic Cache-Retry Interlocks to prevent thundering-herd retries on expiring cache states.
 - **Deep Observability:** OpenTelemetry (W3C Trace Context) and AI-driven telemetry (Sentry Session Replay).
 - **Hardened Agentic Interfaces:** Strict enforcement of cryptographic `UUIDv4` resource paths to neutralize IDOR exploits, paired with Redis Token-Bucket Rate Limiting against Economic Denial of Sustainability (EDoS) attacks.
-- **Self-Healing Manifests:** Built-in `.ps1` scripts dynamically validate rule integrity, check bilingual version parity across English/Arabic baselines, scan general file mapping references, fix broken cross-references, and provide an interactive self-healing mode.
+- **Self-Healing Manifests:** Built-in validation scripts (`.ps1`/`.py`) dynamically validate rule integrity, check bilingual version parity across English/Arabic baselines, scan general file mapping references, fix broken cross-references, and provide an interactive self-healing mode.
 
 ---
 
