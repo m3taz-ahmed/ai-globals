@@ -13,7 +13,7 @@
 | 3 | **No success criteria** | "make it better" | "Done when the function passes existing unit tests and handles null input without throwing" |
 | 4 | **Over-permissive agent** | "do whatever it takes" | Explicit allowed actions list + explicit forbidden actions list |
 | 5 | **Emotional task description** | "it's totally broken, fix everything" | "Throws uncaught TypeError on line 43 when `user` is null" |
-| 6 | **Build-the-whole-thing** | "build my entire app" | Break into Prompt 1 (scaffold), Prompt 2 (core feature), Prompt 3 (polish) |
+| 6 | **Build-the-whole-thing** | "build my entire app" | Use Phased Execution (Template N): execute Phase 1, wait for approval before Phase 2 |
 | 7 | **Implicit reference** | "now add the other thing we discussed" | Always restate the full task — never reference "the thing we discussed" |
 
 ---

@@ -19,6 +19,7 @@ Full template library for Prompt Master. Read the relevant template when the use
 | [K — ComfyUI](#template-k--comfyui) | ComfyUI node-based image workflows |
 | [L — Prompt Decompiler](#template-l--prompt-decompiler) | Breaking down, adapting, or splitting existing prompts |
 | [M — Opus 4.7 Task Brief](#template-m--opus-4.7-task-brief) | Complex, multi-step, or agentic task on Claude Opus 4.7 |
+| [N — Phased Execution](#template-n--phased-execution) | Large projects requiring step-by-step human approval |
 
 ---
 
@@ -450,3 +451,30 @@ After each completed step: ✅ [what was done] — [file(s) affected]
 ```
 
 **When to use:** Opus 4.7 on any surface — claude.ai, API, Claude Code — when the task is complex, multi-file, ambiguous, or agentic. Not needed for simple one-shot tasks.
+
+---
+
+## Template N — Phased Execution
+
+*Use for very large or complex tasks (e.g., writing a long document, building a large application, comprehensive research) to prevent the AI from losing context, hallucinating, or going off-track. This template forces the AI to execute one phase at a time and wait for human approval.*
+
+```
+Objective: [Describe the overarching goal of the large project]
+
+To ensure high quality and prevent loss of focus, we will execute this project in [X] distinct phases.
+
+Phase 1: [Description of the first phase, e.g., Planning and Outline]
+Phase 2: [Description of the second phase, e.g., Core Structure / Draft]
+Phase 3: [Description of the third phase, e.g., Detailed Execution / Polish]
+[Add more phases as needed]
+
+CRITICAL RULE:
+You must ONLY execute Phase 1 right now. Do NOT begin Phase 2 or any subsequent phase.
+When you finish Phase 1, stop and ask: "Is this phase approved, or do you need changes before we move to Phase 2?"
+```
+
+**When to use:**
+- Writing long-form content (books, extensive reports)
+- Generating complex code architectures from scratch
+- Multi-stage analysis where later stages depend on early assumptions
+- Any time a single prompt results in the AI "forgetting" early instructions or producing overwhelming output.
