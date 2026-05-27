@@ -35,3 +35,6 @@ After completing a milestone, pause. Output a brief summary of what was achieved
 - **Use Placeholders:** Use comments like `// ... existing code ...` or `# ... existing methods ...` to represent parts of the file that remain unchanged.
 - **Strict Diffs:** Only output the specific function, class property, or HTML block being added, modified, or deleted. 
 - **Terse Explanations:** Keep non-code conversational text to an absolute minimum. Save tokens for the actual architecture and code logic.
+
+## 9. LOCAL SKILLS DELEGATION
+- **Mandatory Delegation:** Always cross-reference and execute available local `<skills>` (e.g., `tdd-workflows`, `subagent-driven-development`, `testing-qa`, `code-reviewer`) for complex implementations to ensure autonomous agents follow specific behavioral protocols rather than improvising.

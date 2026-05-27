@@ -71,6 +71,7 @@
 - **Dependency Audits:** Run `composer audit` and `npm audit` in CI/CD. Fail on HIGH/CRITICAL issues.
 - **NEVER** mix refactoring with feature work in the same commit/delivery.
 - **NEVER** output unchanged code — use placeholders like `// ... existing code ...` to save context.
+- **NEVER** attempt complex, multi-file execution without leveraging local skills like `subagent-driven-development` or `tdd-workflows`.
 
 ---
 

@@ -1,7 +1,10 @@
 # Phase 1: Planning & Architecture
 
-## 1. ASK FIRST PROTOCOL (THE GOLDEN RULE)
-NEVER generate large blocks of code for a new feature without clarifying all dimensions first. If requirements are vague, STOP and ask.
+## 1. SPEC TEASING (THE GOLDEN RULE)
+NEVER generate large blocks of code for a new feature without clarifying all dimensions first. If requirements are vague or underspecified, STOP and ask clarifying questions before writing any code. Force the user to lock in the specification.
+
+## 1.5. DIGESTIBLE CHUNKING
+Architectural outputs and implementation plans MUST be presented in small, readable chunks. Do not dump a massive, monolithic plan. Provide the high-level architecture and require explicit user sign-off before proceeding to detailed implementation steps.
 
 ## 2. CONTEXT & CONSTRAINTS MAPPING
 Establish the exact operating environment, hardware limits, expected data scale, and deployment targets before designing.
@@ -32,3 +35,6 @@ Before adding or upgrading any dependency:
 
 ## 7. ARCHITECTURAL OUTPUT
 Produce an implementation plan, logic flow, and necessary Migration/Schema definitions BEFORE logic coding begins.
+
+## 8. RED/GREEN TDD & SUBAGENT EXECUTION (SUPERPOWERS)
+Following the `obra/superpowers` methodology, structure your implementation plan to enforce Red/Green TDD (Test-Driven Development). Utilize subagent-driven development for executing isolated engineering tasks autonomously without deviating from the approved plan.

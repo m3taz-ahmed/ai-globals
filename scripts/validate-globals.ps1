@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.13.0
+# AI Globals Validation Script (PowerShell) v4.14.0
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -11,284 +11,357 @@ param(
 )
 
 $GlobalPath = $PSScriptRoot | Split-Path
-
 if (-not $GlobalPath -or -not (Test-Path -LiteralPath $GlobalPath)) {
     Write-Error "Invalid or empty global path: '$GlobalPath'. Ensure this script runs from within the .ai directory."
     exit 1
 }
 
 # Fuzzy Match Helper
-function Get-FuzzyMatch($Target, $List) {
-    # 1. Exact match
+function Get-FuzzyMatch {
+    param([string]$Target, [string[]]$List)
     if ($List -contains $Target) { return $Target }
-    
-    # 2. Case-insensitive basename match
     $TargetBase = [System.IO.Path]::GetFileName($Target)
     $Match = $List | Where-Object { [System.IO.Path]::GetFileName($_) -eq $TargetBase } | Select-Object -First 1
     if ($Match) { return $Match }
-
-    # 3. Fuzzy search (partial match)
     $Match = $List | Where-Object { $_ -like "*$TargetBase*" } | Select-Object -First 1
     if ($Match) { return $Match }
-
     return $null
 }
 
-$RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
-$RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
+function Get-RuleFiles {
+    param([string]$GlobalPath)
+    $RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
+    $RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
+    return $RuleFiles
+}
 
-Write-Host "Starting AI Globals Validation v4.13.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
-
-$ScannedCount = 0; $SkippedCount = 0; $ErrorCount = 0; $WarningCount = 0; $FixedCount = 0
-
-# 0. Load Integrity Manifest
-$Manifest = @{}
-$ManifestPath = Join-Path $GlobalPath "integrity.manifest"
-if (Test-Path $ManifestPath) {
-    Get-Content $ManifestPath | ForEach-Object {
-        if ($_ -match "^\s*([A-F0-9]{64})\s+(.+)$") {
-            $Manifest[$Matches[2].Trim()] = $Matches[1]
+function Get-IntegrityManifest {
+    param([string]$ManifestPath)
+    $Manifest = @{}
+    if (Test-Path $ManifestPath) {
+        Get-Content $ManifestPath | ForEach-Object {
+            if ($_ -match "^\s*([A-F0-9]{64})\s+(.+)$") {
+                $Manifest[$Matches[2].Trim()] = $Matches[1]
+            }
         }
     }
+    return $Manifest
 }
 
-# 1. Rule Propagation Check
-$CoreFiles = @("global-workflow.md", "global-roles.md") + (Get-ChildItem -Path "$GlobalPath\rules" -Filter "*.md" -File).FullName
-$ForceScan = $Force
-foreach ($CoreFile in $CoreFiles) {
-    $Rel = $CoreFile.Replace("$GlobalPath\", "")
-    $Hash = [BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.IO.File]::ReadAllBytes($CoreFile))) -replace '-', ''
-    if ($Manifest[$Rel] -ne $Hash) {
-        $ForceScan = $true
-        Write-Host "Core rule change detected in $Rel. Forcing full system scan..." -ForegroundColor Yellow
-        break
-    }
+function Get-FileHashHex {
+    param([string]$FilePath)
+    $Bytes = [System.IO.File]::ReadAllBytes($FilePath)
+    $Hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($Bytes)
+    return [BitConverter]::ToString($Hash) -replace '-', ''
 }
 
-$FileData = @{}
-$GlobalHeaders = @{}
-
-# Pass 1: Collect Data
-foreach ($File in $RuleFiles) {
-    $ContentBytes = [System.IO.File]::ReadAllBytes($File.FullName)
-    $CurrentHash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($ContentBytes)
-    $CurrentHashHex = [BitConverter]::ToString($CurrentHash) -replace '-', ''
-    $RelativeName = $File.FullName.Replace("$GlobalPath\", "")
-    
-    if (-not $ForceScan -and $Manifest.ContainsKey($RelativeName) -and $Manifest[$RelativeName] -eq $CurrentHashHex) {
-        $SkippedCount++
-        $Content = [System.Text.Encoding]::UTF8.GetString($ContentBytes)
-        $Matches_Headers = [regex]::Matches($Content, "(?m)^##\s+(\d+(?:\.\d+)?)\.?\s+(.+)$")
-        $Headers = @()
-        foreach ($m in $Matches_Headers) { $Headers += $m.Groups[1].Value.Trim() }
-        $GlobalHeaders[$RelativeName] = $Headers
-        continue
+function Test-CoreRules {
+    param([string]$GlobalPath, [hashtable]$Manifest)
+    $CoreFiles = @("global-workflow.md", "global-roles.md") + (Get-ChildItem -Path "$GlobalPath\rules" -Filter "*.md" -File).FullName
+    foreach ($CoreFile in $CoreFiles) {
+        $Rel = $CoreFile.Replace("$GlobalPath\", "")
+        $Hash = Get-FileHashHex $CoreFile
+        if ($Manifest[$Rel] -ne $Hash) {
+            Write-Host "Core rule change detected in $Rel. Forcing full system scan..." -ForegroundColor Yellow
+            return $true
+        }
     }
-
-    $Content = [System.Text.Encoding]::UTF8.GetString($ContentBytes)
-    $Matches_Headers = [regex]::Matches($Content, "(?m)^##\s+(\d+(?:\.\d+)?)\.?\s+(.+)$")
-    $Headers = @()
-    foreach ($m in $Matches_Headers) { $Headers += $m.Groups[1].Value.Trim() }
-    $GlobalHeaders[$RelativeName] = $Headers
-
-    $FileData[$RelativeName] = @{
-        Content  = $Content
-        FullName = $File.FullName
-        Hash     = $CurrentHashHex
-    }
+    return $false
 }
 
-$NewManifest = $Manifest.Clone()
-
-# Pass 2: Validation & Healing
-foreach ($Entry in $FileData.GetEnumerator()) {
-    $Content = $Entry.Value.Content
-    $FileName = $Entry.Key
-    $FilePath = $Entry.Value.FullName
-    $ErrorFound = $false; $FileModified = $false
-    $ScannedCount++
-
-    # 1. Line Endings (LF)
+function Test-LineEndings {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
     if ($Content -match "`r`n") {
-        if ($Fix) {
-            $Content = $Content -replace "`r`n", "`n"
-            $FileModified = $true; $FixedCount++
+        if ($ctx.Fix) {
+            $ctx.FixedCount++
             Write-Host "Fixed CRLF in $FileName" -ForegroundColor Gray
+            return $true, ($Content -replace "`r`n", "`n")
         } else {
             Write-Warning "CRLF detected in $FileName."
-            $WarningCount++
+            $ctx.WarningCount++
         }
     }
+    return $false, $Content
+}
 
-    # 2. UTF-8 BOM
-    $bytes = [System.IO.File]::ReadAllBytes($FilePath)
-    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
-        if ($Fix) {
-            $Content = $Content.TrimStart([char]0xFEFF)
-            $FileModified = $true; $FixedCount++
-            Write-Host "Stripped BOM in $FileName" -ForegroundColor Gray
-        } else {
-            Write-Warning "UTF-8 BOM detected in $FileName."
-            $WarningCount++
+function Test-Utf8Bom {
+    param([string]$FilePath, [string]$Content, [string]$FileName, [hashtable]$ctx)
+    if (Test-Path $FilePath) {
+        $fs = [System.IO.File]::OpenRead($FilePath)
+        $headerBytes = New-Object byte[] 3
+        $read = $fs.Read($headerBytes, 0, 3)
+        $fs.Close()
+        if ($read -eq 3 -and $headerBytes[0] -eq 0xEF -and $headerBytes[1] -eq 0xBB -and $headerBytes[2] -eq 0xBF) {
+            if ($ctx.Fix) {
+                $ctx.FixedCount++
+                Write-Host "Stripped BOM in $FileName" -ForegroundColor Gray
+                return $true, $Content.TrimStart([char]0xFEFF)
+            } else {
+                Write-Warning "UTF-8 BOM detected in $FileName."
+                $ctx.WarningCount++
+            }
         }
     }
+    return $false, $Content
+}
 
-    # 3. Secret Scanner
-    $SecretRegex = '(?i)(password|api_key|secret|token|private_key|ssh-rsa|BEGIN\s+RSA\s+PRIVATE)\s*[:=]\s*[\x22\x27]?([a-zA-Z0-9\/\+]' + [char]123 + '20,' + [char]125 + ')'
-    if ($Content -match $SecretRegex) {
-        Write-Error "Potential SECRET detected in ${FileName}: $($Matches[0])"
-        $ErrorFound = $true; $ErrorCount++
+function Test-Secrets {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
+    $SecretRegex = '(?i)(password|api_key|secret|token|private_key|ssh-rsa|BEGIN\s+RSA\s+PRIVATE)\s*[:=]\s*[\x22\x27]?([a-zA-Z0-9\/\+\-_=]' + [char]123 + '20,' + [char]125 + ')'
+    $Matches_Sec = [regex]::Matches($Content, $SecretRegex)
+    $ErrorFound = $false
+    foreach ($Match in $Matches_Sec) {
+        $Val = $Match.Groups[2].Value
+        $IsMock = $false
+        foreach ($Mock in @('placeholder', 'your_', 'secret_here', 'token_here', 'example', 'mysecret', 'dummy', 'xxxx')) {
+            if ($Val.ToLower().Contains($Mock)) { $IsMock = $true }
+        }
+        if (-not $IsMock) {
+            Write-Error "Potential SECRET detected in ${FileName}: $($Match.Value)"
+            $ctx.ErrorCount++
+            $ErrorFound = $true
+        }
     }
+    return $ErrorFound
+}
 
-    # 4. H1 Title (Support Markdown # and HTML <h1>)
+function Test-H1Title {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
     if ($Content -notmatch "(?m)^#\s+.+" -and $Content -notmatch "(?i)<h1>.+</h1>") {
         Write-Error "Missing H1 title in $FileName"
-        $ErrorFound = $true; $ErrorCount++
+        $ctx.ErrorCount++
+        return $true
     }
+    return $false
+}
 
-    # 5. Cross-Reference Self-Healing (Enhanced with Fuzzy Matching & Interaction)
+function Handle-BrokenSection {
+    param([string]$Content, [string]$RawTargetFile, [string]$ResolvedPath, [string]$SectionNum, [string]$FileName, [hashtable]$ctx)
+    $NearMatch = $ctx.GlobalHeaders[$ResolvedPath] | Where-Object { $_ -like "$SectionNum*" -or $SectionNum -like "$_*" } | Select-Object -First 1
+    if ($ctx.Fix -and $NearMatch) {
+        $ShouldApply = $true
+        if ($ctx.Interactive) {
+            $choice = Read-Host "Found broken section §$SectionNum in $FileName (referencing $ResolvedPath). Suggesting fix to §$NearMatch. Apply? [Y/N]"
+            if ($choice -ne 'Y') { $ShouldApply = $false }
+        }
+        if ($ShouldApply) {
+            $newContent = $Content.Replace("$RawTargetFile §$SectionNum", "$RawTargetFile §$NearMatch")
+            $ctx.FixedCount++
+            Write-Host "Healed section: §$SectionNum -> §$NearMatch in $FileName" -ForegroundColor Gray
+            return $true, $newContent, $false
+        }
+    }
+    Write-Error "Broken Reference in ${FileName}: Section '§$SectionNum' not found in '$ResolvedPath'."
+    $ctx.ErrorCount++
+    return $false, $Content, $true
+}
+
+function Test-CrossReferences {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
     $Refs = [regex]::Matches($Content, "([\w\-\./]+\.md)\s+[§S]\s*(\d+(?:\.\d+)?)")
+    $ErrorFound = $false; $FileModified = $false
     foreach ($Ref in $Refs) {
         $RawTargetFile = $Ref.Groups[1].Value
         $TargetFile = $RawTargetFile.Replace("/", "\")
         $SectionNum = $Ref.Groups[2].Value
-        
-        $ResolvedPath = Get-FuzzyMatch $TargetFile $GlobalHeaders.Keys
-
+        $ResolvedPath = Get-FuzzyMatch $TargetFile $ctx.GlobalHeaders.Keys
         if (-not $ResolvedPath) {
             Write-Error "Broken Reference in ${FileName}: Target '$TargetFile' not found."
-            $ErrorFound = $true; $ErrorCount++
-        } elseif ($GlobalHeaders[$ResolvedPath] -notcontains $SectionNum) {
-            # Fuzzy match for section header (if SectionNum is slightly off, e.g. 1.1 instead of 1)
-            $NearMatch = $GlobalHeaders[$ResolvedPath] | Where-Object { $_ -like "$SectionNum*" -or $SectionNum -like "$_*" } | Select-Object -First 1
-            
-            if ($Fix -and $NearMatch) {
-                $ShouldApply = $true
-                if ($Interactive) {
-                    $choice = Read-Host "Found broken section §$SectionNum in $FileName (referencing $ResolvedPath). Suggesting fix to §$NearMatch. Apply? [Y/N]"
-                    if ($choice -ne 'Y') { $ShouldApply = $false }
-                }
-                
-                if ($ShouldApply) {
-                    $Content = $Content.Replace("$RawTargetFile §$SectionNum", "$RawTargetFile §$NearMatch")
-                    $FileModified = $true; $FixedCount++
-                    Write-Host "Healed section: §$SectionNum -> §$NearMatch in $FileName" -ForegroundColor Gray
-                }
-            } else {
-                Write-Error "Broken Reference in ${FileName}: Section '§$SectionNum' not found in '$ResolvedPath'."
-                $ErrorFound = $true; $ErrorCount++
-            }
-        } elseif ($Fix -and $TargetFile -ne $ResolvedPath) {
-            # Auto-Fix Path
-            $ShouldApply = $true
-            if ($Interactive) {
-                $choice = Read-Host "Found broken path '$TargetFile' in $FileName. Suggesting fix to '$ResolvedPath'. Apply? [Y/N]"
-                if ($choice -ne 'Y') { $ShouldApply = $false }
-            }
-
-            if ($ShouldApply) {
+            $ctx.ErrorCount++; $ErrorFound = $true
+        } elseif ($ctx.GlobalHeaders[$ResolvedPath] -notcontains $SectionNum) {
+            $applied, $Content, $err = Handle-BrokenSection $Content $RawTargetFile $ResolvedPath $SectionNum $FileName $ctx
+            if ($applied) { $FileModified = $true }
+            if ($err) { $ErrorFound = $true }
+        } elseif ($ctx.Fix -and $TargetFile -ne $ResolvedPath) {
+            if (-not $ctx.Interactive -or (Read-Host "Found broken path '$TargetFile' in $FileName. Fix to '$ResolvedPath'? [Y/N]") -eq 'Y') {
                 $Content = $Content.Replace($RawTargetFile, $ResolvedPath.Replace("\", "/"))
-                $FileModified = $true; $FixedCount++
+                $FileModified = $true; $ctx.FixedCount++
                 Write-Host "Healed path: $TargetFile -> $ResolvedPath in $FileName" -ForegroundColor Gray
             }
         }
     }
+    return $FileModified, $Content, $ErrorFound
+}
 
-    # 5b. General File Reference Validation
-    $IgnoredFileRefs = @(
-        'monthely-maintenance-prompt.md',
-        'nuxt-4.md',
-        'bun-1.md',
-        'drizzle-orm.md',
-        '09-ai-review.md',
-        'mobile-standards.md',
-        'GEMINI.md',
-        'workflows\NN-name.md',
-        'tech-stack\xxx.md',
-        'verification-patterns.md',
-        'filename.md',
-        'bug_report.md',
-        'feature_request.md',
-        'tech_stack_request.md',
-        'PULL_REQUEST_TEMPLATE.md'
-    )
+function Test-FileReferences {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
+    $IgnoredFileRefs = @('monthely-maintenance-prompt.md','nuxt-4.md','bun-1.md','drizzle-orm.md','09-ai-review.md','mobile-standards.md','GEMINI.md','workflows\NN-name.md','tech-stack\xxx.md','verification-patterns.md','filename.md','bug_report.md','feature_request.md','tech_stack_request.md','PULL_REQUEST_TEMPLATE.md')
     $FileRefs = [regex]::Matches($Content, "(?i)\b([\w\-\./]+\.md)\b")
+    $ErrorFound = $false
     foreach ($FileRef in $FileRefs) {
         $RawTargetFile = $FileRef.Groups[1].Value
-        # Skip if it's followed by section markers, as that's handled above
         $IndexAfter = $FileRef.Index + $FileRef.Length
         if ($IndexAfter -lt $Content.Length -and $Content.Substring($IndexAfter) -match "^\s+[§S]\s*\d+") { continue }
-        
         $TargetFile = $RawTargetFile.Replace("/", "\")
         $BaseTargetFile = [System.IO.Path]::GetFileName($TargetFile)
         if ($IgnoredFileRefs -contains $TargetFile -or $IgnoredFileRefs -contains $BaseTargetFile) { continue }
-
-        $ResolvedPath = Get-FuzzyMatch $TargetFile $GlobalHeaders.Keys
+        $ResolvedPath = Get-FuzzyMatch $TargetFile $ctx.GlobalHeaders.Keys
         if (-not $ResolvedPath) {
             Write-Error "Broken File Reference in ${FileName}: Target '$TargetFile' not found."
-            $ErrorFound = $true; $ErrorCount++
+            $ctx.ErrorCount++; $ErrorFound = $true
         }
     }
-
-    # 6. Mojibake
-    if ($Content -match '(\xC3\xA2\x80\x9C|\xC3\xA2\x80\x9D|\xE2\x80\x9C|\xE2\x80\x9D|\uFFFD)') {
-        Write-Error "Encoding artifact (mojibake) found in $FileName."
-        $ErrorFound = $true; $ErrorCount++
-    }
-
-    # 7. Newline at end of file
-    if ($Content -notmatch "\n$") {
-        if ($Fix) {
-            $Content += "`n"
-            $FileModified = $true; $FixedCount++
-            Write-Host "Added trailing newline to $FileName" -ForegroundColor Gray
-        } else {
-            Write-Warning "Missing trailing newline in $FileName."
-            $WarningCount++
-        }
-    } elseif ($Content -match "\n\n$") {
-        if ($Fix) {
-            $Content = $Content.TrimEnd("`n") + "`n"
-            $FileModified = $true; $FixedCount++
-            Write-Host "Normalized trailing newlines in $FileName" -ForegroundColor Gray
-        } else {
-            Write-Warning "Multiple trailing newlines in $FileName."
-            $WarningCount++
-        }
-    }
-
-    if ($FileModified -and -not $DryRun) {
-        [System.IO.File]::WriteAllText($FilePath, $Content, [System.Text.UTF8Encoding]::new($false))
-        # Recalculate hash after fix
-        $NewHash = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Content))
-        $Entry.Value.Hash = [BitConverter]::ToString($NewHash) -replace '-', ''
-    }
-
-    if (-not $ErrorFound) {
-        Write-Host "$FileName passed." -ForegroundColor Green
-        $NewManifest[$FileName] = $Entry.Value.Hash
-    }
+    return $ErrorFound
 }
 
-# 7. Version Consistency
-$VersionPattern = '(\d+\.\d+\.\d+)'
-$ReadmeVersion = if ((Get-Content "$GlobalPath\README.md" -Raw -Encoding UTF8) -match "badge/.*?-$VersionPattern") { $Matches[1] } else { "NF" }
-$ReadmeArVersion = if ((Get-Content "$GlobalPath\README-AR.md" -Raw -Encoding UTF8) -match "badge/.*?-$VersionPattern") { $Matches[1] } else { "NF" }
-$ChangelogVersion = if ((Get-Content "$GlobalPath\CHANGELOG.md" -Raw -Encoding UTF8) -match "(?m)^##\s*\[v?$VersionPattern\]") { $Matches[1] } else { "NF" }
-$ScriptVersion = if ((Get-Content "$GlobalPath\scripts\validate-globals.ps1" -Raw -Encoding UTF8) -match "Validation.*?v(\d+\.\d+\.\d+)") { $Matches[1] } else { "NF" }
-$PyScriptVersion = if ((Get-Content "$GlobalPath\scripts\validate-globals.py" -Raw -Encoding UTF8) -match "Validation.*?v(\d+\.\d+\.\d+)") { $Matches[1] } else { "NF" }
+function Test-Mojibake {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
+    if ($Content -match '(\xC3\xA2\x80\x9C|\xC3\xA2\x80\x9D|\xE2\x80\x9C|\xE2\x80\x9D|\uFFFD)') {
+        Write-Error "Encoding artifact (mojibake) found in $FileName."
+        $ctx.ErrorCount++
+        return $true
+    }
+    return $false
+}
 
-$Versions = @($ReadmeVersion, $ReadmeArVersion, $ChangelogVersion, $ScriptVersion, $PyScriptVersion) | Where-Object { $_ -ne "NF" } | Select-Object -Unique
-if ($Versions.Count -ne 1) { Write-Error "Version Mismatch! README=$ReadmeVersion, README-AR=$ReadmeArVersion, CL=$ChangelogVersion, Script=$ScriptVersion, PyScript=$PyScriptVersion"; $ErrorCount++ }
-else { Write-Host "Version: $($Versions -join '')" -ForegroundColor Green }
+function Test-TrailingNewlines {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
+    if ($Content -notmatch "\n$") {
+        if ($ctx.Fix) {
+            $ctx.FixedCount++
+            Write-Host "Added trailing newline to $FileName" -ForegroundColor Gray
+            return $true, ($Content + "`n")
+        } else {
+            Write-Warning "Missing trailing newline in $FileName."
+            $ctx.WarningCount++
+        }
+    } elseif ($Content -match "\n\n$") {
+        if ($ctx.Fix) {
+            $ctx.FixedCount++
+            Write-Host "Normalized trailing newlines in $FileName" -ForegroundColor Gray
+            return $true, ($Content.TrimEnd("`n") + "`n")
+        } else {
+            Write-Warning "Multiple trailing newlines in $FileName."
+            $ctx.WarningCount++
+        }
+    }
+    return $false, $Content
+}
 
-# 8. Manifest Update (Automatic regeneration after fixes)
-if (-not $DryRun -and ($ErrorCount -eq 0 -or $Fix)) {
+function Test-SingleFile {
+    param([string]$FileName, [hashtable]$EntryVal, [hashtable]$ctx)
+    $Content = $EntryVal.Content
+    $FilePath = $EntryVal.FullName
+    $ctx.ScannedCount++
+    
+    $modLE, $Content = Test-LineEndings $Content $FileName $ctx
+    $modBom, $Content = Test-Utf8Bom $FilePath $Content $FileName $ctx
+    $errSec = Test-Secrets $Content $FileName $ctx
+    $errH1 = Test-H1Title $Content $FileName $ctx
+    $modRefs, $Content, $errRefs = Test-CrossReferences $Content $FileName $ctx
+    $errFileRefs = Test-FileReferences $Content $FileName $ctx
+    $errMoji = Test-Mojibake $Content $FileName $ctx
+    $modNL, $Content = Test-TrailingNewlines $Content $FileName $ctx
+    
+    $FileModified = $modLE -or $modBom -or $modRefs -or $modNL
+    $ErrorFound = $errSec -or $errH1 -or $errRefs -or $errFileRefs -or $errMoji
+    
+    if ($FileModified -and -not $ctx.DryRun) {
+        [System.IO.File]::WriteAllText($FilePath, $Content, [System.Text.UTF8Encoding]::new($false))
+        $NewHash = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Content))
+        $EntryVal.Hash = [BitConverter]::ToString($NewHash) -replace '-', ''
+    }
+    return $ErrorFound
+}
+
+function Extract-Version {
+    param([string]$Path, [string]$Regex)
+    if (-not (Test-Path $Path)) { return "NF" }
+    $RawContent = Get-Content $Path -Raw -Encoding UTF8
+    if ($RawContent -match $Regex) { return $Matches[1] }
+    return "NF"
+}
+
+function Test-VersionConsistency {
+    param([string]$GlobalPath, [hashtable]$ctx)
+    $VersionPattern = '(\d+\.\d+\.\d+)'
+    $ReadmeVersion = Extract-Version "$GlobalPath\README.md" "badge/.*?-$VersionPattern"
+    $ReadmeArVersion = Extract-Version "$GlobalPath\README-AR.md" "badge/.*?-$VersionPattern"
+    $ChangelogVersion = Extract-Version "$GlobalPath\CHANGELOG.md" "(?m)^##\s*\[v?$VersionPattern\]"
+    $ScriptVersion = Extract-Version "$GlobalPath\scripts\validate-globals.ps1" "Validation.*?v$VersionPattern"
+    $PyScriptVersion = Extract-Version "$GlobalPath\scripts\validate-globals.py" "Validation.*?v$VersionPattern"
+    
+    $Versions = @($ReadmeVersion, $ReadmeArVersion, $ChangelogVersion, $ScriptVersion, $PyScriptVersion) | Where-Object { $_ -ne "NF" } | Select-Object -Unique
+    if ($Versions.Count -ne 1) {
+        Write-Error "Version Mismatch! README=$ReadmeVersion, README-AR=$ReadmeArVersion, CL=$ChangelogVersion, Script=$ScriptVersion, PyScript=$PyScriptVersion"
+        $ctx.ErrorCount++
+        return $false
+    }
+    Write-Host "Version: $($Versions -join '')" -ForegroundColor Green
+    return $true
+}
+
+function Update-IntegrityManifest {
+    param([string]$ManifestPath, [hashtable]$NewManifest)
     Write-Host "Updating integrity.manifest..." -ForegroundColor Cyan
     $ManifestOutput = $NewManifest.Keys | Sort-Object | ForEach-Object { "$($NewManifest[$_])  $_" }
     [System.IO.File]::WriteAllLines($ManifestPath, $ManifestOutput, [System.Text.UTF8Encoding]::new($false))
 }
 
-Write-Host "`nSummary: Scanned=$ScannedCount, Skipped=$SkippedCount, Errors=$ErrorCount, Warnings=$WarningCount, Healed=$FixedCount"
-exit [int]($ErrorCount -gt 0)
+function Get-Headers {
+    param([string]$Content)
+    $Matches_Headers = [regex]::Matches($Content, "(?m)^##\s+(\d+(?:\.\d+)?)\.?\s+(.+)$")
+    $Headers = @()
+    foreach ($m in $Matches_Headers) { $Headers += $m.Groups[1].Value.Trim() }
+    return $Headers
+}
 
+function Run-Pass1 {
+    param([object[]]$RuleFiles, [string]$GlobalPath, [hashtable]$Manifest, [bool]$ForceScan, [hashtable]$ctx)
+    $FileData = @{}
+    foreach ($File in $RuleFiles) {
+        $RelativeName = $File.FullName.Replace("$GlobalPath\", "")
+        $ContentBytes = [System.IO.File]::ReadAllBytes($File.FullName)
+        $CurrentHashHex = [BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash($ContentBytes)) -replace '-', ''
+        
+        $Content = [System.Text.Encoding]::UTF8.GetString($ContentBytes)
+        $ctx.GlobalHeaders[$RelativeName] = Get-Headers $Content
+        
+        if (-not $ForceScan -and $Manifest.ContainsKey($RelativeName) -and $Manifest[$RelativeName] -eq $CurrentHashHex) {
+            $ctx.SkippedCount++
+            continue
+        }
+        $FileData[$RelativeName] = @{ Content = $Content; FullName = $File.FullName; Hash = $CurrentHashHex }
+    }
+    return $FileData
+}
+
+function Run-Pass2 {
+    param([hashtable]$FileData, [hashtable]$NewManifest, [hashtable]$ctx)
+    foreach ($Entry in $FileData.GetEnumerator()) {
+        $ErrorFound = Test-SingleFile $Entry.Key $Entry.Value $ctx
+        if (-not $ErrorFound) {
+            Write-Host "$($Entry.Key) passed." -ForegroundColor Green
+            $NewManifest[$Entry.Key] = $Entry.Value.Hash
+        } elseif ($NewManifest.ContainsKey($Entry.Key)) {
+            $NewManifest.Remove($Entry.Key)
+        }
+    }
+}
+
+# Execution Start
+$RuleFiles = Get-RuleFiles $GlobalPath
+Write-Host "Starting AI Globals Validation v4.14.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+
+$ManifestPath = Join-Path $GlobalPath "integrity.manifest"
+$Manifest = Get-IntegrityManifest $ManifestPath
+$ForceScan = $Force -or $GenerateManifest -or (Test-CoreRules $GlobalPath $Manifest)
+
+$ctx = @{
+    Fix = $Fix; Interactive = $Interactive; DryRun = $DryRun
+    ScannedCount = 0; SkippedCount = 0; ErrorCount = 0; WarningCount = 0; FixedCount = 0
+    GlobalHeaders = @{}
+}
+
+$FileData = Run-Pass1 $RuleFiles $GlobalPath $Manifest $ForceScan $ctx
+$NewManifest = $Manifest.Clone()
+Run-Pass2 $FileData $NewManifest $ctx
+
+$null = Test-VersionConsistency $GlobalPath $ctx
+
+if (-not $DryRun -and ($ctx.ErrorCount -eq 0 -or $Fix)) {
+    Update-IntegrityManifest $ManifestPath $NewManifest
+}
+
+Write-Host "`nSummary: Scanned=$($ctx.ScannedCount), Skipped=$($ctx.SkippedCount), Errors=$($ctx.ErrorCount), Warnings=$($ctx.WarningCount), Healed=$($ctx.FixedCount)"
+exit [int]($ctx.ErrorCount -gt 0)

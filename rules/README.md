@@ -25,6 +25,7 @@ Rules are loaded in a strict priority order to minimize context window usage:
 | `security-standards.md` | Security | OWASP-driven Zero-Trust protocols |
 | `performance-standards.md` | Performance | N+1 prevention, query budgets, caching strategy |
 | `api-integration-standards.md` | API | Circuit breakers, retry logic, idempotency |
+| `ai-integration-standards.md` | AI | Asynchronous AI queues, SSE streaming, Context Compaction |
 | `observability-standards.md` | Ops | Structured logging, health endpoints, audit trails |
 | `code-quality.md` | Quality | SOLID, DRY, KISS, naming conventions |
 | `git-standards.md` | Git | Conventional Commits, branching, PR standards |

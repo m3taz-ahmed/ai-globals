@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-05-27 — Superpowers Methodology & Prompt Architecting Upgrade (v4.14.0)
+
+**Scope:** Full System Deep-Scan and Upgrade to natively integrate `obra/superpowers` behavioral methodologies and harden prompt architecting capabilities.
+**Trigger:** Manual — User Objective implementation
+**Agent:** Antigravity (Gemini 3.1 Pro)
+
+### Actions Taken
+- **Workflow Hardening:** Updated `global-workflow.md` to explicitly mandate reading `useful-repos.md` in Layer 1, and injected `obra/superpowers` philosophies (Spec Teasing, Digestible Chunking, Red/Green TDD) into `workflows/01-planning.md`.
+- **Prompt Architecting Upgrade:** Refined `workflows/00-prompt-architecting.md` to act as a strict quality gate that extracts specifications before any implementation begins.
+- **Skill Alignment:** Ensured `workflows/02-execution.md` and `rules/anti-patterns.md` mandate the execution of local skills (`tdd-workflows`, `subagent-driven-development`) for complex changes.
+- **Tool Discovery:** Added `VoltAgent/awesome-design-md` to `useful-repos.md` to standardise UI contexts.
+
+### Architectural Decisions
+1. **Spec Teasing as a Quality Gate** — By enforcing a strict halt-and-ask mechanism, we prevent AI from fabricating implementation details for ambiguous requirements.
+2. **Digestible Chunking** — Presenting plans in small, readable chunks ensures higher fidelity user sign-off.
+3. **Mandatory Skills Delegation** — Relying on specialized local skills for execution ensures autonomous agents adhere to Red/Green TDD patterns rather than improvising monolithic changes.
+
+---
+
 ## 2026-05-14 — Sovereign Audit & Ecosystem Convergence (v4.11.0)
 
 **Scope:** High-fidelity architectural audit across Analyst, System Design, Refactor, and Critic personas.

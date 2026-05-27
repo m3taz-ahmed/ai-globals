@@ -42,14 +42,14 @@ Files for **unreleased or preview versions** are marked with `[!SPECULATIVE]` at
 | `filament-5.md` | 🔮 Speculative — skip by default |
 | `mysql-9-7.md` | 🔮 Speculative — skip by default |
 
-## Current Coverage (60 files)
+## Current Coverage (61 files)
 
 | Category | Files |
 |---|---|
-| **PHP / Laravel** | `php-8-3.md`, `php-8-4.md`, `php-8-5.md`, `laravel-11.md`, `laravel-12.md`, `laravel-13.md`, `laravel-boost.md`, `laravel-octane.md`, `laravel-horizon.md`, `laravel-reverb.md` |
+| **PHP / Laravel** | `php-8-3.md`, `php-8-4.md`, `php-8-5.md`, `laravel-11.md`, `laravel-12.md`, `laravel-13.md`, `laravel-boost.md`, `laravel-octane.md`, `laravel-horizon.md`, `laravel-reverb.md`, `laravel-ai.md` |
 | **Admin / UI** | `filament-3.md`, `filament-4.md`, `filament-5.md`, `filament-shield.md`, `livewire-3.md`, `alpine-3.md`, `shadcn-ui.md` |
 | **Frontend** | `react-ecosystem.md`, `frontend-modern.md`, `frontend-ui.md`, `tailwind-3.md`, `tailwind-4.md`, `tailwind-4-1.md`, `vite-6.md`, `vite-7.md`, `postcss-8.md`, `nextjs-15.md`, `typescript-5.md`, `framer-motion.md`, `zustand-state.md`, `tanstack-query.md`, `zod-validation.md` |
-| **Database** | `mysql-8-3.md`, `mysql-8-4.md`, `mysql-9-7.md`, `postgresql-17.md`, `redis-7.md`, `clickhouse-analytics.md`, `meilisearch.md` |
+| **Database** | `mysql-8-3.md`, `mysql-8-4.md`, `mysql-9-7.md`, `postgresql-17.md`, `redis-7.md`, `clickhouse-analytics.md`, `meilisearch.md`, `qdrant-rag.md` |
 | **Node.js** | `nodejs-22.md`, `nodejs-23.md`, `nodejs-24.md` |
 | **Auth / Security** | `clerk-auth.md` |
 | **Payments** | `stripe-integration.md` |

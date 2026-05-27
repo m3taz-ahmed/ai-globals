@@ -2,6 +2,20 @@
 
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [v4.14.0] - 2026-05-27 - Superpowers Methodology & Prompt Architecting Upgrade
+
+### Added
+- **useful-repos.md:** Added `VoltAgent/awesome-design-md` to centralize semantic design system contexts.
+- **workflows/01-planning.md:** Injected `obra/superpowers` core philosophies (Spec Teasing, Digestible Chunking, and Red/Green TDD & Subagent Execution).
+- **workflows/02-execution.md:** Added explicit "Local Skills Delegation" step enforcing usage of `subagent-driven-development` and `tdd-workflows`.
+
+### Changed
+- **global-workflow.md:** Mandated `useful-repos.md` scanning in Layer 1 and added the Subagent & TDD execution mandate.
+- **workflows/00-prompt-architecting.md:** Upgraded Active Discovery into a strict "Spec Teasing" quality gate preventing code generation before requirement lock-in.
+- **rules/anti-patterns.md:** Hardened AI workflow constraints against multi-file execution without local skill delegation.
+
+---
+
 ## [v4.13.0] - 2026-05-20 - Multi-Agent Cross-Platform Validation & Saga Protocol
 
 ### Added
@@ -9,9 +23,10 @@
 - **workflows/10-saga-reconciliation.md:** Technical workflow specifying the Saga State Machine and handshake protocols for parallel subagents.
 
 ### Changed
-- **scripts/validate-globals.ps1:** Upgraded to v4.13.0, incorporating validate-globals.py into the version parity checks.
+- **scripts/validate-globals.ps1:** Upgraded to v4.13.0, modularizing helper functions to be strictly under 30 lines, aligning regex/secret scanning, and optimizing BOM inspection footprint to 3 bytes.
+- **scripts/validate-globals.py:** Refactored into granular helper functions under 30 lines, added strict type annotations, and optimized BOM reading footprint.
 - **rules/security-standards.md:** Linked Section 8 (Inter-Agent Collaboration Handshake) to workflows/10-saga-reconciliation.md.
-- **Documentation:** Synchronized English (README.md) and Arabic (README-AR.md) versions to v4.13.0 with directory map updates.
+- **Documentation:** Synchronized English (README.md) and Arabic (README-AR.md) versions, and updated directory maps/readmes in `rules/README.md`, `tech-stack/README.md`, and `workflows/README.md` to ensure all 11 workflows, 61 tech stack rules, and 18 rule files are fully cataloged.
 
 ---
 

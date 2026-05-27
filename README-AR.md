@@ -4,7 +4,7 @@
   <p><b>توقف عن السماح للذكاء الاصطناعي بكتابة كود "سباغيتي". حوله إلى مهندس برمجيات رئيسي (Principal Architect).</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/الإصدار-4.13.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.13.0">
+    <img src="https://img.shields.io/badge/الإصدار-4.14.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.14.0">
     <img src="https://img.shields.io/badge/الحالة-تصحيح_ذاتي-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
     <img src="https://img.shields.io/badge/المعمارية-سيادية-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
     <img src="https://img.shields.io/badge/الرخصة-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
@@ -102,11 +102,12 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 
 ---
 
-## 🔥 الإصدار 4.13.0: المخطط الهندسي للمؤسسات 2026
+## 🔥 الإصدار 4.14.0: المخطط الهندسي للمؤسسات 2026
 
 هذا النظام لا يدير الموجهات فحسب؛ بل يفرض أعلى مستويات هندسة البرمجيات الحديثة:
 
-- **تكامل سيادي للذكاء الاصطناعي:** دعم أصلي لتدفق البيانات عالي الإنتاجية عبر (SSE)، ذاكرة RAG محلية مخصصة عبر Qdrant، ضغط وحفظ السياق (Sliding Window)، وتمرير المهام الخلفية عبر Redis Queues.
+- **منهجية القوى الخارقة (Superpowers):** دمج أصيل لسير العمل يفرض استخراج المتطلبات (Spec Teasing) بشكل صارم، تقسيم المهام (Digestible Chunking)، والتطوير الموجه بالاختبار (Red/Green TDD) باستخدام وكلاء فرعيين (Subagents) قبل كتابة أي كود.
+- **تكامل الذكاء الاصطناعي السيادي:** دعم أصيل لتدفق البيانات عالي الإنتاجية عبر (SSE)، ذاكرة RAG محلية مخصصة عبر Qdrant، ضغط وحفظ السياق (Sliding Window)، وتمرير المهام الخلفية عبر Redis Queues.
 - **مصافحات تعاونية بين الوكلاء (Inter-Agent Handshakes):** ضوابط صارمة تفرض مزامنة وتتبع آلة الحالة (Saga Reconciliation) بين الوكلاء الفرعيين أثناء التنفيذ المتوازي لمنع انقسام حالة النظام.
 - **بنية تحتية من الجيل القادم:** PostgreSQL 17 (UUIDv7, BRIN)، AWS Graviton4 (ARM64)، و Docker SBOMs أصلية.
 - **واجهة أمامية متطورة:** Next.js 15 (`"use cache"`)، Tailwind CSS v4، وتفويضات وصول صارمة WCAG 2.2 AA.

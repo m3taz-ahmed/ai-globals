@@ -58,3 +58,9 @@ If a major tech/framework version is detected locally but its rule file is MISSI
 
 ## 9. OBSERVABLE METRICS (Self-Test)
 Verify behavioral compliance using the self-check in `rules/core-behavioral-compact.md` and the expanded self-tests in `rules/llm-behavioral-guidelines.md`. If any metric is NOT met, the agent must self-correct immediately.
+
+## 10. REPOSITORY ANALYSIS PROTOCOL
+When the user provides a repository link and asks how the project can benefit from it:
+1. **Automatic Cloning:** If direct URL reading is insufficient, proactively clone the repository into a `temp` folder within the current workspace.
+2. **Deep Analysis:** Extract the required concepts, rules, patterns, or methodologies.
+3. **Automatic Cleanup:** Once the analysis is complete and insights are integrated or presented to the user, proactively delete the `temp` folder without waiting for explicit permission to keep the workspace clean.

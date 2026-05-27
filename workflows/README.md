@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **9 trigger-based workflow protocols**. Each workflow activates when the AI detects a specific task type, providing a structured, expert execution path.
+This directory contains **11 trigger-based workflow protocols**. Each workflow activates when the AI detects a specific task type, providing a structured, expert execution path.
 
 ## Routing Map
 
@@ -17,6 +17,8 @@ The AI selects the correct workflow automatically based on the task context:
 | System maintenance | `06-maintenance.md` | Monthly deep-scan, tech debt, rule updates |
 | Security hardening | `07-security-audit.md` | Security audit, OWASP scan, hardening protocol |
 | New project setup | `08-onboarding.md` | AI initialization, baseline audit, stack detection |
+| Tech discovery / research | `09-discovery.md` | Research and integration of unknown or bleeding-edge tech stacks |
+| Multi-agent execution | `10-saga-reconciliation.md` | Saga State Machine tracking and handshake protocols for parallel execution |
 
 ## Execution Model
 

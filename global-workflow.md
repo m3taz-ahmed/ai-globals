@@ -13,6 +13,7 @@ Read FIRST, on every task, no exceptions:
 ### Layer 1 — ALWAYS (Structural Rules)
 Read immediately after Layer 0:
 - `rules/anti-patterns.md` — Hard-stop negative constraints
+- `useful-repos.md` — Central memory bank for tool and methodology discovery
 
 ### Layer 2 — ON-DEMAND (Domain Rules)
 Read ONLY when the task involves the relevant domain:
@@ -82,7 +83,8 @@ When producing code:
 3. Include all necessary components (migrations, models, services, tests).
 4. **Surgical Testing:** Ensure tests match the scope of changes. Do not run the entire suite for a single-line fix; use `--filter` or specific file paths.
 5. Apply surgical diffs — never rewrite entire files unless explicitly requested.
-6. Refer to `EXAMPLES.md` for correct patterns when in doubt about LLM behavioral pitfalls.
+6. **Subagent & TDD Mandate:** You MUST leverage local skills (`tdd-workflows`, `subagent-driven-development`) to execute isolated tasks autonomously without deviating from the architectural plan.
+7. Refer to `EXAMPLES.md` for correct patterns when in doubt about LLM behavioral pitfalls.
 
 ## STEP 5: VERIFY, VALIDATE & FORMAT
 After making any changes, you MUST verify before reporting completion:
