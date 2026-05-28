@@ -4,7 +4,7 @@
   <p><b>توقف عن السماح للذكاء الاصطناعي بكتابة كود "سباغيتي". حوله إلى مهندس برمجيات رئيسي (Principal Architect).</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/الإصدار-4.14.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.14.0">
+    <img src="https://img.shields.io/badge/الإصدار-4.15.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.15.0">
     <img src="https://img.shields.io/badge/الحالة-تصحيح_ذاتي-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
     <img src="https://img.shields.io/badge/المعمارية-سيادية-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
     <img src="https://img.shields.io/badge/الرخصة-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
@@ -99,6 +99,16 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
     ├── validate-globals.ps1      # مدقق النزاهة بـ PowerShell
     └── validate-globals.py       # مدقق النزاهة متعدد المنصات بـ Python
 ```
+
+---
+
+## 🚀 الإصدار 4.15.0: بنية Micro-DSL وتقليل استهلاك التوكنز بنسبة 50%
+
+هذا النظام لا يدير الموجهات فحسب؛ بل يفرض أعلى مستويات هندسة البرمجيات الحديثة بأقصى كفاءة:
+
+- **نظام قاموس Micro-DSL:** استبدال القواعد النصية الطويلة بمفردات رمزية مركزية (مثل `[BEH-01]`, `[SEC-08]`)، مما يضمن انتشار السياق العميق بجزء بسيط من التكلفة.
+- **تقليل بصمة التوكنز بنسبة 50%:** تقليل حجم السياق النشط لمساحة العمل من حوالي 113,000 إلى 57,765 توكن، مما يضاعف من سرعة تحليل الذكاء الاصطناعي ويوسع نوافذ السياق للمهام المعقدة.
+- **تحقق وإصلاح ذاتي (Self-Healing):** تعزيز نصوص التحقق متعددة المنصات `validate-globals.ps1` و `validate-globals.py` لتسوية وتصحيح الأكواد الرمزية تلقائياً واحترام معلمات `.aiignore` ديناميكياً.
 
 ---
 

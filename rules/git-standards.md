@@ -1,46 +1,20 @@
 # Version Control & Git Standards
 > [!NOTE]
-> **TRIGGER:** LOAD ON COMMITS, BRANCHING, OR PULL REQUEST PREPARATION.
-> **SCOPE:** CONVENTIONAL COMMITS AND ATOMIC CHANGES.
+> Trigger: Commit, branching, or PR prep.
 
-## 1. COMMIT MESSAGES (CONVENTIONAL COMMITS)
-- Always format commit messages according to Conventional Commits:
-  - `feat: [description]` (New feature)
-  - `fix: [description]` (Bug fix)
-  - `refactor: [description]` (Code change that neither fixes a bug nor adds a feature)
-  - `chore: [description]` (Updating build tasks, package manager configs, etc.)
-  - `docs: [description]` (Documentation only changes)
-  - `test: [description]` (Adding or updating tests)
-  - `perf: [description]` (Performance improvements)
-  - `security: [description]` (Security fixes or hardening)
+## Commit Messages (Conventional Commits) `[GIT-01]`
+- Standard format: `type(scope): description`.
+- **Types:** `feat` (new feature), `fix` (bug fix), `refactor` (code structure), `chore` (maintenance), `docs`, `test`, `perf`, `security`.
+- Commits must be atomic (one logical change per commit).
 
-## 2. COMMIT SCOPE
-- Keep commits atomic. One commit = one logical change.
-- The commit description must explain the "Why" if the change is complex, not just the "What".
-- Use scopes for clarity: `feat(booking): add automatic invoice generation`.
+## Branching Strategy `[GIT-02]`
+- `main` — Production-ready, always deployable.
+- `develop` — Integration branch.
+- `feature/[id]-[desc]` — e.g. `feature/FS-42-invoice-pdf`.
+- `hotfix/[desc]` — Branch from `main`, merge to both `main` & `develop`.
+- `release/[version]` — Release prep (freeze features).
 
-## 3. BRANCHING STRATEGY
-- **`main`** — Production-ready code only. Always deployable.
-- **`develop`** — Integration branch. All feature branches merge here first.
-- **`feature/[ticket-id]-[description]`** — New features (e.g., `feature/FS-42-invoice-pdf`).
-- **`hotfix/[description]`** — Critical production fixes. Branch from `main`, merge to both `main` and `develop`.
-- **`release/[version]`** — Release preparation. Freeze features, fix bugs, update version numbers.
-
-## 4. PULL REQUEST REQUIREMENTS
-- **Minimum 1 approval** before merging to `develop` or `main`.
-- **All CI checks must pass** — tests, linting, static analysis.
-- **PR Description:** Must include: What changed, Why, How to test, and any Breaking Changes.
-- **Size Limit:** PRs should not exceed ~400 lines of changes. Split large features into incremental PRs.
-
-## 5. PROTECTED BRANCHES
-- **`main`:** Force push disabled. Require PR reviews. Require status checks to pass. Require linear history (squash merge preferred).
-- **`develop`:** Force push disabled. Require PR reviews.
-- **Tags:** Use semantic versioning (`v1.2.3`) for releases. Annotated tags with release notes.
-
----
-
-## 📦 GIT COMPLIANCE CHECK (Mandatory)
-- [ ] **Message:** Does the commit follow Conventional Commits (`feat:`, `fix:`, etc.)?
-- [ ] **Atomicity:** Does this commit address exactly one logical change?
-- [ ] **Branch:** Is the branch name correctly formatted (`feature/ID-desc`)?
-- [ ] **Diff Quality:** Did I use surgical diffs and avoid unchanged code?
+## Pull Requests (PR) `[GIT-03]`
+- ✓ Minimum 1 approval before merge. All CI checks (tests, lints, analysis) must pass.
+- PR size: Max ~400 lines. Split large features.
+- Protect `main` & `develop` (no force-push, PR required). Tag releases via SemVer (`v1.2.3`).

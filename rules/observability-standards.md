@@ -6,7 +6,7 @@
 
 > A system without observability is a system operated by luck. Every production application MUST be observable: logging, monitoring, alerting, and health checks are non-negotiable.
 
-## 1. STRUCTURED LOGGING
+## 1. STRUCTURED LOGGING [OBS-01]
 
 - **Format:** Use structured (JSON) logging in production. Human-readable format is acceptable in local development only.
 - **Log Levels (RFC 5424) — use correctly:**
@@ -33,7 +33,7 @@ Log::error('Invoice creation failed', [
 - **Sensitive data prohibition:** NEVER log passwords, API keys, tokens, credit card numbers, or raw PII. Mask or omit them.
 - **Distributed Tracing (OTel):** Use **OpenTelemetry (OTel)** with W3C Trace Context to automatically propagate `trace_id` and `span_id` across all microservices, queues, and API boundaries. Never rely on proprietary APM agents if OTel is supported natively.
 
-## 2. APPLICATION MONITORING
+## 2. APPLICATION MONITORING [OBS-02]
 
 - **Health Endpoint:** Every application MUST expose a `GET /health` endpoint returning:
   - HTTP `200 OK` with a JSON body when healthy.
@@ -62,7 +62,7 @@ Log::error('Invoice creation failed', [
   - **Database Connections:** Active connection count. Alert if approaching pool limit.
   - **Memory Usage:** PHP worker memory. Alert if consistently > 80% of limit.
 
-## 3. OPEN TELEMETRY & ERROR TRACKING
+## 3. OPEN TELEMETRY & ERROR TRACKING [OBS-03]
 
 - **Use a dedicated error tracking service** (Sentry, Bugsnag, Flare, or equivalent) in all non-local environments.
 - **Configuration:**
@@ -102,7 +102,7 @@ Log::error('Invoice creation failed', [
 - **`Model::shouldBeStrict()`:** Enable in local/staging `AppServiceProvider` to catch lazy loading, silently discarded attributes, and invalid attribute access.
 - **Slow Query Log:** Enable MySQL slow query log (threshold: 500ms) in staging. Review weekly.
 
-## 6. AUDIT TRAILS
+## 6. AUDIT TRAILS [OBS-04]
 
 - **State-changing operations MUST be audited:** Create, Update, Delete on business entities.
 - **Audit record contents:**
@@ -117,7 +117,7 @@ Log::error('Invoice creation failed', [
 ---
 
 ## 👁️ OBSERVABILITY CHECKLIST (Mandatory)
-- [ ] **Context:** Does every new log entry include relevant IDs/context?
-- [ ] **Exceptions:** Is every caught exception logged with its stack trace?
-- [ ] **Auditing:** Does this change require an audit trail entry? (If yes, is it implemented?)
-- [ ] **PII:** Have I verified that no sensitive data (passwords/keys) is being logged?
+- [ ] **Context:** Does every new log entry include relevant IDs/context? [OBS-01]
+- [ ] **Exceptions:** Is every caught exception logged with its stack trace? [OBS-03]
+- [ ] **Auditing:** Does this change require an audit trail entry? (If yes, is it implemented?) [OBS-04]
+- [ ] **PII:** Have I verified that no sensitive data (passwords/keys) is being logged? [SEC-04]

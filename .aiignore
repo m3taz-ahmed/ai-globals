@@ -1,0 +1,13 @@
+# AI Globals Ignore File
+# Exclude community standard files and GitHub templates from LLM context scans
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md
+.github/
+README.md
+README-AR.md
+CHANGELOG-archive.md
+MEMORY-archive.md
+brain/
+graphify-out/
+.agents/

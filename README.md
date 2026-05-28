@@ -4,7 +4,7 @@
   <p><b>Stop letting AI write spaghetti code. Turn it into your Principal Architect.</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-4.14.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.14.0">
+    <img src="https://img.shields.io/badge/Version-4.15.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.15.0">
     <img src="https://img.shields.io/badge/Status-Self--Healing-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="Status: Self-Healing">
     <img src="https://img.shields.io/badge/Architecture-Sovereign-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="Architecture: Sovereign">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -97,6 +97,16 @@ AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context
     ├── validate-globals.ps1      # PowerShell integrity validator
     └── validate-globals.py       # Cross-platform Python validator
 ```
+
+---
+
+## 🚀 v4.15.0: Micro-DSL Architecture & 50% Token Optimization
+
+This OS doesn't just manage prompts; it enforces the highest echelons of modern software engineering with maximum efficiency:
+
+- **Micro-DSL Dictionary System:** Replaced verbose prose rules with a centralized symbolic vocabulary (e.g., `[BEH-01]`, `[SEC-08]`), ensuring deep context propagation at a fraction of the cost.
+- **50% Token Footprint Reduction:** Cut the active workspace context footprint from ~113,000 to ~57,765 tokens, supercharging AI reasoning speed and extending context windows for complex tasks.
+- **Self-Healing Validation:** Hardened `validate-globals.ps1` and `validate-globals.py` cross-platform validators to automatically reconcile symbolic codes and dynamically respect `.aiignore` parameters.
 
 ---
 

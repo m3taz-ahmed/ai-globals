@@ -1,67 +1,31 @@
-# Security & Cyber Resilience (OWASP Top 10 & OWASP 2026 Agentic)
+# Security & Cyber Resilience
 > [!NOTE]
-> **TRIGGER:** LOAD ON API DESIGN, AUTHENTICATION, DATABASE SCHEMA, OR AI AGENT TASKS.
-> **SCOPE:** PRODUCTION-GRADE SECURITY STANDARDS.
+> Trigger: API design, authentication, database schema, or AI agent tasks.
 
-- **Mindset:** Implement "Zero-Trust" & "Identity-First" architecture. Never assume an internal request or AI agent is safe.
+## Data Protection `[SEC-08]`
+- **Encryption:** Encryption at rest for sensitive DB fields.
+- **Storage:** Cloud buckets PRIVATE by default. Use signed URLs.
+- **Audit Trails `[OBS-04]`:** Log state-changing actions.
+- **Secrets Safety `[SEC-04]`:** ⛔ log or commit PII, tokens, keys, or `.env`.
 
-## 1. DATA PROTECTION
-- **Encryption at Rest:** Sensitive database fields MUST be encrypted using Laravel's encryption or database-level encryption.
-- **Environment Safety:** Never log `.env` variables or raw request bodies containing sensitive credentials/keys.
-- **Audit Trails:** Every state-changing action (Create, Update, Delete) MUST be logged in an audit trail with UserID, Timestamp, and Old/New values.
+## Input & Output Validation `[SEC-01]`
+- **Trust No Input:** Strict validation via `FormRequest`.
+- **Sanitization `[SEC-06]`:** Escape all outputs to prevent XSS.
+- **MIME:** Strict JSON response headers to prevent sniffing.
 
-## 2. INPUT & OUTPUT
-- **Trust No Input:** All user inputs must be validated strictly using Laravel FormRequests.
-- **Sanitization:** Prevent XSS by ensuring all user-generated content is escaped.
-- **Output Encoding:** Ensure all API responses use strict JSON headers and appropriate status codes to prevent MIME-sniffing attacks.
+## Database & Auth Security `[SEC-02]`
+- **SQLi:** Parameterized queries / Eloquent only. ⛔ raw SQL string concatenation.
+- **Mass Assignment `[SEC-03]`:** Whitelist `$fillable`. ⛔ `$guarded = []`.
+- **Default Deny `[SEC-05]`:** Deny by default; verify access using Policies/Gates. Filament Shield RBAC.
 
-## 3. DATABASE SECURITY
-- **SQL Injection:** Never use raw string concatenation in queries. Always use Eloquent, Query Builder, or PDO Parameterized Queries.
-- **Mass Assignment:** Strictly protect Models by defining `$fillable` explicitly. NEVER use `$guarded = []` (see `anti-patterns.md` §1).
+## Rate Limiting & Throttling `[SEC-09]`
+- **Middleware:** ALL routes throttled (e.g. 60 req/min). Progressive failed auth lockout.
 
-## 4. AUTHORIZATION
-- **Default Deny:** Access should be denied by default. Explicitly grant permissions using Laravel Policies or Gates.
-- **Filament Security:** Secure resources by strictly defining `canViewAny()`, `canEdit()`, and `canDelete()` based on role-based access control (RBAC).
+## Session & JWT Security `[SEC-10]`
+- **Cookies:** Store JWT in HttpOnly, Secure, SameSite cookies. ⛔ localStorage.
+- **Session:** Call `Session::regenerate()` after login.
 
-## 5. RATE LIMITING & DDoS MITIGATION
-- **API Throttling:** ALL API routes MUST use Laravel's `ThrottleRequests` middleware. Default: 60 requests/minute per user.
-- **Abuse Detection:** Implement progressive lockout (exponential backoff) for failed auth attempts.
-- **Resource Limits:** Set maximum request body sizes and upload limits to prevent resource exhaustion.
-
-## 6. JWT & SESSION SECURITY
-- **JWT Storage:** Never store JWTs in `localStorage`. Use `HttpOnly`, `Secure` cookies.
-- **Revocation:** Implement a blacklist or JTI-based revocation for JWTs.
-- **Session Regeneration:** Call `Session::regenerate()` after every login to prevent session fixation.
-
-## 7. CLOUD & INFRASTRUCTURE SECURITY
-- **Storage Privacy:** Ensure all cloud storage buckets (S3/Azure) are PRIVATE by default. Use Signed URLs for temporary access.
-- **Identity & Access (IAM):** Use "Least Privilege" IAM roles for app servers. Never use root account credentials.
-- **Dependency Audits:** Run `composer audit` and `npm audit` in CI/CD. Fail on HIGH/CRITICAL issues.
-
----
-
-## 8. AGENTIC AI SECURITY (OWASP 2026)
-- **Agentic Top 10:** Adhere strictly to the OWASP Top 10 for Agentic Applications (2026).
-- **Goal Hijacking Prevention:** Sanitize all external prompts to prevent Agent Goal Hijacking and Prompt Injection.
-- **Inter-Agent Communication:** All machine-to-machine (M2M) and inter-agent API calls MUST be mutually authenticated (mTLS) and strictly scoped.
-  - **Inter-Agent Collaboration Handshake:** Require strict state machine/Saga reconciliation verification upon delegating subtasks between subagents (see [10-saga-reconciliation.md](file:///d:/server/.ai/workflows/10-saga-reconciliation.md) §3) to prevent persistent multi-agent state fragmentation during parallel execution.
-- **LLM Output Validation:** Treat LLM outputs as untrusted user input. Enforce strict JSON Schema validation before processing AI responses.
-- **Secure Identifiers (UUIDv4 Mandate):** Never use auto-incrementing integers (`chatId`) for public-facing AI resources. Always use unpredictable `UUIDv4` strings to prevent Insecure Direct Object References (IDOR).
-- **Economic Denial of Sustainability (EDoS) & Rate Limiting:** Apply advanced rate limiting via Redis on all AI endpoints to prevent abusive API consumption and model cost exhaustion.
-
----
-
-## 9. DEPENDENCY EVOLUTION & AUDIT GATES
-- **Audit-Driven Upgrades:** Avoid hard-pinning core frameworks to allow for security patches. However, moving to a new **MAJOR** version (e.g., Laravel 11→12, Tailwind 3→4) requires a mandatory "Breaking Change Impact Analysis".
-- **Verified Window:** Prioritize versions within the "LTS" or "Stable" window.
-- **Speculative Tech:** Rules for tech marked `[!SPECULATIVE]` must only be applied to research branches or explicitly approved experimental projects. Never merge speculative standards into the `main` production branch.
-- **Transitive Security:** Before adding a new package, analyze its dependency tree for "Phantom Maintenance" (deep dependencies that are unmaintained).
-
----
-
-## 🕵️ SECURITY VERIFICATION (Mandatory)
-- [ ] **Validation:** Is every input passing through a strict `FormRequest`?
-- [ ] **Exposure:** Are any sensitive keys or PII being logged/exposed in the API?
-- [ ] **Permissions:** Is the default behavior "Deny All" for this new route?
-- [ ] **SQLi:** Have I verified that no raw strings are being passed to database queries?
-- [ ] **Upgrade Audit:** If a dependency was upgraded, have I reviewed the breaking changes?
+## Agentic AI Security (OWASP 2026) `[SEC-11]`
+- **Hijack Prevention:** Sanitize inputs to prevent goal hijacking. Enforce JSON schema validation.
+- **Inter-Agent:** Scoped and mutually authenticated (mTLS/tokens) machine-to-machine APIs.
+- **Identifiers:** Always use unpredictable UUIDv4 for resources. ⛔ auto-increment IDs.

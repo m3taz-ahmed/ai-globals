@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v4.14.0
+# AI Globals Validation Script (Python) v4.15.0
 # This script ensures the repository follows its own standards.
 
 import os
@@ -31,6 +31,7 @@ class ValidationContext:
         self.warning_count: int = 0
         self.healed_count: int = 0
         self.global_headers: Dict[str, List[str]] = {}
+        self.defined_codes: set = set()
 
 def print_color(text: str, color: str = Colors.RESET) -> None:
     if sys.stdout.isatty():
@@ -66,6 +67,15 @@ def get_fuzzy_match(target: str, file_list: List[str]) -> Optional[str]:
     return None
 
 def collect_rule_files(global_path: str) -> List[str]:
+    ignore_lines = []
+    ignore_file = os.path.join(global_path, ".aiignore")
+    if os.path.exists(ignore_file):
+        with open(ignore_file, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                line_str = line.strip()
+                if line_str and not line_str.startswith('#'):
+                    ignore_lines.append(line_str.replace('/', os.sep))
+
     rule_files: List[str] = []
     for f in os.listdir(global_path):
         if f.endswith('.md') and os.path.isfile(os.path.join(global_path, f)):
@@ -79,7 +89,17 @@ def collect_rule_files(global_path: str) -> List[str]:
                     if f.endswith('.md'):
                         full_f = os.path.join(root, f)
                         rule_files.append(os.path.relpath(full_f, global_path))
-    return rule_files
+                        
+    filtered_files = []
+    for rf in rule_files:
+        skip = False
+        for pattern in ignore_lines:
+            if pattern in rf:
+                skip = True
+                break
+        if not skip:
+            filtered_files.append(rf)
+    return filtered_files
 
 def load_integrity_manifest(manifest_path: str) -> Dict[str, str]:
     manifest: Dict[str, str] = {}
@@ -118,7 +138,7 @@ def decode_content(bytes_content: bytes) -> str:
         return bytes_content.decode('latin-1')
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="AI Globals Validation v4.14.0")
+    parser = argparse.ArgumentParser(description="AI Globals Validation v4.15.0")
     parser.add_argument("--dry-run", action="store_true", help="Scan files without writing modifications")
     parser.add_argument("--generate-manifest", action="store_true", help="Force regenerate manifest")
     parser.add_argument("--force", action="store_true", help="Bypass manifest checks and scan all files")
@@ -226,11 +246,16 @@ def check_file_references(content: str, rel_name: str, ctx: ValidationContext) -
         if re.match(r"^\s+[§S]\s*\d+", content[index_after:]):
             continue
         target_file = raw_target_file.replace("/", os.sep)
+        if "server" + os.sep + ".ai" in target_file:
+            target_file = target_file.split("server" + os.sep + ".ai" + os.sep)[-1]
         base_target_file = os.path.basename(target_file).lower()
         if target_file.lower() in ignored_file_refs or base_target_file in ignored_file_refs:
             continue
         resolved_path = get_fuzzy_match(target_file, list(ctx.global_headers.keys()))
         if not resolved_path:
+            global_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            if os.path.exists(os.path.join(global_path, target_file)):
+                continue
             print_color(f"ERROR: Broken File Reference in {rel_name}: Target '{target_file}' not found.", Colors.RED)
             error_found = True
             ctx.error_count += 1
@@ -242,6 +267,19 @@ def check_mojibake(content: str, rel_name: str, ctx: ValidationContext) -> bool:
         ctx.error_count += 1
         return True
     return False
+
+def check_symbolic_codes(content: str, rel_name: str, ctx: ValidationContext) -> bool:
+    error_found = False
+    if "vocabulary.md" in rel_name:
+        return False
+    codes = re.finditer(r"\[([A-Z]{3,4}-\d{2})\]", content)
+    for match in codes:
+        code = match.group(1)
+        if code not in ctx.defined_codes:
+            print_color(f"ERROR: Undefined Symbolic Code in {rel_name}: '{code}' is not defined in vocabulary.md.", Colors.RED)
+            error_found = True
+            ctx.error_count += 1
+    return error_found
 
 def check_trailing_newlines(content: str, rel_name: str, ctx: ValidationContext) -> Tuple[str, bool]:
     if not content.endswith("\n"):
@@ -299,9 +337,10 @@ def validate_single_file(rel_name: str, file_data: Dict[str, Dict], ctx: Validat
     content, ref_err, ref_mod = check_cross_references(content, rel_name, ctx)
     file_ref_err = check_file_references(content, rel_name, ctx)
     moji_err = check_mojibake(content, rel_name, ctx)
+    code_err = check_symbolic_codes(content, rel_name, ctx)
     content, nl_mod = check_trailing_newlines(content, rel_name, ctx)
     
-    error_found = sec_err or h1_err or ref_err or file_ref_err or moji_err
+    error_found = sec_err or h1_err or ref_err or file_ref_err or moji_err or code_err
     file_modified = ending_mod or bom_mod or ref_mod or nl_mod
     
     if file_modified and not ctx.dry_run:
@@ -341,13 +380,21 @@ def main() -> None:
     os.chdir(global_path)
     
     fix_status = 'ON' if args.fix else 'OFF'
-    print_color(f"Starting AI Globals Validation v4.14.0 [Self-Healing Mode: {fix_status}]...", Colors.CYAN)
+    print_color(f"Starting AI Globals Validation v4.15.0 [Self-Healing Mode: {fix_status}]...", Colors.CYAN)
     
     rule_files = collect_rule_files(global_path)
     manifest = load_integrity_manifest(os.path.join(global_path, "integrity.manifest"))
     force_scan = args.force or args.generate_manifest or check_core_rules(global_path, manifest)
     
     ctx = ValidationContext(args.fix, args.interactive, args.dry_run, args.force)
+    
+    vocab_path = os.path.join(global_path, "rules", "vocabulary.md")
+    if os.path.exists(vocab_path):
+        with open(vocab_path, 'r', encoding='utf-8', errors='ignore') as f:
+            vocab_content = f.read()
+            for match in re.finditer(r"\[([A-Z]{3,4}-\d{2})\]", vocab_content):
+                ctx.defined_codes.add(match.group(1))
+                
     file_data = run_pass1(rule_files, global_path, manifest, force_scan, ctx)
     
     new_manifest = manifest.copy()

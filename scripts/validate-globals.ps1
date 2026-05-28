@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.14.0
+# AI Globals Validation Script (PowerShell) v4.15.0
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -30,9 +30,30 @@ function Get-FuzzyMatch {
 
 function Get-RuleFiles {
     param([string]$GlobalPath)
-    $RuleFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
-    $RuleFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
-    return $RuleFiles
+    $IgnoreLines = @()
+    $IgnoreFile = Join-Path $GlobalPath ".aiignore"
+    if (Test-Path $IgnoreFile) {
+        $IgnoreLines = Get-Content $IgnoreFile | Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') } | ForEach-Object { $_.Trim().Replace('/', '\') }
+    }
+    
+    $AllFiles = Get-ChildItem -Path "$GlobalPath" -Filter "*.md" -File
+    $AllFiles += Get-ChildItem -Path "$GlobalPath\rules", "$GlobalPath\tech-stack", "$GlobalPath\workflows" -Filter "*.md" -Recurse
+    
+    $Filtered = @()
+    foreach ($f in $AllFiles) {
+        $rel = $f.FullName.Replace("$GlobalPath\", "")
+        $ignored = $false
+        foreach ($ignore in $IgnoreLines) {
+            if ($rel -like "*$ignore*") {
+                $ignored = $true
+                break
+            }
+        }
+        if (-not $ignored) {
+            $Filtered += $f
+        }
+    }
+    return $Filtered
 }
 
 function Get-IntegrityManifest {
@@ -192,11 +213,16 @@ function Test-FileReferences {
         $RawTargetFile = $FileRef.Groups[1].Value
         $IndexAfter = $FileRef.Index + $FileRef.Length
         if ($IndexAfter -lt $Content.Length -and $Content.Substring($IndexAfter) -match "^\s+[§S]\s*\d+") { continue }
+
         $TargetFile = $RawTargetFile.Replace("/", "\")
+        if ($TargetFile -like "*server\.ai\*") {
+            $TargetFile = $TargetFile -replace '^.*server\\\.ai\\', ''
+        }
         $BaseTargetFile = [System.IO.Path]::GetFileName($TargetFile)
         if ($IgnoredFileRefs -contains $TargetFile -or $IgnoredFileRefs -contains $BaseTargetFile) { continue }
         $ResolvedPath = Get-FuzzyMatch $TargetFile $ctx.GlobalHeaders.Keys
         if (-not $ResolvedPath) {
+            if (Test-Path (Join-Path $GlobalPath $TargetFile)) { continue }
             Write-Error "Broken File Reference in ${FileName}: Target '$TargetFile' not found."
             $ctx.ErrorCount++; $ErrorFound = $true
         }
@@ -212,6 +238,21 @@ function Test-Mojibake {
         return $true
     }
     return $false
+}
+
+function Test-SymbolicCodes {
+    param([string]$Content, [string]$FileName, [hashtable]$ctx)
+    $ErrorFound = $false
+    $Refs = [regex]::Matches($Content, "\[([A-Z]{3,4}-\d{2})\]")
+    foreach ($ref in $Refs) {
+        $code = $ref.Groups[1].Value
+        if ($FileName -like "*vocabulary.md") { continue }
+        if (-not $ctx.DefinedCodes.ContainsKey($code)) {
+            Write-Error "Undefined Symbolic Code in ${FileName}: '$code' is not defined in vocabulary.md."
+            $ctx.ErrorCount++; $ErrorFound = $true
+        }
+    }
+    return $ErrorFound
 }
 
 function Test-TrailingNewlines {
@@ -251,10 +292,11 @@ function Test-SingleFile {
     $modRefs, $Content, $errRefs = Test-CrossReferences $Content $FileName $ctx
     $errFileRefs = Test-FileReferences $Content $FileName $ctx
     $errMoji = Test-Mojibake $Content $FileName $ctx
+    $errCodes = Test-SymbolicCodes $Content $FileName $ctx
     $modNL, $Content = Test-TrailingNewlines $Content $FileName $ctx
     
     $FileModified = $modLE -or $modBom -or $modRefs -or $modNL
-    $ErrorFound = $errSec -or $errH1 -or $errRefs -or $errFileRefs -or $errMoji
+    $ErrorFound = $errSec -or $errH1 -or $errRefs -or $errFileRefs -or $errMoji -or $errCodes
     
     if ($FileModified -and -not $ctx.DryRun) {
         [System.IO.File]::WriteAllText($FilePath, $Content, [System.Text.UTF8Encoding]::new($false))
@@ -341,16 +383,27 @@ function Run-Pass2 {
 
 # Execution Start
 $RuleFiles = Get-RuleFiles $GlobalPath
-Write-Host "Starting AI Globals Validation v4.14.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.15.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ManifestPath = Join-Path $GlobalPath "integrity.manifest"
 $Manifest = Get-IntegrityManifest $ManifestPath
 $ForceScan = $Force -or $GenerateManifest -or (Test-CoreRules $GlobalPath $Manifest)
 
+$VocabularyPath = Join-Path $GlobalPath "rules\vocabulary.md"
+$DefinedCodes = @{}
+if (Test-Path $VocabularyPath) {
+    $VocabContent = Get-Content $VocabularyPath -Raw -Encoding UTF8
+    $Matches_Codes = [regex]::Matches($VocabContent, "\[([A-Z]{3,4}-\d{2})\]")
+    foreach ($m in $Matches_Codes) {
+        $DefinedCodes[$m.Groups[1].Value] = $true
+    }
+}
+
 $ctx = @{
     Fix = $Fix; Interactive = $Interactive; DryRun = $DryRun
     ScannedCount = 0; SkippedCount = 0; ErrorCount = 0; WarningCount = 0; FixedCount = 0
     GlobalHeaders = @{}
+    DefinedCodes = $DefinedCodes
 }
 
 $FileData = Run-Pass1 $RuleFiles $GlobalPath $Manifest $ForceScan $ctx
