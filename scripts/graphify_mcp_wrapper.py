@@ -104,6 +104,8 @@ def _extract_workspace_from_initialize(line: bytes) -> str | None:
     client_info = params.get("clientInfo", {})
     log.info("clientInfo: %s", client_info)
 
+    log.info("os.environ: %s", json.dumps(dict(os.environ), indent=2))
+
     log.warning("Could not extract workspace from initialize message")
     return None
 
@@ -172,12 +174,12 @@ def _install_intercept_pipe():
         os.chdir(ws)
         os.environ["GRAPHIFY_WORKSPACE"] = ws
     else:
-        log.warning("No workspace detected, staying in cwd=%s", os.getcwd())
-        # Fallback: check if GRAPHIFY_WORKSPACE env var was set externally
-        env_ws = os.environ.get("GRAPHIFY_WORKSPACE")
-        if env_ws and os.path.isdir(env_ws):
-            log.info("Using GRAPHIFY_WORKSPACE env var: %s", env_ws)
-            os.chdir(env_ws)
+        # Fallback to the script's grandparent directory (assuming script is in workspace/scripts/)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        fallback_ws = os.path.dirname(script_dir)
+        log.warning("No workspace detected from MCP protocol, using script's parent directory as fallback: %s", fallback_ws)
+        os.chdir(fallback_ws)
+        os.environ["GRAPHIFY_WORKSPACE"] = fallback_ws
 
     # Now replace fd 0 with our pipe's read end
     os.dup2(r_fd, 0)
