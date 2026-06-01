@@ -3,6 +3,20 @@
 > This file tracks system-level audits, architectural decisions, and auto-discovered tech-stack additions.
 > Historical entries have been archived to [MEMORY-archive.md](file:///D:/server/.ai/MEMORY-archive.md).
 
+## 2026-05-29 — MCP Initialization & Windows Quoting Fix (v4.15.1)
+
+**Scope:** Repairing Windows-specific shell quoting and variable expansion bug causing StitchMCP and all cascading MCP servers to fail during IDE startup.
+**Trigger:** Manual — MCP Error resolution
+**Agent:** Antigravity (Gemini 3.5 Flash)
+
+### Actions Taken
+- **MCP Configuration Hardening:** Refactored `C:\Users\Moataz\.gemini\antigravity-ide\mcp_config.json` to spawn `StitchMCP` directly using `npx.cmd` instead of calling `cmd.exe /c` with backslash-escaped quotes.
+- **Environment Variable Binding:** Switched from Windows shell-level environment variable expansion (`%STITCH_API_KEY%`) to `mcp-remote` native token substitution (`${STITCH_API_KEY}`).
+
+### Architectural Decisions
+1. **Direct Binary Spawning over Shell Wrapper** — Spawning batch/executable targets (`npx.cmd`) directly instead of launching an intermediate shell (`cmd.exe /c`) avoids multi-layered quote escaping and argument tokenization bugs on Windows.
+2. **Native Tool Substitution** — Utilizing `mcp-remote`'s internal environment variable replacement parser ensures secure token injection without relying on OS-level command-line expansions.
+
 ---
 
 ## 2026-05-27 — Superpowers Methodology & Prompt Architecting Upgrade (v4.14.0)

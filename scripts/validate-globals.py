@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v4.15.0
+# AI Globals Validation Script (Python) v4.15.1
 # This script ensures the repository follows its own standards.
 
 import os
@@ -138,7 +138,7 @@ def decode_content(bytes_content: bytes) -> str:
         return bytes_content.decode('latin-1')
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="AI Globals Validation v4.15.0")
+    parser = argparse.ArgumentParser(description="AI Globals Validation v4.15.1")
     parser.add_argument("--dry-run", action="store_true", help="Scan files without writing modifications")
     parser.add_argument("--generate-manifest", action="store_true", help="Force regenerate manifest")
     parser.add_argument("--force", action="store_true", help="Bypass manifest checks and scan all files")
@@ -380,7 +380,7 @@ def main() -> None:
     os.chdir(global_path)
     
     fix_status = 'ON' if args.fix else 'OFF'
-    print_color(f"Starting AI Globals Validation v4.15.0 [Self-Healing Mode: {fix_status}]...", Colors.CYAN)
+    print_color(f"Starting AI Globals Validation v4.15.1 [Self-Healing Mode: {fix_status}]...", Colors.CYAN)
     
     rule_files = collect_rule_files(global_path)
     manifest = load_integrity_manifest(os.path.join(global_path, "integrity.manifest"))

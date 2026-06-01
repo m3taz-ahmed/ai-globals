@@ -3,10 +3,18 @@
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 > Historical entries (v1.0.0 to v4.11.0) have been archived to [CHANGELOG-archive.md](file:///D:/server/.ai/CHANGELOG-archive.md).
 
+## [v4.15.1] - 2026-05-29 - MCP Windows Environment & Quoting Patch
+
+### Fixed
+- **MCP Configuration:** Resolved Windows shell-escaping crash for `StitchMCP` in [mcp_config.json](file:///C:/Users/Moataz/.gemini/antigravity-ide/mcp_config.json) by switching execution from `cmd.exe /c` to direct `npx.cmd` and using `mcp-remote` native `${ENV_VAR}` placeholder syntax. This restores full workspace initialization of all MCP servers (`StitchMCP`, `github-mcp-server`, `graphify`).
+
+---
+
 ## [v4.15.0] - 2026-05-28 - Micro-DSL Architecture & 50% Token Optimization 🚀
 
 ### Added
 - **rules/vocabulary.md:** Centralized symbolic dictionary mapping core rules to lightweight codes (`[BEH-01]`, `[SEC-08]`, `[PERF-06]`).
+- **useful-repos.md:** Added `adithya-s-k/omniparse` to centralize document, media, and web parsing resources for local RAG operations.
 - **Validation Engine:** Hardened `validate-globals.ps1` and `validate-globals.py` to parse `vocabulary.md` and enforce correct symbolic code usage across the workspace.
 
 ### Changed

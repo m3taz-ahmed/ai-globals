@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.15.0
+# AI Globals Validation Script (PowerShell) v4.15.1
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -383,7 +383,7 @@ function Run-Pass2 {
 
 # Execution Start
 $RuleFiles = Get-RuleFiles $GlobalPath
-Write-Host "Starting AI Globals Validation v4.15.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.15.1 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ManifestPath = Join-Path $GlobalPath "integrity.manifest"
 $Manifest = Get-IntegrityManifest $ManifestPath
