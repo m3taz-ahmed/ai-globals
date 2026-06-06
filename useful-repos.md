@@ -26,3 +26,13 @@ This file tracks useful open-source repositories and tools that can be leveraged
 - **[adithya-s-k/omniparse](https://github.com/adithya-s-k/omniparse)**: A local ingestion and parsing platform that converts unstructured data (documents, images, audio, video, web) into structured Markdown for GenAI (LLM) applications.
   - **Use Case**: When building RAG systems (e.g. using Qdrant), analyzing design wireframes/screenshots for UI generation, transcribing media specs, or crawling dynamic web pages.
   - **Key Benefits**: Completely local and private deployment (via Docker), parses PDF, Word, PowerPoint, images, web, and audio/video into clean LLM-friendly Markdown. Exposes FastAPI endpoints and a Gradio UI.
+
+## Awesome Lists (Curated Resources)
+- **[ziadoz/awesome-php](https://github.com/ziadoz/awesome-php)**: A curated list of amazingly awesome PHP libraries, resources, and shiny things.
+  - **Use Case**: When looking for the best standard library or tool in PHP for a specific task (e.g. PDF generation, caching, ORM).
+- **[simskij/awesome-software-architecture](https://github.com/simskij/awesome-software-architecture)**: A curated list of awesome articles and resources to learn and practice software architecture.
+  - **Use Case**: When designing a new system or refactoring an existing one.
+- **[vinta/awesome-python](https://github.com/vinta/awesome-python)**: A curated list of awesome Python frameworks, libraries, software and resources.
+  - **Use Case**: When working on python/AI scripts and needing a specific tool.
+- **[enaqx/awesome-react](https://github.com/enaqx/awesome-react)**: A collection of awesome things regarding React ecosystem.
+  - **Use Case**: When working on React frontend projects.
