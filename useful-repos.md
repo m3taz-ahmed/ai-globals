@@ -1,6 +1,9 @@
 # Useful Repositories & Tools
 
-This file tracks useful open-source repositories and tools that can be leveraged when building new features. Before starting a new feature, review this list to see if any existing tool can simplify the implementation.
+> This file serves as the official registry for third-party methodologies, structural tools, UI templates, and AI workflows that Antigravity relies upon.
+
+## 🤖 AI Ecosystem & Capabilities
+- **[vercel-labs/skills](https://github.com/vercel-labs/skills):** The official standard and package manager for AI Agent Skills. Use this via `npx skills add <skill>` to instantly download third-party workflows and capabilities (like Stripe, AWS, specific frameworks) instead of writing prompts from scratch. Before starting a new feature, review this list to see if any existing tool can simplify the implementation.
 
 ## Integrations & APIs
 - **[NangoHQ/nango](https://github.com/NangoHQ/nango)**: An open-source platform for B2B integrations.

@@ -3,6 +3,35 @@
 > This file tracks system-level audits, architectural decisions, and auto-discovered tech-stack additions.
 > Historical entries have been archived to [MEMORY-archive.md](file:///D:/server/.ai/MEMORY-archive.md).
 
+## 2026-06-06 — Third-Party AI Capabilities Standard (v4.16.1)
+
+**Scope:** Defined the official package manager and standard for extending AI capabilities without bloating the native OS.
+**Trigger:** Manual — User request and architectural discussion
+**Agent:** Antigravity (Gemini 3.1 Pro)
+
+### Architectural Decisions
+1. **`vercel-labs/skills` as Standard:** Adopted `vercel-labs/skills` as the official standard for integrating third-party APIs (AWS, Stripe) and domain-specific AI workflows.
+2. **Strict Separation of Concerns:** Native OS rules (`d:\server\.ai\workflows`) will NOT be converted to `SKILL.md` format. Vercel Skills (`npx skills`) will be used strictly as ephemeral, external plugins to preserve the OS's git-based centralization and portability.
+
+---
+
+## 2026-06-06 — Native Persistent Memory System (v4.16.0)
+
+**Scope:** Implemented a native context-preservation system inside the Global AI OS (inspired by claude-mem) to maintain project-specific context across sessions without third-party tools.
+**Trigger:** Manual — User request and architectural discussion
+**Agent:** Antigravity (Gemini 3.1 Pro)
+
+### Actions Taken
+- **Workflow Creation:** Created `workflows/09-memory-sync.md` to extract, compress, and save session learnings into a local `./.ai/active-context.md` file.
+- **Workflow Automation:** Updated `global-workflow.md` (Layer 1 and Step 6) to read from and write to the local active context automatically at the end of major tasks.
+
+### Architectural Decisions
+1. **Native Implementation over Third-Party Tools** — Building this natively inside the AI OS ensures full control, avoids conflicts with existing CLI tools, and integrates perfectly with the existing Markdown/Workflow ecosystem.
+2. **Relative Pathing (`./.ai/active-context.md`)** — Scoping the memory per-project avoids bloat and cross-contamination of project contexts, solving the multi-tenant memory problem gracefully.
+3. **Auto-Triggering Memory Sync** — Mandated that the AI natively invokes the memory sync sequence without requiring manual user prompts to simulate a true "persistent memory" experience.
+
+---
+
 ## 2026-05-29 — MCP Initialization & Windows Quoting Fix (v4.15.1)
 
 **Scope:** Repairing Windows-specific shell quoting and variable expansion bug causing StitchMCP and all cascading MCP servers to fail during IDE startup.

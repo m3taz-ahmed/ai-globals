@@ -8,6 +8,7 @@ Load context in order (silently):
   - `rules/core-behavioral-compact.md` — Non-negotiable behavioral core (< 50 lines)
   - `global-roles.md` — Architecture, gates, communication
 - **Layer 1 — ALWAYS (Structural Rules):**
+  - `./.ai/active-context.md` — Local project persistent memory context
   - `rules/vocabulary.md` — Central symbolic rules dictionary
   - `rules/anti-patterns.md` — Negative constraints
   - `useful-repos.md` — Tools & methodologies registry
@@ -57,7 +58,10 @@ No blind large-code generation. Stop & ask if requirements are ambiguous (<80% c
 2. Run static analysis/linters.
 3. Keep technical terms in English inside translation output.
 
-## STEP 6: DOCUMENTATION & HANDOFF
-1. Update local project's `MEMORY.md`.
-2. Update `./CHANGELOG.md` if central rules changed.
+## STEP 6: DOCUMENTATION & HANDOFF (AUTO-TRIGGER)
+> [!IMPORTANT]
+> You must proactively execute this step automatically whenever you complete a major task, logical milestone, or right before completing the user's core request. Do NOT wait for the user to explicitly ask you to "save the session".
+
+1. Run `workflows/09-memory-sync.md` to compress session context into `./.ai/active-context.md`.
+2. Update global `MEMORY.md` (for architectural changes) and `./CHANGELOG.md` (for rule changes).
 3. Summarize remaining tasks, blockers, and state for next session.
