@@ -4,7 +4,7 @@
   <p><b>توقف عن السماح للذكاء الاصطناعي بكتابة كود "سباغيتي". حوله إلى مهندس برمجيات رئيسي (Principal Architect).</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/الإصدار-4.15.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.15.1">
+    <img src="https://img.shields.io/badge/الإصدار-4.17.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.17.0">
     <img src="https://img.shields.io/badge/الحالة-تصحيح_ذاتي-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
     <img src="https://img.shields.io/badge/المعمارية-سيادية-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
     <img src="https://img.shields.io/badge/الرخصة-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">

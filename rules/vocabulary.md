@@ -70,6 +70,7 @@
 - `[API-06]`: Stream tokens via Server-Sent Events (SSE); disable Nginx proxy buffering.
 - `[API-07]`: Mitigate context collapse: limit tokens with sliding window, semantic injection (RAG), auto-summarization.
 - `[API-08]`: Semantic Caching: return cached responses on high vector similarity (>=0.95) to save token cost.
+- `[API-09]`: Generative UI Efficiency: Use OpenUI Lang for LLM UI outputs. ⛔ JSON-based UI generation (to reduce tokens by 67% and constrain hallucinations).
 
 
 ## ENV: Windows Environment

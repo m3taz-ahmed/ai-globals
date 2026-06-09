@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v4.15.1
+# AI Globals Validation Script (PowerShell) v4.17.0
 # This script ensures the repository follows its own standards.
 
 [CmdletBinding()]
@@ -206,7 +206,7 @@ function Test-CrossReferences {
 
 function Test-FileReferences {
     param([string]$Content, [string]$FileName, [hashtable]$ctx)
-    $IgnoredFileRefs = @('monthely-maintenance-prompt.md','nuxt-4.md','bun-1.md','drizzle-orm.md','09-ai-review.md','mobile-standards.md','GEMINI.md','workflows\NN-name.md','tech-stack\xxx.md','verification-patterns.md','filename.md','bug_report.md','feature_request.md','tech_stack_request.md','PULL_REQUEST_TEMPLATE.md')
+    $IgnoredFileRefs = @('monthely-maintenance-prompt.md','nuxt-4.md','bun-1.md','drizzle-orm.md','09-ai-review.md','mobile-standards.md','GEMINI.md','workflows\NN-name.md','tech-stack\xxx.md','verification-patterns.md','filename.md','bug_report.md','feature_request.md','tech_stack_request.md','PULL_REQUEST_TEMPLATE.md','active-context.md','SKILL.md','memory-archive.md')
     $FileRefs = [regex]::Matches($Content, "(?i)\b([\w\-\./]+\.md)\b")
     $ErrorFound = $false
     foreach ($FileRef in $FileRefs) {
@@ -383,7 +383,7 @@ function Run-Pass2 {
 
 # Execution Start
 $RuleFiles = Get-RuleFiles $GlobalPath
-Write-Host "Starting AI Globals Validation v4.15.1 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
+Write-Host "Starting AI Globals Validation v4.17.0 [Self-Healing Mode: $(if($Fix){"ON"}else{"OFF"})]..." -ForegroundColor Cyan
 
 $ManifestPath = Join-Path $GlobalPath "integrity.manifest"
 $Manifest = Get-IntegrityManifest $ManifestPath

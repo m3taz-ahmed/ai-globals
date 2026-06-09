@@ -3,6 +3,15 @@
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 > Historical entries (v1.0.0 to v4.11.0) have been archived to [CHANGELOG-archive.md](file:///D:/server/.ai/CHANGELOG-archive.md).
 
+## [v4.17.0] - 2026-06-09 - Token-Efficient Generative UI (OpenUI)
+
+### Added
+- **OpenUI Integration:** Enforced `OpenUI` as the official standard for generative UI across the `AI Global OS` to reduce token footprint by up to 67% and constrain hallucinations.
+- **tech-stack/openui-generative.md:** New standards defining how to use `OpenUI Lang`, `defineComponent`, and the React `<Renderer />`.
+- **Vocabulary:** Added `[API-09]` rule to strictly block `JSON-based` component generation frameworks in favor of the `OpenUI` standard.
+
+---
+
 ## [v4.16.0] - 2026-06-09 - AI OS Memory Engine (Turbovec Integration)
 
 ### Added

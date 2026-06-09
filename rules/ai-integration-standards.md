@@ -13,3 +13,6 @@
 
 ## Semantic Caching `[API-08]`
 - **Vector Cache:** Cache responses using vector similarity (threshold >= 0.95) to prevent redundant API calls.
+
+## Generative UI `[API-09]`
+- **OpenUI Standard:** Enforce `OpenUI` framework for chat/generative UI. Define strict Zod component libraries to prevent UI hallucinations, and utilize `OpenUI Lang` stream via React `<Renderer />`. ⛔ JSON-based UI output.

@@ -196,4 +196,3 @@ How much to change: subtle, preserve all facial features exactly
 Style consistency: maintain photorealistic style, same lighting direction
 Negative prompt: no new elements, no style changes, no background changes
 ```
-
