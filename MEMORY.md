@@ -3,6 +3,22 @@
 > This file tracks system-level audits, architectural decisions, and auto-discovered tech-stack additions.
 > Historical entries have been archived to [MEMORY-archive.md](file:///D:/server/.ai/MEMORY-archive.md).
 
+## 2026-06-09 — AI OS Memory Engine (v4.16.0)
+
+**Scope:** Integrated `turbovec` as the native local vector search engine for the Global AI OS.
+**Trigger:** Manual — User request to analyze and adopt `turbovec` repo.
+**Agent:** Antigravity (Gemini 3.1 Pro)
+
+### Actions Taken
+- **Standardization:** Created `tech-stack/turbovec-standards.md` establishing `turbovec` as the sovereign vector index and prohibiting external vector DBs.
+- **Module Creation:** Built `scripts/ai_memory_engine.py` to wrap the `IdMapIndex` functionality for adding/searching memory vectors.
+
+### Architectural Decisions
+1. **Efficiency Over Complexity:** Utilizing a 4-bit scalar quantized index directly in memory avoids the overhead of managing Dockerized databases (like Milvus or Qdrant), fitting our local-first philosophy.
+2. **Hybrid Search Foundations:** Using `IdMapIndex` allows integration with external permissions/ACLs using `turbovec`'s SIMD allowlist filtering.
+
+---
+
 ## 2026-06-06 — Third-Party AI Capabilities Standard (v4.16.1)
 
 **Scope:** Defined the official package manager and standard for extending AI capabilities without bloating the native OS.

@@ -3,6 +3,16 @@
 > All notable changes are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/) and [Conventional Commits](https://www.conventionalcommits.org/).
 > Historical entries (v1.0.0 to v4.11.0) have been archived to [CHANGELOG-archive.md](file:///D:/server/.ai/CHANGELOG-archive.md).
 
+## [v4.16.0] - 2026-06-09 - AI OS Memory Engine (Turbovec Integration)
+
+### Added
+- **turbovec Integration:** Added `turbovec` as the official local vector search engine for the Global AI OS, eliminating the need for heavyweight vector databases.
+- **tech-stack/turbovec-standards.md:** New standards defining how to use `turbovec` with `IdMapIndex` and allowlist filtering across the workspace.
+- **scripts/ai_memory_engine.py:** New Python wrapper script for interacting with the AI memory via `turbovec`.
+- **scripts/requirements-memory.txt:** Added Python requirements for the new memory module.
+
+---
+
 ## [v4.15.1] - 2026-05-29 - MCP Windows Environment & Quoting Patch
 
 ### Fixed
