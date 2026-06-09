@@ -136,3 +136,64 @@
 ### Ex 2: Validation-less Writes
 - **❌:** `auth()->user()->update($request->all());`
 - **✅:** Use FormRequest validation: `auth()->user()->update($request->validated());`
+
+
+---
+
+## 8. Prompt Master Examples
+
+### Template Example 1
+**Example:**
+```
+Role: You are a senior technical writer.
+Task: Write a one-paragraph description of what a REST API is.
+Format: Plain prose, 3 sentences maximum, no jargon, suitable for a non-technical audience.
+```
+
+### Template Example 2
+**Example:**
+```
+Context: I am a founder pitching a B2B SaaS tool that automates expense reporting for mid-size companies.
+Objective: Write a cold email that gets a reply from a CFO.
+Style: Direct and conversational, not salesy.
+Tone: Confident but not pushy.
+Audience: CFO at a 200-person company, busy, skeptical of vendor emails.
+Response: 5 sentences max. Subject line included. No bullet points.
+```
+
+### Template Example 3
+**Example:**
+```
+Role: You are a product manager with 10 years of experience in mobile apps.
+Instructions: Write a product requirements document for a habit tracking feature.
+Steps:
+  1. Define the problem statement in one paragraph
+  2. List user stories in the format "As a [user], I want [goal] so that [reason]"
+  3. Define acceptance criteria for each story
+  4. List out-of-scope items explicitly
+End Goal: A PRD that an engineering team can begin sprint planning from immediately.
+Narrowing: No technical implementation details. No wireframes. Under 600 words total.
+```
+
+### Template Example 4
+**Example:**
+```
+Capacity: Expert copywriter specializing in SaaS product launches.
+Role: Brand voice for a productivity tool aimed at developers.
+Insight: Developers hate marketing speak and respond to honesty and specificity.
+Statement: Write the hero headline and sub-headline for the landing page.
+Personality: Sharp, dry, confident — no adjectives, no exclamation marks.
+Experiment: Give 3 variants ranging from minimal to bold.
+```
+
+### Template Example 5
+**Example:**
+```
+Reference image: [attached portrait photo]
+What to keep exactly the same: face, hair, clothing, background, lighting
+What to change: head angle — rotate from facing left to facing straight forward
+How much to change: subtle, preserve all facial features exactly
+Style consistency: maintain photorealistic style, same lighting direction
+Negative prompt: no new elements, no style changes, no background changes
+```
+

@@ -29,3 +29,11 @@
 - **Hijack Prevention:** Sanitize inputs to prevent goal hijacking. Enforce JSON schema validation.
 - **Inter-Agent:** Scoped and mutually authenticated (mTLS/tokens) machine-to-machine APIs.
 - **Identifiers:** Always use unpredictable UUIDv4 for resources. ⛔ auto-increment IDs.
+
+## Network & Integration Security
+- **SSRF Prevention:** When making outbound HTTP requests with user-provided URLs, validate the domain against an allowed list. ⛔ Never resolve local IPs (`127.0.0.1`, `169.254.169.254` or internal subnets).
+- **Webhooks:** All incoming webhooks must be verified via HMAC signature. Prevent replay attacks using message IDs and timestamp checks.
+
+## File Upload Security
+- **Validation:** Validate file extensions AND MIME types. Ensure file size limits are enforced at the web server level (Nginx/Apache) AND application level.
+- **Storage Location:** Store uploaded files outside the public web root (`public/`). Serve them via a controller that enforces authorization.

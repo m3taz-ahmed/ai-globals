@@ -2,6 +2,11 @@
 > [!IMPORTANT]
 > **Discovery:** Scan `workflows/` at start of any task as primary execution blueprint.
 
+## STEP 0: SMART TRIGGERS & COMMANDS
+Listen for Natural Language triggers or Slash Commands to instantly map to workflows.
+- If user types `الاوامر`, `القائمة`, `/menu`, or `/help`, immediately read and display `CHEAT_SHEET.md` in a neat table.
+- Map natural phrases like "راجع الكود" to `/review` (`05-code-review.md`), "نفذ" to `/execute`, etc. Refer to `CHEAT_SHEET.md` for the full mapping matrix.
+
 ## STEP 1: ROUTE & READ (Layered Context Loading)
 Load context in order (silently):
 - **Layer 0 — ALWAYS (Behavioral Core):**
@@ -36,10 +41,11 @@ Load context in order (silently):
     - Onboarding → `08-onboarding.md`
   - **Tech-Stack Lazy Loading:** Read ONLY matching files from `./tech-stack/` based on `package.json`/`composer.json`. Ignore spec files marked `[!SPECULATIVE]` unless matching pre-release stack.
 
-## STEP 2: THINK (Internal Reasoning)
-Prior to responding:
-1. Identify edge cases & requirements.
-2. Security (OWASP), N+1, performance checks.
+## STEP 2: THINK & PRE-FLIGHT HOOK (Internal Reasoning)
+Prior to responding or executing ANY tool (Bash/Write):
+1. **Pre-flight Validation:** Am I running a destructive bash command? Am I bypassing security? Validate against anti-patterns first.
+2. Identify edge cases & requirements.
+3. Security (OWASP), N+1, performance checks.
 3. Validate approach doesn't violate `rules/anti-patterns.md` / `[SEC-xx]`.
 4. Webhooks/APIs follow `rules/api-integration-standards.md` / `[API-xx]`.
 5. Subagents follow Saga handshake (`workflows/10-saga-reconciliation.md`).

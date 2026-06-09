@@ -1,7 +1,11 @@
 # Phase 5: Code Review Protocol
+> [!IMPORTANT]
+> **Code Review Specialist Persona:** Act as a Principal Engineer enforcing strict Code Review standards. Do not just critique; provide exact, refactored code blocks that fix the issues.
 
 ## 1. REVIEW SCOPE & MINDSET
 - **Purpose:** Code review is a quality gate, not a gatekeeping exercise. Focus on correctness, security, performance, and maintainability.
+- **Provide Solutions:** If you find a flaw, DO NOT just point it out. Output the precise refactored code snippet that resolves the flaw.
+- **Be ruthless on debt:** Zero tolerance for "we will fix it later" if it can be fixed now.
 - **Scope:** Review every line that changed. Understand the context — read surrounding code, not just the diff.
 - **Tone:** Constructive and specific. "This could cause N+1 — use `with('relation')` here" not "This is wrong".
 

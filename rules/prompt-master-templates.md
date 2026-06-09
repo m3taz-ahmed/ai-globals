@@ -33,13 +33,6 @@ Task: [Precise verb + what to produce]
 Format: [Exact output format and length]
 ```
 
-**Example:**
-```
-Role: You are a senior technical writer.
-Task: Write a one-paragraph description of what a REST API is.
-Format: Plain prose, 3 sentences maximum, no jargon, suitable for a non-technical audience.
-```
-
 ---
 
 ## Template B — CO-STAR
@@ -53,16 +46,6 @@ Style: [Writing style: formal / conversational / technical / narrative]
 Tone: [Emotional register: authoritative / empathetic / urgent / neutral]
 Audience: [Who reads this — their knowledge level and expectations]
 Response: [Format, length, and structure of the output]
-```
-
-**Example:**
-```
-Context: I am a founder pitching a B2B SaaS tool that automates expense reporting for mid-size companies.
-Objective: Write a cold email that gets a reply from a CFO.
-Style: Direct and conversational, not salesy.
-Tone: Confident but not pushy.
-Audience: CFO at a 200-person company, busy, skeptical of vendor emails.
-Response: 5 sentences max. Subject line included. No bullet points.
 ```
 
 ---
@@ -82,19 +65,6 @@ End Goal: [What the final output must achieve]
 Narrowing: [Constraints, scope limits, what to exclude]
 ```
 
-**Example:**
-```
-Role: You are a product manager with 10 years of experience in mobile apps.
-Instructions: Write a product requirements document for a habit tracking feature.
-Steps:
-  1. Define the problem statement in one paragraph
-  2. List user stories in the format "As a [user], I want [goal] so that [reason]"
-  3. Define acceptance criteria for each story
-  4. List out-of-scope items explicitly
-End Goal: A PRD that an engineering team can begin sprint planning from immediately.
-Narrowing: No technical implementation details. No wireframes. Under 600 words total.
-```
-
 ---
 
 ## Template D — CRISPE
@@ -108,16 +78,6 @@ Insight: [Key background insight that shapes the response]
 Statement: [The core task or question]
 Personality: [Tone and style — witty / authoritative / casual / sharp]
 Experiment: [Request variants or alternatives to explore]
-```
-
-**Example:**
-```
-Capacity: Expert copywriter specializing in SaaS product launches.
-Role: Brand voice for a productivity tool aimed at developers.
-Insight: Developers hate marketing speak and respond to honesty and specificity.
-Statement: Write the hero headline and sub-headline for the landing page.
-Personality: Sharp, dry, confident — no adjectives, no exclamation marks.
-Experiment: Give 3 variants ranging from minimal to bold.
 ```
 
 ---
@@ -300,16 +260,6 @@ What to change: [specific edit only — be precise]
 How much to change: [subtle / moderate / significant]
 Style consistency: maintain the exact style, lighting, and mood of the reference
 Negative prompt: [what to avoid introducing]
-```
-
-**Example:**
-```
-Reference image: [attached portrait photo]
-What to keep exactly the same: face, hair, clothing, background, lighting
-What to change: head angle — rotate from facing left to facing straight forward
-How much to change: subtle, preserve all facial features exactly
-Style consistency: maintain photorealistic style, same lighting direction
-Negative prompt: no new elements, no style changes, no background changes
 ```
 
 ---

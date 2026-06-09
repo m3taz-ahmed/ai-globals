@@ -20,3 +20,11 @@
 - **Strict Types:** parameters and return types mandatory. ⛔ `mixed` or `any`.
 - **Enums `[CODE-04]`:** Use Enums or constants for statuses. ⛔ magic strings.
 - **Exceptions:** Extend domain-specific `AppException` rather than throwing raw `\Exception`.
+
+## AI-Specific Guardrails (Clean Code Guard)
+- **Names Reveal Intent:** Never use `data`, `data2`, `result`, `item`, `helper`. A name must answer *why it exists and what it does*.
+- **No Boolean Flags:** Avoid boolean flag arguments; split into two functions instead. Max 4 arguments total.
+- **Deduplicate Knowledge, Not Text:** Two functions that look alike but encode different business rules are NOT a DRY violation.
+- **Re-inline Bad Abstractions:** If an abstraction has accumulated branches for special cases, re-inline it back into callers before re-abstracting.
+- **Strip Dead Code Before Delivery:** Run static analysis and delete unused imports, dead branches, and "just in case" exports. Do not leave code for "someday".
+- **Refactoring Discipline:** Preserve observable behavior strictly when refactoring. Never bundle bug fixes with refactoring.
