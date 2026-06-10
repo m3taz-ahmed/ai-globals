@@ -49,9 +49,10 @@ Paste this block into your project's root `.cursorrules`, `GEMINI.md`, or AI sys
 ```markdown
 ### 🌍 GLOBAL AI OPERATING SYSTEM
 - **Root Path:** `D:/.ai` (adjust to your clone path)
-- **Identity & Rules:** Initialize by reading `global-roles.md` and `./rules/` from the root.
-- **Master Workflow:** Sync execution cycles using `./workflows/` and `global-workflow.md`.
-- **Tech Sync:** Auto-save missing tech-stack rules to `./tech-stack/` and log to `./CHANGELOG.md`.
+- **Identity & Rules:** Initialize by reading `global-roles.md` and `./min/rules/`. NEVER read source directories.
+- **JIT Compiler:** Run `scripts/get-uncompiled.ps1` at init. If it outputs paths, read them, compress to Telegraphic Pseudo-Code, and save to their `min/` folders before proceeding.
+- **Master Workflow:** Sync execution cycles using `./min/workflows/` and `global-workflow.md`.
+- **Tech Sync:** Load matching `.min` files from `./min/tech-stack/`. Auto-save missing tech-stack rules.
 ```
 
 ### 3. Issue the Command
@@ -72,35 +73,36 @@ AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context
 ├── global-workflow.md            # [Core] Cognitive loading & execution protocol
 ├── EXAMPLES.md                   # [Reference] ❌ LLM mistakes vs ✅ correct patterns
 │
-├── rules/                        # 🛡️ Precision-Guided Constraints
-│   ├── core-behavioral-compact.md  # 4 non-negotiable engineering principles
-│   ├── ai-integration-standards.md # Asynchronous AI queues, SSE streaming, Context Compaction
-│   ├── security-standards.md       # Zero-Trust, OWASP 2026, UUIDv4 mandates, EDoS Rate Limiting
-│   ├── performance-standards.md    # N+1 prevention, query budgeting
-│   └── ... (Git, Code Quality, SaaS, API Integration)
+├── min/                          # 🧠 Shadow DOM (AI-Only Readable Memory)
+│   ├── rules/                    # Compressed behavioral & structural rules
+│   ├── tech-stack/               # Compressed domain-specific RAG tech-stacks
+│   ├── workflows/                # Compressed trigger-based execution protocols
+│   └── skills/                   # Compressed AI tools & agent personas
 │
-├── tech-stack/                   # 🧠 Domain-Specific RAG (Auto-loaded based on task)
-│   ├── laravel-12.md             # Laravel 12/13 Professional Standards (Octane, Horizon)
-│   ├── react-ecosystem.md        # Next.js 15, React Compiler, Turbopack
-│   ├── qdrant-rag.md             # Local Qdrant Vector Databases & Cosine RAG Metrics
-│   ├── design-foundations.md     # Bento UI, Fluid Motion, OKLCH styling
-│   └── ... (PostgreSQL 17, Tailwind v4, Filament, SaaS Billing)
-│
-├── workflows/                    # ⚙️ Trigger-Based Execution Protocols
-│   ├── 01-planning.md            # Architectural gating & strategy
-│   ├── 02-execution.md           # Surgical implementation loops
-│   ├── 07-security-audit.md      # Security hardening protocol
-│   ├── 10-saga-reconciliation.md # Saga coordination & reconciliation
-│   └── ... (Debugging, Deployment, Code Review)
+├── rules/                        # 🛡️ Source: Precision-Guided Constraints (Human Readable)
+├── tech-stack/                   # 📚 Source: Domain-Specific RAG (Human Readable)
+├── workflows/                    # ⚙️ Source: Execution Protocols (Human Readable)
+├── skills/                       # 🧰 Source: AI Personas & Skills (Human Readable)
 │
 └── scripts/                      # 🔧 Self-Healing Operations
+    ├── get-uncompiled.ps1        # JIT Compiler trigger for newly added rules
     ├── validate-globals.ps1      # PowerShell integrity validator
     └── validate-globals.py       # Cross-platform Python validator
 ```
 
 ---
 
-## 🚀 v4.15.0: Micro-DSL Architecture & 50% Token Optimization
+## 🚀 v4.18.0: JIT Compiler & Telegraphic Shadow DOM
+
+This OS now operates with a compiler-like architecture, maximizing AI context efficiency to extremes:
+
+- **Shadow DOM (`min/` directory):** AI no longer reads raw English/Markdown rule files. All instructions, workflows, skills, and tech stacks are compressed into a "Telegraphic Pseudo-Code" format readable only by the AI and stored in `min/`.
+- **JIT Compilation (`get-uncompiled.ps1`):** Whenever a human adds or updates a rule in the raw directories, the OS automatically detects the uncompiled file on initialization. The AI acts as its own JIT compiler, compressing the new rule and injecting it into the Shadow DOM.
+- **Context Density Limit-Break:** Achieved an unprecedented reduction in token usage. The entire global intelligence footprint now consumes minimal context while executing multi-layered instructions flawlessly.
+
+---
+
+## ⚡ v4.15.0: Micro-DSL Architecture & 50% Token Optimization
 
 This OS doesn't just manage prompts; it enforces the highest echelons of modern software engineering with maximum efficiency:
 
