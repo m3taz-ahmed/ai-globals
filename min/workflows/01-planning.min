@@ -1,0 +1,6 @@
+[PLANNING]
+Protocol:SpecTeasing(⛔GenLargeCodeW/oClarify); Chunking(ReqSignOff); MapConstraints; DevilsAdvocate(ResourceAlt);
+RiskMatrix:Complex/Data/Rollback/Perf(FlagHigh);
+Deps:Audit(CVE/Updates)BeforeInstall;
+Model:Schema/FK/Indexes(1x-100xScale);
+Exec:StructureTDD(Red/Green); UseSubagents;

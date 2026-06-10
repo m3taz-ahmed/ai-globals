@@ -1,0 +1,5 @@
+[REVERB]
+Channels:Public(Global); Private(User/TenantScoped); Presence(UserAwareness);
+Sec:AuthCallback(Private/Presence); Limits/Heartbeats; TypedDTOs>ModelProps;
+Scale:Horizontal(RedisPubSub); NativeBroadcast(L12/13); ContextAPI(Trace);
+Rules:⛔BroadcastRawModels(UseDTO); ⛔SensitiveDataOnPublic; VerifyAuth=Req;

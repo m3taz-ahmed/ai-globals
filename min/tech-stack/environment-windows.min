@@ -1,0 +1,4 @@
+[ENV_WINDOWS]
+OS:Win11; Paths:Root=D:\server\.ai\, Dev=D:\server\, Pwsh=\, QuoteSpaces; LineEnding=LF;
+Pwsh:UTF8(BOM-less)=Req; Policy=RemoteSigned>Unrestricted; ErrorAction=Stop+try/catch;
+WSL:WSL2; Mount(/mnt/c/, \\wsl$\); NoCrossFS_HeavyI/O; Docker+WSL2Backend;

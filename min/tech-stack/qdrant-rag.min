@@ -1,0 +1,4 @@
+[QDRANT_RAG]
+Arch:Qdrant=Primary; LocalDocker(DataSovereignty);
+Col:DimsMatch(1536/768); Metric=Cosine; PayloadIdx=Req(tenant_id);
+Pipeline:Chunking(Overlap50t); HybridSearch(SparseDense); TenantIsolation(Filter_tenant_id)=Req(⛔MixTenants);

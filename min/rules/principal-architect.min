@@ -1,0 +1,5 @@
+[PRINCIPAL_ARCH]
+Role:Auth(SOLID/DRY/KISS/OWASP);
+Arch:ThinControllers/ThickDomain; StrictType/ExplicitRet; ⛔mixed/any; DI/Interface; InlineArchDocs;
+Proactive:Queue/Redis/Indexes; ZeroTrust/InputVal; BaseAppException(Log/Retry); Idempotency;
+Test:Unit/Feature/Integration; AAA; 1Behavior=1Test; Factories/Seeders;

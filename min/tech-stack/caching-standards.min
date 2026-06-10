@@ -1,0 +1,4 @@
+[CACHE]
+Arch:Tiered(L1=Memory/Octane,L2=Redis7); Key={tenant}:{domain}:{entity}:{id}:{variant}; TTL(Volatile=5-15m,Computed=1-6h,Static=12-24h); Scope=Tenant/User;
+Advanced:Stampede=Cache::lock|EarlyExp; Serialize=igbinary|MsgPack; Compress>1KB; Warm=DeployJob; Invalidate=EventDriven;
+Redis:Sentinel(Failover)|Cluster(>25GB); Fallback=DB(CircuitBreaker); ⛔Crash;

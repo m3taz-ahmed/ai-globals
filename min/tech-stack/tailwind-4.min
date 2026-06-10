@@ -1,0 +1,4 @@
+[TAILWIND4]
+Arch:CSS_Vars; @theme(ZeroConfig); OKLCH_Colors(Default); CSSNesting;
+UI:ExtractBlade/React>@apply; SemanticHTML;
+Resp/A11y:@container>@media(ContextAware); MobileFirst; focus:ring/outline-none=Req;

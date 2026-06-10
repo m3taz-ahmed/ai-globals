@@ -1,0 +1,7 @@
+[CLERK_AUTH]
+NextJS:<ClerkProvider>; UIComponents(SignIn,UserBtn); clerkMiddleware(); authProtect(); Server:auth()|currentUser();
+Laravel:VerifyJWT(Middleware); WebhookSync(PG)->user.created/updated/deleted; Map:sub=users.clerk_id;
+Org/Tenant:Org=Tenant; <OrgSwitcher>; Config=publicMetadata; SyncWebhook->tenants; Roles(org:admin)=SpatieRoles; NoCustomInvites;
+Authz:SpatieRBAC; BackendVerify=Req; ⛔FrontendOnlyRoles;
+Session:AutoRefresh(60s); AuthHeader(Bearer)NextJS->Laravel;
+Rules:⛔TrustClient; SvixVerify=Req; HTTPS_Webhook=Req; ⛔PrivateDataInPublicMeta(UsePrivateMeta);

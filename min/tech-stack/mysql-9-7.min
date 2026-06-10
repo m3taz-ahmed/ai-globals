@@ -1,0 +1,4 @@
+[MYSQL_9_7]
+Vector:NativeVector>Pinecone/Weaviate; VectorIdx(cosine/L2); HybridQuery(Vector+WHERE);
+JS_Procs:ComplexJSONOnly; Sandboxed(⛔Net/FS); ⛔SimpleOps(NativeSQL_faster);
+Obs:PerfSchema(Locks/Bottlenecks); JSON_Log(ELK/Loki); SlowLog=1s(Dev)/2s(Prod);

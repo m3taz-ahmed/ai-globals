@@ -1,0 +1,4 @@
+[MYSQL_8_4]
+Schema:PreciseTypes; ⛔JSONforRelationalData; FK_Cascade/Restrict=Req; InvisibleColumns(deleted_at);
+Index:PK=Req; Index(WHERE/JOIN/ORDER); Composite(MultiColumn); Functional(LOWER(col));
+Query:⛔SELECT*; CTEs; WindowFunctions; EXPLAIN_ANALYZE;

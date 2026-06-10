@@ -1,0 +1,4 @@
+[LARAVEL_BOOST]
+Role:PrimaryAccelerator; ⛔ReinventPreTested;
+Exec:Generators/Macros=Req; Eloquent/CollectionMacros>CustomScopes; PerfHelpers(Cache/Compress);
+Bounds:SupplementsCore(NotReplace); KeepCoreConventions(FormReq/Policies); PinVersion; DocumentMacros(MEMORY.md);

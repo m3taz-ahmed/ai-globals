@@ -1,46 +1,31 @@
-# `rules/` — Precision-Guided Constraints
-
-This directory contains the **architectural law** of the system. Every file here is a hard constraint that the AI agent **must** comply with. They are not suggestions.
-
-## Loading Strategy (Layered Context)
-
-Rules are loaded in a strict priority order to minimize context window usage:
-
-| Layer | Files | When Loaded |
-|---|---|---|
-| **Layer 0** | `core-behavioral-compact.md`, `global-roles.md` | **Always** — every single task |
-| **Layer 1** | `anti-patterns.md` | **Always** — hard-stop constraints |
-| **Layer 2** | All others | **On-demand** — only when the task requires it |
+# AI OS Rules & Context Architecture
 
 > [!IMPORTANT]
-> Do NOT load all rule files on every task. The lazy-loading pattern is what keeps the system fast and context-efficient.
+> **DO NOT READ THE `rules/`, `tech-stack/`, or `workflows/` DIRECTORIES DIRECTLY!** 
+> This OS uses a compiled Shadow DOM pattern for extreme context token savings.
 
-## File Reference
+## The `min/` Shadow DOM
+All human-readable rules in this repository are compiled into highly dense AI-shorthand (`.min` files) located in the `D:\server\.ai\min\` directory. 
 
-| File | Domain | Purpose |
-|---|---|---|
-| `core-behavioral-compact.md` | Behavior | 4 non-negotiable principles in < 50 lines |
-| `anti-patterns.md` | Safety | Everything the AI must NEVER do |
-| `principal-architect.md` | Identity | Persona, decision-making authority, architectural DNA |
-| `security-standards.md` | Security | OWASP-driven Zero-Trust protocols |
-| `performance-standards.md` | Performance | N+1 prevention, query budgets, caching strategy |
-| `api-integration-standards.md` | API | Circuit breakers, retry logic, idempotency |
-| `ai-integration-standards.md` | AI | Asynchronous AI queues, SSE streaming, Context Compaction |
-| `observability-standards.md` | Ops | Structured logging, health endpoints, audit trails |
-| `code-quality.md` | Quality | SOLID, DRY, KISS, naming conventions |
-| `git-standards.md` | Git | Conventional Commits, branching, PR standards |
-| `saas-standards.md` | SaaS | Multi-tenancy decision matrix, billing core |
-| `llm-behavioral-guidelines.md` | Behavior | Expanded self-tests for behavioral compliance |
-| `environment-windows.md` | DevEnv | Windows/WSL/PowerShell compatibility rules |
-| `caching-standards.md` | Caching | L1/L2 topology, Redis HA, stampede prevention, serialization |
-| `ci-cd-standards.md` | CI/CD | SLSA Level 3, OIDC keyless auth, SBOM, supply chain security |
-| `database-scaling.md` | Database | PG17 tuning, read replicas, connection pooling, vacuum strategy |
-| `devops-standards.md` | DevOps | Progressive delivery, chaos engineering, GitOps, self-healing |
-| `testing-standards.md` | Testing | Test pyramid, Pest/Vitest/Playwright, TDD, coverage enforcement |
+Whenever you update any `.md` file in the source directories (`rules`, `tech-stack`, `workflows`, `skills`), you **must** run the compilation script to update the AI's context:
+```powershell
+D:\server\.ai\scripts\build-context.ps1
+```
 
-## Contributing a New Rule
+## Global AI OS Instructions (User Configuration)
+To properly initialize this system in your IDE (Cursor, Windsurf, etc.), place the following highly compressed configuration into your IDE's Global Rules or system prompt:
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for the full process. Key points:
-- Every rule must have a concrete ❌/✅ example
-- Rules must not contradict each other — resolve conflicts explicitly
-- Run `validate-globals.ps1` after any change to check cross-references
+```markdown
+### 🌍 GLOBAL AI OS
+- **Root:** `D:\server\.ai\`
+- **Init:** Read `global-roles.md` & `./min/rules/`. NEVER read source `rules/` or `tech-stack/`.
+- **Context:** Read project `spec.md`. Only load corresponding `.min` files from `./min/tech-stack/`.
+- **Graphify:** If `graphify-out/graph.json` exists, NEVER raw grep. MUST use `query_graph` (MCP)/`graphify query` (CLI). Use `shortest_path`/`get_node` for relations/concepts. Navigate `wiki/index.md` if present. Use `GRAPH_REPORT.md` ONLY as last resort. Run `graphify update .` after edits.
+```
+
+## Directory Structure
+- `rules/` : Core AI identities, anti-patterns, and baseline constraints.
+- `tech-stack/` : Framework-specific rules (e.g., Laravel, React, Database). Loaded dynamically.
+- `workflows/` : Process constraints (e.g., CI/CD, Git, Testing).
+- `skills/` : Prompting behaviors and roleplay capabilities.
+- `min/` : **The only directory the AI should read.** Contains the compiled output of all the above.

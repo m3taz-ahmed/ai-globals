@@ -1,0 +1,6 @@
+[LARAVEL13]
+Types:NativeAttr(Models/Jobs/Events); DTO_PHP8.4_Asymmetric(public private(set)); ⛔RawArrays; strict_types=1=Req;
+Context:TraceID(Context::add)->Logs/Queue/Reverb; Tenancy(tenant_id);
+Engine:BindApp(bootstrap/app.php); LeanOctane(⛔UnusedProviders,Defer);
+LaravelAI:RAG(whereVectorSimilarTo); SSE(->stream()); PasskeyAuth(Admin); SepRateLimit;
+Feat:Cache::touch(TTL); JSON:API; ReverbScale;

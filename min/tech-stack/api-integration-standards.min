@@ -1,0 +1,8 @@
+[API_INTG]
+Client:LaravelHttp(Guzzle)>raw_cURL; Timeout:Conn=5s,Req=30s; Config=services.php;
+Class:DedicatedService>Controllers; Macro=AppServiceProvider;
+Error:Catch(ConnEx/ReqEx); Fallback=Req; Log=SanitizeTokens;
+Retry:ExpBackoff(5xx,429)>!4xx; CircuitBreaker=Req; Queue=ShouldBeUnique;
+Webhook:VerifySig>403; Idempotent(TrackID); StoreRaw; Ack(200/202<5s)->DispatchJob;
+Cache:Static=1-24h; Dyn=5-30m+Tags; NoRetryStale(unless FORCE_REFRESH);
+Docs:PinVersions; KeepDocs=README;

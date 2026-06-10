@@ -1,0 +1,6 @@
+[TAILWIND_4_1]
+Engine:Oxide(Rust/Fast);
+Config:@theme(CSS-First); CSSNesting; CSS_Vars(--color-*); ⛔tailwind.config.js(UnlessPlugin);
+Layout:@container(ComponentResp); @starting-style(EntryAnim); Subgrid;
+Anim:animate-*(BuiltIn); ViewTransitions; motion-reduce:=Req;
+Rules:OptionalPostCSS;

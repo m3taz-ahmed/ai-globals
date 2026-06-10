@@ -1,0 +1,5 @@
+[MEILISEARCH]
+Scout:MeilisearchDriver; toSearchableArray(StrictPayload); QueueUpdates(NoBlock);
+Index:Explicit(filterable/sortable/searchableAttributes); RankingRules; Synonyms/StopWords;
+Advanced:FacetedSearch; MultiIndex; KeyMgt(MasterKey=ConfigOnly, SearchKey=App);
+Rules:⛔ExposeMasterKey; ⛔IndexPasswords/PII; BatchImport=Req;

@@ -1,0 +1,7 @@
+[DEBUGGING]
+Format:Err+Code+Log(ReqFirst);
+RCA:⛔Guess; TraceStack/DB/Server;
+Fix:PermanentArch; ⛔@Suppress; ⛔DisableStrict;
+Protocol:1.Reproduce(MinCase) 2.Isolate(BinarySearch) 3.Hypothesize 4.Verify 5.Regression;
+PostMortem:CritBugs(What/RCA/Fix/Prevent/Timeline)->MEMORY.md;
+Verify:SystemLevelExplanation;

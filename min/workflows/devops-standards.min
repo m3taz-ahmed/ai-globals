@@ -1,0 +1,4 @@
+[DEVOPS_STANDARDS]
+Infra:ContainerFirst(PHP8.4+FrankenPHP/Octane); GitOps(Terraform/RemoteState); GoldenPath;
+Deploy:Canary(1->100%); AutoRollback(Err/Latency); SafeMigrations(ExpandContract);
+Resilience:SelfHealing(AutoRestart); ChaosTesting; DR_Drills(RTO/RPO);

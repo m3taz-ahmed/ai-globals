@@ -1,0 +1,3 @@
+[SKILL_BROWSER_EXT_BUILDER]
+Obj:Chrome/Firefox_Extensions; Secure/Fast;
+Core:1.Arch(ManifestV3/Background/Content/Popup) 2.Sec(LeastPrivilege/Privacy) 3.CrossBrowser(Chrome/FF/Edge) 4.Perf(⛔MemLeak/BgDrain);

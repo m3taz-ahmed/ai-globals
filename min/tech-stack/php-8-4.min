@@ -1,0 +1,4 @@
+[PHP_8_4]
+Syntax:PropertyHooks>Getters/Setters; AsymmetricVis(public private(set)); ChainInstantiation((new Class())->act());
+API:DOM\XMLDocument|HTMLDocument>DOMDocument; Array(array_find,any,all,find_key); BCMath(bcadd/bcsub+OpOverload);
+Quality:declare(strict_types=1)=Req; ⛔Deprecated8.3;

@@ -1,0 +1,5 @@
+[HORIZON]
+Arch:SegregateQueues(high,default,low,webhooks); Supervisors+WorkerCount; AutoScale(simple/auto/false);
+Jobs:Batching(ParallelTasks); RateLimit(Redis::funnel/throttle); RetryExpBackoff+failed(); TenantIsolation;
+Ctx:PHP8.4+DTOs; Context::add(TraceID/TenantID)->Logs;
+Rules:⛔SyncLongTasks(QueueReq); ⛔GlobalState/Singletons; Idempotent=Req;

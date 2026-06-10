@@ -1,0 +1,4 @@
+[SKILL_BRAINSTORMING]
+Obj:RunBeforeCoding/Planning; ExploreIntent/Design;
+Gate:⛔Implement/Scaffold_UntilApproved;
+Process:1.ExploreContext 2.Clarify(1by1) 3.Propose(2-3Options+Tradeoffs+Rec) 4.PresentDesign(GetApproval) 5.SelfReview(⛔TODO/Ambiguity) 6.Next(writing-plans,⛔Implement);

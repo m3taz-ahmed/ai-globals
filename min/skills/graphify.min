@@ -1,0 +1,4 @@
+[SKILL_GRAPHIFY]
+Trigger:/graphify; KnowledgeGraphExtract;
+Workflow:1.Check(graph.json_exists->query) 2.Detect(CountFiles/Tokens) 3.Extract(AST+LLMSemantic,Parallel) 4.Analyze(Communities/GRAPH_REPORT.md) 5.Explore(AnswerViaGraph);
+Rule:AlwaysRelyOn_graph.json(⛔RawFilesForDeepQ);

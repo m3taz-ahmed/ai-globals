@@ -1,0 +1,6 @@
+[API_DESIGN]
+REST:Nouns(plural)>Verbs; NestLimit=1(e.g.,/users/{id}/posts); URLs=kebab-case; JSON=snake_case;
+Methods:GET(Read);POST(Create,!Idempotent+IdempKey);PUT(Replace);PATCH(Update);DELETE(Remove);
+Res:{data:{},meta:{}}; Err(RFC7807):{error:{code,message,details}};
+Pagination:Cursor(Feed|>1M),Offset(Admin|Small+Limit);
+Versioning:URL(/v1/); Break=Bump(v2)+WarnHeader;

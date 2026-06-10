@@ -1,0 +1,6 @@
+[FILAMENT5]
+Core(Lwv4+PHP8.2):Islands=Req(NoWaterfalls); DeferredFilters(v5.2+)=Req;
+Async:deferLoading()|Islands; Reverb/SSE>ClientPolling;
+Embeds:@script|@assets; ScopedStyles/ModulePattern; ⛔GlobalLeaks;
+State:Enums>MagicStrings; Size<50KB(RedisForLarge); PassScalarIDs(⛔ModelSerialize);
+Sec:Auth(canViewAny,canCreate,etc)=DefaultDeny; Shield(bezhansalleh)=Req;

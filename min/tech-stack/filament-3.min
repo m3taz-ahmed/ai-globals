@@ -1,0 +1,4 @@
+[FILAMENT3]
+Perf:Optimize_query(); ⛔Heavy$appends(Eloquent); deferLoading(Widgets);
+UX:Actions>CustomLivewire; ActionModals(InTable);
+Custom:CleanOverrides(TailwindEnv); ExtractMassiveSchemas(StandaloneVars/Methods);

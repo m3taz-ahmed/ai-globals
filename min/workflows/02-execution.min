@@ -1,0 +1,8 @@
+[EXECUTION]
+Rules:Iterative(1Mod/time); Surgical(IncrementalDiff/Placeholders);
+Pattern:Services/FormReqs/Actions; ThinControllers;
+Docs:InlineWhy(NotWhat);
+TDD:Migrate->Model->Service->Ctrl->Test;
+Checklist:Types/FormReq/Sec/Perf/Err/Test/Docs;
+Process:Checkpoint(AwaitApproval); TokenEfficient(⛔UnchangedCode);
+Delegation:CallSkills(tdd/subagent);

@@ -1,0 +1,6 @@
+[NODEJS24]
+TS:node --experimental-strip-types(⛔ts-node/tsx); TemporalAPI>Date; NoEnums(UseUnions); tsconfig(ES2024);
+SQLite:node:sqlite(LocalCache/Tests); ⛔ProdMultiUser(SQLite=SingleWriter); WALMode=Req;
+Mod:100%ESM(⛔require); type:module;
+Sec:OpenSSL_3.5(Level2); --permission(Stable); URLPattern>Regex;
+Diag:node:diagnostics_channel; node:perf_hooks(PerfObserver);

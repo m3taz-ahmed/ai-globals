@@ -1,0 +1,3 @@
+[WORKFLOWS_README]
+System:11TriggerProtocols;
+Loop:1.RouteRead 2.Think 3.GoldenRule(Clarify) 4.Execute 5.Verify 6.DocsSync 7.Handoff;

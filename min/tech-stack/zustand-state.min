@@ -1,0 +1,5 @@
+[ZUSTAND]
+Arch:SlicesPattern; FlatState; ExplicitTSInterfaces;
+Usage:Selectors(PreventReRender); useShallow(ReferentialEq); SSRHydration(useStoreHydration|ClientInit);
+MW:persist(localStorage); devtools; immer(NestedState);
+Rules:⛔ServerDataInZustand(UseTanStackQuery); ⛔MutateDirectly(UnlessImmer); TypeActions=Req;

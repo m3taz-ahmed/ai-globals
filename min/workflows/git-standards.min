@@ -1,0 +1,4 @@
+[GIT_STANDARDS]
+Commits:ConvCommits(type(scope):desc); Atomic;
+Branches:main; develop; feature/*; hotfix/*; release/*;
+PRs:1Approval; CI_Pass; Size<400L; Protect_main/develop; SemVerTags;

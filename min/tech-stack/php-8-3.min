@@ -1,0 +1,7 @@
+[PHP_8_3]
+Types:TypedClassConsts=Req; DynamicConst=Class::{$name}; ReadonlyClone(Reinit); ReadonlyAnonClass;
+JSON:json_validate()=PassThroughOnly; json_decode(JSON_THROW_ON_ERROR)(LocalConsume_SkipValidate);
+Bilingual:mb_str_pad()>str_pad();
+Override:#[\Override]=Req(PHPStanEnforce);
+Rand:Random\Randomizer=Req;
+Rules:⛔DynamicProps(AllowDynamicProperties=TempMigrate); Deprecation=Fatal(CI);

@@ -1,0 +1,5 @@
+[CLOUDFLARE]
+DNS:Proxy(OrangeCloud); CDN_CacheControl; ArgoRouting(Dynamic);
+Sec:WAF(SQLi,XSS,CVE); RateLimit(Login/API); DDoS(UnderAttack); Turnstile>reCaptcha; SSL=Full(Strict)+OriginCert;
+Edge:Workers(A/B,Geo,Auth); R2_Storage(NoEgressFee);
+Rules:⛔FlexibleSSL; ⛔CacheSensitiveHTMLw/oToken; TestLogMode>BlockMode;

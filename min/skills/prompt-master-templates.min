@@ -1,0 +1,15 @@
+[SKILL_PROMPT_TEMPLATES]
+A_RTF:Role/Task/Format(OneShot);
+B_COSTAR:Context/Obj/Style/Tone/Aud/Resp(Biz);
+C_RISEN:Role/Inst/Steps/End/Narrow(MultiStep);
+D_CRISPE:Cap/Role/Insight/Statement/Personality/Exp(Creative);
+E_CoT:Logic/Math(⛔o1/o3);
+F_FewShot:FormatReplication(2-5Examples);
+G_FileScope:Cursor/IDE(File/Scope/Constraints/DoneWhen);
+H_ReAct:ClaudeCode/Devin(Objective/Allowed/Forbidden/StopCond);
+I_Visual:Midjourney/Sora(Subject/Action/Style/Light/NegPrompt);
+J_RefImage:EditExisting(WhatToKeep/Change);
+K_ComfyUI:Nodes(Pos/Neg/Checkpoint/Steps);
+L_Decompiler:BreakDown/Adapt/Simplify/Split;
+M_Opus4.7:Obj/Ctx/Target/Scope/Constraints/StopCond(LiteralReading);
+N_Phased:WaitApprovalPerPhase(LargeProjects);

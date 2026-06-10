@@ -1,0 +1,5 @@
+[RULES_README]
+ShadowDOM:min/(AI_Shorthand); ⛔Read_rules/tech-stack/workflows;
+Build:build-context.ps1;
+GlobalInit:Read_global-roles+min/rules; Read_spec.md->Load_min/tech-stack;
+Dirs:rules(Identities); tech-stack(FWs); workflows(Process); skills(Roleplay); min(AIOnly);

@@ -1,0 +1,4 @@
+[SPEC_CACHE]
+Obj:EliminateVersionHallucination; SaveTokens;
+Flow:Search(spec.md); Hit->AdhereVersions(⛔Older); Miss->AnalyzePkgMgr->Create(spec.md)->Add(.gitignore);
+Format:1LineDense(e.g.,php:8.2|laravel:11|filament:5); ⛔HumanFormat/MD;

@@ -1,0 +1,5 @@
+[STRIPE]
+Core:L12_Cashier; CheckoutSessions(PCI); CustomerPortal(BillingUX);
+Sub:SetupIntents; MeteredBilling;
+Webhooks:VerifySignature(CashierMid); Idempotency(AlreadyProcessed); SCA/3DSecure;
+Rules:⛔RawCardData; ⛔UnverifiedWebhooks; IdempotencyKeys=Req; StripeTax; StripeRadar;

@@ -1,0 +1,6 @@
+[FRAMER_MOTION]
+Patterns:motion>m(v11+); AnimatePresence(Exit); variants(CleanJSX); layout|layoutId(Morph);
+Perf:GPU(transform,opacity); ⛔LayoutAnim(width,height); will-change(Caution); ReducedMotion=Req; LazyMotion(domAnimation)=Req;
+Interact:whileHover|Tap|Drag|InView;
+NextJS:ClientOnly(framer-motion/client); "use client"=Req;
+Rules:⛔AnimLayoutProps; ⛔IgnoreReducedMotion; ⛔ServerComponentImport;

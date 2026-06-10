@@ -1,0 +1,6 @@
+[SAAS_TENANCY]
+Laravel(stancl):Tenancy::initialize(); DB/SchemaSwitch; prefixCache; Storage::disk(tenant); Tenancy::runForMultiple(); Events(Init/Switch);
+NextJS:SubdomainMiddleware; Header(x-tenant-id); ClearCachesOnSwitch; SharedShell+Branding; RouteVal(x-tenant-id);
+CrossStack:CentralAuth(Sanctum/JWT_Claims); APIGW_Route; AsyncDataMigration;
+Rules:⛔GlobalVars(UseMiddleware); PropagateContext(Jobs/Events); VerifyOwnership(⛔TrustClient); ⛔CrossTenantDB(where(tenant_id)); DB_TxForCreation;
+Tests:Isolation; Init; Concurrency; Provisioning;

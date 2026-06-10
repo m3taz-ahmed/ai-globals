@@ -1,0 +1,3 @@
+[SKILL_AI_AGENTS_ARCHITECT]
+Obj:AgentArch/PromptEng/Eval; ContextCompression; MCP_Integration;
+Core:1.Architecture(AutonomousReasoning) 2.Eval(Reliability) 3.PromptEng(1ShotAccurate) 4.Memory(SaveTokens/StayInContext) 5.MCPBuilder(ExternalTools) 6.Docs(CLAUDE.md/AGENTS.md_Compact);

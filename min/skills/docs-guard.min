@@ -1,0 +1,4 @@
+[SKILL_DOCS_GUARD]
+Trigger:AfterDocsGen;
+Core:1.VerifyEverything(MustExistInSource) 2.WorkingSamples 3.Code=Truth(Docs<Code) 4.⛔UnverifiableClaims 5.SyncDocsOnCodeChange 6.⛔Filler(DeleteParaphrase) 7.FailPaths;
+Verify:SymbolsChecked? SamplesWork? MarketingFillerDeleted?

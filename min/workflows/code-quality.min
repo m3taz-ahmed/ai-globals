@@ -1,0 +1,6 @@
+[CODE_QUALITY]
+Naming:Services(Biz); Actions(DomainTask); DTOs(DataTx);
+SOLID:SRP/OCP/ISP/DIP; DRY(Extract>3);
+Limits:Methods<30L; Classes<300L; Max3Args;
+Types:StrictReq; ⛔mixed/any; Enums/Consts(⛔MagicStrings); DomainExceptions;
+AI_Guardrails:NamesRevealIntent(⛔data/helper); ⛔BoolFlags(SplitFunc); DeduplicateLogicNotText; ReInlineBadAbstractions; StripDeadCode; PreserveBehavior;

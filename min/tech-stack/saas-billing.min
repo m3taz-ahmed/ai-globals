@@ -1,0 +1,7 @@
+[SAAS_BILLING]
+Core:Stripe/Paddle(Intl)|Paymob/Tap/Moyasar(MENA); SubFirst+Usage; Webhooks=Req(VerifySig,⛔TrustClient);
+Life:newSubscription(); swapAndInvoice(Prorate); cancel()vs_cancelNow(); onGracePeriod()(⛔HardCut); trialDays();
+Feature:LaravelPennant(Feature::active); RealtimeTierUpdate;
+Usage:AsyncCapture(Redis); ScheduledAgg; DashboardReport; OveragePolicies(⛔SilentCharge);
+Inv:PDF_AutoGen; Storage::disk(tenant); DownloadEndpoint; StripeTax/VAT;
+Sec:⛔RawCardData; IdempotencyKeys; AuditLog(tenant/user); RefundsViaGateway(⛔DirectDB);

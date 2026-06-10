@@ -1,0 +1,4 @@
+[SPATIE_ACTIVITYLOG]
+Model:LogsActivity_Trait; getActivitylogOptions();
+Audit:tapActivity()(ReqID/IP); CustomLogNames;
+Cleanup:Prunable_Trait|activitylog:clean(365d);

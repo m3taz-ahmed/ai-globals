@@ -1,0 +1,7 @@
+[NEXTJS15]
+RSC:Default=ServerComponents; 'use client'=State/HooksOnly; ServerActions>APIRoutes+ZodReq; PlainObjToClient; ReactCompiler=Req(⛔useMemo/useCallback); use()(Unwrap);
+PPR:experimental.ppr=incremental; <Suspense>(DynamicHoles); StaticShell=Req;
+Route:Parallel(@folder); Intercept(..folder); "use cache"=Req(⛔ImplicitFetchCache); loading.tsx(Stream); after()(NonBlock);
+Build:Turbopack(dev); next.config.ts(⛔.js/.mjs); dynamicIO;
+Opt:next/image; next/font(NoCLS); MetadataAPI; error.tsx;
+Rules:⛔PagesRouter; ⛔FetchSensitiveInClient; Actions=TryCatch+Auth;

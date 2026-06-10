@@ -1,0 +1,5 @@
+[DESIGN_FOUNDATION]
+Aesthetic:BentoGrid(gap-4/6,aspect-ratio); Glassmorphism(blur,bg-white/10,border-white/20)+Fallback; Neumorphism(SoftShadow,ControlsOnly); Gradients(Mesh|MultiStopLinear);
+WOW_Factor:MicroInteractions=Req; BoldTypoHierarchy; NoEmptyStates(Illustrate); DarkModeExcellence(zinc/slate>pureBlack);
+Typo:Eng(Inter|Outfit|Geist); Ar(IBMPlex|ReadexPro|NotoSans); HarmonyLineHeight(Ar=1.5-1.7);
+Perf:Idle/IntersectionObserver(HeavyAnim/3D); NoCLS(aspect-ratio_BentoCards);

@@ -1,0 +1,4 @@
+[RESPONSIVE_UI]
+Layout:MobileFirst(base->md->lg->xl); @container(@tailwindcss/container-queries)>@media; FluidTypo(clamp);
+MobileUX:TouchTargets>=44px; Gestures(Alpine/Framer); SafeAreas(env); AppNav(BottomBar/Overlay);
+RTL:LogicalProps(ms-*,pe-*>ml-*,pr-*); Flexbox/Grid(RespectDir); IconsFlip(rtl:-scale-x-100);

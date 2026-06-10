@@ -1,0 +1,4 @@
+[ALPINE3]
+Component:Logic=x-data; Global=Alpine.store();
+Reactivity:x-show>x-if(freq_toggle); Event=x-on|@(+modifiers:prevent,stop,window);
+LivewireSync:$wire.entangle(); ProtectDOM=wire:ignore;

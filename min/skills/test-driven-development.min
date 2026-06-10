@@ -1,0 +1,5 @@
+[SKILL_TDD]
+Obj:Implementation/RedGreenRefactor;
+IronLaw:⛔CodeWithoutFailingTest;
+Process:1.Red(FailingTest) 2.VerifyRed 3.Green(MinimalCode_YAGNI) 4.VerifyGreen 5.Refactor(Clean/NoNewBehavior);
+RedFlags:CodeBeforeTest; ImmediatePass; UnexplainedFail; "TestAfter";

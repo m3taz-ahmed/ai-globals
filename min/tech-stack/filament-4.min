@@ -1,0 +1,5 @@
+[FILAMENT4]
+Resource:Clusters=Req; getNavigationSort()=Req; InfoLists(Read)>Forms; Actions(Logic)>OverrideControllers;
+Form/Table:FluentChain+PHPStanLvl8=Req; eagerLoad()=Req(No_N+1); Polling>=30s;
+Advanced:PropHooks(PHP8.4); NativeMultiTenancy=Req; AlpineJS(ClientState);
+Structure:Schemas=Filament\Schemas\Components; Layouts=(Section|Grid|Fieldset|Group); ResourceForm::configure()=Req;

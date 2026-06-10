@@ -1,0 +1,7 @@
+[SECURITY_AUDIT]
+Deps:composer/npm_audit; Dependabot/Snyk; OutdatedCheck; LicenseCompliance(⛔GPLInProp);
+Code:⛔$guarded=[]; ⛔RawSQL; XSS(EscapeOut); AuthGates(routes_vs_Policies); FileUploads; EncryptPii; CSRF;
+Auth:PasswordDefaults; 2FA(Admin); SessionRegen; JWTRotation; ThrottleReqs; PrivEscalationCheck;
+Infra:EnvCheck(git_history_scan); Perms(NotWorldRead); HTTPS_Force; SecHeaders; APP_DEBUG=false; CORS(⛔*);
+Data:PII(Encrypt@Rest); DataRetentionPurge; ExportControl(TenantBoundary); BackupSec;
+Report:Critical(Immediate)->High->Med->Low; Template=MarkdownStatus;

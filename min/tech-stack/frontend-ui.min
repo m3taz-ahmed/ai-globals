@@ -1,0 +1,4 @@
+[FRONTEND_UI]
+JS:AlpineJS(Primary); VanillaJS_ES6+(Canvas/WebGL); ⛔jQuery/React/VueInBlade(UnlessSPA);
+CSS:Tailwind100%; CustomCSS(App.css)=ComplexAnim/OverridesOnly; ⛔!important; ArbitraryValues(TW)>NewClasses;
+Components:BladeAnonymous(<x-button>); DumbComponents(Props+Events);

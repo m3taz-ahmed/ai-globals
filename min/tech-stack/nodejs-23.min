@@ -1,0 +1,5 @@
+[NODEJS23]
+Test:node:test=Req(⛔Jest/Mocha); --experimental-test-coverage;
+Mod:import>require()(EvenForESM); import.meta.glob(Dynamic);
+Net:NativeWebSocket(⛔ws); fetch(Redirect/Stream);
+Perf:V8_Maglev(Monomorphic); --snapshot-blob(ServerlessColdStart);

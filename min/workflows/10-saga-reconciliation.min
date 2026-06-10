@@ -1,0 +1,5 @@
+[SAGA_RECONCILIATION]
+Problem:StateFrag/RaceCond/GoalDrift;
+Headers:X-Saga-ID(UUIDv4); X-Parent-Span; X-Agent-Persona;
+Lifecycle:1.Init(RegisterSaga/Boundaries) 2.ParallelExec(Sandbox) 3.VerifyHandshake(Schema/DiffScan/ConflictScan) 4.ConflictMatrix 5.Compensate/Commit(TagGit);
+ConflictMatrix:Overlap(Reject/Merge); ConfigDrift(ParentBroker); ArchContradiction(Halt/Rollback/Clarify);

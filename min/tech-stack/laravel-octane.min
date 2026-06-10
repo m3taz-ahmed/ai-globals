@@ -1,0 +1,6 @@
+[OCTANE]
+Driver:FrankenPHP(Default/HTTP3)>RoadRunner(gRPC/Orchestration)>Swoole(WebSocket/Coroutines);
+Mem:⛔StaticState/GlobalArrays; Bind=scoped|bind>singleton; --max-requests=500-2000(Req); Log(memory_get_peak_usage); BaselineTest(1vs500);
+Perf:Octane::concurrently|cache()|flush()|tick(); PDO::ATTR_PERSISTENT=true;
+Deploy:octane:reload(ZeroDowntime); HealthCheck(/up); stopGracePeriod; ⛔KillAbruptly;
+Rules:⛔env()(UseConfig); ⛔LeakDBConn; ⛔UnboundedLifetimes; ProfileMemory=Req;

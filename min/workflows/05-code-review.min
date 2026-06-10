@@ -1,0 +1,7 @@
+[CODE_REVIEW]
+Role:PrincipalEng; ⛔JustCritique(ProvideRefactoredCode);
+Sec:⛔RawSQL; ⛔Secrets; FormReqVal; AuthPolicies; ⛔$guarded=[]; FileUploadVal(Type/Size/OutWebRoot);
+Perf:⛔N+1(eager_load); BoundQueries(Limit/Chunk); ⛔HeavyLoops; QueueHeavyOps; Cache;
+Qual:PSR12/JSName; Func<30L; ⛔DeadCode/TODOw/oTicket; ExplicitCatch(⛔@); TestsCoverBehavior;
+Arch:ServiceRepo; ⛔UndocDeps; Migration/Index/FK; APICompat;
+Rules:Author(SelfReview,<400L); Reviewer(24h,DistinguishBlocking/Suggest);

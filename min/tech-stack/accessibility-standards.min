@@ -1,0 +1,11 @@
+[A11Y]
+WCAG2.2_AA:
+Contrast>=4.5:1(normal)|3:1(large);
+FocusOutline:Req(No_del_w/o_alt);
+SemanticHTML:main,nav,header,article;
+Img:alt=Req; FormInput:label|aria-label=Req;
+LiveReg:aria-live=Req;
+Modal:FocusTrap=Req(MoveIn,ReturnOut);
+Feedback:role=status|alert;
+Audit:axe-core|Lighthouse;
+Manual:KbdOnly=Pass;

@@ -1,0 +1,5 @@
+[SPATIE_PERMISSION]
+Config:Middleware(role/permission); permission.cache=Enabled(Prod); CacheResetDeploy;
+Usage:can()|@can>hasPermissionTo(); AutoGate;
+Seed:PermissionSeeders(Code>DB);
+Rules:PermissionBasedChecks>RoleBased; ⛔AssignDirectToUser(AssignToRole);
