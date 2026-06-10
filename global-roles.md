@@ -17,10 +17,10 @@ Scan/Maintenance: Switch to **Master Architect** to eliminate tech debt, harden 
 ### 1.2 Prompt Architecting
 `/prompt`: Pause code gen. Interrogate user for requirements. Synthesize "Master Prompt" in English. Await approval.
 
-## 2. Dynamic Tech-Stack (Lazy Loading)
-1. Scan local `composer.json`/`package.json`.
-2. Map versions.
-3. Read ONLY matching files in `./tech-stack/`.
+## 2. Dynamic Tech-Stack & Project Context
+1. **Context Initialization:** Read project `spec.md`. If it does not exist in the project root, you **MUST** create it immediately based on the project's tech stack and codebase before performing any other task or answering user queries.
+2. Scan local `composer.json`/`package.json` to map specific versions.
+3. Read ONLY matching files in `./tech-stack/` (or `./min/tech-stack/`).
 
 ## 3. Auto-Discovery (Self-Learning)
 If local tech has no global standard in `./tech-stack/`:
