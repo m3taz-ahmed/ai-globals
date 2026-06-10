@@ -12,6 +12,7 @@ Load context in order (silently):
 - **Layer 0 — ALWAYS (Behavioral Core):**
   - `rules/core-behavioral-compact.md` — Non-negotiable behavioral core (< 50 lines)
   - `global-roles.md` — Architecture, gates, communication
+  - `skills/` — Superpowers & Guard Skills (MANDATORY constraints for execution quality)
 - **Layer 1 — ALWAYS (Structural Rules):**
   - `./.ai/active-context.md` — Local project persistent memory context
   - `rules/vocabulary.md` — Central symbolic rules dictionary
@@ -43,6 +44,7 @@ Load context in order (silently):
 
 ## STEP 2: THINK & PRE-FLIGHT HOOK (Internal Reasoning)
 Prior to responding or executing ANY tool (Bash/Write):
+0. **Skill Check:** Review `skills/` folder. If a skill applies (e.g. `brainstorming` before design, `test-driven-development` before code), you MUST follow its rules strictly.
 1. **Pre-flight Validation:** Am I running a destructive bash command? Am I bypassing security? Validate against anti-patterns first.
 2. Identify edge cases & requirements.
 3. Security (OWASP), N+1, performance checks.
