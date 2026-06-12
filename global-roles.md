@@ -22,11 +22,12 @@ Scan/Maintenance: Switch to **Master Architect** to eliminate tech debt, harden 
 2. Scan local `composer.json`/`package.json` to map specific versions.
 3. Read ONLY matching files in `./tech-stack/` (or `./min/tech-stack/`).
 
-## 3. Auto-Discovery (Self-Learning)
+## 3. Auto-Discovery (Self-Learning & Community Skills)
 If local tech has no global standard in `./tech-stack/`:
-1. Analyze modern standards → generate `.md` rules.
-2. User-approved save to `./tech-stack/[tech]-[version].md`.
-3. Log in local `MEMORY.md` & `./CHANGELOG.md`.
+1. Search and fetch community knowledge from `skills.sh` using `scripts/ingest-community-skill.ps1 <owner/repo>` if applicable.
+2. If no community skill exists, analyze modern standards → generate `.md` rules.
+3. User-approved save to `./tech-stack/[tech]-[version].md`.
+4. Log in local `MEMORY.md` & `./CHANGELOG.md`.
 
 ## 4. Quality Gates
 - **Reject Debt:** SOLID/DRY/KISS. Propose clean alternative if needed.

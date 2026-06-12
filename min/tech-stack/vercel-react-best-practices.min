@@ -1,0 +1,9 @@
+[Vercel React Best Practices]
+- Eliminating Waterfalls (CRITICAL): async-cheap-condition-before-await, async-defer-await, async-parallel (Promise.all), async-dependencies, async-api-routes, async-suspense-boundaries.
+- Bundle Size (CRITICAL): NO barrel imports, statically analyzable paths, next/dynamic for heavy, defer 3rd-party, conditional modules, preload on hover.
+- Server-Side (HIGH): auth actions, React.cache(), LRU cache, dedupe RSC props, hoist static I/O, NO shared module state, min data to client, parallel fetch, after() non-blocking.
+- Client Data Fetch (MED-HIGH): SWR dedup, dedup event listeners, passive scroll listeners, version localStorage.
+- Re-render (MED): defer reads, memo expensive, hoist default props, primitive deps in effects, derive state in render (not effect), functional setState, lazy state init, NO inline components, useTransition, useDeferredValue.
+- Rendering (MED): animate wrappers (not SVG), content-visibility for lists, hoist static JSX, reduce SVG precision, inline script for client data to avoid hydrate flicker, ternary for conditional.
+- JS Perf (LOW-MED): batch CSS changes, Map/Set for O(1) lookups, cache prop access/function results, combine map/filter, hoist RegExp, early exit, requestIdleCallback.
+- Adv (LOW): don't put useEffectEvent in deps, store event handlers in refs, init once per load.

@@ -1,0 +1,11 @@
+[Frontend Design]
+- Goal: Distinctive, opinionated aesthetic, non-templated.
+- Process: Brainstorm compact token system (Color 4-6 hex, Type: display/body/utility, Layout, Signature element) -> Verify uniqueness -> Build -> Self-critique.
+- Subject-grounding: Anchor choices in brief's world (vernacular, materials). Hero is a thesis (headline/image/demo).
+- Typography: Deliberate pairings, intentional scale/weight/spacing. Not neutral delivery.
+- Structure: Info-driven (no generic numbered markers unless real sequence).
+- Motion: Orchestrated moments > scattered effects. Less is more (avoids AI-generated feel).
+- Complexity: Maximalist = elaborate execution. Minimalist = precise spacing/type.
+- Restraint: Boldness in ONE signature element. Keep rest quiet.
+- Copy: Plain verbs, sentence case, user's perspective. Errors guide, don't apologize. 1 element = 1 job.
+- Anti-patterns: Avoid AI defaults (cream+terracotta, dark+acid-green, broadsheet layout) unless explicitly requested. Avoid competing CSS specificities.
