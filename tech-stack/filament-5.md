@@ -22,3 +22,7 @@
 ## Security
 - **Auth:** Implement `canViewAny`, `canCreate`, `canEdit`, `canDelete`, `canView` on resources (default deny).
 - **Shield:** Enforce Panel access using `bezhansalleh/filament-shield`.
+
+## Schemas & Layout Components
+- **Namespaces:** In Filament v5, Layout components (like `Section`, `Grid`, `Fieldset`, `Card`) have been decoupled from Forms. They must be imported from `Filament\Schemas\Components\...` (e.g., `use Filament\Schemas\Components\Section;`).
+- **Input Fields:** Data entry components (like `TextInput`, `Select`, `Toggle`) remain in `Filament\Forms\Components\...`. Always check imports carefully to prevent "Class not found" errors.
