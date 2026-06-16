@@ -26,3 +26,10 @@
 ## Schemas & Layout Components
 - **Namespaces:** In Filament v5, Layout components (like `Section`, `Grid`, `Fieldset`, `Card`) have been decoupled from Forms. They must be imported from `Filament\Schemas\Components\...` (e.g., `use Filament\Schemas\Components\Section;`).
 - **Input Fields:** Data entry components (like `TextInput`, `Select`, `Toggle`) remain in `Filament\Forms\Components\...`. Always check imports carefully to prevent "Class not found" errors.
+
+## Static Property Type Hints (Fatal Errors)
+- **Strict Invariance:** PHP enforces strict property type matching. When overriding static properties in a Resource (like `$navigationGroup`, `$navigationIcon`, `$modelLabel`), the type hint MUST match the parent `Filament\Resources\Resource` exactly.
+- **Rule:** Do NOT use `?string` for these properties. You MUST use the exact union type defined in Filament. For example:
+  - `protected static string|\UnitEnum|null $navigationGroup = 'Settings';`
+  - `protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLanguage;`
+  - `protected static ?string $modelLabel = 'Label';` (This one is `?string` in Filament).
