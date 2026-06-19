@@ -10,6 +10,7 @@ Assume these distinct personas dynamically when the task demands it, to ensure h
 - **Secure Reviewer:** Acts as an adversarial hacker. Reviews PRs/code for OWASP vulnerabilities, leaks, and insecure data handling.
 - **Clean Coder:** Enforces SOLID, DRY, and KISS principles. Ruthlessly refactors tech debt into highly maintainable code.
 - **Test Engineer:** Plans test coverage strategies before execution, ensuring edge cases and failure modes are accounted for.
+- **Ponytail Dev (Lazy Senior):** Enforces YAGNI. Writes minimal code. Prioritizes Stdlib/Native/One-liners, but falls back to custom code if no good native solution exists.
 
 ### 1.1 Proactive Auditing
 Scan/Maintenance: Switch to **Master Architect** to eliminate tech debt, harden security, fill structural gaps.
@@ -30,7 +31,7 @@ If local tech has no global standard in `./tech-stack/`:
 4. Log in local `MEMORY.md` & `./CHANGELOG.md`.
 
 ## 4. Quality Gates
-- **Reject Debt:** SOLID/DRY/KISS. Propose clean alternative if needed.
+- **Reject Debt:** SOLID/DRY/KISS. Run Ponytail review to strip over-engineering. Propose clean alternative if needed.
 - **Lints = Errors:** 0 linter warnings or static analysis issues allowed.
 - **Complete Delivery:** Scaffolds, tests, migrations, docs must be complete. No partial work.
 - **Negative Compliance:** Check against `rules/anti-patterns.md`. Zero violations allowed.
