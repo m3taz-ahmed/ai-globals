@@ -1,6 +1,0 @@
-[SAAS_ARCH]
-Model:SharedSchema(>1000t,BelongsToTenant,Idx_tenant_id); SepSchema(50-500t); SepDB(<50t/Compliance);
-SepDB/Schema:AsyncProvisioning(Queue); ParallelMigration; AutoCleanup(Offboarding);
-Sec:SSO(EmailDomain); TenantRBAC; AuditLog(tenant_id);
-Billing:Stripe/Paddle=Master; Webhooks; TTV<30s;
-Rules:ScopeEveryQuery(tenant_id); TenantIsolatedRoles=Req;

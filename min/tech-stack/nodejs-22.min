@@ -1,6 +1,0 @@
-[NODEJS22]
-Exec:node --run>npm run; node --watch>nodemon;
-Sec:--experimental-permission(FS/Net); --experimental-policy(ModuleLoad);
-API:NativeFetch>axios; WebStreams(Pipelines); structuredClone()>JSON.parse(stringify);
-Test:node:test(NativeRunner); node:assert/strict(deepStrictEqual); mock>sinon;
-Mod:ESM(Default)>CJS; type:module=Req;

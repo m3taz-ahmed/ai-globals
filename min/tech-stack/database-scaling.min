@@ -1,4 +1,0 @@
-[DB_SCALE]
-Conn:ReplicaRouting; Pool=PgBouncer(TxMode)|RDS_Proxy(max 200-500); SSL=sslnegotiation=direct(PG17);
-QueryPerf:API<100ms,Jobs<500ms; JSONB_Idx=GIN(jsonb_path_ops)|B-tree; Partition>10M_rows; IndexSafety=CONCURRENTLY;
-Vacuum:Aggressive(scale_factor 0.01/0.005,delay 2ms); PG17_MemWatch(pg_wait_events); Backup=PG17_Incremental;

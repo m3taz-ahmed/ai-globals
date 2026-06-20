@@ -1,7 +1,0 @@
-[SKILL_PROMPT_PATTERNS]
-Task:⛔VagueVerb; ⛔2TasksIn1; ⛔NoSuccessCriteria; ⛔OverPermissiveAgent(LockScope); ⛔Emotional; ⛔BuildWholeThing(UsePhases); ⛔ImplicitRef;
-Context:⛔AssumedKnowledge; ⛔NoProjectContext; ⛔ForgottenStack; ⛔HallucinationInvite; ⛔UndefinedAudience; ⛔NoMentionOfPriorFails;
-Format:⛔MissingOutputFormat; ⛔ImplicitLength; ⛔NoRole; ⛔VagueAesthetics; ⛔NoNegativePrompt(Img); ⛔Prose(Midjourney);
-Scope:⛔NoScopeBoundary(TouchNothingElse); ⛔NoStackConstraints; ⛔NoAgentStopCond; ⛔NoFilePath(IDE); ⛔WrongTemplate; ⛔PasteEntireRepo;
-Reason:⛔NoCoT(Logic); ⛔CoTOnReasoningModels(o1/o3); ⛔ExpectSessionMemory; ⛔ContradictPriorWork; ⛔NoGrounding(Factual);
-Agentic:⛔NoStartingState; ⛔NoTargetState; ⛔SilentAgent; ⛔UnlockedFS(OnlyInside/src); ⛔NoHumanReviewTrigger; ⛔VagueFirstTurn(Opus4.7); ⛔ContextRot(>60Turns->NewSession);

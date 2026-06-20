@@ -1,44 +1,18 @@
-# Prompt Templates Reference
-
-Full template library for Prompt Master. Read the relevant template when the user's task type matches. Do not load all templates at once — only the one you need.
-
-## Table of Contents
-
-| Template | Best For |
-|----------|----------|
-| [A — RTF](#template-a--rtf) | Simple one-shot tasks |
-| [B — CO-STAR](#template-b--co-star) | Professional documents, business writing |
-| [C — RISEN](#template-c--risen) | Complex multi-step projects |
-| [D — CRISPE](#template-d--crispe) | Creative work, brand voice |
-| [E — Chain of Thought](#template-e--chain-of-thought) | Logic, math, analysis, debugging |
-| [F — Few-Shot](#template-f--few-shot) | Consistent structured output, pattern replication |
-| [G — File-Scope](#template-g--file-scope) | Cursor, Windsurf, Copilot — code editing AI |
-| [H — ReAct + Stop Conditions](#template-h--react--stop-conditions) | Claude Code, Devin — autonomous agents |
-| [I — Visual Descriptor](#template-i--visual-descriptor) | Midjourney, DALL-E, Stable Diffusion, Sora |
-| [J — Reference Image Editing](#template-j--reference-image-editing) | Editing an existing image with a reference |
-| [K — ComfyUI](#template-k--comfyui) | ComfyUI node-based image workflows |
-| [L — Prompt Decompiler](#template-l--prompt-decompiler) | Breaking down, adapting, or splitting existing prompts |
-| [M — Opus 4.7 Task Brief](#template-m--opus-4.7-task-brief) | Complex, multi-step, or agentic task on Claude Opus 4.7 |
-| [N — Phased Execution](#template-n--phased-execution) | Large projects requiring step-by-step human approval |
-
----
+[SKILL] prompt-master-templates
+[OBJ] Prompt template library.
+[RULES]
+1. [REQ] Load ONLY the specific template matching the task.
 
 ## Template A — RTF
-
-*Role, Task, Format. Use for fast one-shot tasks where the request is clear and simple.*
-
+[REQ] Simple one-shot tasks.
 ```
 Role: [One sentence defining who the AI is]
 Task: [Precise verb + what to produce]
 Format: [Exact output format and length]
 ```
 
----
-
 ## Template B — CO-STAR
-
-*Context, Objective, Style, Tone, Audience, Response. Use for professional documents, business writing, reports, and marketing content where full context control matters.*
-
+[REQ] Professional documents, business writing.
 ```
 Context: [Background the AI needs to understand the situation]
 Objective: [Exact goal — what success looks like]
@@ -48,12 +22,8 @@ Audience: [Who reads this — their knowledge level and expectations]
 Response: [Format, length, and structure of the output]
 ```
 
----
-
 ## Template C — RISEN
-
-*Role, Instructions, Steps, End Goal, Narrowing. Use for complex projects, multi-step tasks, and any output that requires a clear sequence of actions.*
-
+[REQ] Complex projects, multi-step tasks.
 ```
 Role: [Expert identity the AI should adopt]
 Instructions: [Overall task in plain terms]
@@ -65,12 +35,8 @@ End Goal: [What the final output must achieve]
 Narrowing: [Constraints, scope limits, what to exclude]
 ```
 
----
-
 ## Template D — CRISPE
-
-*Capacity, Role, Insight, Statement, Personality, Experiment. Use for creative work, brand voice writing, and any task where personality, tone, and iteration matter.*
-
+[REQ] Creative work, brand voice writing.
 ```
 Capacity: [What capability or expertise the AI should have]
 Role: [Specific persona to adopt]
@@ -80,14 +46,9 @@ Personality: [Tone and style — witty / authoritative / casual / sharp]
 Experiment: [Request variants or alternatives to explore]
 ```
 
----
-
 ## Template E — Chain of Thought
-
-*Use for logic-heavy tasks, math, debugging, and multi-factor analysis where the AI needs to reason carefully before committing to an answer.*
-
-**Important:** Only use CoT for standard reasoning models (Claude, GPT-4o, Gemini). Do NOT add CoT instructions to o1, o3, or Claude extended thinking — they reason internally and CoT instructions degrade their output.
-
+[REQ] Logic, math, debugging.
+[PROHIBIT] NEVER use for o1/o3/Claude extended reasoning models.
 ```
 [Task statement]
 
@@ -102,23 +63,8 @@ Before answering, think through this carefully:
 Give your final answer in <answer> tags only.
 ```
 
-**When to use:**
-- Debugging where the cause is not obvious
-- Comparing two technical approaches
-- Any math or calculation
-- Analysis where a wrong first impression is likely
-
-**When NOT to use:**
-- o1 / o3 / reasoning models (they think internally — adding CoT hurts)
-- Simple tasks where the answer is clear (unnecessary overhead)
-- Creative tasks (CoT can kill natural voice)
-
----
-
 ## Template F — Few-Shot
-
-*Use when the output format is easier to show than describe. Examples outperform written instructions for format-sensitive tasks every time.*
-
+[REQ] Format replication. Use 2-5 edge-case examples. Wrap in XML.
 ```
 [Task instruction]
 
@@ -129,27 +75,13 @@ Here are examples of the exact format needed:
     <input>[example input 1]</input>
     <output>[example output 1]</output>
   </example>
-  <example>
-    <input>[example input 2]</input>
-    <output>[example output 2]</output>
-  </example>
 </examples>
 
 Now apply this exact pattern to: [actual input]
 ```
 
-**Rules:**
-- 2 to 5 examples is the sweet spot. More rarely helps and wastes tokens.
-- Examples must include edge cases, not just easy cases.
-- Use XML tags to wrap examples — Claude parses XML reliably.
-- If you have been re-prompting for the same formatting correction twice, switch to few-shot instead of rewriting instructions.
-
----
-
 ## Template G — File-Scope
-
-*Use for Cursor, Windsurf, GitHub Copilot, and any AI that edits code inside a codebase. The most common failure mode here is editing the wrong file or breaking existing logic — this template prevents both.*
-
+[REQ] Cursor/IDE code editing. Prevents editing wrong file.
 ```
 File: [exact/path/to/file.ext]
 Function/Component: [exact name]
@@ -173,12 +105,8 @@ Done When:
 [Exact condition that confirms the change worked correctly]
 ```
 
----
-
 ## Template H — ReAct + Stop Conditions
-
-*Use for Claude Code, Devin, AutoGPT, and any AI that takes autonomous actions. Runaway loops and scope explosion are the biggest credit killers in agentic workflows — stop conditions are not optional.*
-
+[REQ] Autonomous agents (Claude Code, Devin). Prevents runaway loops.
 ```
 Objective:
 [Single, unambiguous goal in one sentence]
@@ -213,12 +141,8 @@ After each major step, output: ✅ [what was completed]
 At the end, output a full summary of every file changed.
 ```
 
----
-
 ## Template I — Visual Descriptor
-
-*Use for Midjourney, DALL-E 3, Stable Diffusion, Sora, Runway, and any image or video generation tool.*
-
+[REQ] Image/Video generation (Midjourney, DALL-E, Sora).
 ```
 Subject: [Main subject — specific, not vague]
 Action/Pose: [What the subject is doing]
@@ -233,26 +157,8 @@ Negative Prompts: [blurry, watermark, extra fingers, distortion, low quality]
 Style Reference: [artist / film / aesthetic reference if applicable]
 ```
 
-**Tool-specific syntax:**
-- **Midjourney**: Comma-separated descriptors, not prose. Add `--ar`, `--style`, `--v 6` at the end.
-- **Stable Diffusion**: Use `(word:1.3)` weight syntax. CFG scale 7 to 12. Negative prompt is mandatory.
-- **DALL-E 3**: Prose works well. Add "do not include any text in the image" unless text is needed.
-- **Sora / video**: Add camera movement (slow dolly, static shot, crane up), duration in seconds, and cut style.
-
----
-
 ## Template J — Reference Image Editing
-
-*Use when the user has an existing image they want to modify. Completely different from generation — never describe the whole scene from scratch, only describe the change.*
-
-**Before writing the prompt, always tell the user:**
-"Attach your reference image to [tool name] before sending this prompt."
-
-**Detect the tool's editing capability:**
-- Midjourney: use `--cref [image URL]` for character reference or `--sref` for style reference
-- DALL-E 3: use the Edit endpoint, not the Generate endpoint. User must be in ChatGPT with image editing enabled
-- Stable Diffusion: use img2img mode, not txt2img. Set denoising strength 0.3-0.6 to preserve the original
-
+[REQ] Modify existing image. Ask user to attach image first.
 ```
 Reference image: [attached / URL]
 What to keep exactly the same: [list everything that must not change]
@@ -262,20 +168,8 @@ Style consistency: maintain the exact style, lighting, and mood of the reference
 Negative prompt: [what to avoid introducing]
 ```
 
----
-
 ## Template K — ComfyUI
-
-*Use for ComfyUI node-based workflows. Always output Positive and Negative prompts as separate blocks. Ask for the checkpoint model before writing — syntax and token limits differ per model.*
-
-**Ask first if not stated:**
-"Which checkpoint model are you using? (SD 1.5, SDXL, Flux, or other)"
-
-**Model-specific notes:**
-- SD 1.5: shorter prompts work better, under 75 tokens per block, use (word:weight) syntax
-- SDXL: handles longer prompts, supports more natural language alongside weighted syntax
-- Flux: natural language works well, less reliance on weighted syntax, very responsive to style descriptions
-
+[REQ] ComfyUI node workflows.
 ```
 POSITIVE PROMPT:
 [subject], [style], [mood], [lighting], [composition], [quality boosters: highly detailed, sharp focus, 8k]
@@ -290,22 +184,8 @@ STEPS: 20-30
 RESOLUTION: [width x height — must be divisible by 64]
 ```
 
----
-
 ## Template L — Prompt Decompiler
-
-*Use when the user pastes an existing prompt and wants to break it down, adapt it for a different tool, simplify it, or understand its structure. This is analysis and adaptation, not building from scratch.*
-
-**Detect which Decompiler task is needed:**
-- **Break down** — explain what each part of the prompt does
-- **Adapt** — rewrite for a different tool while preserving intent
-- **Simplify** — remove redundancy and tighten without losing meaning
-- **Split** — divide a complex one-shot prompt into a cleaner sequence
-
-**For Adapt tasks, always ask:**
-"What tool is the original prompt from, and what tool are you adapting it for?"
-
-**Break down output format:**
+[REQ] Break down, adapt, or split existing prompts.
 ```
 Original prompt: [paste]
 
@@ -319,38 +199,8 @@ Structure analysis:
 Recommended fix: [rewritten version with gaps filled]
 ```
 
-**Adapt output format:**
-```
-Original ([source tool]): [original prompt]
-
-Adapted for [target tool]:
-[rewritten prompt using target tool syntax and best practices]
-
-Key changes made:
-- [change 1 and why]
-- [change 2 and why]
-```
-
-**Split output format:**
-```
-Original prompt: [paste]
-
-This prompt is doing [N] things. Split into [N] sequential prompts:
-
-Prompt 1 — [what it handles]:
-[prompt block]
-
-Prompt 2 — [what it handles]:
-[prompt block]
-
-Run these in order. Each output feeds the next.
-```
----
-
 ## Template M — Opus 4.7 Task Brief
-
-*Use for any complex, multi-step, or agentic task on Claude Opus 4.7 — claude.ai, API, or Claude Code. Opus 4.7 reads prompts literally. Missing context produces narrow output. This template front-loads everything so the first turn is the only turn.*
-
+[REQ] Complex, agentic tasks for Opus 4.7.
 ```
 ## Objective
 [What needs to be built, fixed, or produced — one clear sentence. Add WHY if it affects approach.]
@@ -385,29 +235,8 @@ Stop and ask before:
 After each completed step: ✅ [what was done] — [file(s) affected]
 ```
 
-**Thinking depth** — add only when needed, delete otherwise:
-- Hard multi-step task: `"Think carefully and step-by-step before starting."`
-- Simple targeted change: `"Prioritize responding quickly. This is a scoped change."`
-- Default: say nothing — adaptive thinking calibrates itself.
-
-**Claude Code only — add Session Strategy block when relevant:**
-```
-## Session Strategy
-[Pick one:]
-- New session — unrelated to prior context, start fresh
-- Continue — prior context still needed
-- Subagent — spin off for [file-heavy research / verification] so intermediate output stays out of main context
-- Compact first — run /compact [focus on X] then begin
-```
-
-**When to use:** Opus 4.7 on any surface — claude.ai, API, Claude Code — when the task is complex, multi-file, ambiguous, or agentic. Not needed for simple one-shot tasks.
-
----
-
 ## Template N — Phased Execution
-
-*Use for very large or complex tasks (e.g., writing a long document, building a large application, comprehensive research) to prevent the AI from losing context, hallucinating, or going off-track. This template forces the AI to execute one phase at a time and wait for human approval.*
-
+[REQ] Very large/complex tasks requiring human checkpoints.
 ```
 Objective: [Describe the overarching goal of the large project]
 
@@ -415,16 +244,8 @@ To ensure high quality and prevent loss of focus, we will execute this project i
 
 Phase 1: [Description of the first phase, e.g., Planning and Outline]
 Phase 2: [Description of the second phase, e.g., Core Structure / Draft]
-Phase 3: [Description of the third phase, e.g., Detailed Execution / Polish]
-[Add more phases as needed]
 
 CRITICAL RULE:
 You must ONLY execute Phase 1 right now. Do NOT begin Phase 2 or any subsequent phase.
 When you finish Phase 1, stop and ask: "Is this phase approved, or do you need changes before we move to Phase 2?"
 ```
-
-**When to use:**
-- Writing long-form content (books, extensive reports)
-- Generating complex code architectures from scratch
-- Multi-stage analysis where later stages depend on early assumptions
-- Any time a single prompt results in the AI "forgetting" early instructions or producing overwhelming output.

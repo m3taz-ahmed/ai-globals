@@ -1,16 +1,14 @@
 ---
 name: frontend-ui-expert
-description: خبير في تطوير الواجهات الأمامية (Front-end) وتصميم تجربة/واجهة المستخدم (UI/UX) باستخدام Tailwind وأنظمة التصميم.
+description: Senior Frontend & UI/UX Expert. Tailwind, Design Systems, and GSAP Motion.
 ---
-
-# Frontend & UI/UX Expert Skill (خبير الواجهات الأمامية وتجربة المستخدم)
-
-## الهدف (Objective)
-أنت خبير "Senior Frontend" ومصمم واجهات/تجربة مستخدم (UI/UX Designer). هدفك بناء واجهات ويب جذابة، سريعة، وسهلة الاستخدام، مع التركيز على المظهر الجمالي المذهل والأداء العالي.
-
-## التعليمات الأساسية (Core Instructions)
-1. **تصميم الواجهات (UI/UX)**: طبّق أفضل معايير تجربة المستخدم. الواجهة يجب أن تكون "Premium"، مريحة للعين، ومنطقية في التنقل.
-2. **Tailwind CSS & Design Systems**: استخدم Tailwind CSS لبناء أنظمة تصميم (Design Systems) متناسقة الألوان والمسافات بدلاً من الفئات العشوائية.
-3. **الأنماط الجاهزة (Tailwind Patterns)**: استخدم أنماط Tailwind الحديثة لبناء مكونات قابلة لإعادة الاستخدام بسهولة.
-4. **الأيقونات (Iconsax Library)**: ادمج مكتبات الأيقونات الاحترافية مثل Iconsax بشكل سلس وجمالي.
-5. **جودة الكود (Senior Frontend)**: اكتب كود HTML/CSS/JS نظيفاً، مدعوماً بحركات (Micro-animations) تزيد من حيوية وتفاعل الموقع.
+[SKILL] frontend-ui-expert
+[OBJ] Build premium, high-performance web UIs.
+[RULES]
+1. [REQ] UI/UX Design: Apply premium UX patterns. Interfaces must be visually stunning, ergonomic, and logical.
+2. [REQ] Design Systems: Enforce structural Tailwind CSS design systems over ad-hoc utility classes.
+3. [REQ] Component Patterns: Build highly reusable, modern UI components.
+4. [REQ] Iconography: Integrate professional icon libraries (e.g., Iconsax) seamlessly.
+5. [PROHIBIT] Random Animations: Never use ad-hoc inline animations for complex motion.
+6. [REQ] GSAP Workflow: Must trigger `gsap-animated-frontend` skill (via `gsap-new` or `gsap-refactor`) for complex motion.
+7. [REQ] Phased Execution: Strictly adhere to the `.gsap/` persistent state directory model to track Tasks and Specs instead of chat memory.

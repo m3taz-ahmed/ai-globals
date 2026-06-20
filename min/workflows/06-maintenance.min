@@ -1,6 +1,0 @@
-[MAINTENANCE]
-Sync:ReloadRules; AnalyzeTech(GenMissingFiles_v2025/26);
-Audit:CleanCode(SOLID/DRY/KISS); Sec(OWASP); Perf(N+1/Cache); Docs(PHPDoc/README);
-Gates:Low(ImmediateFix); Med(ProposePlan); High(FlagRiskMatrix);
-Gaps:MissingWorkflows/Configs/Tests;
-Report:MEMORY.md(LogResolutions); CHANGELOG(GlobalMods); HandoffSummary;

@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSAP Animated Frontend"
+  short_description: "Persistent GSAP workflow with gsap-new and gsap-refactor"
+  default_prompt: "Use $gsap-animated-frontend to route this animation task, then continue with either $gsap-new for new work or $gsap-refactor for existing code."

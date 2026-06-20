@@ -1,6 +1,0 @@
-[SKILL_WRITING_PLANS]
-Trigger:AfterBrainstorm/SpecApprove;
-Rules:HighlyDetailed/TaskByTask; AssumeExecutor0Context; BiteSized(Test->Fail->Code->Pass->Commit);
-⛔Placeholders(TBD/TODO/ErrorHandling); ProvideExactCode/Paths;
-Format:# [Feature] Implementation Plan -> Tasks(Checklists);
-Next:subagent-driven-development;

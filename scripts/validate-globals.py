@@ -311,7 +311,7 @@ def check_version_consistency(global_path: str, ctx: ValidationContext) -> bool:
     versions = {
         "README.md": extract_version(os.path.join(global_path, "README.md"), r"badge/.*?-" + v_pattern),
         "README-AR.md": extract_version(os.path.join(global_path, "README-AR.md"), r"badge/.*?-" + v_pattern),
-        "CHANGELOG.md": extract_version(os.path.join(global_path, "CHANGELOG.md"), r"(?m)^##\s*\[v?" + v_pattern + r"\]"),
+        "state/CHANGELOG.md": extract_version(os.path.join(global_path, "state", "CHANGELOG.md"), r"(?m)^##\s*\[v?" + v_pattern + r"\]"),
         "validate-globals.ps1": extract_version(os.path.join(global_path, "scripts", "validate-globals.ps1"), r"Validation.*?v" + v_pattern),
         "validate-globals.py": extract_version(os.path.join(global_path, "scripts", "validate-globals.py"), r"Validation.*?v" + v_pattern)
     }

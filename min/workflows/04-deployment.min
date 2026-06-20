@@ -1,6 +1,0 @@
-[DEPLOYMENT]
-PreCheck:Tests; StaticAnalysis; DBStagingTest; ENV; CacheBuild; AssetBuild; CHANGELOG; SemVer;
-Deploy:MaintenanceMode(bypass); git_pull; deps(no-dev); migrate(force); cache; queue:restart; up;
-Rollback:down->git_checkout->migrate:rollback->deps->up->PostMortem;
-HealthCheck:HTTP200; CoreFlows; Sentry(NoSpikes); Queue/ScheduleActive;
-Adv:ZeroDowntime(Envoyer/Deployer); BackwardsCompatMigrations; FeatureFlags;

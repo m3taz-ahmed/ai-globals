@@ -1,0 +1,5 @@
+rich>=13.0.0
+click>=8.0.0
+pyyaml>=6.0
+jinja2>=3.0
+watchdog>=3.0.0

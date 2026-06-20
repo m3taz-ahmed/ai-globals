@@ -1,4 +1,0 @@
-[BILINGUAL]
-Layout:GlobalDir(html/body); LogicalCSS(margin-inline,padding-block)=100%; Mirror(justify-start,text-start);
-ArabicTypo:ScaleBaseFont; LineHeight>=1.6; OpenTypeFonts=Req;
-MixedRender:EngTerms=<span dir="ltr">; NeutralSym=؟(Arabic); Nums=Consistent(Eastern|Western),NoMix;

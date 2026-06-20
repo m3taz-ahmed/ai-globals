@@ -1,3 +1,0 @@
-[SKILL_TEST_GUARD]
-Trigger:BeforePresent/CommitTests;
-Core:1.TestBehaviorNotImpl 2.MocksAtBoundariesOnly(Net/DB/FS/LLM,⛔Internal/State) 3.1Scenario(MergeDataProvider) 4.DeleteTrivial/TypoTests 5.Name:test_scenario_outcome 6.RealDTO_Entity(⛔MockState) 7.RealDB(⛔MockConn);

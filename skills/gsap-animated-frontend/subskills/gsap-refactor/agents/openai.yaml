@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSAP Refactor"
+  short_description: "Refactor and improve GSAP on existing pages or components"
+  default_prompt: "Use $gsap-refactor to read current code and .gsap artifacts, audit the current motion system, generate a refactor plan, and apply safe improvements."

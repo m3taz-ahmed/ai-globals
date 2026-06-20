@@ -1,7 +1,0 @@
-[AWS]
-Compute:ECS_Fargate; CPU=Graviton4(ARM64); SeparateTasks(Web,Queue,Sched); ALB+ACM_SSL+TargetGroup; AutoScale(CPU/Mem/Req);
-DB:Aurora_Serverless_v2(PG); RDS_Proxy; ElastiCache(Redis_Cluster_MultiAZ);
-Storage:S3(PrivatePolicy+CDN),KMS_Encrypt;
-Msg:SQS+DLQ; SES(DedicatedIP);
-Sec:SecretsManager->ECS_Role; IAM(LeastPriv); NoHardcode; PrivateSubnetOnly;
-Mon:CloudWatch(CPU,Mem,5xx,DB_Conn);

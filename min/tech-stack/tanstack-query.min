@@ -1,5 +1,0 @@
-[TANSTACK_QUERY]
-Pattern:queryOptions()(Factory); SWR(Default); useSuspenseQuery()(v5,R19)>useQuery();
-Mutations:OptimisticUpdates; onSettled(Invalidate/Refetch); RetryLogic(5xx,⛔4xx);
-Adv:InfiniteQueries; prefetchQuery(Hover/Server); SSR_Dehydrate; ErrorBoundaries; useMutationState();
-Rules:⛔MutateCacheDirectly(Use_setQueryData); ⛔StringArrayKeys; ExplicitStates=Req;

@@ -1,4 +1,0 @@
-[TECH_STACK_README]
-System:DomainSpecificRAG; LazyLoad(OnlyProjectStack);
-Rules:SkipSpeculative(UnlessExplicit);
-Format:{tech}-{major}.md;

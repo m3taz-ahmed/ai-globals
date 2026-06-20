@@ -1,5 +1,0 @@
-[CLICKHOUSE]
-Engines:MergeTree; Replacing/CollapsingMergeTree(Dedup); StrictPartition(Month/Week); ⛔JOINs->Denormalize(WideTables);
-Ingest:BatchInsert=Req(>10k|5s); ⛔SingleRow; LaravelQueues->Redis->CronBulk; ContextAPI(TraceID,Tenant);
-Query:MaterializedViews(Aggs)=Req; TTL_DropPolicy=Req; Datadog/Grafana;
-Rules:⛔FreqUpdates/Deletes; ⛔Unbounded(SELECT *);

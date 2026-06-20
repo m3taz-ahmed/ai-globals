@@ -1,5 +1,0 @@
-[ANTI_PATTERNS]
-Code:⛔OverEngineering(CustomCodeWhenStdlibWorks); ⛔ReinventStdlib; ⛔ControllerLogic; ⛔DupCode(>3=Shared); ⛔TODOw/oTicket; ⛔NoPK/NoConstraintFK; ⛔NoMigrationDown; ⛔UnjustifiedNullable; ⛔FloatCurrency; ⛔TEXTforSearch(UseVARCHAR);
-Sec/Err:⛔@Suppress; ⛔EmptyCatch; ⛔SwallowQueueErr; ⛔Nullw/oDoc; ⛔CORS*; ⛔ExposeInternalErr; ⛔PlainTextPwd(Argon2/bcrypt); ⛔DisableCSRF;
-Perf/Test:⛔sleep()/LoopWait; ⛔MemLimit-1; ⛔LoadLargeFile(Stream); ⛔TestOrderDependence; ⛔MockUnowned;
-AI:⛔SkipTests/QA; ⛔UndocDeps; ⛔MixRefactor+Feature; ⛔PrintUnchanged; ⛔SwallowErrors; ⛔HallucinateAPIs(VerifySource); ⛔HardcodeSuccess(NotImplementedException); ⛔CopyPasteBugs; ⛔PrematureAbstract; ⛔DocsHallucination(VerifyExists);

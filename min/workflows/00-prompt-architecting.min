@@ -1,7 +1,0 @@
-[PROMPT_ARCHITECT]
-Intent:Extract9Dims(Task/Target/Output+Constraints/Input/Context/Audience/Criteria/Examples);
-Discovery:⛔PromptIfMissing(Target/Task/Output); Max3Qs(SpecTease);
-Template:Use prompt-master-templates.md;
-Synthesis:EnglishOnly; Role/FewShot/MemoryBlock; ⛔MoE/ToT/GoT(UnlessReq); StripCredentials;
-Audit:prompt-master-patterns.md; ⛔VagueVerbs/DoubleTasks; TokenEfficient;
-Delivery:1.PromptBlock 2.Target+Strategy 3.SetupNote; AgenticWarningIfRealSys;

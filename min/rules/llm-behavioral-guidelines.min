@@ -1,5 +1,0 @@
-[LLM_BEHAVIOR]
-Think:SelfTest(Assumptions/Ambiguity/Ask/PushbackSimpler);
-Simple:SelfTest(SeniorArchitectApprove?); ⛔TomorrowProblems;
-Surgical:Traceability(EveryLineToRequest); ⛔DeadCodeCleanup(UnlessYours);
-Goal:AAA_Pattern; 1BehaviorPerTest;

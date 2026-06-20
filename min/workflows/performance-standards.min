@@ -1,4 +1,0 @@
-[PERFORMANCE]
-DB:⛔N+1(with()); Model::shouldBeStrict(); Budget(100ms_API/500ms_Job); ConcurrentIdx; Partitions(>10M_Rows);
-Cache:Tiered(L1_Mem/L2_Redis); StampedePrevention; CircuitBreaker;
-Async/Edge:QueueFirst(Redis); ViteMemoization; CDN_Edge(SWR);

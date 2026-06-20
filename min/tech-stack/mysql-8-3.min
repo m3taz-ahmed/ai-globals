@@ -1,5 +1,0 @@
-[MYSQL_8_3]
-HA:GTID_Replication=Req; InnoDBCluster(GroupReplication);
-JSON:MultiValuedIndexes(CAST..ARRAY); JSON_TABLE; ⛔JSONforRelationalData;
-Perf:CTEs(Recursive/Subquery); WindowFunctions(ROW_NUMBER,RANK)>SelfJoins; EXPLAIN_ANALYZE>EXPLAIN;
-InnoDB:BufferPool=70-80%RAM; PartitionPruning(>10M_rows); InvisibleIndexes(TestRemoval);

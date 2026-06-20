@@ -1,25 +1,7 @@
-# Filament v4.x Architecture Rules
-
-## 1. RESOURCE DESIGN
-- **Layout Organization:** Use **Clusters** to group related resources and pages. Navigation should be sorted explicitly via the `getNavigationSort()` method.
-- **Read-Only Data:** Use **InfoLists** for displaying record details instead of read-only forms to provide a cleaner, faster user interface.
-- **Custom Actions:** Implement logic in **Actions** (Resource actions, Header actions) rather than overriding controller methods.
-
-## 2. FORM & TABLE OPTIMIZATION
-- **Form Chaining:** Forms and Tables must exclusively use fluent chaining with strict static analysis (PHPStan Level 8) compliance.
-- **Performance:** All Tables MUST use `eagerLoad()` for relationships to prevent N+1 queries.
-- **Polling:** Polling interval should be managed carefully to avoid server overhead. Prefer `seconds(30)` or more.
-
-## 3. ADVANCED PATTERNS
-- **Property Hooks:** Use PHP 8.4 property hooks for managing computed states in custom widgets and pages.
-- **Multi-Tenancy:** Always use Filament's native multi-tenancy features when the application requires scoped data access.
-- **State Management:** Use `Alpine.js` (see `alpine-3.md`) for complex client-side interactions within Filament components.
-
-## 4. REPOSITORY-SPECIFIC NAMESPACES
-- **Schema Pattern:** This repository uses a specialized structure for forms and tables. Components are organized under `Filament\Schemas\Components` instead of the standard `Filament\Forms\Components`.
-- **Layout Components:** Use the following namespaces for layout organization:
-    - `Filament\Schemas\Components\Section`
-    - `Filament\Schemas\Components\Grid`
-    - `Filament\Schemas\Components\Fieldset`
-    - `Filament\Schemas\Components\Group`
-- **Resource Integration:** Resource forms should always call a static `configure()` method from a dedicated Schema class (e.g., `PackageForm::configure($schema)`).
+[TECH] filament-4
+[OBJ] Filament v4.x Architecture Rules.
+[RULES]
+1. [REQ] Design: Group via Clusters. `InfoLists` for read-only data. Custom logic in Actions.
+2. [REQ] Optimization: Fluent chaining only (PHPStan Lvl 8). `eagerLoad()` on ALL tables. Polling >30s.
+3. [REQ] Structure: Use PHP 8.4 property hooks. Use Filament native multi-tenancy.
+4. [REQ] Custom Namespaces: Use `Filament\Schemas\Components` (NOT `Filament\Forms\...`). Use `configure()` from Schema classes.

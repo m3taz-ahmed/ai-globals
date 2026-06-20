@@ -1,5 +1,0 @@
-[MEMORY_SYNC]
-Trigger:EndOfSession(Step6);
-Step1:Read/Create(.ai/active-context.md);
-Step2:Compress(Goal/Decisions/OpenIssues); ⛔RawCode/Verbose;
-Step3:PrependLocalContext(TimestampHeader); ArchiveOld(>200Lines)->memory-archive.md;

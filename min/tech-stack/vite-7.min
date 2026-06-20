@@ -1,5 +1,0 @@
-[VITE7]
-Config:type:module; TWv4(NoPostCSS_UnlessPlugin); MultiEntry(rollupOptions.input);
-Perf:CodeSplit(import()); esbuild(⛔Terser); TreeShake(ESM); build.assetsInlineLimit(SmallAssets);
-Laravel:laravel-vite-plugin(^2.0); refresh:true; Alias(@->resources/js);
-Dev:VITE_prefix; SourceMaps(dev_only);

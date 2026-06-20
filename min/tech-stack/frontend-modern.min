@@ -1,6 +1,0 @@
-[FRONTEND_MODERN]
-Stack:Tailwind4+; CSSFirstConfig(@theme)>tailwind.config.js; AtomicComponents=Req;
-A11y:Contrast=WCAG_AA; ARIA(DynamicUI); KbdNav(tabindex)=Req;
-Perf:Vite; SVG>IconFonts; LazyLoad(Img/HeavyUI);
-Design:GlobalTokens(CSS); DarkMode(dark:utility);
-Anim:Micro(TW_transition); Complex(FramerMotion|GSAP); GPU(transform,opacity); prefers-reduced-motion=Req;

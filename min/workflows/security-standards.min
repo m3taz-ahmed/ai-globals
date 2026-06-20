@@ -1,9 +1,0 @@
-[SECURITY]
-Data:Encrypt@Rest; BucketsPrivate; SignedURLs; AuditTrails; ⛔CommitPII/Keys/env;
-IO:TrustNoInput(FormReq); Sanitize(EscapeXSS); MIMEJSONHeaders;
-DB/Auth:ParameterizedSQL; ⛔RawSQL; $fillable; ⛔$guarded=[]; DefaultDeny(Policies);
-RateLimit:Throttled(60req/min); ProgressiveLockout;
-Session/JWT:HttpOnly/SecureCookie; ⛔localStorage; Session::regenerate();
-AgentAI(OWASP26):JSONSchemaVal; mTLS/Tokens(M2M); UUIDv4; ⛔AutoIncID;
-Network:SSRFPrev(AllowedList_⛔LocalIP); VerifyHMAC_Webhooks;
-FileUpload:ValidateExt/MIME/Size(App+Nginx); StoreOutsidePublic;

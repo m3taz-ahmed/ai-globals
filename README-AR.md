@@ -53,7 +53,7 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 - **المسار الجذر:** `D:/.ai` (قم بتعديله لمسار الاستنساخ الخاص بك)
 - **الهوية والقواعد:** ابدأ بقراءة `global-roles.md` و `./rules/` من الجذر.
 - **سير العمل الرئيسي:** زامن دورات التنفيذ باستخدام `./workflows/` و `global-workflow.md`.
-- **مزامنة التقنيات:** احفظ قواعد التقنيات المفقودة تلقائياً في `./tech-stack/` وسجل في `CHANGELOG.md`.
+- **مزامنة التقنيات:** احفظ قواعد التقنيات المفقودة تلقائياً في `./tech-stack/` وسجل في `state/CHANGELOG.md`.
 ```
 
 ### 3. إصدار الأمر
@@ -74,26 +74,22 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 ├── global-workflow.md            # [الجوهر] بروتوكول التحميل المعرفي والتنفيذ
 ├── EXAMPLES.md                   # [المرجع] ❌ أخطاء الـ LLM مقابل ✅ الأنماط الصحيحة
 │
-├── rules/                        # 🛡️ قيود موجهة بدقة
+├── .github/                      # 🤝 إرشادات المجتمع (السياسات، الأمان، المساهمة)
+├── state/                        # 🧠 سجلات التتبع والذاكرة (CHANGELOG, MEMORY)
+├── rules/                        # 🛡️ قيود موجهة بدقة (مضغوطة)
 │   ├── core-behavioral-compact.md  # 4 مبادئ هندسية غير قابلة للتفاوض
 │   ├── ai-integration-standards.md # طوابير معالجة غير متزامنة، بث SSE، وضغط السياق
-│   ├── security-standards.md       # بروتوكولات Zero-Trust، معايير OWASP، حماية UUIDv4، و EDoS Rate Limiting
-│   ├── performance-standards.md    # منع N+1، وميزانية الاستعلامات
-│   └── ... (Git, جودة الكود, SaaS, تكامل الـ API)
+│   └── ... 
 │
-├── tech-stack/                   # 🧠 RAG خاص بالنطاق (يُحمل تلقائياً بناءً على المهمة)
-│   ├── laravel-12.md             # معايير Laravel 12/13 المحترفة (Octane, Horizon)
-│   ├── react-ecosystem.md        # Next.js 15, React Compiler, Turbopack
-│   ├── qdrant-rag.md             # قواعد بيانات Qdrant المتجهة محلياً ومعايير RAG
-│   ├── design-foundations.md     # Bento UI, Fluid Motion, OKLCH styling
-│   └── ... (PostgreSQL 17, Tailwind v4, Filament, SaaS Billing)
+├── tech-stack/                   # 🧠 RAG خاص بالنطاق (مضغوطة)
+│   ├── laravel-12.md             # معايير Laravel 12/13 المحترفة 
+│   ├── react-ecosystem.md        # Next.js 15, React Compiler
+│   └── ... 
 │
-├── workflows/                    # ⚙️ بروتوكولات تنفيذ تعتمد على المحفزات
+├── workflows/                    # ⚙️ بروتوكولات تنفيذ تعتمد على المحفزات (مضغوطة)
 │   ├── 01-planning.md            # البوابات المعمارية والاستراتيجية
 │   ├── 02-execution.md           # حلقات التنفيذ الجراحية
-│   ├── 07-security-audit.md      # بروتوكول التقوية الأمنية
-│   ├── 10-saga-reconciliation.md # تنسيق ومزامنة الـ Saga
-│   └── ... (تصحيح الأخطاء، النشر، مراجعة الكود)
+│   └── ... 
 │
 └── scripts/                      # 🔧 عمليات التصحيح الذاتي
     ├── validate-globals.ps1      # مدقق النزاهة بـ PowerShell
@@ -148,9 +144,9 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 
 ### ارتقِ بالنظام
 نحتاج إلى مهندسين رئيسيين، مدققي أمن، وقادة تقنيين للمساعدة في تقوية هذه القواعد.
-- 📖 [**اقرأ دليل المساهمة**](CONTRIBUTING.md) لإضافة تقنياتك.
-- 🛡️ [**راجع سياسة الأمن**](SECURITY.md).
-- 📜 [**مدونة قواعد السلوك**](CODE_OF_CONDUCT.md).
+- 📖 [**اقرأ دليل المساهمة**](.github/CONTRIBUTING.md) لإضافة تقنياتك.
+- 🛡️ [**راجع سياسة الأمن**](.github/SECURITY.md).
+- 📜 [**مدونة قواعد السلوك**](.github/CODE_OF_CONDUCT.md).
 
 > *بُني للمهندسين الذين يرفضون القبول بمخرجات ذكاء اصطناعي متوسطة. هندس بدقة جراحية بواسطة [@m3taz-ahmed](https://github.com/m3taz-ahmed).*
 

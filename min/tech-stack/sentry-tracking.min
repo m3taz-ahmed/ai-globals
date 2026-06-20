@@ -1,5 +1,0 @@
-[SENTRY]
-SDK:NextJS+L12/13; UploadSourceMaps(DelFromPublic); Release(GitSHA);
-Ctx:UserCtx(ID/Email); CustomTags(tenant_id); Breadcrumbs;
-Perf/AI:PerfMonitor+OpenTelemetry; SessionReplay(StrictMasking); AIAutofix; IssueGrouping;
-Rules:⛔LogPII(Scrubbers); ⛔IgnoreAlerts(Assign/Resolve); traces_sample_rate=0.1;

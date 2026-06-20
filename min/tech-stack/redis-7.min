@@ -1,5 +1,0 @@
-[REDIS7]
-Data:Strings(KV); Hashes(Profiles/ReduceMem); Sets(Unique); Streams(Events);
-Pattern:CacheAside(Default); WriteThrough(LowLatency); CentralSession; LuaRateLimit;
-Cluster:ElastiCache(ClusterMode); Evict=allkeys-lru|volatile-lru; ShortKeys;
-Rules:⛔KEYS*(UseSCAN); ⛔UnboundedCache; TTL=Req(UnlessConfig);

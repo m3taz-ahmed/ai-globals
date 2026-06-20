@@ -1,5 +1,0 @@
-[GHA_CI]
-Arch:Separate(PR=CI,Main=CD); MatrixBuilds; Cache(Composer/NPM);
-Quality:Static(ESLint,tsc,PHPStan); Tests(Pest/Playwright)=100%; Audit(composer/npm)->FailOnCrit; DockerScan(Trivy);
-Deploy:Trigger(main/develop); EnvProtection(ManualApproval); DockerBuild+Tag(SHA)->ECR; AutomateMigrations+Rollback;
-Rules:⛔MergeOnFail; ⛔HardcodeKeys(OIDC=Req); Notify(Slack/Discord);

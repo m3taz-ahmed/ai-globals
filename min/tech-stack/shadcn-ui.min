@@ -1,6 +1,0 @@
-[SHADCN_UI]
-Setup:npx shadcn@latest init; components.json;
-Theme:CSS_Vars(--primary,globals.css); next-themes(dark:);
-Comp:Extend/Modify(NotJustBlackbox); A11y(Radix_Preserve); cn()(clsx+twMerge);
-Blocks:shadcn add blocks(ComplexLayouts);
-Rules:⛔WrapUnnecessarily; ⛔StripA11y; CLI=shadcn(⛔shadcn-ui); ⛔Manual_useMemo(React19);

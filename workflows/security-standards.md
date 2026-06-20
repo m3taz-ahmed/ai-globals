@@ -1,39 +1,10 @@
-# Security & Cyber Resilience
-> [!NOTE]
-> Trigger: API design, authentication, database schema, or AI agent tasks.
-
-## Data Protection `[SEC-08]`
-- **Encryption:** Encryption at rest for sensitive DB fields.
-- **Storage:** Cloud buckets PRIVATE by default. Use signed URLs.
-- **Audit Trails `[OBS-04]`:** Log state-changing actions.
-- **Secrets Safety `[SEC-04]`:** ⛔ log or commit PII, tokens, keys, or `.env`.
-
-## Input & Output Validation `[SEC-01]`
-- **Trust No Input:** Strict validation via `FormRequest`.
-- **Sanitization `[SEC-06]`:** Escape all outputs to prevent XSS.
-- **MIME:** Strict JSON response headers to prevent sniffing.
-
-## Database & Auth Security `[SEC-02]`
-- **SQLi:** Parameterized queries / Eloquent only. ⛔ raw SQL string concatenation.
-- **Mass Assignment `[SEC-03]`:** Whitelist `$fillable`. ⛔ `$guarded = []`.
-- **Default Deny `[SEC-05]`:** Deny by default; verify access using Policies/Gates. Filament Shield RBAC.
-
-## Rate Limiting & Throttling `[SEC-09]`
-- **Middleware:** ALL routes throttled (e.g. 60 req/min). Progressive failed auth lockout.
-
-## Session & JWT Security `[SEC-10]`
-- **Cookies:** Store JWT in HttpOnly, Secure, SameSite cookies. ⛔ localStorage.
-- **Session:** Call `Session::regenerate()` after login.
-
-## Agentic AI Security (OWASP 2026) `[SEC-11]`
-- **Hijack Prevention:** Sanitize inputs to prevent goal hijacking. Enforce JSON schema validation.
-- **Inter-Agent:** Scoped and mutually authenticated (mTLS/tokens) machine-to-machine APIs.
-- **Identifiers:** Always use unpredictable UUIDv4 for resources. ⛔ auto-increment IDs.
-
-## Network & Integration Security
-- **SSRF Prevention:** When making outbound HTTP requests with user-provided URLs, validate the domain against an allowed list. ⛔ Never resolve local IPs (`127.0.0.1`, `169.254.169.254` or internal subnets).
-- **Webhooks:** All incoming webhooks must be verified via HMAC signature. Prevent replay attacks using message IDs and timestamp checks.
-
-## File Upload Security
-- **Validation:** Validate file extensions AND MIME types. Ensure file size limits are enforced at the web server level (Nginx/Apache) AND application level.
-- **Storage Location:** Store uploaded files outside the public web root (`public/`). Serve them via a controller that enforces authorization.
+[WORKFLOW] security-standards
+[OBJ] Security & Cyber Resilience.
+[RULES]
+1. [REQ] Data `[SEC-08]`: Encrypt DB PII. Private Cloud buckets with Signed URLs. NO secrets in logs.
+2. [REQ] Input `[SEC-01]`: Strict `FormRequest`. Escape HTML. Strict JSON MIME type.
+3. [REQ] DB/Auth `[SEC-02]`: Parameterized queries. Whitelist `$fillable`. Deny by default (Policies/Gates).
+4. [REQ] Network: Prevent SSRF (NO local IP resolution). Verify Webhook HMAC.
+5. [REQ] Uploads: Validate extension/MIME/Size. Store outside `public/`.
+6. [REQ] Sessions: Throttle APIs. HttpOnly/Secure cookies. `Session::regenerate()`.
+7. [REQ] AI Security: Sanitize against goal hijacking. Enforce JSON schema. UUIDv4 IDs. mTLS for M2M.

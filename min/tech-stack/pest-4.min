@@ -1,5 +1,0 @@
-[PEST4]
-ArchTest:arch()->expect();
-Suite:Feature=1Controller/Service; Unit=NoDB; Datasets=with();
-Expect:expect()Exclusively(⛔PHPUnitAsserts);
-Perf:--parallel(CI); RefreshDatabase(Integration); DatabaseTransactions(NoFullReset);

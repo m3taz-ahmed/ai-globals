@@ -1,5 +1,0 @@
-[POSTCSS8]
-Pipeline:autoprefixer+browserslist=Req; postcss-nesting; postcss-import;
-Tailwind:TW=PostCSSPlugin; Order=import->TW->autoprefixer;
-ReqVsOpt:Req=CustomPlugins(pxtorem/css-variables/cssnano); Opt=TWv4(OxideEngine);
-Prod:cssnano(preset:default,discardComments); ⛔PurgeCSS(TW_NativelyHandles);

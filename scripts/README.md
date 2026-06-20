@@ -35,7 +35,7 @@ The primary automation tool. Performs a full integrity scan of the repository, d
 | **Line Endings** | Ensures all files use LF (not CRLF) |
 | **Cross-References** | Validates all `ref: filename.md §N` links exist |
 | **Secret Scanning** | Entropy-based detection of potential credential leaks |
-| **Version Consistency** | Confirms version number matches across README, CHANGELOG, and script |
+| **Version Consistency** | Confirms version number matches across README, state/CHANGELOG.md, and script |
 | **Integrity Manifest** | SHA-256 hashes to detect unauthorized file changes |
 | **Rule Propagation** | If core rules changed, forces a full system re-scan |
 

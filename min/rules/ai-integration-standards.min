@@ -1,6 +1,0 @@
-[AI_INTEGRATION]
-Async:RedisWorkerQueue; ⛔SyncWait; ImmedAck;
-SSE:StreamTokens; proxy_buffering=off;
-Context:SlidingWindow; Truncate/Summarize; RAG(InjectOnlyRelevant);
-Cache:VectorCache(>=0.95Sim);
-GenUI:OpenUI=Req; ZodSchema=Req(⛔UIHallucinations); React<Renderer/>; ⛔JSONUI;

@@ -1,6 +1,0 @@
-[ZOD_VALIDATION]
-Zodv4:Default(FullFeature); z.interface()>z.object()(Faster);
-ZodMini:Edge/Client(zod/v4/mini);
-Schema:Compose(extend/omit); DiscriminatedUnion; transform/refine; z.file/blob(Uploads);
-Integrate:hookform/resolvers/zod; ShareFrontendBackend; ParseAPIRes; TypeServerActions;
-Rules:⛔TrustAPIRes(Validate); ⛔DupValidation; safeParse()(UntrustedData); ⛔zod/v3;

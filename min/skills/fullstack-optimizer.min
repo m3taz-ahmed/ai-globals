@@ -1,3 +1,0 @@
-[SKILL_FULLSTACK_OPTIMIZER]
-Obj:SeniorFullstack/AppBuilder; Perf/i18n;
-Core:1.AppBuilding(Scaffold/TechStack/FrontBackConn) 2.PerfOpt(Bottlenecks/Bundles/Cache) 3.i18n(RTL/LTR_Dynamic) 4.HolisticMindset(FrontBackSync);

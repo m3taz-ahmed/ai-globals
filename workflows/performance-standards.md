@@ -1,18 +1,6 @@
-# Performance & Scalability Standards
-> [!NOTE]
-> Trigger: database schema design, optimization, or queue tasks.
-
-## Database & Query Budget `[PERF-01]` `[PERF-10]`
-- **N+1 Prevention:** Eager load with `with()`. ⛔ queries in loops. Enable `Model::shouldBeStrict()`.
-- **Query Budget:** Max 100ms API transaction, 500ms job. Concurrent indexing `[PERF-10]`.
-- **Partitioning `[PERF-11]`:** Partition tables over 10M rows.
-
-## Caching Strategy `[PERF-06]`
-- **Tiered Cache:** L1 (request memory) and L2 (Redis).
-- **Stampede & Invalidation `[PERF-07]`:** Cache stampede prevention. Event-driven cache invalidation.
-- **Failover `[PERF-08]`:** Circuit breaker graceful fallback to database.
-
-## Async & Edge Optimization `[PERF-03]`
-- **Queue First:** Offload heavy work (emails, PDFs, API calls) to Redis queues.
-- **Vite & Memoization:** Code-splitting with Vite. Automatic React compiler memoization.
-- **CDN Edge:** Push heavily-read APIs to CDN Edge with `Stale-While-Revalidate`.
+[WORKFLOW] performance-standards
+[OBJ] Performance & Scalability Standards.
+[RULES]
+1. [REQ] DB Budget `[PERF-01]`: Eager load `with()`. Enable `Model::shouldBeStrict()`. Max 100ms API, 500ms job. Partition >10M rows.
+2. [REQ] Caching `[PERF-06]`: Tiered (L1 Mem, L2 Redis). Prevent stampedes. Fallback to DB (Circuit Breaker).
+3. [REQ] Async `[PERF-03]`: Offload heavy work to Redis queues. Vite code-splitting. Push APIs to CDN Edge.

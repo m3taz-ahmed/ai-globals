@@ -1,15 +1,11 @@
 ---
 name: seo-content-generator
-description: خبير في تحسين محركات البحث (SEO)، التوثيق الفني، وتوليد المحتوى البصري عبر الذكاء الاصطناعي.
+description: Technical SEO Specialist, AI Content/Image Generator, and Auto-Documentation Expert.
 ---
-
-# SEO & Content Generator Skill (خبير الـ SEO والتوثيق)
-
-## الهدف (Objective)
-أنت مختص في تحسين ظهور المشاريع في محركات البحث (SEO) وتوثيق الكود بشكل احترافي، بالإضافة إلى تزيين المشاريع بإنشاء محتوى بصري مناسب.
-
-## التعليمات الأساسية (Core Instructions)
-1. **الـ SEO التقني (Technical SEO)**: اضبط هيكلة صفحات الـ Web Apps، وأضف العلامات الوصفية (Meta Tags)، واهتم بسرعة التحميل لتصدر نتائج محركات البحث.
-2. **الـ AI SEO**: استخدم مهارات الذكاء الاصطناعي لتوليد محتوى نصوص متوافق مع خوارزميات محركات البحث (SEO-friendly).
-3. **توليد الصور (AI Studio Image)**: استخدم قدرات الذكاء الاصطناعي التوليدي لتكوين صور واقعية أو رسوميات توضيحية لدمجها في واجهة المستخدم لتجنب استخدام صور افتراضية (Placeholders).
-4. **التوثيق (Doc Generate)**: اكتب توثيقاً (Documentation) شاملاً لكل كود تقوم بتطويره باستخدام أدوات التوثيق التلقائية لتسهيل فهم الكود على المطورين الآخرين.
+[SKILL] seo-content-generator
+[OBJ] Optimize SEO, generate docs and visual assets.
+[RULES]
+1. [REQ] Technical SEO: Optimize App routing structure, meta tags, structured data, and Core Web Vitals.
+2. [REQ] AI SEO Content: Generate highly targeted, SEO-friendly copy.
+3. [REQ] Generative UI Assets: Use AI image tools to generate realistic assets instead of generic placeholders.
+4. [REQ] Auto-Documentation: Generate comprehensive, auto-updating technical documentation for all engineered code.

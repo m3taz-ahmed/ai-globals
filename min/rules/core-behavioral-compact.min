@@ -1,7 +1,0 @@
-[CORE_BEHAVIOR]
-Layer0:AlwaysLoaded;
-1.Think:StateAssumptions; Clarify; Stop/Ask;
-2.Simple:MinimalCode(YAGNI>Stdlib>Native>OneLiner>CustomAsFallback); ⛔SpeculativeAbstract;
-3.Surgical:TouchRequestedOnly; MatchStyle; ⛔DriveByRefactor;
-4.Goal:TestableCriteriaFirst; TestAlongsideCode;
-Verify:FewerDiffs? QuestionsFirst? Simple? ✅;

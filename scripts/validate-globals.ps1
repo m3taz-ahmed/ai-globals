@@ -319,7 +319,7 @@ function Test-VersionConsistency {
     $VersionPattern = '(\d+\.\d+\.\d+)'
     $ReadmeVersion = Extract-Version "$GlobalPath\README.md" "badge/.*?-$VersionPattern"
     $ReadmeArVersion = Extract-Version "$GlobalPath\README-AR.md" "badge/.*?-$VersionPattern"
-    $ChangelogVersion = Extract-Version "$GlobalPath\CHANGELOG.md" "(?m)^##\s*\[v?$VersionPattern\]"
+    $ChangelogVersion = Extract-Version "$GlobalPath\state\CHANGELOG.md" "(?m)^##\s*\[v?$VersionPattern\]"
     $ScriptVersion = Extract-Version "$GlobalPath\scripts\validate-globals.ps1" "Validation.*?v$VersionPattern"
     $PyScriptVersion = Extract-Version "$GlobalPath\scripts\validate-globals.py" "Validation.*?v$VersionPattern"
     

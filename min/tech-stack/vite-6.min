@@ -1,6 +1,0 @@
-[VITE6]
-Config:laravel-vite-plugin(input:app.css/js); import.meta.env(VITE_*);
-Dev:HMR(@vite); npm run dev; server.https|plugin-basic-ssl;
-Prod:npm run build(manifest.json); CodeSplit(dynamic_import); TreeShake(Rollup_StaticExports); AssetHash;
-Opt:esbuild(PreBundle); optimizeDeps.include; PostCSS_v3|Oxide_v4; ?url(Images);
-Rules:⛔Webpack/Mix(Deprecated); ⛔CDNFallback(BundleAll);

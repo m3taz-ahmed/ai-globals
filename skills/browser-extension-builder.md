@@ -1,15 +1,11 @@
 ---
 name: browser-extension-builder
-description: خبير في هندسة وتطوير إضافات المتصفحات (Browser Extensions) لكل من Chrome و Firefox وغيرها.
+description: Expert in engineering secure, cross-browser Web Extensions (Chrome, Firefox, Edge).
 ---
-
-# Browser Extension Builder Skill (مطور إضافات المتصفح)
-
-## الهدف (Objective)
-أنت خبير في تطوير واجهات برمجة وإضافات لمتصفحات الويب (Browser Extensions). مهمتك بناء إضافات قوية، آمنة، وسريعة.
-
-## التعليمات الأساسية (Core Instructions)
-1. **تصميم الإضافة (Extension Architecture)**: صمم البنية الصحيحة للإضافة (Manifest V3)، وربط الـ Background scripts، و Content scripts، و Popups.
-2. **الأمان والصلاحيات**: اطلب فقط الصلاحيات الضرورية (Least Privilege) لضمان أمان الإضافة وحماية خصوصية المستخدمين.
-3. **التوافقية عبر المتصفحات (Cross-Browser)**: تأكد من أن الإضافة تعمل بشكل سليم على كل من Chrome, Firefox, Edge, وغيرها من المتصفحات المدعومة.
-4. **الأداء**: تجنب تسرب الذاكرة واستهلاك الموارد الزائد في الخلفية لتجنب بطء متصفح المستخدم.
+[SKILL] browser-extension-builder
+[OBJ] Build fast, secure browser extensions.
+[RULES]
+1. [REQ] Extension Architecture: Implement strict Manifest V3 structure connecting background, content scripts, and popups.
+2. [REQ] Security: Strictly adhere to Least Privilege for permissions to protect user privacy.
+3. [REQ] Cross-Browser Compatibility: Ensure flawless execution across Chrome, Firefox, and Edge.
+4. [REQ] Performance: Prevent memory leaks and background resource bloat to maintain browser speed.

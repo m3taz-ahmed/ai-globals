@@ -49,10 +49,10 @@ Paste this block into your project's root `.cursorrules`, `GEMINI.md`, or AI sys
 ```markdown
 ### 🌍 GLOBAL AI OPERATING SYSTEM
 - **Root Path:** `D:/.ai` (adjust to your clone path)
-- **Identity & Rules:** Initialize by reading `global-roles.md` and `./min/rules/`. NEVER read source directories.
-- **JIT Compiler:** Run `scripts/get-uncompiled.ps1` at init. If it outputs paths, read them, compress to Telegraphic Pseudo-Code, and save to their `min/` folders before proceeding.
-- **Master Workflow:** Sync execution cycles using `./min/workflows/` and `global-workflow.md`.
-- **Tech Sync:** Load matching `.min` files from `./min/tech-stack/`. Auto-save missing tech-stack rules.
+- **Identity & Rules:** Initialize by reading `global-roles.md` & `global-workflow.md`. All rules and skills are natively compressed.
+- **Context:** Read project `spec.md`. Only load corresponding files from `tech-stack/`.
+- **Master Workflow:** Sync execution cycles using `./workflows/` and `global-workflow.md`.
+- **Tech Sync:** Auto-save missing tech rules to `./tech-stack/` and log in `state/CHANGELOG.md`.
 ```
 
 ### 3. Issue the Command
@@ -73,19 +73,14 @@ AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context
 ├── global-workflow.md            # [Core] Cognitive loading & execution protocol
 ├── EXAMPLES.md                   # [Reference] ❌ LLM mistakes vs ✅ correct patterns
 │
-├── min/                          # 🧠 Shadow DOM (AI-Only Readable Memory)
-│   ├── rules/                    # Compressed behavioral & structural rules
-│   ├── tech-stack/               # Compressed domain-specific RAG tech-stacks
-│   ├── workflows/                # Compressed trigger-based execution protocols
-│   └── skills/                   # Compressed AI tools & agent personas
-│
-├── rules/                        # 🛡️ Source: Precision-Guided Constraints (Human Readable)
-├── tech-stack/                   # 📚 Source: Domain-Specific RAG (Human Readable)
-├── workflows/                    # ⚙️ Source: Execution Protocols (Human Readable)
-├── skills/                       # 🧰 Source: AI Personas & Skills (Human Readable)
+├── .github/                      # 🤝 Community guidelines (Code of Conduct, Security, Contributing)
+├── state/                        # 🧠 Logs & State tracking (CHANGELOG, MEMORY)
+├── rules/                        # 🛡️ Compressed behavioral & structural rules
+├── tech-stack/                   # 📚 Compressed domain-specific RAG tech-stacks
+├── workflows/                    # ⚙️ Compressed trigger-based execution protocols
+├── skills/                       # 🧰 Compressed AI tools & agent personas
 │
 └── scripts/                      # 🔧 Self-Healing Operations
-    ├── get-uncompiled.ps1        # JIT Compiler trigger for newly added rules
     ├── validate-globals.ps1      # PowerShell integrity validator
     └── validate-globals.py       # Cross-platform Python validator
 ```
@@ -104,12 +99,12 @@ AI Global OS now forces agents to act like a **Lazy Senior Developer**. We've na
 
 ---
 
-## 🚀 v4.18.0: JIT Compiler & Telegraphic Shadow DOM
+## 🚀 v4.18.0: Natively Compressed Architecture
 
 This OS now operates with a compiler-like architecture, maximizing AI context efficiency to extremes:
 
-- **Shadow DOM (`min/` directory):** AI no longer reads raw English/Markdown rule files. All instructions, workflows, skills, and tech stacks are compressed into a "Telegraphic Pseudo-Code" format readable only by the AI and stored in `min/`.
-- **JIT Compilation (`get-uncompiled.ps1`):** Whenever a human adds or updates a rule in the raw directories, the OS automatically detects the uncompiled file on initialization. The AI acts as its own JIT compiler, compressing the new rule and injecting it into the Shadow DOM.
+- **Elite Telegraphic Pseudo-Code:** AI no longer reads raw verbose English/Markdown files. All instructions, workflows, skills, and tech stacks are natively compressed into a "Telegraphic Pseudo-Code" format readable instantly by the AI.
+- **Token Efficiency:** By eliminating conversational boilerplate and using structural tags (`[REQ]`, `[CMD]`, `[PROHIBIT]`), the framework ensures that maximum guidance is provided using the minimal possible token footprint.
 - **Context Density Limit-Break:** Achieved an unprecedented reduction in token usage. The entire global intelligence footprint now consumes minimal context while executing multi-layered instructions flawlessly.
 
 ---
@@ -148,8 +143,8 @@ This OS doesn't just manage prompts; it enforces the highest echelons of modern 
 
 ### Elevate the OS
 We need Principal Engineers, Security Auditors, and Tech Leads to help harden these rules. 
-- 📖 [**Read the Contributing Guide**](CONTRIBUTING.md) to add your stack.
-- 🛡️ [**Review our Security Policy**](SECURITY.md).
-- 📜 [**Code of Conduct**](CODE_OF_CONDUCT.md).
+- 📖 [**Read the Contributing Guide**](.github/CONTRIBUTING.md) to add your stack.
+- 🛡️ [**Review our Security Policy**](.github/SECURITY.md).
+- 📜 [**Code of Conduct**](.github/CODE_OF_CONDUCT.md).
 
 > *Built for engineers who refuse to settle for mediocre AI output. Engineered with surgical precision by [@m3taz-ahmed](https://github.com/m3taz-ahmed).*

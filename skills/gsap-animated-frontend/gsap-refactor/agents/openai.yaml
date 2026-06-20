@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSAP Refactor"
+  short_description: "Claude wrapper for refactoring existing GSAP work"
+  default_prompt: "Use $gsap-refactor to delegate into the shared gsap-animated-frontend package and run the existing-page GSAP refactor workflow."

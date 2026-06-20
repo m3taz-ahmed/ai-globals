@@ -1,4 +1,0 @@
-[TERRAFORM_IAC]
-Arch:Modules(vpc/ecs); Vars/Locals; Outputs(IDs/ARNs); DataSources(⛔HardcodeID);
-State:RemoteS3Locking(NativeTF1.10)>DynamoDB; StateEncryption; Terragrunt(MultiEnv_DRY); ⛔TFWorkspaces;
-Rules:prevent_destroy=true(DBs); NativeTest(tofu test); CI/CD_Apply(⛔LocalApply); ⛔CommitTFState/Secrets; ⛔ManualAWSConsole; fmt+tflint=Req;

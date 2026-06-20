@@ -1,5 +1,0 @@
-[PG17]
-Model:JSONB(Schema-less); Partitioning(Hash/Range)>MassiveData; PK=UUIDv7|ULID;
-Index:Partial(WHERE); BRIN(TimeSeries); GIN/GiST(JSONB/Search); CTEs; WindowFunctions;
-Ops:shared_buffers=25%RAM(pg_buffercache); RLS=Req(TenantIsolation); PgBouncer/RDSProxy; pg_stat_statements;
-Rules:⛔UnboundedQuery; ⛔SELECT*; EXPLAIN_ANALYZE=Req;

@@ -1,4 +1,0 @@
-[SKILL_CONTEXT_COMPRESSOR]
-Obj:CompressMarkdown(TelegraphicPseudoCode) for AI;
-Tags:⛔(Forbidden) ✅(Required) ⚠️(Warn) 💡(Heuristic) ⚙️(Config);
-Rules:DelVowels(Keep1st); DelArticles/Prepositions; UseSymbols(=,->,+,<); CamelCase/SnakeCase;

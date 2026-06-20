@@ -1,5 +1,0 @@
-[LARAVEL11]
-Arch:NoKernels(bootstrap/app.php); ⛔LegacyFiles;
-Logic:ThinControllers; ServicePattern(App\Services\); Validation(FormRequest)=Req(⛔Inline);
-Eloquent:Strict(shouldBeStrict); EagerLoad(with)=Req(No_N+1); Chunk/Lazy(LargeData);
-API:JsonResource=Req; ConsistentRes;

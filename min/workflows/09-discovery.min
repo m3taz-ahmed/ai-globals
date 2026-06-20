@@ -1,6 +1,0 @@
-[DISCOVERY_WF]
-Trigger:UnknownTechStack_Or_UnreleasedVersion;
-Step1:DetectMismatch->PauseImpl->TriggerProtocol; ⛔AssumeDefaults;
-Step2:ResearchArch/Sec(OWASP)/Perf(NativeOpts)/Constraints;
-Step3:Draft(.md)->[!TECH-DISCOVERY]/[!SPECULATIVE]; SOLID/DRY/OWASP; HardConstraints; SurgicalPatterns(❌vs✅);
-Step4:Integrate->SaveTo_tech-stack->CHANGELOG->MEMORY.md->validate-globals.ps1;

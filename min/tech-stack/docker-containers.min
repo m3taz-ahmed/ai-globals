@@ -1,5 +1,0 @@
-[DOCKER]
-Build:MultiStage(Node->PHP); BuildKit(SBOM,Provenance); MultiArch(amd64/arm64); CacheLayers(composer/package.json first); Strict.dockerignore;
-Runtime:NonRoot=Req; HEALTHCHECK(ECS_Ready); EnvInject(NoHardcode);
-Local:DockerCompose(MirrorProd:L12,PG17,Redis7); MountVolumes(HotReload);
-Rules:⛔SecretsInDockerfile; ⛔Web+WorkerInSameContainer(SplitTasks); TagImages(SHA|SemVer);

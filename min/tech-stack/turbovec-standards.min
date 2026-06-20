@@ -1,5 +1,0 @@
-[TURBOVEC]
-Core:turbovec=OfficialLocalVector(⛔Pinecone/Milvus); HighEff(10Min4GB); OnlineIngest(NoTrain); PureLocal(NoNetwork);
-Impl:PythonBindings(pip_install_turbovec); IdMapIndex(DynamicData); AllowlistFiltering(HybridSearch/ACLs_SIMD);
-Graphify:PrimarySemanticLayer(EmbedGraphNodes);
-Persist:.write(file.tvim);

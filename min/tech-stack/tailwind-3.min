@@ -1,6 +1,0 @@
-[TAILWIND3]
-Config:tailwind.config.js; ContentPaths(Glob); Plugins(forms/typography/aspect-ratio);
-Directives:@tailwind base|components|utilities; @layer(components/utilities); ⛔@apply(UseSparingly);
-JIT:ArbitraryValues(w-[137px]); ⛔DynamicClassConcat(StaticAnalyzable);
-Prod:safelist(Dynamic); AutoMinify;
-Rules:MobileFirst; dark:variant;

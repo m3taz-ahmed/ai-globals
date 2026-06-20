@@ -1,6 +1,0 @@
-[OPENUI_GEN]
-Core:OpenUI=Req(DSL-67%TokenSave); ⛔JSON-Render/A2UI;
-Arch:Library(defineComponent+ZodSchema); ⛔InventHTML; library.prompt(); Stream-><Renderer/>;
-Pkgs:@openuidev/(react-lang,react-headless,react-ui);
-Syntax:1Line=1Stmt(id=Expr); Line1=root; TopDown(Layout->Comp->Data); PositionalArgs;
-Frame:NextJS15/Octane_SSE;

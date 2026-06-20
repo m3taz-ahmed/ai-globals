@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSAP New"
+  short_description: "Plan and implement GSAP for new pages or sections"
+  default_prompt: "Use $gsap-new to create or update .gsap artifacts, ask only missing questions, generate the plan, and implement animation work for a new page or section."

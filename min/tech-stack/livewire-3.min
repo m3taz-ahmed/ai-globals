@@ -1,7 +1,0 @@
-[LIVEWIRE3]
-Design:SingleResponsibility; KebabCase(View) / PascalCase(Class); #[Layout](FullPage);
-React:wire:model.live(Caution:NetworkSpam); wire:model.blur(Preferred); wire:model(Deferred); #[Computed](Cached);
-Perf:#[Lazy](HeavyComponents); wire:poll.30s(ConditionToStop); BuiltinPagination; MinimizePublicProps(HydrationPayload);
-AlpineSync:@entangle; $wire.method(); Alpine=ClientUI, LW=ServerState;
-Events:$this->dispatch()->self()|to(); #[On]>protected$listeners;
-Nav:wire:navigate(SPA); @persist; PrefetchHover;

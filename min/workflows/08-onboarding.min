@@ -1,7 +1,0 @@
-[ONBOARDING]
-Trigger:NewProject|SwitchProject|SessionBreak;
-60sAct:ReadProtocols; ⛔PriorAssumptions; Role=Principal10xArch;
-ReadSeq:1.L0(core-behav/global-roles) 2.L1(anti-patterns) 3.TechScan 4.L3(Load_tech-stack) 5.HandoffReport;
-NewRepo:Create_MEMORY.md; Verify_.gitignore; AutoDiscoverTech(GenMissingFiles);
-Audit:ThinCtrl/Services; Sec(SQL/Auth); Deps(CVE); TestCov%; TechDebt->MEMORY.md;
-Handoff:StackDetected; RulesLoaded; RedFlags(Crit/Maj/Min); RecommendedFirstAction;

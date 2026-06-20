@@ -1,13 +1,6 @@
-# Alpine.js v3.x Standards
-
-## 1. COMPONENT DESIGN
-- **Self-Contained:** Keep logic inside the `x-data` attribute for simple components.
-- **Global Stores:** Use `Alpine.store()` for state that needs to be shared across multiple components.
-
-## 2. REACTIVITY
-- **Directives:** Use `x-show`, `x-if`, and `x-for` efficiently. Prefer `x-show` (CSS display) over `x-if` (DOM removal) for frequently toggled elements.
-- **Events:** Use `x-on` (or `@`) for event handling. Use `.prevent`, `.stop`, and `.window` modifiers where appropriate.
-
-## 3. INTEGRATION WITH LIVEWIRE
-- **Entangle:** Use `$wire.entangle()` to sync Alpine.js state with Livewire properties.
-- **Ignore:** Use `wire:ignore` on elements where Alpine.js manages complex DOM manipulations to prevent Livewire from overriding them.
+[TECH] alpine-3
+[OBJ] Alpine.js v3.x Standards.
+[RULES]
+1. [REQ] Design: Keep logic inside `x-data`. Use `Alpine.store()` for globals.
+2. [REQ] Reactivity: Prefer `x-show` over `x-if` for frequent toggles. Use `x-on` with `.prevent`/`.stop`/`.window`.
+3. [REQ] Livewire: Sync with `$wire.entangle()`. Protect DOM mutations with `wire:ignore`.

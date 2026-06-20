@@ -1,22 +1,7 @@
-# Global Design Foundations (2024-2025)
-
-## 1. MODERN AESTHETICS & LAYOUTS
-- **Bento Grids:** Use modular, card-based layouts with varying spans. Ensure consistent gaps using `gap-4` or `gap-6`. Use `aspect-ratio` to maintain visual balance.
-- **Glassmorphism:** Implement using `backdrop-blur-md`, `bg-white/10`, and subtle `border-white/20`. Always include a fallback background color for non-supporting browsers.
-- **Neumorphism:** Use soft shadows for depth. `shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff]`. Best used for subtle UI controls, not entire layouts.
-- **Modern Gradients:** Favor mesh gradients or multi-stop linear gradients. Example: `bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500`.
-
-## 2. THE WOW FACTOR RULES
-- **Micro-interactions:** Every button hover, card click, and transition must feel "alive".
-- **Visual Hierarchy:** Use bold typography and scale to guide the eye.
-- **Empty States:** Never show a blank screen. Use illustrations or stylized placeholders.
-- **Dark Mode Excellence:** Don't just flip colors. Adjust saturation and contrast for eye comfort. Use `zinc` or `slate` palettes instead of pure black `#000000`.
-
-## 3. TYPOGRAPHY STANDARDS
-- **English Fonts:** Primary: `Inter`, `Outfit`, or `Geist`.
-- **Arabic Fonts:** Primary: `IBM Plex Sans Arabic`, `Readex Pro`, or `Noto Sans Arabic`.
-- **Harmony:** Ensure font-weight and line-height are balanced between languages. Arabic typically requires `1.5` to `1.7` line-height for readability.
-
-## 4. PERFORMANCE-AESTHETIC INTERLOCK
-- **Critical Path Protection:** High-fidelity animations or heavy 3D/Spline assets MUST use `requestIdleCallback` or `IntersectionObserver` to ensure they do not block the critical rendering path.
-- **Zero-Layout-Shift:** Always define `aspect-ratio` or explicit dimensions for Bento card containers to prevent cumulative layout shift (CLS) when assets load.
+[TECH] design-foundations
+[OBJ] Global Design Foundations.
+[RULES]
+1. [REQ] Layouts: Bento Grids (`gap-4`, `aspect-ratio`). Glassmorphism (`backdrop-blur`, fallback BG). Neumorphism for subtle controls. Mesh gradients.
+2. [REQ] Wow Factor: Micro-interactions on every element. Bold typography. NO empty states. High contrast/saturated Dark Mode (use zinc/slate).
+3. [REQ] Typography: English (Inter/Outfit/Geist). Arabic (IBM Plex/Readex Pro/Noto Sans, 1.5-1.7 line-height).
+4. [REQ] Performance: Heavy animations MUST use `requestIdleCallback`/`IntersectionObserver`. Prevent CLS via strict `aspect-ratio` on containers.

@@ -1,8 +1,0 @@
-[REACT_ECO]
-Web:NextJS15+(SSR/SSG,RSC); Vite7+(SPA);
-Mobile:ExpoSDK52+; ExpoRouter; NativeWind4+;
-State:TanStackQuery5(ServerState); Zustand(ClientState)>Redux;
-UI:Tailwind4; ShadcnUI; FramerMotion; LucideReact;
-Forms:ReactHookForm+Zod;
-Arch:AtomicDesign; CompoundComponents; CustomHooks; RTL_Support(dir=rtl,LogicalCSS);
-Quality:⛔any; types.ts=Req; Vitest/Jest(100%Cov);

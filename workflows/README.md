@@ -30,7 +30,7 @@ Step 2: THINK         → Internal reasoning, anti-pattern check
 Step 3: GOLDEN RULE   → Clarify if ambiguous (≥80% clear = proceed)
 Step 4: EXECUTE       → Deliver with verifiable success criteria
 Step 5: VERIFY        → Run tests, static analysis, formatting
-Step 6: DOCS SYNC     → Update MEMORY.md and CHANGELOG.md
+Step 6: DOCS SYNC     → Update state/MEMORY.md and state/CHANGELOG.md
 Step 7: HANDOFF       → Summarize state for next agent/session
 ```
 
@@ -39,6 +39,6 @@ Step 7: HANDOFF       → Summarize state for next agent/session
 1. Name the file `{NN}-{description}.md` (continue the numbering sequence)
 2. Add it to the routing table in `global-workflow.md` Step 1 Layer 3
 3. Add it to the System Map in `README.md`
-4. Log it in `CHANGELOG.md`
+4. Log it in `state/CHANGELOG.md`
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the full process.

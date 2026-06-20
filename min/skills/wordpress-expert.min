@@ -1,3 +1,0 @@
-[SKILL_WORDPRESS_EXPERT]
-Obj:WP_Plugins/Themes/Woo/PenTest;
-Core:1.PluginDev(Clean/Secure,⛔Bloated3rdParty) 2.ThemeDev(FromScratch/Opt) 3.WooCommerce(Custom/UX) 4.PenTest(FindVulnsInWP/Plugins);

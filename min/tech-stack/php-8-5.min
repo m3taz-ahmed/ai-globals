@@ -1,4 +1,0 @@
-[PHP_8_5]
-Pattern:AdvMatching(Enums/StateMachines); BackedEnum+Methods;
-JIT:OptimizeHotPaths(TypedProps); ⛔DynamicProps;
-Type:declare(strict_types=1)=Req; NativeUnion/Intersection(⛔PHPDoc); true/false/null=Standalone; PipeOperator(|>)>Nested;

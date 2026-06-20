@@ -1,4 +1,0 @@
-[SKILL_SUBAGENT_DEV]
-Obj:ExecPlanViaSubagents; FreshAgentPerTask; TwoStageReview;
-Process:1.ReadPlan 2.ForEachTask(DispatchImplementer->SelfReview->SpecReview->CodeQualityReview) 3.MarkDone 4.NextTask(⛔WaitHumanUnlessBlocked);
-Gates:⛔QualityReviewBeforeSpec; ⛔SkipReviews; ⛔ParallelImplementers(DependentTasks);

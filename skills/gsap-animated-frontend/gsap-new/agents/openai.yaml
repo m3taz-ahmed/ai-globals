@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSAP New"
+  short_description: "Claude wrapper for new GSAP pages or sections"
+  default_prompt: "Use $gsap-new to delegate into the shared gsap-animated-frontend package and run the new-page GSAP workflow."

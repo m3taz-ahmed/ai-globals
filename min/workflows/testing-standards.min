@@ -1,5 +1,0 @@
-[TESTING_STANDARDS]
-FW:Pest3(Backend/RefreshDB); Vitest+RTL(Frontend/userEvent/Role);
-E2E:Playwright(POM); Mocks(Http::fake); ⛔LiveAPI;
-Cov/Gates:Biz(80%); APIs(90%); Overall(70%); Isolation; ⛔SkipW/oIssue;
-AI_Guardrails:TestBehaviorNotImpl; MockSystemBoundariesOnly; 1ScenarioPerTest(DataProviders); DeleteTrivialTests; ⛔MockDTO/StateObjs(Real);

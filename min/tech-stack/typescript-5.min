@@ -1,6 +1,0 @@
-[TYPESCRIPT5]
-Compiler:strict=true; moduleResolution=Bundler; module=NodeNext|Node16; PathAliases(@/*); isolatedDeclarations=true(Libs);
-Types:DiscriminatedUnions; TemplateLiteralTypes; as const; satisfies; using(ES2024_Dispose);
-Decl:*.d.ts(GlobalAugment); @/types; --declaration;
-Decorators:NativeTC39(⛔experimentalDecorators); Symbol.metadata;
-Rules:⛔any; ⛔@ts-ignore(Use@ts-expect-error+comment); ExplicitReturn=Req;

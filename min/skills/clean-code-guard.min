@@ -1,6 +1,0 @@
-[SKILL_CLEAN_CODE_GUARD]
-Trigger:BeforePresent/Commit;
-AI_Guards:⛔SwallowErrors; ⛔ImpossibleCases; ⛔HardcodedMock(RealLogic); VerifyImports; StripDeadCode;
-Clean:Names(Why/What,⛔data/utils); Size(<=20L,1LevelAbs); Args(Max4,>4=DTO); CQS(ReturnORMutate,⛔Both);
-SOLID/YAGNI:SRP; OCP; LSP; DRY/KISS(DeleteKnowledgeNotText,WrongAbs>Dup); YAGNI(⛔Speculative);
-Verify:SmallFuncs? NoMockData? ImportsChecked? NoObservableBehaviorChange?

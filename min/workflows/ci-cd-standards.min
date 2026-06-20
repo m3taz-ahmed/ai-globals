@@ -1,4 +1,0 @@
-[CI_CD_STANDARDS]
-Branch:main/develop/feature/bugfix/hotfix; MergeReq(ConvCommits/Tests/Lints/1Approve); RiskTagging(low/med/high);
-Pipeline:AutoDeploy(develop->Staging,main->Prod); AuditDeps(FailHigh/CritCVE); Secrets(OIDC/EKS_Identity); ⛔StaticTokens;
-SupplyChain(SLSA3):PinActions(SHA); ⛔MutableTags; SBOM(DockerBuildKit); SignImages(Cosign); LeastPriv(GITHUB_TOKEN);

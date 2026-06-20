@@ -1,4 +1,0 @@
-[FILAMENT_SHIELD]
-Sec:AutoGenPerms(Resources/Pages); HasShield_Trait=Req;
-Roles:super_admin(BypassAll); HideNavByPerms;
-Rules:CustomPerms(Config); Sync=php artisan shield:generate;

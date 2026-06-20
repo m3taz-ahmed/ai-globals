@@ -1,17 +1,7 @@
----
-name: graphify-windows
-description: "Turn folder of files into queryable knowledge graph. Use for codebase/architecture questions."
-trigger: /graphify
----
-# /graphify
-
-**Mode**: Extracts knowledge graphs from codebases (`graphify-out/graph.json`).
-
-## 🔴 Workflow
-1. **Check existence**: If `graphify-out/graph.json` exists AND user asks a question, skip rebuild and run `graphify query "<question>"`.
-2. **Detect**: `graphify detect .` to count files/tokens.
-3. **Extract**: `graphify extract` (AST + LLM semantic). Parallel processing via subagents for text/docs.
-4. **Analyze & Cluster**: Generates communities, cohesion scores, and `GRAPH_REPORT.md`.
-5. **Explore**: Answer user questions by querying the graph structure.
-
-*Always rely on the `graph.json` to navigate deep codebase queries rather than reading raw files individually.*
+[SKILL] graphify-windows
+[OBJ] Extract and query codebase knowledge graph.
+[RULES]
+1. [REQ] Trigger: `/graphify` or codebase/architecture questions.
+2. [REQ] Fast Path: If `graphify-out/graph.json` exists, SKIP rebuild. Run `graphify query "<question>"`.
+3. [REQ] Extraction: `graphify detect .` -> `graphify extract` -> Generates `GRAPH_REPORT.md` and communities.
+4. [REQ] Navigation: ALWAYS rely on `graph.json` for deep queries rather than raw file reads.

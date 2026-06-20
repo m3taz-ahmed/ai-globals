@@ -1,5 +1,0 @@
-[LARAVEL12]
-Types:NativeTypeHint=Req; ⛔resolve()/app(); ReturnTypes=Req(Controllers/Services/Jobs);
-Routing:FormRequest=Req; CustomRuleObjects>Regex;
-Async:Queue(>100ms/API)=Req; Bus::batch(); Cache::remember();
-UI:Vite(vite-7.md); Livewire(livewire-3.md);

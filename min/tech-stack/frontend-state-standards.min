@@ -1,6 +1,0 @@
-[FRONTEND_STATE]
-Scope:URL(Shareable/Filter); Local_useState(UIToggles); Global(Deep/Unrelated_ONLY);
-ReactEcosystem:Server(ReactQuery|SWR)>Redux/Zustand; Client(Zustand|Context); Context(RareChange); Zustand(FreqChange);
-SSR:HydrationMatch=Req; ⛔SensitiveDataInPayload(getServerSideProps);
-Forms:ReactHookForm+Zod; Uncontrolled>Controlled;
-Perf:PropDrill(<3Levels); SplitContext(AvoidAllRenders);

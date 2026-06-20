@@ -1,7 +1,0 @@
-[LARAVEL_AI]
-Setup:laravel/ai; Keys(.env);
-ProviderAgnostic:AI::text|image|embed; SmartFailover; ⛔DirectSDK(OpenAI\Client); ->stream()=Req(SSE);
-VectorRAG:PG+pgvector; AI::embed(); Migration->vector(1536); whereVectorSimilarTo();
-Agents:php artisan make:agent; Encapsulate(Memory/Tools/Schema); EnforceJSONSchema;
-Sec:SepRateLimiter(Redis_TokenBucket); ⛔LeakErrorMsgs; ⛔TrustOutputs(ValidateSchema); PasskeyAdmin;
-MCP:laravel/mcp; ScopePolicies; ⛔ExposeRawDB;

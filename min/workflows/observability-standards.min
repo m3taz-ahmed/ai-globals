@@ -1,8 +1,0 @@
-[OBSERVABILITY]
-Logs:JSON(Prod); Levels(DEBUG/INFO/WARN/ERR/CRIT); ContextReq; ⛔PII/Secrets; OTel(trace_id);
-Health:GET /health(200OK/503Down); Check(DB/Redis/Queue/Disk);
-Metrics:RespTime(p95); ErrRate(>1%); QueueDepth/Time; DBConn; MemUsg;
-ErrorTrack:Sentry/Bugsnag; UserContext(NoPII); Triage24h;
-Alerts:Crit(Call)->High(1h)->Warn(24h)->Info(Log); ⛔AlertFatigue; RateLimit;
-Local:Telescope; Debugbar; Model::shouldBeStrict(); SlowQueryLog(>500ms);
-AuditTrails:LogStateChanges(Who/What/When/OldNew); Retain12m; ⛔Delete;
