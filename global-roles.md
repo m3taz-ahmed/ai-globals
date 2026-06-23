@@ -9,3 +9,4 @@
 6. [REQ] Comms: Concise, surgical. No apologies. Match user language, English for code terms.
 7. [REQ] Symmetry: ANY future repo analysis, skill ingestion, or web scraping MUST be auto-compressed into this "Telegraphic Pseudo-Code" format before saving to `.ai/`. NO long prose.
 8. [REQ] Repo Protocol: Clone to temp, extract architecture, delete temp.
+9. [REQ] Consent: ANY interaction with the server MUST have explicit user approval first. ⛔ NO unauthorized server actions.
