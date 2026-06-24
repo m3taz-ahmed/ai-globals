@@ -1,64 +1,158 @@
 # `scripts/` — Automation & Validation Tools
 
-This directory contains the **self-healing validation engine** for AI Global OS.
+Self-healing and utility engine for AI Global OS v4.20.0.
 
 ---
 
-## `validate-globals.ps1` — Integrity Validator (v4.5.0)
+## Validators
 
-The primary automation tool. Performs a full integrity scan of the repository, detects issues, and can auto-correct them.
+### `validate-globals.py` — Source-of-Truth Integrity Validator (v4.20.0)
 
-### Usage
+Python validator. Single source of logic. All checks run here.
 
-```powershell
-# Standard validation scan (read-only)
-.\scripts\validate-globals.ps1
+```bash
+# Standard scan
+python scripts/validate-globals.py
 
-# Full scan — bypasses SHA-256 incremental cache
-.\scripts\validate-globals.ps1 -Force
+# Full scan — bypass SHA-256 cache
+python scripts/validate-globals.py --force
 
-# Auto-fix mode — corrects encoding, line endings, and broken references
-.\scripts\validate-globals.ps1 -Fix
+# Self-healing auto-correct (CRLF, BOM, trailing newlines, broken refs)
+python scripts/validate-globals.py --fix
 
-# Dry-run — shows what -Fix would change without writing anything
-.\scripts\validate-globals.ps1 -Fix -DryRun
+# Dry-run preview of fixes
+python scripts/validate-globals.py --fix --dry-run
 
-# Generate a fresh SHA-256 integrity manifest
-.\scripts\validate-globals.ps1 -GenerateManifest
+# Force-regenerate integrity.manifest
+python scripts/validate-globals.py --generate-manifest
 ```
 
-### What It Checks
+**Checks performed:**
 
 | Check | Description |
 |---|---|
-| **Encoding** | Detects mojibake artifacts (`â€"`, `â€™`, `U+FFFD`) |
-| **Line Endings** | Ensures all files use LF (not CRLF) |
-| **Cross-References** | Validates all `ref: filename.md §N` links exist |
-| **Secret Scanning** | Entropy-based detection of potential credential leaks |
-| **Version Consistency** | Confirms version number matches across README, state/CHANGELOG.md, and script |
-| **Integrity Manifest** | SHA-256 hashes to detect unauthorized file changes |
-| **Rule Propagation** | If core rules changed, forces a full system re-scan |
+| **Title** | AI files: `[FILE]/[TECH]/[WORKFLOW]/[SKILL]` or YAML `name:`. Human docs: `# H1` / `<h1>`. |
+| **Struct** | AI files MUST contain `[OBJ]` and `[RULES]`. |
+| **Encoding** | Detects mojibake artifacts (`â€"`, `U+FFFD`) |
+| **Line Endings** | All files must use LF (flags CRLF) |
+| **BOM** | BOM-less UTF-8 only |
+| **Trailing Newline** | Single trailing newline required |
+| **Cross-References** | Validates `file.md §N` section links |
+| **File References** | Validates `.md` file refs exist in the repo |
+| **Symbolic Codes** | All `[XXX-NN]` codes must be defined in `rules/vocabulary.md` |
+| **Secrets** | Entropy-based detection of leaked credentials |
+| **Version** | README / CHANGELOG / scripts all at the same version |
+| **Integrity Manifest** | SHA-256 hashes detect unauthorized changes |
 
-### Exit Codes
+**Scope:** `*.md` at root + `rules/` + `tech-stack/` + `workflows/` + `skills/` (recursive). Honors `.aiignore`.
 
-| Code | Meaning |
-|---|---|
-| `0` | All checks passed |
-| `1` | Issues found (details in output) |
-| `2` | Script error (misconfiguration or missing files) |
+**Exit codes:** `0` = clean · `1` = errors · `2` = misconfig (e.g. missing `rules/vocabulary.md`)
 
-### Running in CI
+---
 
-```yaml
-# Example GitHub Actions step
-- name: Validate AI Global OS integrity
-  shell: pwsh
-  run: .\scripts\validate-globals.ps1 -Force
+### `validate-globals.ps1` — PowerShell Thin Wrapper (v4.20.0)
+
+Delegates all logic to `validate-globals.py`. Accepts identical flags.
+
+```powershell
+.\scripts\validate-globals.ps1
+.\scripts\validate-globals.ps1 -Force
+.\scripts\validate-globals.ps1 -Fix
+.\scripts\validate-globals.ps1 -Fix -DryRun
+.\scripts\validate-globals.ps1 -GenerateManifest
+```
+
+**Requirements:** PowerShell 7+, Python 3.10+.
+
+---
+
+## AI Memory Engine
+
+### `ai_memory_engine.py` — Local Vector Memory (Turbovec)
+
+Manages persistent AI session memory using local vector search via `turbovec`. Stores and retrieves compressed context snippets for long-running tasks.
+
+```bash
+python scripts/ai_memory_engine.py --help
+```
+
+**Requirements:** See `requirements-memory.txt`.
+
+### `requirements-memory.txt`
+
+Pinned dependencies for `ai_memory_engine.py`.
+
+---
+
+## Free AI Keys
+
+### `fetch-free-keys.py` — Free API Key Discovery
+
+Fetches and lists available free-tier API keys from community sources for AI model providers.
+
+```bash
+python scripts/fetch-free-keys.py
 ```
 
 ---
 
-## Requirements
+## OpenCode Integration
 
-- **PowerShell 7+** (cross-platform: Windows, Linux, macOS)
-- Run from the repository root (same directory as `global-roles.md`)
+### `run-opencode-free.ps1` / `run-opencode-free.cmd`
+
+Launches OpenCode with free-tier model configuration. Cross-platform: `.ps1` for PowerShell, `.cmd` for CMD/batch.
+
+```powershell
+.\scripts\run-opencode-free.ps1
+```
+
+---
+
+## Graphify MCP
+
+### `graphify_mcp_wrapper.py` — Graphify MCP Server Wrapper
+
+Wraps the `graphify` CLI as an MCP (Model Context Protocol) server, enabling AI agents to query the codebase knowledge graph via tool calls.
+
+```bash
+python scripts/graphify_mcp_wrapper.py
+```
+
+---
+
+## Community Skill Ingestion
+
+### `ingest-community-skill.ps1` — Skill Package Importer
+
+Clones a community skill repository into `skills/`, validates format, and registers it. Enforces Telegraphic Pseudo-Code compression per `global-roles.md §7`.
+
+```powershell
+.\scripts\ingest-community-skill.ps1 -RepoUrl <url> -SkillName <name>
+```
+
+---
+
+## UI/UX Pro Max
+
+### `ui-ux-pro-max/` — Design Intelligence Engine
+
+Multi-file subsystem for generating UI/UX specifications. Contains:
+
+| File | Purpose |
+|---|---|
+| `scripts/core.py` | Core generation engine |
+| `scripts/design_system.py` | Design system rule extraction |
+| `scripts/search.py` | Asset and pattern search |
+| `data/_sync_all.py` | Syncs all CSV data sources |
+| `data/*.csv` | Design tokens, typography, colors, icons, UX guidelines |
+| `data/stacks/*.csv` | Stack-specific UI patterns (React, Next.js, Vue, etc.) |
+
+```bash
+python scripts/ui-ux-pro-max/scripts/core.py
+```
+
+---
+
+## CI
+
+See `.github/workflows/validate.yml` — runs `validate-globals.py --force` on every push/PR.

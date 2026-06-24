@@ -1,4 +1,4 @@
-[SKILL] vocabulary
+[FILE] vocabulary
 [OBJ] Dictionary of AI Global symbolic codes.
 [RULES]
 [BEH]

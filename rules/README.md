@@ -1,31 +1,41 @@
-# AI OS Rules & Context Architecture
+# AI OS Rules Architecture
 
-> [!IMPORTANT]
-> **DO NOT READ THE `rules/`, `tech-stack/`, or `workflows/` DIRECTORIES DIRECTLY!** 
-> This OS uses a compiled Shadow DOM pattern for extreme context token savings.
+This directory contains **compressed behavioral and structural rules** for AI Global OS. All files use Telegraphic Pseudo-Code (`[FILE]/[RULES]` format) — natively dense, no compilation step required.
 
-## The `min/` Shadow DOM
-All human-readable rules in this repository are compiled into highly dense AI-shorthand (`.min` files) located in the `D:\server\.ai\min\` directory. 
+## Loading Protocol
 
-Whenever you update any `.md` file in the source directories (`rules`, `tech-stack`, `workflows`, `skills`), you **must** run the compilation script to update the AI's context:
-```powershell
-D:\server\.ai\scripts\build-context.ps1
+Rules load lazily per `global-workflow.md`:
+
+| Layer | Files | When |
+|---|---|---|
+| Layer 0 | `core-behavioral-compact.md` | Every session |
+| Layer 1 | `vocabulary.md`, `anti-patterns.md` | Every session |
+| Layer 2 | All other `rules/*.md` | On-demand |
+
+**Vocabulary** (`rules/vocabulary.md`) is the sole definition source for all symbolic codes (`[BEH-xx]`, `[SEC-xx]`, etc.). Load it before referencing any code.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `vocabulary.md` | Canonical symbolic code dictionary |
+| `core-behavioral-compact.md` | Minimum viable behavioral constraints |
+| `anti-patterns.md` | Prohibited patterns and LLM failure modes |
+| `principal-architect.md` | Architectural identity and authority |
+| `llm-behavioral-guidelines.md` | AI response quality gates |
+| `ai-integration-standards.md` | Agentic/LLM integration rules |
+| `persistent-state-execution.md` | Multi-step task state management |
+| `spec-cache.md` | Project spec caching protocol |
+| `EXAMPLES.md` | Concrete ❌/✅ pattern examples |
+
+## Format
+
+All AI-loaded files follow:
+```
+[FILE] name
+[OBJ] Single-sentence objective.
+[RULES]
+1. [REQ|CMD|PROHIBIT] Rule body.
 ```
 
-## Global AI OS Instructions (User Configuration)
-To properly initialize this system in your IDE (Cursor, Windsurf, etc.), place the following highly compressed configuration into your IDE's Global Rules or system prompt:
-
-```markdown
-### 🌍 GLOBAL AI OS
-- **Root:** `D:\server\.ai\`
-- **Init:** Read `global-roles.md` & `./min/rules/`. NEVER read source `rules/` or `tech-stack/`.
-- **Context:** Read project `spec.md`. Only load corresponding `.min` files from `./min/tech-stack/`.
-- **Graphify:** If `graphify-out/graph.json` exists, NEVER raw grep. MUST use `query_graph` (MCP)/`graphify query` (CLI). Use `shortest_path`/`get_node` for relations/concepts. Navigate `wiki/index.md` if present. Use `GRAPH_REPORT.md` ONLY as last resort. Run `graphify update .` after edits.
-```
-
-## Directory Structure
-- `rules/` : Core AI identities, anti-patterns, and baseline constraints.
-- `tech-stack/` : Framework-specific rules (e.g., Laravel, React, Database). Loaded dynamically.
-- `workflows/` : Process constraints (e.g., CI/CD, Git, Testing).
-- `skills/` : Prompting behaviors and roleplay capabilities.
-- `min/` : **The only directory the AI should read.** Contains the compiled output of all the above.
+Human docs (`README.md`) use standard Markdown.

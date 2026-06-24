@@ -1,0 +1,1 @@
+[FILE] fail-crlf\r\n[OBJ] File with CRLF line endings.\r\n[RULES]\r\n1. [REQ] Example.\r\n

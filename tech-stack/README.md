@@ -42,23 +42,25 @@ Files for **unreleased or preview versions** are marked with `[!SPECULATIVE]` at
 | `filament-5.md` | 🔮 Speculative — skip by default |
 | `mysql-9-7.md` | 🔮 Speculative — skip by default |
 
-## Current Coverage (61 files)
+## Current Coverage (74 files)
 
 | Category | Files |
 |---|---|
 | **PHP / Laravel** | `php-8-3.md`, `php-8-4.md`, `php-8-5.md`, `laravel-11.md`, `laravel-12.md`, `laravel-13.md`, `laravel-boost.md`, `laravel-octane.md`, `laravel-horizon.md`, `laravel-reverb.md`, `laravel-ai.md` |
 | **Admin / UI** | `filament-3.md`, `filament-4.md`, `filament-5.md`, `filament-shield.md`, `livewire-3.md`, `alpine-3.md`, `shadcn-ui.md` |
-| **Frontend** | `react-ecosystem.md`, `frontend-modern.md`, `frontend-ui.md`, `tailwind-3.md`, `tailwind-4.md`, `tailwind-4-1.md`, `vite-6.md`, `vite-7.md`, `postcss-8.md`, `nextjs-15.md`, `typescript-5.md`, `framer-motion.md`, `zustand-state.md`, `tanstack-query.md`, `zod-validation.md` |
-| **Database** | `mysql-8-3.md`, `mysql-8-4.md`, `mysql-9-7.md`, `postgresql-17.md`, `redis-7.md`, `clickhouse-analytics.md`, `meilisearch.md`, `qdrant-rag.md` |
+| **Frontend** | `react-ecosystem.md`, `frontend-modern.md`, `frontend-ui.md`, `frontend-design.md`, `frontend-state-standards.md`, `tailwind-3.md`, `tailwind-4.md`, `tailwind-4-1.md`, `vite-6.md`, `vite-7.md`, `postcss-8.md`, `nextjs-15.md`, `typescript-5.md`, `framer-motion.md`, `zustand-state.md`, `tanstack-query.md`, `zod-validation.md`, `openui-generative.md` |
+| **Database** | `mysql-8-3.md`, `mysql-8-4.md`, `mysql-9-7.md`, `postgresql-17.md`, `redis-7.md`, `clickhouse-analytics.md`, `meilisearch.md`, `qdrant-rag.md`, `database-scaling.md` |
 | **Node.js** | `nodejs-22.md`, `nodejs-23.md`, `nodejs-24.md` |
 | **Auth / Security** | `clerk-auth.md` |
 | **Payments** | `stripe-integration.md` |
-| **Infrastructure** | `aws-infrastructure.md`, `docker-containers.md`, `terraform-iac.md`, `cloudflare-edge.md`, `github-actions-ci.md` |
+| **Infrastructure** | `aws-infrastructure.md`, `docker-containers.md`, `terraform-iac.md`, `cloudflare-edge.md`, `github-actions-ci.md`, `environment-windows.md` |
 | **Observability** | `sentry-tracking.md` |
 | **Testing** | `pest-4.md` |
 | **Spatie** | `spatie-permission.md`, `spatie-activitylog.md` |
-| **SaaS** | `saas-tenancy.md`, `saas-billing.md` |
-| **Design** | `design-foundations.md`, `responsive-ui.md`, `accessibility-standards.md`, `bilingual-mastery.md` |
+| **SaaS** | `saas-tenancy.md`, `saas-billing.md`, `saas-standards.md` |
+| **Design / UX** | `design-foundations.md`, `responsive-ui.md`, `accessibility-standards.md`, `bilingual-mastery.md`, `ui-ux-enforcement.md` |
+| **API / Standards** | `api-design-standards.md`, `api-integration-standards.md`, `caching-standards.md` |
+| **AI / Vector** | `turbovec-standards.md` |
 
 ## Adding a New Tech-Stack File
 

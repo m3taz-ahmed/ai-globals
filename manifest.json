@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "version": "4.20.0",
+    "description": "Machine-readable trigger->workflow/file routing map for AI Global OS.",
+    "updated": "2026-06-24"
+  },
+  "triggers": {
+    "/prompt": "workflows/00-prompt-architecting.md",
+    "architecture": "workflows/01-planning.md",
+    "planning": "workflows/01-planning.md",
+    "new feature": "workflows/01-planning.md",
+    "implementation": "workflows/02-execution.md",
+    "coding": "workflows/02-execution.md",
+    "refactor": "workflows/02-execution.md",
+    "bug": "workflows/03-debugging.md",
+    "error": "workflows/03-debugging.md",
+    "debug": "workflows/03-debugging.md",
+    "deploy": "workflows/04-deployment.md",
+    "release": "workflows/04-deployment.md",
+    "rollback": "workflows/04-deployment.md",
+    "code review": "workflows/05-code-review.md",
+    "PR": "workflows/05-code-review.md",
+    "maintenance": "workflows/06-maintenance.md",
+    "monthly audit": "workflows/06-maintenance.md",
+    "security audit": "workflows/07-security-audit.md",
+    "OWASP": "workflows/07-security-audit.md",
+    "onboarding": "workflows/08-onboarding.md",
+    "new project": "workflows/08-onboarding.md",
+    "tech discovery": "workflows/09-discovery.md",
+    "research": "workflows/09-discovery.md",
+    "memory sync": "workflows/09-memory-sync.md",
+    "milestone": "workflows/09-memory-sync.md",
+    "multi-agent": "workflows/10-saga-reconciliation.md",
+    "saga": "workflows/10-saga-reconciliation.md"
+  },
+  "standards": {
+    "git": "workflows/git-standards.md",
+    "ci-cd": "workflows/ci-cd-standards.md",
+    "testing": "workflows/testing-standards.md",
+    "security": "workflows/security-standards.md",
+    "performance": "workflows/performance-standards.md",
+    "observability": "workflows/observability-standards.md",
+    "code-quality": "workflows/code-quality.md",
+    "devops": "workflows/devops-standards.md"
+  },
+  "reference": {
+    "cheat-sheet": "workflows/cheat-sheet.md",
+    "commands": "workflows/commands-reference.md",
+    "monthly-maintenance": "workflows/monthly-maintenance.md",
+    "update-me": "workflows/update-me.md"
+  },
+  "core": {
+    "roles": "global-roles.md",
+    "workflow": "global-workflow.md",
+    "vocabulary": "rules/vocabulary.md",
+    "anti-patterns": "rules/anti-patterns.md",
+    "behavioral": "rules/core-behavioral-compact.md"
+  }
+}

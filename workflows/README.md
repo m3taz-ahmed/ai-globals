@@ -1,10 +1,8 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **11 trigger-based workflow protocols**. Each workflow activates when the AI detects a specific task type, providing a structured, expert execution path.
+This directory contains **24 execution protocol files** (11 numbered workflows + 13 standards/reference files). Each activates when the AI detects a specific task type.
 
-## Routing Map
-
-The AI selects the correct workflow automatically based on the task context:
+## Numbered Workflows (Trigger-Based)
 
 | Trigger / Task Type | Workflow File | When to Use |
 |---|---|---|
@@ -17,12 +15,30 @@ The AI selects the correct workflow automatically based on the task context:
 | System maintenance | `06-maintenance.md` | Monthly deep-scan, tech debt, rule updates |
 | Security hardening | `07-security-audit.md` | Security audit, OWASP scan, hardening protocol |
 | New project setup | `08-onboarding.md` | AI initialization, baseline audit, stack detection |
-| Tech discovery / research | `09-discovery.md` | Research and integration of unknown or bleeding-edge tech stacks |
-| Multi-agent execution | `10-saga-reconciliation.md` | Saga State Machine tracking and handshake protocols for parallel execution |
+| Tech discovery / research | `09-discovery.md` | Research and integration of bleeding-edge stacks |
+| Multi-agent execution | `10-saga-reconciliation.md` | Saga State Machine tracking for parallel agents |
+
+## Standards & Reference Files
+
+| File | Purpose |
+|---|---|
+| `git-standards.md` | Git branching, commits, PR rules |
+| `ci-cd-standards.md` | CI/CD pipeline and deployment gates |
+| `testing-standards.md` | Test coverage, frameworks, TDD protocol |
+| `security-standards.md` | OWASP, RBAC, threat modeling |
+| `performance-standards.md` | Query budgets, caching, profiling |
+| `observability-standards.md` | Logging, tracing, health checks |
+| `code-quality.md` | SOLID, DRY, complexity gates |
+| `devops-standards.md` | Infrastructure, containers, IaC |
+| `cheat-sheet.md` | Quick command reference |
+| `commands-reference.md` | Full CLI/tooling reference |
+| `monthly-maintenance.md` | Monthly audit protocol |
+| `update-me.md` | AI self-update protocol |
+| `09-memory-sync.md` | State handoff and memory sync on milestones |
 
 ## Execution Model
 
-Workflows follow the global **7-Step Execution Loop** defined in `global-workflow.md`:
+Workflows follow the global **7-Step Execution Loop** in `global-workflow.md`:
 
 ```
 Step 1: ROUTE & READ  → Load context layers (0 → 1 → 2 → 3)
@@ -34,11 +50,15 @@ Step 6: DOCS SYNC     → Update state/MEMORY.md and state/CHANGELOG.md
 Step 7: HANDOFF       → Summarize state for next agent/session
 ```
 
+## Machine-Readable Routing
+
+See `manifest.json` at repo root for the trigger→workflow map used by automated tools.
+
 ## Adding a New Workflow
 
 1. Name the file `{NN}-{description}.md` (continue the numbering sequence)
 2. Add it to the routing table in `global-workflow.md` Step 1 Layer 3
-3. Add it to the System Map in `README.md`
+3. Add it to this README and to `manifest.json`
 4. Log it in `state/CHANGELOG.md`
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the full process.
