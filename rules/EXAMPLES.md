@@ -34,3 +34,16 @@
 [PATTERN] 8. Prompt Master Templates
 - [REQ] Standard Output: Use Capacity, Role, Insight, Statement, Personality, Experiment format.
 - [REQ] CoT (Chain of Thought): Use `<thinking>` tags for logic tasks, BUT NEVER for o1/o3/Claude extended reasoning models.
+
+[PATTERN] 9. Active Context Template (per-project .ai/active-context.md)
+- [REQ] Format: Use telegraphic `[FILE]/[OBJ]/[RULES]` format. Max 10 lines.
+- [REQ] Fields: version, sprint name, status (active/stable/blocked), DONE items, NEXT items.
+- [REQ] Location: `.ai/active-context.md` at project root. Add to `.gitignore`.
+- [REQ] Update: Rewrite on every milestone or session handoff via `workflows/09-memory-sync.md`.
+- [EXAMPLE] |
+    [FILE] active-context
+    [OBJ] Current sprint state.
+    [RULES]
+    1. [STATE] version=X.X | sprint=feature-name | status=active
+    2. [DONE] Brief bullet of completed work.
+    3. [NEXT] Next action item.
