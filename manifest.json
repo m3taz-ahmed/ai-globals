@@ -31,7 +31,17 @@
     "memory sync": "workflows/09-memory-sync.md",
     "milestone": "workflows/09-memory-sync.md",
     "multi-agent": "workflows/10-saga-reconciliation.md",
-    "saga": "workflows/10-saga-reconciliation.md"
+    "saga": "workflows/10-saga-reconciliation.md",
+    "/audit-core": "workflows/11-audit-core.md",
+    "audit-core": "workflows/11-audit-core.md",
+    "/audit-ui": "workflows/12-audit-ui.md",
+    "audit-ui": "workflows/12-audit-ui.md",
+    "/audit-perf": "workflows/13-audit-perf.md",
+    "audit-perf": "workflows/13-audit-perf.md",
+    "/ponytail-review": "workflows/14-ponytail-review.md",
+    "ponytail-review": "workflows/14-ponytail-review.md",
+    "/execute": "workflows/02-execution.md",
+    "execute": "workflows/02-execution.md"
   },
   "standards": {
     "git": "workflows/git-standards.md",

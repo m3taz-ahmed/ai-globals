@@ -1,0 +1,50 @@
+---
+description: AI Global OS — Sovereign Engineering Architecture. Governs all AI behavior across every project. Read this before anything else.
+alwaysApply: true
+---
+
+# AI Global OS
+
+**Root:** `D:/server/.ai`
+
+## Cold Start (EVERY session)
+
+1. Read `D:/server/.ai/global-roles.md` — load persona, quality gates, and absolute prohibitions
+2. Read `D:/server/.ai/global-workflow.md` — load execution protocol and context layers
+3. Check `D:/server/.ai/manifest.json` — route task to correct workflow
+
+## Context Layers (lazy)
+
+| Layer | Load | When |
+|-------|------|------|
+| 0 | `rules/core-behavioral-compact.md`, `skills/` | Always |
+| 1 | `rules/vocabulary.md`, `rules/anti-patterns.md`, `tech-stack/useful-repos.md` | Always |
+| 2 | `rules/*.md`, `tech-stack/` files matching detected stack | On demand |
+| 3 | `workflows/*.md` | Per task type |
+
+Detect stack via `package.json` / `composer.json` in current project root.
+Load `spec.md` from current project root if it exists.
+
+## Active Context
+
+Check `{project_root}/.ai/active-context.md` for current sprint/task state (per-project file, not in global OS).
+If missing, fall back to `D:/server/.ai/state/MEMORY.md` for cross-project persistent state.
+
+## Absolute Prohibitions (always active)
+
+- ⛔ NO `min/` folders — rules are natively compressed
+- ⛔ NO unauthorized server actions — explicit user approval required
+- ⛔ NO generic UIs — apply `tech-stack/design-foundations.md`
+- ⛔ NO partial work — zero linter warnings, SOLID/DRY/KISS enforced
+- ⛔ NO blind code generation — if requirements < 80% clear, STOP and ask
+- ⛔ NO destructive bash without validation
+- ⛔ DO NOT rely on cached context for core rules — re-read on every cold start
+
+## Symbolic Codes
+
+Full dictionary in `D:/server/.ai/rules/vocabulary.md`.
+`[BEH-xx]` behavior · `[SEC-xx]` security · `[EXE-xx]` execution · `[QA-xx]` quality
+
+## Handoff
+
+On milestone completion run `D:/server/.ai/workflows/09-memory-sync.md`.

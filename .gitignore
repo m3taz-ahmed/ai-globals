@@ -17,6 +17,11 @@ desktop.ini
 # MEMORY.md is tracked — it contains cross-session audit history valuable for all users
 
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Generated artifacts
 integrity.manifest
 brain/
