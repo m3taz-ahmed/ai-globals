@@ -10,3 +10,4 @@
 7. [REQ] Changelog: Update `CHANGELOG.md` `[Unreleased]` ONLY. NEVER edit past versions.
 8. [REQ] State: Use `.task/` or `.gsap/` for complex tasks `[EXE-PERSIST-01]`. ⛔ NO chat memory trust. Ref `rules/EXAMPLES.md`.
 9. [CMD] Handoff: Run `workflows/09-memory-sync.md` post-milestone.
+10. [REQ] Knowledge Sync: If a novel bug is fixed or a workaround is found (e.g., framework-specific edge cases), ALWAYS document the solution as a new rule in the relevant `tech-stack/*.md` file to prevent recurrence.
