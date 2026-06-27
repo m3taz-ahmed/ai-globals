@@ -11,3 +11,4 @@
 8. [REQ] State: Use `.task/` or `.gsap/` for complex tasks `[EXE-PERSIST-01]`. ⛔ NO chat memory trust. Ref `rules/EXAMPLES.md`.
 9. [CMD] Handoff: Run `workflows/09-memory-sync.md` post-milestone.
 10. [REQ] Knowledge Sync: If a novel bug is fixed or a workaround is found (e.g., framework-specific edge cases), ALWAYS document the solution as a new rule in the relevant `tech-stack/*.md` file to prevent recurrence.
+11. [REQ] Context Sync: ALWAYS read `Memory.md` at the project root to understand short-term context/history. If missing or outdated, generate/update it in CAVEMAN format before closing the session to ensure cross-agent continuity.
