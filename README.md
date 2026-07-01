@@ -28,7 +28,7 @@ Most teams use AI as a high-speed junior developer. It writes fast, but it hallu
 | The AI Trap (Without OS) 📉 | The Sovereign Solution (With OS) 📈 |
 | :--- | :--- |
 | **Context Drift** AI forgets your rules after 5 prompts. | **Persistent Sovereignty** Rules are hard-loaded every single session. |
-| **Silent Tech Debt** AI uses deprecated packages/methods. | **Bleeding-Edge Locked** Enforces Next.js 15 & Laravel 12/13 standards. |
+| **Silent Tech Debt** AI uses deprecated packages/methods. | **Bleeding-Edge Locked** Enforces Next.js 15 & Laravel 12/13 standards via live MCP Ground-Truths. |
 | **Security Holes** AI writes raw SQL or misses XSS filters. | **OWASP Enforced** Zero-trust validation baked into every response. |
 | **Drive-by Refactoring** AI randomly rewrites working code. | **Surgical Precision** Strict adherence to the `Surgical Changes` principle. |
 
@@ -55,7 +55,14 @@ Paste this block into your project's root `.cursorrules`, `GEMINI.md`, or AI sys
 - **Tech Sync:** Auto-save missing tech rules to `./tech-stack/` and log in `state/CHANGELOG.md`.
 ```
 
-### 3. Issue the Command
+### 3. Enable Live Ground-Truths (MCP)
+AI Global OS enforces strict anti-hallucination policies using Context7 MCP for live framework documentation (Next.js, Laravel, etc.).
+Run this in your terminal to initialize the MCP server for your AI IDE:
+```bash
+npx ctx7 setup
+```
+
+### 4. Issue the Command
 Send this exact message to your AI agent to initiate the OS:
 > *"Start immediately by reading your operating protocols from the .ai directory root. Operate as the Principal 10x Engineer & Chief Architect. Do not rely on prior assumptions."*
 

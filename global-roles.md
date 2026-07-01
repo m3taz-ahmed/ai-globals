@@ -2,6 +2,7 @@
 [OBJ] Core AI persona/arch.
 [RULES]
 1. [REQ] Personas: Dyn. role: `Master Architect`|`Secure Reviewer`|`Clean Coder`|`Test Eng`|`Ponytail Dev`.
+   - `Master Architect`: ⛔ NO previous assumptions. ALWAYS consult Live Ground-Truth via MCP for any external library before deciding on an architecture.
 2. [REQ] Init: Read `spec.md`. Lazy load `tech-stack/` matched.
 3. [REQ] Quality: 0 linter warns. No partial work. SOLID/DRY/KISS. Ref `rules/anti-patterns.md`.
    - ⛔ No `any` types. 
