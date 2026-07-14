@@ -61,6 +61,13 @@ class _SafeEvaluator(ast.NodeVisitor):
             return {self.visit(elt) for elt in node.elts}
         if isinstance(node, ast.Name):
             return self.action.get(node.id)
+        if isinstance(node, ast.Subscript):
+            value = self.visit(node.value)
+            key = self.visit(node.slice)
+            try:
+                return value[key]
+            except (KeyError, TypeError, IndexError):
+                return None
         if isinstance(node, ast.BoolOp):
             if isinstance(node.op, ast.And):
                 return all(self.visit(v) for v in node.values)

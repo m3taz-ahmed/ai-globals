@@ -22,8 +22,10 @@ class Ingestor:
         for p in (self.root / "tech-stack").glob("*.md"):
             content = p.read_text(encoding="utf-8").strip()
             if content:
+                source = f"tech-stack/{p.name}"
+                self.store.delete_by_source(source)
                 m = self.store.add(
-                    "factual", content, source=f"tech-stack/{p.name}", meta={"file": str(p)}
+                    "factual", content, source=source, meta={"file": str(p)}
                 )
                 ids.append(m.id)
         return ids
@@ -33,8 +35,10 @@ class Ingestor:
         for p in (self.root / "workflows").glob("*.md"):
             content = p.read_text(encoding="utf-8").strip()
             if content:
+                source = f"workflows/{p.name}"
+                self.store.delete_by_source(source)
                 m = self.store.add(
-                    "procedural", content, source=f"workflows/{p.name}", meta={"file": str(p)}
+                    "procedural", content, source=source, meta={"file": str(p)}
                 )
                 ids.append(m.id)
         return ids
@@ -44,8 +48,10 @@ class Ingestor:
         for p in (self.root / "rules").glob("*.md"):
             content = p.read_text(encoding="utf-8").strip()
             if content:
+                source = f"rules/{p.name}"
+                self.store.delete_by_source(source)
                 m = self.store.add(
-                    "semantic", content, source=f"rules/{p.name}", meta={"file": str(p)}
+                    "semantic", content, source=source, meta={"file": str(p)}
                 )
                 ids.append(m.id)
         return ids
@@ -56,7 +62,9 @@ class Ingestor:
         for f in [project_root / ".ai" / "active-context.md", project_root / "Memory.md", self.root / "state" / "MEMORY.md"]:
             if f.exists():
                 content = f.read_text(encoding="utf-8")
-                m = self.store.add("episodic", content, source=str(f), meta={"project": str(project_root)})
+                source = str(f)
+                self.store.delete_by_source(source)
+                m = self.store.add("episodic", content, source=source, meta={"project": str(project_root)})
                 ids.append(m.id)
         return ids
 

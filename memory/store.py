@@ -227,6 +227,19 @@ class MemoryStore:
             valid_to=row["valid_to"],
         )
 
+    def delete_by_source(self, source: str) -> None:
+        if not source:
+            return
+        with self._conn() as conn:
+            rows = conn.execute("SELECT id FROM memories WHERE source = ?", (source,)).fetchall()
+            if not rows:
+                return
+            mem_ids = [row["id"] for row in rows]
+            conn.execute("DELETE FROM memories WHERE source = ?", (source,))
+        if self.vector and self.vector.is_available():
+            for mem_id in mem_ids:
+                self.vector.remove(mem_id)
+
     def invalidate(self, mem_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:

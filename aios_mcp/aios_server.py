@@ -61,6 +61,16 @@ def search_memory_vector(query: str, k: int = 5) -> str:
 
 
 @mcp.tool()
+def get_related_memories(mem_id: str, relation: str | None = None) -> str:
+    """Get memories related to the given memory ID."""
+    results = memory.related(mem_id, relation)
+    return json.dumps(
+        [{"id": m.id, "kind": m.kind, "relation": r, "content": m.content[:500]} for m, r in results],
+        indent=2,
+    )
+
+
+@mcp.tool()
 def get_tech_stack(pkg: str, ver: str) -> str:
     """Get the tech-stack file for a package version."""
     path = root / "tech-stack" / f"{pkg}-{ver}.md"
