@@ -7,6 +7,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import config
@@ -18,11 +19,11 @@ class EvalHarness:
     def __init__(self, root: Path) -> None:
         self.root = root
 
-    def _run(self, name: str, cmd: list[str]) -> dict:
+    def _run(self, name: str, cmd: list[str]) -> dict[str, Any]:
         p = subprocess.run(cmd, cwd=self.root, capture_output=True, text=True)
         return {"returncode": p.returncode, "output": (p.stdout + "\n" + p.stderr)[-4000:]}
 
-    def run(self) -> dict:
+    def run(self) -> dict[str, Any]:
         results = {}
         results["ruff"] = self._run("ruff", ["python", "-m", "ruff", "check", "."])
         results["mypy"] = self._run("mypy", ["python", "-m", "mypy", "runtime", "memory", "aios_mcp", "cli.py", "config.py", "dashboard/server.py"])

@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import ast
 import operator
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, cast
 
 import yaml
 
@@ -109,19 +110,32 @@ class PolicyEngine:
         self._load()
 
     def _load(self) -> None:
-        default = self.root / "runtime" / "policies" / "default.yaml"
+        policy_dir = self.root / "runtime" / "policies"
+        default = policy_dir / "default.yaml"
+        others = sorted(p for p in policy_dir.glob("*.yaml") if p.name != "default.yaml")
         if default.exists():
             self._load_file(default)
+        for path in others:
+            self._load_file(path)
 
     def _load_file(self, path: Path) -> None:
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        self.default_action = data.get("default_action", "ask")
+        self.default_action = data.get("default_action", self.default_action)
         for r in data.get("rules", []):
+            if not isinstance(r, dict):
+                warnings.warn(f"Invalid rule in {path}: {r}", stacklevel=2)
+                continue
+            if not all(k in r for k in ("name", "condition", "action")):
+                warnings.warn(f"Skipping malformed rule in {path}: {r}", stacklevel=2)
+                continue
+            if r["action"] not in ("allow", "ask", "deny"):
+                warnings.warn(f"Skipping rule with invalid action in {path}: {r['action']}", stacklevel=2)
+                continue
             self.rules.append(
                 PolicyRule(
                     name=r["name"],
                     condition=r["condition"],
-                    action=r["action"],
+                    action=cast(Action, r["action"]),
                     description=r.get("description", ""),
                     approvers=r.get("approvers", []),
                 )

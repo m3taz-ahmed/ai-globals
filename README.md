@@ -113,7 +113,6 @@ AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context
 └── scripts/                      # 🔧 Self-Healing Operations
     ├── validate-globals.py       # Cross-platform integrity validator
     ├── sync-agent-configs.py     # Sync agent configs across tools
-    ├── ai_memory_engine.py       # Vector memory engine
     └── graphify_mcp_wrapper.py   # Graphify MCP bridge
 ```
 

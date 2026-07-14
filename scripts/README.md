@@ -66,24 +66,6 @@ Delegates all logic to `validate-globals.py`. Accepts identical flags.
 
 ---
 
-## AI Memory Engine
-
-### `ai_memory_engine.py` — Local Vector Memory (Turbovec)
-
-Manages persistent AI session memory using local vector search via `turbovec`. Stores and retrieves compressed context snippets for long-running tasks.
-
-```bash
-python scripts/ai_memory_engine.py --help
-```
-
-**Requirements:** See `requirements-memory.txt`.
-
-### `requirements-memory.txt`
-
-Pinned dependencies for `ai_memory_engine.py`.
-
----
-
 ## Free AI Keys
 
 ### `fetch-free-keys.py` — Free API Key Discovery

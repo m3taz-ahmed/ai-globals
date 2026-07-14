@@ -104,18 +104,26 @@ class VectorMemory:
         self.index.write(str(self.index_path))
         self._save_map()
 
-    def search(self, text: str, k: int = 5) -> list[dict[str, Any]]:
+    def search(self, text: str, k: int = 5, ids: list[str] | None = None) -> list[dict[str, Any]]:
+        """Search the vector index, optionally restricted to the given ids."""
         if not self.is_available():
             return []
         try:
             vector = self.embedder.embed([text])
         except RuntimeError:
             return []
-        scores, ids = self.index.search(vector, k=k)
+        allowlist = None
+        if ids is not None:
+            if not ids:
+                return []
+            allowlist = np.array([_mem_id_to_uint64(mid) for mid in ids], dtype=np.uint64)
+        scores, ids_arr = self.index.search(vector, k=k, allowlist=allowlist)
         results = []
         for i in range(k):
-            u64 = str(int(ids[0, i]))
-            real_id = self.id_map.get(u64, u64)
+            u64 = str(int(ids_arr[0, i]))
+            real_id = self.id_map.get(u64)
+            if real_id is None:
+                continue
             results.append({"id": real_id, "score": float(scores[0, i])})
         return results
 

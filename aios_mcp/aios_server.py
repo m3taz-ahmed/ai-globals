@@ -11,6 +11,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 import config
+from memory.ingest import Ingestor
 from memory.store import MemoryStore
 from runtime.kernel import Kernel
 
@@ -32,6 +33,10 @@ def _memory() -> MemoryStore:
 
 def _is_safe_name(name: str) -> bool:
     return bool(_NAME_RE.fullmatch(name))
+
+
+def _truncate(content: str, limit: int = 500) -> str:
+    return content if len(content) <= limit else content[:limit] + "..."
 
 
 @mcp.tool()
@@ -64,16 +69,73 @@ def search_memory(query: str, kind: str | None = None) -> str:
     """Search memory store by keyword and optional kind."""
     results = _memory().search(query, kind)
     return json.dumps(
-        [{"id": r.id, "kind": r.kind, "content": r.content[:500]} for r in results],
+        [{"id": r.id, "kind": r.kind, "source": r.source, "content": _truncate(r.content)} for r in results],
         indent=2,
     )
 
 
 @mcp.tool()
-def search_memory_vector(query: str, k: int = 5) -> str:
+def search_memory_vector(query: str, k: int = 5, kind: str | None = None) -> str:
     """Search memory by vector similarity (requires sentence-transformers + turbovec)."""
-    results = _memory().search_vector(query, k=k)
+    results = _memory().search_vector(query, k=k, kind=kind)
     return json.dumps(results, indent=2)
+
+
+@mcp.tool()
+def query_context(query: str, k: int = 5, kind: str | None = None) -> str:
+    """Hybrid FTS + vector search across rules, tech-stack, workflows, and skills."""
+    store = _memory()
+    fts_results = store.search(query, kind=kind, limit=k)
+    vector_results = store.search_vector(query, k=k, kind=kind)
+
+    seen: set[str] = set()
+    items: list[dict[str, Any]] = []
+
+    for mem in fts_results:
+        seen.add(mem.id)
+        items.append(
+            {
+                "id": mem.id,
+                "kind": mem.kind,
+                "source": mem.source,
+                "content": _truncate(mem.content),
+                "fts": True,
+                "score": None,
+            }
+        )
+
+    for vr in vector_results:
+        mem_id = vr["id"]
+        if mem_id in seen:
+            for item in items:
+                if item["id"] == mem_id:
+                    item["score"] = vr["score"]
+                    item["vector"] = True
+            continue
+        record = store.get(mem_id)
+        if record is None:
+            continue
+        items.append(
+            {
+                "id": record.id,
+                "kind": record.kind,
+                "source": record.source,
+                "content": _truncate(record.content),
+                "fts": False,
+                "score": vr["score"],
+                "vector": True,
+            }
+        )
+
+    return json.dumps(items, indent=2)
+
+
+@mcp.tool()
+def ingest_memory() -> str:
+    """Ingest rules, tech-stack, workflows, skills, and AGENTS.md into memory."""
+    ingestor = Ingestor(_memory(), root)
+    ids = ingestor.ingest_all()
+    return json.dumps({"ingested": len(ids)}, indent=2)
 
 
 @mcp.tool()
@@ -81,7 +143,7 @@ def get_related_memories(mem_id: str, relation: str | None = None) -> str:
     """Get memories related to the given memory ID."""
     results = _memory().related(mem_id, relation)
     return json.dumps(
-        [{"id": m.id, "kind": m.kind, "relation": r, "content": m.content[:500]} for m, r in results],
+        [{"id": m.id, "kind": m.kind, "relation": r, "content": _truncate(m.content)} for m, r in results],
         indent=2,
     )
 
@@ -158,4 +220,4 @@ def get_agents() -> str:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="stdio")

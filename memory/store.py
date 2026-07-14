@@ -194,11 +194,30 @@ class MemoryStore:
             row = conn.execute("SELECT * FROM memories WHERE id = ?", (mem_id,)).fetchone()
         return self._row_to_memory(row) if row else None
 
-    def search_vector(self, query: str, k: int = 5) -> list[dict[str, Any]]:
-        """Search using vector index (requires sentence-transformers + turbovec)."""
+    def search_vector(
+        self, query: str, k: int = 5, kind: str | None = None, source: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Search using vector index, optionally filtered by kind/source and temporal validity."""
         if not self.vector or not self.vector.is_available():
             return []
-        return self.vector.search(query, k=k)
+        ids: list[str] | None = None
+        if kind or source:
+            now = datetime.now(timezone.utc).isoformat()
+            conditions = ["(valid_to IS NULL OR valid_to > ?)"]
+            params: list[Any] = [now]
+            if kind:
+                conditions.append("kind = ?")
+                params.append(kind)
+            if source:
+                conditions.append("source = ?")
+                params.append(source)
+            where = " AND ".join(conditions)
+            with self._conn() as conn:
+                rows = conn.execute(f"SELECT id FROM memories WHERE {where}", params).fetchall()
+            ids = [row["id"] for row in rows]
+            if not ids:
+                return []
+        return self.vector.search(query, k=k, ids=ids)
 
     def relate(self, source_id: str, target_id: str, relation: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
@@ -242,17 +261,23 @@ class MemoryStore:
         self.delete_by_source_batch([source])
 
     def delete_by_source_batch(self, sources: list[str]) -> list[str]:
-        """Delete all memories for a list of sources and remove their vectors in one batch."""
+        """Delete all memories for a list of sources and remove their vectors and relations in one batch."""
         if not sources:
             return []
+        placeholders = ",".join("?" for _ in sources)
         mem_ids: list[str] = []
         with self._conn() as conn:
-            for source in sources:
-                if not source:
-                    continue
-                rows = conn.execute("SELECT id FROM memories WHERE source = ?", (source,)).fetchall()
-                mem_ids.extend([row["id"] for row in rows])
-                conn.execute("DELETE FROM memories WHERE source = ?", (source,))
+            rows = conn.execute(
+                f"SELECT id FROM memories WHERE source IN ({placeholders})", sources
+            ).fetchall()
+            mem_ids = [row["id"] for row in rows]
+            if mem_ids:
+                id_placeholders = ",".join("?" for _ in mem_ids)
+                conn.execute(
+                    f"DELETE FROM relations WHERE source_id IN ({id_placeholders}) OR target_id IN ({id_placeholders})",
+                    mem_ids + mem_ids,
+                )
+            conn.execute(f"DELETE FROM memories WHERE source IN ({placeholders})", sources)
         if self.vector and self.vector.is_available() and mem_ids:
             self.vector.remove_batch(mem_ids)
         return mem_ids
@@ -261,3 +286,5 @@ class MemoryStore:
         now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
             conn.execute("UPDATE memories SET valid_to = ? WHERE id = ?", (now, mem_id))
+        if self.vector and self.vector.is_available():
+            self.vector.remove(mem_id)

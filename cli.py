@@ -8,6 +8,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -62,6 +63,41 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_query(args: argparse.Namespace) -> int:
+    root = _root(args)
+    store = MemoryStore(root)
+    seen: set[str] = set()
+    results: list[dict[str, Any]] = []
+
+    for mem in store.search(args.query, kind=args.kind, limit=args.limit):
+        seen.add(mem.id)
+        results.append(
+            {"id": mem.id, "kind": mem.kind, "source": mem.source, "content": mem.content[:500], "fts": True, "score": None}
+        )
+
+    for vr in store.search_vector(args.query, k=args.limit, kind=args.kind):
+        if vr["id"] in seen:
+            continue
+        found = store.get(vr["id"])
+        if found is None:
+            continue
+        seen.add(found.id)
+        results.append(
+            {"id": found.id, "kind": found.kind, "source": found.source, "content": found.content[:500], "fts": False, "score": vr["score"]}
+        )
+
+    table = Table(title="Hybrid Context Query")
+    table.add_column("Kind", style="cyan")
+    table.add_column("Source", style="magenta")
+    table.add_column("Score", style="green")
+    table.add_column("Content")
+    for r in results:
+        score = f"{r['score']:.4f}" if r["score"] is not None else "-"
+        table.add_row(r["kind"], r["source"], score, r["content"][:120])
+    console.print(table)
+    return 0
+
+
 def cmd_memory(args: argparse.Namespace) -> int:
     root = _root(args)
     store = MemoryStore(root)
@@ -75,11 +111,19 @@ def cmd_memory(args: argparse.Namespace) -> int:
     elif args.subcommand == "vector":
         table = Table(title="Vector Search")
         table.add_column("ID", style="cyan")
-        table.add_column("Score", style="magenta")
-        for vr in store.search_vector(args.query, k=args.limit):
-            table.add_row(str(vr['id']), f"{vr['score']:.4f}")
+        table.add_column("Kind", style="cyan")
+        table.add_column("Source", style="magenta")
+        table.add_column("Score", style="green")
+        for vr in store.search_vector(args.query, k=args.limit, kind=args.kind):
+            fetched = store.get(vr["id"])
+            kind = fetched.kind if fetched else "-"
+            source = fetched.source if fetched else "-"
+            table.add_row(str(vr["id"]), kind, source, f"{vr['score']:.4f}")
         console.print(table)
     elif args.subcommand == "add":
+        if not args.kind or not args.content:
+            console.print("[red]--kind and --content are required for 'add'[/red]")
+            return 1
         m = store.add(args.kind, args.content, source=args.source or "cli")
         console.print(f"[green]Added memory:[/green] {m.id}")
     elif args.subcommand == "ingest":
@@ -155,6 +199,11 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("workflow")
     p_run.add_argument("--context", default="", help="JSON workflow context")
 
+    p_query = sub.add_parser("query", help="Hybrid search across memory")
+    p_query.add_argument("query")
+    p_query.add_argument("--kind", default=None)
+    p_query.add_argument("--limit", type=int, default=10)
+
     p_mem = sub.add_parser("memory", help="Memory commands")
     p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest"])
     p_mem.add_argument("--query", default="")
@@ -172,6 +221,7 @@ def main(argv: list[str] | None = None) -> int:
         "status": cmd_status,
         "check": cmd_check,
         "run": cmd_run,
+        "query": cmd_query,
         "memory": cmd_memory,
         "sync": cmd_sync,
         "graphify": cmd_graphify,

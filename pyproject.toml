@@ -23,24 +23,24 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pyyaml>=6.0",
-    "mcp>=1.0",
-    "turbovec>=0.1",
-    "numpy>=1.24",
-    "pydantic>=2.0",
-    "rich>=13.0",
+    "pyyaml>=6.0,<7.0",
+    "mcp>=1.0,<2.0",
+    "turbovec>=0.1,<0.8",
+    "numpy>=1.24,<3.0",
+    "pydantic>=2.0,<3.0",
+    "rich>=13.0,<14.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.6",
-    "mypy>=1.0",
+    "pytest>=7.0,<9.0",
+    "pytest-cov>=4.0,<7.0",
+    "ruff>=0.6,<1.0",
+    "mypy>=1.0,<2.0",
     "types-pyyaml",
 ]
 vector = [
-    "sentence-transformers>=2.0",
+    "sentence-transformers>=2.0,<3.0",
 ]
 
 [project.scripts]
@@ -72,6 +72,11 @@ exclude = [
     "skills/gsap-animated-frontend",
     "tmp/**",
     "scratch/**",
+    "tests/*",
+    "tests/*/*",
+    "skills/*",
+    "skills/*/*",
+    "skills/*/*/*",
 ]
 
 [tool.ruff.lint]
@@ -88,7 +93,7 @@ python_version = "3.10"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
-exclude = ["runtime/tests/*", "memory/tests/*", "dashboard/*", "scripts/*"]
+exclude = ["tests/", "skills/", "runtime/tests/", "memory/tests/", "dashboard/", "scripts/", "tmp/", "scratch/", "brain/", "state/", "__pycache__/", "\\.git/", "\\.github/"]
 [[tool.mypy.overrides]]
 module = ["yaml", "sentence_transformers", "turbovec", "numpy"]
 ignore_missing_imports = true

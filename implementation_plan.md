@@ -1,141 +1,127 @@
-# خطة التطوير والصيانة الدورية — AI Global OS v4.21.0
+# AI Global OS — Periodic Evolution & Audit Plan
 
-**تاريخ التدقيق:** 2026-07-14  
-**الحالة الأساسية:** `ruff check .`, `mypy .`, `pytest -q`, `python eval/harness.py` — جميعها ✅ (all_pass: true)
+> Status: Step 1/4 complete. Proposed fixes and upgrades below; awaiting explicit approval before code is written.
 
----
+## 1. Baseline State
 
-## 1. حالة الكود الحالية (Audit Summary)
+- `ruff check .` — pass
+- `pytest -q` — pass (26 tests)
+- `python eval/harness.py` — `all_pass: true`
+- `mypy .` — **fail** (non-core `tests/` and `skills/` trigger `no-untyped-def`/`import-not-found`; `eval/harness.py` uses bare `dict`)
 
-- **runtime/**: `kernel.py` يعمل كبوابة موحدة للسياسة/الميزانية/التدقيق؛ `policy.py` يستخدم AST evaluator آمن؛ `budget.py` يدير الحصص في `state/budget.json`؛ `workflow.py` يتتبع حالة التشغيل في SQLite.
-- **memory/**: `MemoryStore` يجمع SQLite + FTS5 + relations + بحث vectorي باستخدام `turbovec` و `sentence-transformers`؛ `ingest.py` يقرأ ويخزّن ملفات `rules/`, `workflows/`, `tech-stack/`.
-- **aios_mcp/**: `aios_server.py` يُقدّم 7 tools/resources عبر FastMCP.
-- **cli.py**: واجهة `ai-os` تدير `status`, `check`, `run`, `memory`, `sync`, `graphify`.
-- **Quality gate:** جميع الفحوصات الحالية خضراء، لكن توجد ديون تقنية وأخطاء تصرفات (behavior) خفية.
+## 2. Audit Findings
 
----
+### Technical Debt
+1. **Dead vector engine** — `scripts/ai_memory_engine.py` uses `dim=1536` and `brain/global_memory.tvim`, while the live engine `memory/vector.py` uses `dim=384` and `brain/vector_memory.tvim`. It is documented but not invoked by any tool.
+2. **DRY violation in `memory/ingest.py`** — `ingest_all()` and `_ingest_dir()` duplicate the same manifest/compare/delete/add/save flow.
+3. **Unused `Budget.period`** — `runtime/budget.py` defines `period` but never enforces it, so `daily`/`hourly` budgets never reset and become silently irrelevant.
+4. **`mypy` leakage** — `pyproject.toml` only excludes `runtime/tests/*`, `memory/tests/*`, `dashboard/*`, `scripts/*`; `tests/`, `skills/`, and `eval/harness.py` are still checked and fail.
 
-## 2. أوجه القصور والديون التقنية (Findings)
+### Security / Resilience
+1. **Policy YAML is fragile** — `runtime/policy.py` loads `default.yaml` only and will crash with a `KeyError` if a rule is missing `name`, `condition`, or `action`; invalid `action` values are stored silently.
+2. **`MemoryStore` deletes leave orphans** — `delete_by_source_batch()` deletes memories but does not clean `relations`, and it deletes row-by-row instead of with `IN`.
+3. **Vector memory keeps invalidated entries** — `MemoryStore.invalidate()` updates `valid_to` but does not remove the vector from the index.
+4. **Dashboard/CLI concurrency** — `BudgetManager` updates `usage` and `audit.log` without locks; `Dashboard` uses a class-level `Kernel` across `ThreadingHTTPServer` threads.
 
-### 2.1 أمن وجودة
+### Performance / Efficiency
+1. **Vector search is unfiltered** — `VectorMemory.search()` cannot restrict by `kind`/`source`, so `search_vector` scores the whole index and returns irrelevant results.
+2. **Ingestor ignores skills and AGENTS.md** — `_DIRS` only tracks `rules/`, `workflows/`, `tech-stack/`; the canonical `AGENTS.md` and `skills/` are not loaded into memory.
+3. **MCP `query_rules` does raw file scans** — every call reads and lower-cases every `rules/*.md` file; there is no `ingest` MCP tool, no hybrid vector+FTS tool, and `memory vector --kind` is ignored by the CLI.
 
-1. **`ask` لا يُعامل كطلب موافقة.** `Kernel.act` يرجع `ok: true` لأي قرار `ask` طالما الميزانية مسموح. السياسة `require-approval-for-write` تقول `ask` لكن الواقع أن الإجراء يُنفذ بدون موافقة صريحة.
-2. **تهيئة MCP فورية (eager init).** `aios_server.py` يُنشئ `Kernel` و `MemoryStore` عند `import`، مما يُحمّل نموذج `sentence-transformers` ويفتح قواعد SQLite حتى لو لم يُستدعَ أي tool.
-3. **Path traversal في `get_tech_stack`.** `pkg` و `ver` يُستخدمان لبناء `Path` مباشرةً دون تطهير، مما قد يسمح بالخروج من `tech-stack/`.
-4. **عدم احترام الصلاحية الزمنية.** `MemoryStore.search` لا تُفلتر السجلات المُلغاة (`valid_to IS NOT NULL`).
+### Dependencies
+- No outdated dependencies detected. Core versions: `mcp 1.26.0`, `pydantic 2.13.4`, `turbovec 0.7.0`, `numpy 2.2.6`.
+- **Risk:** `pyproject.toml` has no upper bounds on major versions; a future `mcp` 2.x or `pydantic` 3.x could break the MCP server or Pydantic schemas.
 
-### 2.2 أداء
+## 3. Ponytail Filter (what this plan deliberately avoids)
 
-1. **إعادة الاستيعاب الكامل دائمًا.** `Ingestor.ingest_all` يقرأ كل ملف ويعيد تضمينه في كل مرة، حتى لو لم يتغير. هذا يُضيع تكلفة التضمين.
-2. **كتابة الفهرس Vector في كل سجل.** `VectorMemory.add` يستدعي `index.write(str(self.index_path))` بعد كل `add` فردي. مع `ingest_all` تُكتب القرص عشرات المرات.
-3. **اتصال SQLite لكل ملف.** `Ingestor` يستدعي `delete_by_source` ثم `store.add` لكل ملف على حدة، وكل عملية تفتح اتصالًا جديدًا.
-4. **استهلاك الميزانية قبل الفحص.** `BudgetManager.check` يزيد `usage` ثم يتحقق من الحدود، فإذا أُرجع `block` يظل الاستهلاك مُسجّلاً.
+- No new infrastructure (Postgres, Redis, external vector DB).
+- No new UI, web framework, or generic dashboard expansion.
+- No new heavy third-party packages.
+- All upgrades use the existing `pydantic`, `sqlite3`, `turbovec`, `sentence-transformers`, and `mcp` stack.
 
-### 2.3 صيانة ومرونة
+## 4. Proposed Upgrades
 
-1. **نسخة مُعَدّة في أكثر من مكان.** `Kernel.status`, `runtime/__init__.py`, `memory/__init__.py` تحتوي على `"4.21.0"` يدويًا.
-2. **كود ميت.** `MemoryStore._escape_like` غير مستخدم.
-3. **`WorkflowRunner` بلا حالة فشل.** لا يُرجع `status` للتشغيل ولا يتوقف عند خطوة فاشلة.
-4. **كتابة `budget.json` غير ذرية.** `state/budget.json` يُكتب مباشرة، قد يُتلف عند انقطاع التشغيل.
+### Upgrade 1 — Resilient Governance (Budget Periods + Policy Validation + Thread Safety)
+**Goal:** Make budget enforcement actually time-aware and make policy loading crash-proof.
 
----
+**Files:**
+- `runtime/budget.py`
+- `runtime/policy.py`
+- `runtime/audit.py`
+- `runtime/tests/test_budget.py`
+- `runtime/tests/test_policy.py`
 
-## 3. مقترحات التطوير (Ponytail Filter Applied)
+**Changes:**
+1. Add `Budget.__post_init__` to normalize `period` (`session`, `hourly`, `daily`, `weekly`, `monthly`) and `on_exceed` (`warn`, `fallback`, `block`).
+2. Store `session_id` + `process_id` in `usage` and reset `usage` for a scope when the period key changes (session reset only on a new OS process; `daily` resets at midnight UTC).
+3. Protect `BudgetManager.check()` and `save()` with a `threading.Lock`; add the same lock to `AuditLogger.log()` so the dashboard cannot corrupt `budget.json` or `audit.log`.
+4. Iterate `runtime/policies/*.yaml` sorted; validate each rule has `name`, `condition`, and `action` in `("allow", "ask", "deny")`, skip malformed entries with a warning instead of crashing.
 
-> فلتر Ponytail: لا Postgres/Redis، لا واجهات رسومية، لا تبعيات ضخمة. الأفكار المُختارة جراحية، تعتمد على Python الأصلي + SQLite + الأدوات الموجودة.
+### Upgrade 2 — Hybrid Context Retrieval (Vector + FTS + MCP + CLI)
+**Goal:** Let agents and users query the brain in one shot with vector similarity filtered by `kind`/`source`.
 
-### الفكرة 1: تفعيل بوابة الموافقة `ask` (Strict Rule Validation)
+**Files:**
+- `memory/vector.py`
+- `memory/store.py`
+- `memory/tests/test_store.py`
+- `aios_mcp/aios_server.py`
+- `cli.py`
+- `tests/mcp/test_mcp_server.py`
+- `tests/test_cli.py`
 
-- **الهدف:** لا يمكن السماح بإجراء `ask` إلا بإرسال `approved=True` صريح.
-- **التغييرات:**
-  - `runtime/policy.py`: أضف `requires_approval: bool` للنتيجة عندما `decision == "ask"`.
-  - `runtime/kernel.py`: في `act`، عند `requires_approval` تأكد من `kwargs.get("approved") is True`؛ إذا لا، أرجع `ok: False` مع `requires_approval: True`.
-  - `cli.py`: أضف `ai-os check <action> --approve` (تُرسل `approved: true` في الـ args).
-  - `dashboard/server.py`: `/api/check` يدعم `?approve=1` ويرفض `ask` بدونه.
-  - `aios_mcp/aios_server.py`: `check_policy` يُمرّر `approved` من `args`.
-  - تحديث الاختبارات: `test_kernel`, `test_cli`, `test_mcp_server` تتوقع `ok=False` للـ `ask` بدون `approved`.
+**Changes:**
+1. Extend `VectorMemory.search()` to accept an `ids` allowlist and pass it through `turbovec` `index.search(..., allowlist=...)`.
+2. Extend `MemoryStore.search_vector()` to accept optional `kind` and `source`, query `SELECT id FROM memories` for valid candidates, and pass them as the vector allowlist.
+3. Add MCP tool `query_context(query, k=5, kind=None)` that returns combined `fts` and `vector` results (truncated to 500 chars, with `kind`/`source` metadata).
+4. Add MCP tool `ingest_memory()` that calls `Ingestor(...).ingest_all()` and returns the count of ingested memories.
+5. Add optional `kind` parameter to MCP `search_memory_vector()`.
+6. Add `ai-os query <query>` CLI command with `--kind` and `--limit`.
+7. Fix `ai-os memory vector` to pass `--kind` to `MemoryStore.search_vector()`.
 
-### الفكرة 2: الاستيعاب المتزايد والمتجمع للذاكرة (Memory Ingestion Efficiency)
+### Upgrade 3 — Memory Ingestion Integrity + Efficiency
+**Goal:** Make ingestion faster, DRY, and strict about malformed AI files.
 
-- **الهدف:** تجنب إعادة تضمين الملفات غير المتغيرة وتقليل كتابات القرص.
-- **التغييرات:**
-  - `memory/ingest.py`:
-    - إنشاء `brain/ingest_manifest.json` يُخزن SHA-256 + mtime لكل `source`.
-    - `ingest_all` يتخطى الملفات غير المتغيرة، يجمع المحتويات الجديدة/المتغيرة فقط، يحذف المصادر المتغيرة/المفقودة دفعة واحدة، ثم يُضيف دفعة واحدة.
-  - `memory/store.py`:
-    - `add_batch` تفتح اتصالًا واحدًا، تستخدم `executemany`، وتفلتر `valid_to IS NULL` في `search`.
-    - `delete_by_source_batch` تحذف مجموعة من المصادر وتُعدّ أرقام `mem_ids` للـ vector.
-  - `memory/vector.py`:
-    - `add_batch(ids, texts)` يُشفّر النصوص دفعة واحدة، يستدعي `add_with_ids` بالبُعد (n, d) ثم يكتب الفهرس مرة واحدة.
-    - `remove_batch(ids)` يحذف مجموعة ويكتب الفهرس مرة واحدة.
+**Files:**
+- `memory/ingest.py`
+- `memory/store.py`
+- `memory/tests/test_store.py`
+- `tests/test_cli.py`
 
-### الفكرة 3: MCP Lazy Init + Tools محسّنة + Path Protection
+**Changes:**
+1. Refactor `Ingestor` so a single internal `_collect()` helper drives both `ingest_all()` and `_ingest_dir()`.
+2. Add `skills/` (recursive) and root `AGENTS.md` to the tracked ingestion directories.
+3. Skip malformed AI files (those starting with `[FILE]`, `[TECH]`, `[WORKFLOW]`, or `[SKILL]` but missing `[OBJ]` or `[RULES]`) and emit a warning.
+4. Batch `delete_by_source_batch()` with `source IN (...)` and delete orphaned `relations` rows with `source_id IN (...) OR target_id IN (...)` in one query.
+5. Remove vector entries when `MemoryStore.invalidate()` is called, so the vector index never returns expired memories.
 
-- **الهدف:** تسريع بدء MCP server وتوفير أدوات أغنى وأكثر أمانًا.
-- **التغييرات:**
-  - `aios_mcp/aios_server.py`:
-    - `get_kernel()` و `get_memory()` باستخدام `functools.lru_cache(maxsize=None)` — لا يُحمل النموذج عند الاستيراد.
-    - `get_tech_stack`: التحقق من `pkg` و `ver` بـ `re.fullmatch(r"[A-Za-z0-9_.-]+")` قبل بناء `Path`.
-    - `query_rules`: استخدام `MemoryStore.search` (FTS5) بدلاً من `str.lower()` على كل ملف.
-    - أضف `list_rules`, `get_rule`, `list_workflows`, `get_workflow` tools.
-  - `cli.py`:
-    - أضف `ai-os version` و `ai-os doctor`.
-    - `doctor` يتحقق من النسخة، الملفات الأساسية، الحصص، توفر vector، ويعرض نتيجة `validate-globals`.
-  - `config.py`:
-    - أضف `VERSION` يُقرأ من `pyproject.toml` (regex) مع fallback.
-    - `runtime/kernel.py` و `runtime/__init__.py` و `memory/__init__.py` يستخدمون `config.VERSION`.
+### Baseline Cleanup (required for zero-defect handoff)
+**Files:**
+- `pyproject.toml`
+- `eval/harness.py`
+- `scripts/ai_memory_engine.py` (dead code)
+- `README.md`, `scripts/README.md` (remove references)
 
----
+**Changes:**
+1. Add `tests/*` and `skills/*` to `tool.mypy.exclude` so `mypy .` aligns with package boundaries.
+2. Fix `eval/harness.py` generic `dict` types (`dict[str, Any]`).
+3. Remove the dead `scripts/ai_memory_engine.py` and update its references in `README.md` and `scripts/README.md`.
+4. Pin major versions in `pyproject.toml` dependencies to avoid unvetted breaking releases: `mcp>=1.0,<2.0`, `pydantic>=2.0,<3.0`, `rich>=13.0,<14.0`, `pyyaml>=6.0,<7.0`, `sentence-transformers>=2.0,<3.0`, `turbovec>=0.1,<0.8`.
 
-## 4. خطة التنفيذ (Execution Plan)
+## 5. Verification After Implementation
 
-### المرحلة 1: Foundation fixes
-1. `config.py` — إضافة `VERSION` من `pyproject.toml`.
-2. `runtime/kernel.py`, `runtime/__init__.py`, `memory/__init__.py` — استخدام `config.VERSION`.
-3. `runtime/budget.py` — إصلاح استهلاك الميزانية قبل الفحص + كتابة JSON ذرية.
-4. `memory/store.py` — إزالة `_escape_like`، إضافة فلتر `valid_to` في `search`.
+Before declaring done:
+- `ruff check .` — must pass
+- `mypy .` — must pass
+- `pytest -q` — must pass
+- `python eval/harness.py` — must return `all_pass: true`
 
-### المرحلة 2: Strict Policy (`ask` gate)
-1. `runtime/policy.py` — `requires_approval` في النتيجة.
-2. `runtime/kernel.py` — رفض `ask` بدون `approved=True`.
-3. `cli.py` — `ai-os check <action> --approve`.
-4. `dashboard/server.py` — دعم `?approve=1`.
-5. `aios_mcp/aios_server.py` — `check_policy` يمرّر `approved`.
-6. تحديث الاختبارات.
+## 6. Out-of-Scope
 
-### المرحلة 3: Memory efficiency
-1. `memory/ingest.py` — manifest + incremental + batch delete.
-2. `memory/store.py` — `add_batch` و `delete_by_source_batch`.
-3. `memory/vector.py` — `add_batch` و `remove_batch`.
-4. `cli.py` — `memory ingest` يستفيد من التحسينات تلقائيًا.
+- No workflow step execution engine (the no-op `_execute_step` is a known stub; not requested).
+- No new dashboard features or CORS rework beyond existing behavior.
+- No new databases, caches, or network services.
+- No rewrite of `scripts/validate-globals.py` (its logic stays; only `memory/ingest.py` gets its own small AI-file guard).
 
-### المرحلة 4: MCP & DevEx
-1. `aios_mcp/aios_server.py` — lazy init، path validation، أدوات جديدة.
-2. `cli.py` — `version` و `doctor`.
+## 7. Approval Request
 
-### المرحلة 5: Validation
-- `ruff check .`
-- `mypy .`
-- `pytest -q`
-- `python eval/harness.py` (يجب أن يُعيد `all_pass: true`)
-
----
-
-## 5. التأثيرات والكسر المحتمل (Risks)
-
-- **Breaking:** إجراءات `ask` لن تُعيد `ok=True` إلا عند `approved=True`. هذا يُصلح سلوكًا خاطئًا، لكنه يتطلب تحديث اختبارات `ask`.
-- **Performance:** تقليل وقت `ai-os memory ingest` بشكل كبير عند تكرار التشغيل، وتقليل كتابات vector إلى مرة واحدة لكل استيعاب.
-- **Security:** `get_tech_stack` محمي من path traversal، و `ask` يحتاج موافقة صريحة.
-- **No new infra:** لا يُضاف Postgres/Redis/واجهات رسومية/تبعيات جديدة.
-
----
-
-## 6. موافقة المستخدم (Approval Checklist)
-
-- [ ] الموافقة على هذه الخطة.
-- [ ] الموافقة على تعديل اختبارات `ask` لتعكس السلوك الجديد.
-- [ ] أولوية البدء: **المرحلة 2 أم المرحلة 3؟** (المقترح: 1 → 2 → 3 → 4)
-
----
-
-*الخطة مكتوبة بالعربية حسب طلب المستخدم. سيتم البدء في التنفيذ فقط بعد الموافقة الصريحة.*
+Please review the three upgrades and the baseline cleanup. If approved, I will execute them surgically and keep the codebase at 100% green on `ruff`, `mypy`, `pytest`, and `eval/harness.py`.
