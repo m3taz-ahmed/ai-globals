@@ -20,7 +20,7 @@ _AI_TITLE_TAGS = ("[FILE]", "[TECH]", "[WORKFLOW]", "[SKILL]")
 # (source_prefix, kind, recursive)
 _TRACKED: tuple[tuple[str, str, bool], ...] = (
     ("rules", "semantic", False),
-    ("tech-stack", "semantic", False),
+    ("tech-stack", "factual", False),
     ("workflows", "procedural", False),
     ("skills", "procedural", True),
 )

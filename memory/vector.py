@@ -19,13 +19,13 @@ IdMapIndex: Any = None
 try:
     from sentence_transformers import SentenceTransformer as _SentenceTransformer
     SentenceTransformer = _SentenceTransformer
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 
 try:
     from turbovec import IdMapIndex as _IdMapIndex
     IdMapIndex = _IdMapIndex
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 
 
@@ -119,7 +119,9 @@ class VectorMemory:
             allowlist = np.array([_mem_id_to_uint64(mid) for mid in ids], dtype=np.uint64)
         scores, ids_arr = self.index.search(vector, k=k, allowlist=allowlist)
         results = []
-        for i in range(k):
+        # Turbovec may return fewer than k results (e.g., empty index → shape (1,0))
+        n_results = ids_arr.shape[1] if ids_arr.ndim >= 2 else 0
+        for i in range(min(k, n_results)):
             u64 = str(int(ids_arr[0, i]))
             real_id = self.id_map.get(u64)
             if real_id is None:

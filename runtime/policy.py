@@ -74,7 +74,7 @@ class _SafeEvaluator(ast.NodeVisitor):
                 return all(self.visit(v) for v in node.values)
             if isinstance(node.op, ast.Or):
                 return any(self.visit(v) for v in node.values)
-            return False
+            return False  # pragma: no cover
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
             return not self.visit(node.operand)
         if isinstance(node, ast.Compare):

@@ -26,7 +26,7 @@ def kernel(tmp_root):
         "  - name: deny-destructive\n    condition: \"'rm -rf' in command\"\n    action: deny\n"
     )
     (tmp_root / "workflows/test.md").write_text(
-        "[WORKFLOW] test\n[RULES]\n1. [REQ] Step one.\n2. [CMD] Step two.\n"
+        "[WORKFLOW] test\n[OBJ] Test workflow for unit tests.\n[RULES]\n1. [REQ] Step one.\n2. [CMD] Step two.\n"
     )
     return Kernel(tmp_root)
 
