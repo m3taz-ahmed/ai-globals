@@ -1,5 +1,6 @@
-import os
 import argparse
+import os
+
 import numpy as np
 
 # Try to import turbovec; gracefully handle if it's not installed yet.
@@ -17,10 +18,10 @@ class GlobalMemoryEngine:
         self.dim = dim
         self.bit_width = bit_width
         self.index = None
-        
+
         if IdMapIndex is None:
             return
-            
+
         os.makedirs(MEMORY_DIR, exist_ok=True)
         self.load_or_create()
 
@@ -40,10 +41,10 @@ class GlobalMemoryEngine:
         """
         if self.index is None:
             raise RuntimeError("turbovec index is not initialized.")
-            
+
         assert vectors.shape[1] == self.dim, f"Vectors must have dimension {self.dim}"
         assert len(vectors) == len(ids), "Vectors and ids must have the same length"
-        
+
         self.index.add_with_ids(vectors, ids)
         self.save()
         print(f"Added {len(ids)} new memories.")
@@ -58,11 +59,11 @@ class GlobalMemoryEngine:
         """
         if self.index is None:
             raise RuntimeError("turbovec index is not initialized.")
-            
+
         if allowlist is not None:
             return self.index.search(query_vector, k=k, allowlist=allowlist)
         return self.index.search(query_vector, k=k)
-        
+
     def remove_memory(self, memory_id):
         if self.index is None:
             raise RuntimeError("turbovec index is not initialized.")
@@ -85,19 +86,19 @@ if __name__ == "__main__":
         exit(1)
 
     engine = GlobalMemoryEngine()
-    
+
     if args.status:
         print("Memory engine is online and ready.")
-        
+
     if args.test:
         print("Running sanity test...")
         dummy_vectors = np.random.randn(10, 1536).astype(np.float32)
         # Normalize vectors for cosine similarity equivalent
         dummy_vectors = dummy_vectors / np.linalg.norm(dummy_vectors, axis=1, keepdims=True)
         dummy_ids = np.array([100 + i for i in range(10)], dtype=np.uint64)
-        
+
         engine.add_memories(dummy_vectors, dummy_ids)
-        
+
         query = dummy_vectors[0:1] # Search for the exact first dummy vector
         scores, ids = engine.search_memory(query, k=3)
         print(f"Search results for dummy query:\n IDs: {ids}\n Scores: {scores}")

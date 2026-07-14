@@ -1,0 +1,15 @@
+---
+description: Tech-stack version gating. Detect exact version from lockfile.
+globs: ["package.json","composer.json","package-lock.json","composer.lock"]
+alwaysApply: true
+---
+
+[FILE] tech-stack.mdc
+[OBJ] Version detection and stack loading.
+[RULES]
+1. [REQ] `[VER-01]` Before loading ANY `tech-stack/` file, read lockfile.
+2. [CMD] For PHP: `composer.lock` -> grep package version -> load `tech-stack/<pkg>-<ver>.md`.
+3. [CMD] For JS: `package-lock.json` -> grep version -> load `tech-stack/<pkg>-<ver>.md`.
+4. [PROHIBIT] NEVER default to v3 for Filament or v11 for Laravel.
+5. [REQ] If lockfile missing, use `composer.json`/`package.json` constraints.
+6. [REQ] Load `spec.md` from project root if exists.

@@ -1,0 +1,20 @@
+---
+description: Security rules. Validate inputs, no leaks, no wildcard CORS.
+globs: ["*.php","*.ts","*.tsx","*.js","*.jsx","*.py","*.go","*.rs"]
+alwaysApply: true
+---
+
+[FILE] security.mdc
+[OBJ] Security constraints.
+[RULES]
+1. [REQ] `[SEC-01]` Zero-trust validation. FormRequest/DTO for inputs.
+2. [REQ] `[SEC-02]` Parameterized queries. No raw SQL interpolation.
+3. [REQ] `[SEC-03]` Whitelist `$fillable`. No `$guarded = []`.
+4. [REQ] `[SEC-04]` No PII/credentials in logs/commits.
+5. [REQ] `[SEC-05]` Enforce RBAC (Filament Shield / policy gates).
+6. [REQ] `[SEC-06]` Sanitize HTML outputs (DOMPurify).
+7. [REQ] `[SEC-07]` Explicit DTO projections for client.
+8. [REQ] `[SEC-08]` Encrypt at rest; private signed URLs.
+9. [REQ] `[SEC-09]` API throttling & rate-limiting.
+10. [REQ] `[SEC-10]` JWT in HttpOnly cookies. Regenerate session on login.
+11. [PROHIBIT] No CORS wildcard `*`. No plaintext passwords. No internal traces in API.

@@ -28,3 +28,14 @@ brain/
 graphify-out/
 .agents/
 temp/
+GRAPH_REPORT.md
+
+tmp/
+scratch/
+state/
+.coverage
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+aios.egg-info/

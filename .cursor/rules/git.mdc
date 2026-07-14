@@ -1,0 +1,18 @@
+---
+description: Git rules. Conventional commits, atomic staging, no force push.
+globs: []
+alwaysApply: true
+---
+
+[FILE] git.mdc
+[OBJ] Source control discipline.
+[RULES]
+1. [REQ] `[GIT-01]` Conventional commits. Format: `type(scope): subject`.
+2. [REQ] `[GIT-02]` Branches: `feature/*`, `hotfix/*`, `release/*`.
+3. [REQ] `[GIT-03]` Protect `main`. PR <= ~400 lines.
+4. [REQ] `[GIT-04]` Pipeline deploy. OIDC keyless auth.
+5. [REQ] `[GIT-05]` Pin SHAs, SBOM, Cosign.
+6. [PROHIBIT] `git add .` or `git add -A`.
+7. [PROHIBIT] `git reset --hard`, `git checkout .`, `git stash`.
+8. [PROHIBIT] Force push.
+9. [REQ] Stage only files YOU modified in this session.

@@ -4,7 +4,7 @@
   <p><b>توقف عن السماح للذكاء الاصطناعي بكتابة كود "سباغيتي". حوله إلى مهندس برمجيات رئيسي (Principal Architect).</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/الإصدار-4.20.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.20.0">
+    <img src="https://img.shields.io/badge/الإصدار-4.21.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.21.0">
     <img src="https://img.shields.io/badge/الحالة-تصحيح_ذاتي-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
     <img src="https://img.shields.io/badge/المعمارية-سيادية-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
     <img src="https://img.shields.io/badge/الرخصة-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
@@ -107,6 +107,20 @@ git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 - **أولوية السطر الواحد (One-Liner):** إذا كان بالإمكان حل المشكلة في سطر واحد، فسيتم ذلك. الأكواد المخصصة المعقدة هي الحل الأخير فقط.
 - **تدقيق التعقيد المدمج:** تمت إضافة مهارات جديدة مثل `/ponytail-review` و `/ponytail-audit` لحذف الديون التقنية وتقليص الأكواد المنتفخة من مشروعك بلا رحمة.
 - **النتيجة:** تقليل حجم الكود المولد بنسبة تصل إلى 54%، توفير التكلفة بنسبة ~20%، وسرعة تنفيذ أعلى بكثير دون المساس بالدقة أو الأمان.
+
+---
+
+## 🌌 الإصدار 4.21.0: نواة التشغيل والأوركسترية العالمية
+
+- **AGENTS.md** كنص مرجعي واحد لكل الأدوات (Cursor، Claude، Codex، OpenCode، Cline، Windsurf، Aider، Copilot).
+- **نواة التشغيل Runtime** — محرك سياسات `allow/ask/deny` مع تقييم AST آمن (بدون `eval`)، ميزانيات رموز/تكلفة، ومشغّل سير عمل متين.
+- **ذاكرة** — SQLite مع بحث FTS5، ذاكرة زمنية/دلالية/حقيقية/إجرائية، علاقات جراف، وفهرس متجهي اختياري (turbovec + sentence-transformers).
+- **تدقيق Audit** — سجل `state/audit.log` لكل قرار سياسة/ميزانية/سير عمل.
+- **خادم MCP** — بناء FastMCP يعرض `query_rules`, `run_workflow`, `check_policy`, `search_memory`, `search_memory_vector`, `get_tech_stack`.
+- **CLI `ai-os`** — `--root`, `AGENT_OS_ROOT`, `check --args`, `memory vector`, `run --context`.
+- **لوحة Dashboard** — تحديث تلقائي، CORS، توكن `AGENT_OS_DASHBOARD_TOKEN` اختياري، ونقطة audit.
+- **بناء ونشر** — `pyproject.toml`, `ruff`, `mypy`, `pytest`, `Dockerfile`, `docker-compose.yml`, وCI.
+- **اكتشاف Root** — `config.py` يستخدم `AGENT_OS_ROOT` أو مجلد التثبيت؛ لا مسارات `D:/server/.ai` محددة بشكل ثابت.
 
 ---
 

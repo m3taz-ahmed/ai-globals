@@ -78,6 +78,9 @@
 [OBS-03]: Sentry error tracking.
 [OBS-04]: State-changing audit logs (12mo retention).
 
+[VER]
+[VER-01]: Detect exact package version from lockfile before loading `tech-stack/<pkg>-<ver>.md`. No defaults.
+
 [SaaS]
 [SaaS-01]: Shared DB: `BelongsToTenant` trait.
 [SaaS-02]: Separate DB: Async provision.

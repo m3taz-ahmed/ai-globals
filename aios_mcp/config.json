@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ai-global-os": {
+      "command": "python",
+      "args": ["aios_mcp/aios_server.py"]
+    }
+  }
+}

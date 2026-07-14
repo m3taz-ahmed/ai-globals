@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v4.20.0
+# AI Globals Validation Script (Python) v4.21.0
 # Source of truth validator — PowerShell wrapper delegates to this script.
 
-import os
-import sys
-import re
-import hashlib
 import argparse
+import hashlib
 import math
-from typing import List, Dict, Tuple, Optional
+import os
+import re
+import sys
 
 AI_TITLE_TAGS = ("FILE", "TECH", "WORKFLOW", "SKILL")
 
@@ -31,7 +30,7 @@ class ValidationContext:
         self.error_count = 0
         self.warning_count = 0
         self.healed_count = 0
-        self.global_headers: Dict[str, List[str]] = {}
+        self.global_headers: dict[str, list[str]] = {}
         self.defined_codes: set = set()
 
 def cprint(text: str, color: str = Colors.RESET) -> None:
@@ -43,13 +42,13 @@ def cprint(text: str, color: str = Colors.RESET) -> None:
 def calculate_entropy(data: str) -> float:
     if not data:
         return 0.0
-    freq: Dict[str, int] = {}
+    freq: dict[str, int] = {}
     for ch in data:
         freq[ch] = freq.get(ch, 0) + 1
     total = len(data)
     return -sum((c / total) * math.log(c / total, 2) for c in freq.values())
 
-def get_fuzzy_match(target: str, file_list: List[str]) -> Optional[str]:
+def get_fuzzy_match(target: str, file_list: list[str]) -> str | None:
     norm = os.path.normpath(target).lower()
     for f in file_list:
         if os.path.normpath(f).lower() == norm:
@@ -63,17 +62,17 @@ def get_fuzzy_match(target: str, file_list: List[str]) -> Optional[str]:
             return f
     return None
 
-def collect_rule_files(global_path: str) -> List[str]:
-    ignore_lines: List[str] = []
+def collect_rule_files(global_path: str) -> list[str]:
+    ignore_lines: list[str] = []
     ignore_file = os.path.join(global_path, ".aiignore")
     if os.path.exists(ignore_file):
-        with open(ignore_file, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(ignore_file, encoding='utf-8', errors='ignore') as f:
             for line in f:
                 s = line.strip()
                 if s and not s.startswith('#'):
                     ignore_lines.append(s.replace('/', os.sep))
 
-    rule_files: List[str] = []
+    rule_files: list[str] = []
     for fname in os.listdir(global_path):
         if fname.endswith('.md') and os.path.isfile(os.path.join(global_path, fname)):
             rule_files.append(fname)
@@ -86,23 +85,23 @@ def collect_rule_files(global_path: str) -> List[str]:
                     if fname.endswith('.md'):
                         rule_files.append(os.path.relpath(os.path.join(root, fname), global_path))
 
-    filtered: List[str] = []
+    filtered: list[str] = []
     for rf in rule_files:
         if not any(pat in rf for pat in ignore_lines):
             filtered.append(rf)
     return filtered
 
-def load_manifest(manifest_path: str) -> Dict[str, str]:
-    manifest: Dict[str, str] = {}
+def load_manifest(manifest_path: str) -> dict[str, str]:
+    manifest: dict[str, str] = {}
     if os.path.exists(manifest_path):
-        with open(manifest_path, 'r', encoding='utf-8') as f:
+        with open(manifest_path, encoding='utf-8') as f:
             for line in f:
                 m = re.match(r"^\s*([A-Fa-f0-9]{64})\s+(.+)$", line)
                 if m:
                     manifest[m.group(2).strip()] = m.group(1).lower()
     return manifest
 
-def check_core_rules(global_path: str, manifest: Dict[str, str]) -> bool:
+def check_core_rules(global_path: str, manifest: dict[str, str]) -> bool:
     core_files = ["global-workflow.md", "global-roles.md"]
     rules_dir = os.path.join(global_path, "rules")
     if os.path.exists(rules_dir):
@@ -119,7 +118,7 @@ def check_core_rules(global_path: str, manifest: Dict[str, str]) -> bool:
                 return True
     return False
 
-def extract_headers(content: str) -> List[str]:
+def extract_headers(content: str) -> list[str]:
     return [m.group(1).strip() for m in re.finditer(r"(?m)^##\s+(\d+(?:\.\d+)?)\.?\s+", content)]
 
 def decode_content(raw: bytes) -> str:
@@ -180,7 +179,7 @@ def check_struct(content: str, rel_name: str, ctx: ValidationContext) -> bool:
         error = True
     return error
 
-def check_line_endings(content: str, rel_name: str, ctx: ValidationContext) -> Tuple[str, bool]:
+def check_line_endings(content: str, rel_name: str, ctx: ValidationContext) -> tuple[str, bool]:
     if "\r\n" not in content:
         return content, False
     if ctx.fix:
@@ -191,7 +190,7 @@ def check_line_endings(content: str, rel_name: str, ctx: ValidationContext) -> T
     ctx.warning_count += 1
     return content, False
 
-def check_utf8_bom(content: str, file_path: str, rel_name: str, ctx: ValidationContext) -> Tuple[str, bool]:
+def check_utf8_bom(content: str, file_path: str, rel_name: str, ctx: ValidationContext) -> tuple[str, bool]:
     with open(file_path, 'rb') as f:
         hdr = f.read(3)
     if hdr != b'\xef\xbb\xbf':
@@ -243,19 +242,18 @@ def check_symbolic_codes(content: str, rel_name: str, ctx: ValidationContext) ->
     return error
 
 def handle_broken_section(content: str, raw_t: str, resolved: str, sec: str,
-                           rel_name: str, ctx: ValidationContext) -> Tuple[str, bool, bool]:
+                           rel_name: str, ctx: ValidationContext) -> tuple[str, bool, bool]:
     near = next((h for h in ctx.global_headers[resolved] if h.startswith(sec) or sec.startswith(h)), None)
-    if ctx.fix and near:
-        if not ctx.interactive or input(f"Fix §{sec}->§{near} in {rel_name}? [Y/N]: ").strip().upper() == 'Y':
-            content = content.replace(f"{raw_t} §{sec}", f"{raw_t} §{near}")
-            ctx.healed_count += 1
-            cprint(f"Healed §{sec}->§{near} in {rel_name}", Colors.GRAY)
-            return content, False, True
+    if ctx.fix and near and (not ctx.interactive or input(f"Fix §{sec}->§{near} in {rel_name}? [Y/N]: ").strip().upper() == 'Y'):
+        content = content.replace(f"{raw_t} §{sec}", f"{raw_t} §{near}")
+        ctx.healed_count += 1
+        cprint(f"Healed §{sec}->§{near} in {rel_name}", Colors.GRAY)
+        return content, False, True
     cprint(f"ERROR: Broken ref §{sec} in {rel_name} (target: {resolved})", Colors.RED)
     ctx.error_count += 1
     return content, True, False
 
-def check_cross_references(content: str, rel_name: str, ctx: ValidationContext) -> Tuple[str, bool, bool]:
+def check_cross_references(content: str, rel_name: str, ctx: ValidationContext) -> tuple[str, bool, bool]:
     error, modified = False, False
     for ref in re.finditer(r"([\w\-\./]+\.md)\s+[§S]\s*(\d+(?:\.\d+)?)", content):
         raw_t, sec = ref.group(1), ref.group(2)
@@ -263,14 +261,17 @@ def check_cross_references(content: str, rel_name: str, ctx: ValidationContext) 
         resolved = get_fuzzy_match(target, list(ctx.global_headers.keys()))
         if not resolved:
             cprint(f"ERROR: Broken ref in {rel_name}: '{target}' not found", Colors.RED)
-            error = True; ctx.error_count += 1
+            error = True
+            ctx.error_count += 1
         elif sec not in ctx.global_headers[resolved]:
             content, err, mod = handle_broken_section(content, raw_t, resolved, sec, rel_name, ctx)
-            error = error or err; modified = modified or mod
+            error = error or err
+            modified = modified or mod
         elif ctx.fix and target != resolved:
             if not ctx.interactive or input(f"Fix path '{target}'->'{resolved}' in {rel_name}? [Y/N]: ").strip().upper() == 'Y':
                 content = content.replace(raw_t, resolved.replace(os.sep, "/"))
-                modified = True; ctx.healed_count += 1
+                modified = True
+                ctx.healed_count += 1
     return content, error, modified
 
 IGNORED_FILE_REFS = {
@@ -287,9 +288,13 @@ IGNORED_FILE_REFS = {
 
 def check_file_references(content: str, rel_name: str, ctx: ValidationContext, global_path: str) -> bool:
     error = False
-    for ref in re.finditer(r"\b([\w\-\./]+\.md)\b", content):
+    for ref in re.finditer(r"(?<![\w/])(\.?[\w\-./]+\.md)\b", content):
         raw_t = ref.group(1)
         if re.match(r"^\s+[§S]\s*\d+", content[ref.end():]):
+            continue
+        # Skip wildcard/template references like .gsap/pages/*.animation.md or .gsap/pages/<page>.animation.md
+        prefix = content[max(0, ref.start()-40):ref.start()]
+        if '*' in prefix or '<' in prefix or '>' in prefix:
             continue
         target = raw_t.replace("/", os.sep)
         if "server" + os.sep + ".ai" in target:
@@ -302,10 +307,11 @@ def check_file_references(content: str, rel_name: str, ctx: ValidationContext, g
         if os.path.exists(os.path.join(global_path, target)):
             continue
         cprint(f"ERROR: Broken file ref in {rel_name}: '{raw_t}' not found", Colors.RED)
-        error = True; ctx.error_count += 1
+        error = True
+        ctx.error_count += 1
     return error
 
-def check_trailing_newlines(content: str, rel_name: str, ctx: ValidationContext) -> Tuple[str, bool]:
+def check_trailing_newlines(content: str, rel_name: str, ctx: ValidationContext) -> tuple[str, bool]:
     if not content.endswith("\n"):
         if ctx.fix:
             ctx.healed_count += 1
@@ -325,7 +331,7 @@ def check_trailing_newlines(content: str, rel_name: str, ctx: ValidationContext)
 def extract_version(path: str, regex: str) -> str:
     if not os.path.exists(path):
         return "NF"
-    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(path, encoding='utf-8', errors='ignore') as f:
         m = re.search(regex, f.read())
     return m.group(1) if m else "NF"
 
@@ -344,10 +350,10 @@ def check_version_consistency(global_path: str, ctx: ValidationContext) -> bool:
         cprint(f"ERROR: Version mismatch: {details}", Colors.RED)
         ctx.error_count += 1
         return False
-    cprint(f"Version: {list(unique)[0]} (all consistent)", Colors.GREEN)
+    cprint(f"Version: {next(iter(unique))} (all consistent)", Colors.GREEN)
     return True
 
-def validate_single_file(rel_name: str, data: Dict, ctx: ValidationContext, global_path: str) -> Tuple[Optional[str], bool]:
+def validate_single_file(rel_name: str, data: dict, ctx: ValidationContext, global_path: str) -> tuple[str | None, bool]:
     content = data['content']
     ctx.scanned_count += 1
 
@@ -373,9 +379,9 @@ def validate_single_file(rel_name: str, data: Dict, ctx: ValidationContext, glob
 
     return (data['hash'] if not error_found else None), error_found
 
-def run_pass1(rule_files: List[str], global_path: str, manifest: Dict[str, str],
-              force: bool, ctx: ValidationContext) -> Dict[str, Dict]:
-    file_data: Dict[str, Dict] = {}
+def run_pass1(rule_files: list[str], global_path: str, manifest: dict[str, str],
+              force: bool, ctx: ValidationContext) -> dict[str, dict]:
+    file_data: dict[str, dict] = {}
     for rel in rule_files:
         fpath = os.path.join(global_path, rel)
         with open(fpath, 'rb') as f:
@@ -390,7 +396,7 @@ def run_pass1(rule_files: List[str], global_path: str, manifest: Dict[str, str],
     return file_data
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="AI Globals Validation v4.20.0")
+    p = argparse.ArgumentParser(description="AI Globals Validation v4.21.0")
     p.add_argument("--dry-run",            action="store_true", help="Scan without writing")
     p.add_argument("--generate-manifest",  action="store_true", help="Force regenerate manifest")
     p.add_argument("--force",              action="store_true", help="Bypass manifest cache")
@@ -408,7 +414,7 @@ def main() -> None:
         cprint(f"MISCONFIG: rules/vocabulary.md not found at {vocab_path}", Colors.RED)
         sys.exit(2)
 
-    cprint(f"AI Globals Validation v4.20.0 [Fix: {'ON' if args.fix else 'OFF'}]", Colors.CYAN)
+    cprint(f"AI Globals Validation v4.21.0 [Fix: {'ON' if args.fix else 'OFF'}]", Colors.CYAN)
 
     rule_files = collect_rule_files(global_path)
     manifest_path = os.path.join(global_path, "integrity.manifest")
@@ -417,7 +423,7 @@ def main() -> None:
 
     ctx = ValidationContext(args.fix, args.interactive, args.dry_run, args.force)
 
-    with open(vocab_path, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(vocab_path, encoding='utf-8', errors='ignore') as f:
         for m in re.finditer(r"\[([A-Z]{3,4}-\d{2})\]", f.read()):
             ctx.defined_codes.add(m.group(1))
 

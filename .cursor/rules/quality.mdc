@@ -1,0 +1,21 @@
+---
+description: Code quality. 0 linter warnings, SOLID/DRY/KISS, strict typing.
+globs: ["*.php","*.ts","*.tsx","*.js","*.jsx","*.py","*.go","*.rs"]
+alwaysApply: true
+---
+
+[FILE] quality.mdc
+[OBJ] Quality gates.
+[RULES]
+1. [REQ] `[CODE-01]` Service-Repo separation. Thin controllers.
+2. [REQ] `[CODE-02]` Strict typing. No `any` / `mixed` / `unknown` abuse.
+3. [REQ] `[CODE-03]` Class <300 lines, method <30 lines.
+4. [REQ] `[CODE-04]` Enums/constants over magic strings.
+5. [REQ] `[CODE-05]` SOLID & DRY.
+6. [REQ] `[TEST-01]` Mandatory coverage.
+7. [REQ] `[TEST-02]` AAA pattern. One behavior per test.
+8. [REQ] `[TEST-03]` Factories/seeders. No hardcoded IDs/dates.
+9. [REQ] `[TEST-04]` Pest 3+ (backend), Vitest+RTL (frontend).
+10. [REQ] `[TEST-06]` 80% logic, 90% API, 70% total coverage.
+11. [PROHIBIT] No inline imports (`await import()`). No downgrade deps for type errors.
+12. [PROHIBIT] No `TODO`/`FIXME` without ticket tag.

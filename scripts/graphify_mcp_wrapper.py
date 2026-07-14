@@ -16,16 +16,16 @@ with graphify's own _filter_blank_stdin() which also rewires fd 0.
 Protocol: MCP stdio uses plain JSON lines (one JSON-RPC message per line).
 """
 
-import sys
-import os
 import json
-import urllib.parse
-import threading
 import logging
+import os
+import sys
+import threading
+import urllib.parse
 from pathlib import Path
 
 # Set up debug logging to a file (always useful for diagnosing MCP issues)
-_LOG_PATH = Path(os.environ.get("GRAPHIFY_WRAPPER_LOG", 
+_LOG_PATH = Path(os.environ.get("GRAPHIFY_WRAPPER_LOG",
     Path.home() / ".graphify" / "wrapper_debug.log"))
 _LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
@@ -113,12 +113,12 @@ def _extract_workspace_from_initialize(line: bytes) -> str | None:
 def _install_intercept_pipe():
     """
     Install an OS-level pipe on fd 0 (stdin).
-    
+
     We read from the *original* stdin in a background thread, intercept
     the first 'initialize' message to extract the workspace path, then
     relay all messages (including the initialize) through the pipe to
     the new fd 0 that graphify will read from.
-    
+
     This works at the fd level so it is fully compatible with graphify's
     own _filter_blank_stdin() which also manipulates fd 0.
     """
@@ -186,7 +186,7 @@ def _install_intercept_pipe():
     os.close(r_fd)
 
     # Rewrap sys.stdin so Python sees the new fd 0
-    sys.stdin = open(0, "r", encoding="utf-8", errors="replace", closefd=False)
+    sys.stdin = open(0, encoding="utf-8", errors="replace", closefd=False)  # noqa: SIM115
 
     log.info("Wrapper setup complete, final cwd=%s", os.getcwd())
 

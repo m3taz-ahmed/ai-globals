@@ -1,0 +1,14 @@
+---
+description: Memory sync. Read MEMORY.md at start, update after milestone.
+globs: []
+alwaysApply: true
+---
+
+[FILE] memory.mdc
+[OBJ] Persistent state and cross-session continuity.
+[RULES]
+1. [REQ] Read `state/MEMORY.md` at session start.
+2. [REQ] Check `{project_root}/.ai/active-context.md` for project state.
+3. [REQ] Run `workflows/09-memory-sync.md` after every milestone.
+4. [REQ] Document novel fixes/workarounds in `tech-stack/*.md` to prevent recurrence.
+5. [REQ] If memory conflicts with current code, trust code + lockfile + MCP docs.

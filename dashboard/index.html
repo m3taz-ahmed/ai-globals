@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Global OS Dashboard</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f1115; color: #e2e8f0; margin: 0; padding: 2rem; }
+    h1 { margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .card { background: #1a1d23; border-radius: 8px; padding: 1rem; }
+    .metric { font-size: 2rem; font-weight: 700; }
+    .error { color: #ef4444; }
+    .success { color: #22c55e; }
+    ul { padding-left: 1.2rem; }
+    pre { background: #0f1115; padding: 0.5rem; border-radius: 4px; overflow: auto; max-height: 300px; }
+    button { background: #22c55e; color: #0f1115; border: 0; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <h1>AI Global OS</h1>
+  <p class="muted" id="status-line">Loading...</p>
+  <div class="grid">
+    <div class="card"><div>Version</div><div class="metric" id="version">-</div></div>
+    <div class="card"><div>Workflows</div><div class="metric" id="workflow-count">-</div></div>
+    <div class="card"><div>Rules</div><div class="metric" id="rule-count">-</div></div>
+    <div class="card"><div>Budgets</div><div class="metric" id="budget-count">-</div></div>
+  </div>
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Workflows <button onclick="load()">Refresh</button></h3>
+    <ul id="workflows"></ul>
+  </div>
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Policy check: edit</h3>
+    <pre id="policy-check">-</pre>
+  </div>
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Recent audit</h3>
+    <pre id="audit">-</pre>
+  </div>
+  <script>
+    async function fetchJson(path) {
+      try {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+        return await res.json();
+      } catch (e) {
+        return { error: e.message };
+      }
+    }
+    async function load() {
+      const statusLine = document.getElementById('status-line');
+      const data = await fetchJson('/api/status');
+      if (data.error) {
+        statusLine.textContent = 'Error: ' + data.error;
+        statusLine.className = 'error';
+        return;
+      }
+      statusLine.textContent = 'Connected';
+      statusLine.className = 'success';
+      document.getElementById('version').textContent = data.version;
+      document.getElementById('workflow-count').textContent = data.workflows.length;
+      document.getElementById('rule-count').textContent = data.rules.length;
+      document.getElementById('budget-count').textContent = data.budgets.length;
+      const wf = document.getElementById('workflows');
+      wf.innerHTML = '';
+      data.workflows.forEach(w => { const li = document.createElement('li'); li.textContent = w; wf.appendChild(li); });
+      const check = await fetchJson('/api/check?action=edit');
+      document.getElementById('policy-check').textContent = JSON.stringify(check, null, 2);
+      const audit = await fetchJson('/api/audit');
+      document.getElementById('audit').textContent = JSON.stringify(audit, null, 2);
+    }
+    load();
+    setInterval(load, 10000);
+  </script>
+</body>
+</html>

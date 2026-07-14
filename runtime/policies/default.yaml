@@ -1,0 +1,38 @@
+name: default
+apiVersion: governance.ai-global-os/v1
+default_action: ask
+rules:
+  - name: allow-reads
+    condition: "type in ['view', 'Read', 'grep', 'Glob', 'graphify query', 'graphify explain', 'graphify path']"
+    action: allow
+    description: Read-only operations are always allowed.
+
+  - name: block-destructive
+    condition: "type in ['rm', 'delete', 'truncate', 'drop', 'destroy'] or 'rm -rf' in command"
+    action: deny
+    description: Destructive operations are blocked without explicit user command.
+
+  - name: require-approval-for-write
+    condition: "type in ['edit', 'write', 'apply', 'deploy']"
+    action: ask
+    description: Writes require approval unless explicitly approved.
+
+  - name: require-approval-for-bash
+    condition: "type == 'Bash' or type == 'exec'"
+    action: ask
+    description: Shell commands require approval.
+
+  - name: block-unauth-server
+    condition: "type in ['curl', 'http', 'send_email', 'sms', 'deploy'] or 'curl' in command"
+    action: deny
+    description: No unauthorized server actions.
+
+  - name: block-git-danger
+    condition: "'git reset --hard' in command or 'git checkout .' in command or 'git clean -fd' in command or 'git add -A' in command or 'git add .' in command or 'git push -f' in command or 'git stash' in command"
+    action: deny
+    description: Forbidden git operations.
+
+  - name: allow-status-reads
+    condition: "type in ['git status', 'git diff', 'git log', 'ls', 'pwd']"
+    action: allow
+    description: Safe read-only git/filesystem commands.

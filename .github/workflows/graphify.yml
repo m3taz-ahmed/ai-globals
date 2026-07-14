@@ -1,0 +1,26 @@
+name: graphify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install graphify
+        run: pip install graphify
+      - name: Update graph
+        run: graphify update .
+      - name: Commit graph
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add graphify-out/
+          git diff --cached --quiet || git commit -m "chore: update graphify graph" && git push

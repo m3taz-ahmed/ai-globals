@@ -1,0 +1,10 @@
+tmp
+scratch
+brain
+state
+__pycache__
+.git
+.github
+.pytest_cache
+.mypy_cache
+.ruff_cache

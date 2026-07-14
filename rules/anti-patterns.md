@@ -9,3 +9,4 @@
 6. [PROHIBIT] Security Flaws: No CORS wildcard `*`. No internal traces in API. No plaintext passwords (use Argon2/bcrypt).
 7. [PROHIBIT] Performance Killers: No `sleep()` in requests. No PHP memory limit `-1`. Stream large files instead of loading fully.
 8. [PROHIBIT] AI Hallucinations: Verify ALL APIs/methods before calling. Never return hardcoded mock success.
+9. [PROHIBIT] Version Guessing `[VER-01]`: ⛔ NEVER assume Filament=v3, Laravel=v11, or ANY default version. ALWAYS `composer.lock` → grep exact version → load correct `tech-stack/<pkg>-<ver>.md`. Defaulting to wrong version = shipping broken code.

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 SECTION_RECIPES = {
     "Hero": "hero-text-reveal + layered media parallax",
     "Navigation": "navbar polish on scroll",

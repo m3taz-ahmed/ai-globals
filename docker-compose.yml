@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  aios:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - AGENT_OS_ROOT=/app
+      - AGENT_OS_HOST=0.0.0.0
+      - AGENT_OS_DASHBOARD_TOKEN=${AGENT_OS_DASHBOARD_TOKEN:-}
+    volumes:
+      - aios_state:/app/state
+      - aios_brain:/app/brain
+
+volumes:
+  aios_state:
+  aios_brain:

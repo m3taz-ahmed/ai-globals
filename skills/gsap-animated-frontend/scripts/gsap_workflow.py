@@ -12,10 +12,10 @@ from pathlib import Path
 
 try:
     import click
+    import yaml
     from rich.console import Console
     from rich.panel import Panel
     from rich.table import Table
-    import yaml
 except ImportError:
     print("Install dependencies first: pip install -r requirements.txt")
     sys.exit(1)

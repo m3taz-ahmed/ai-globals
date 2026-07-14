@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Unit tests for validate-globals.py checks. Run from repo root: python scripts/tests/test_validator.py"""
 
-import sys
+import importlib.util
 import os
 import unittest
-
-import importlib.util
 
 _spec = importlib.util.spec_from_file_location(
     "validate_globals",
@@ -34,7 +32,7 @@ def _ctx(**kwargs) -> ValidationContext:
     vocab_path = os.path.join(GLOBAL_PATH, "rules", "vocabulary.md")
     if os.path.exists(vocab_path):
         import re
-        with open(vocab_path, 'r', encoding='utf-8') as f:
+        with open(vocab_path, encoding='utf-8') as f:
             for m in re.finditer(r"\[([A-Z]{3,4}-\d{2})\]", f.read()):
                 ctx.defined_codes.add(m.group(1))
     for k, v in kwargs.items():

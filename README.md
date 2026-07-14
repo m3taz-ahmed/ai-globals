@@ -4,7 +4,7 @@
   <p><b>Stop letting AI write spaghetti code. Turn it into your Principal Architect.</b></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-4.20.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.20.0">
+    <img src="https://img.shields.io/badge/Version-4.21.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.21.0">
     <img src="https://img.shields.io/badge/Status-Self--Healing-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="Status: Self-Healing">
     <img src="https://img.shields.io/badge/Architecture-Sovereign-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="Architecture: Sovereign">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -44,27 +44,34 @@ Clone this repository to a central location on your machine (e.g., `D:/.ai` or `
 git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
 ```
 
-### 2. Inject the Global Directive
-Paste this block into your project's root `.cursorrules`, `GEMINI.md`, or AI system prompt:
-```markdown
-### 🌍 GLOBAL AI OPERATING SYSTEM
-- **Root Path:** `D:/.ai` (adjust to your clone path)
-- **Identity & Rules:** Initialize by reading `global-roles.md` & `global-workflow.md`. All rules and skills are natively compressed.
-- **Context:** Read project `spec.md`. Only load corresponding files from `tech-stack/`.
-- **Master Workflow:** Sync execution cycles using `./workflows/` and `global-workflow.md`.
-- **Tech Sync:** Auto-save missing tech rules to `./tech-stack/` and log in `state/CHANGELOG.md`.
+### 2. Install the OS
+```powershell
+# Windows
+.\install.ps1
+
+# macOS/Linux
+bash install.sh
 ```
 
-### 3. Enable Live Ground-Truths (MCP)
-AI Global OS enforces strict anti-hallucination policies using Context7 MCP for live framework documentation (Next.js, Laravel, etc.).
-Run this in your terminal to initialize the MCP server for your AI IDE:
+### 3. Install Dependencies
+The OS requires `pydantic`, `rich`, and other core libraries to function. Run this inside the cloned folder:
 ```bash
-npx ctx7 setup
+python -m pip install -e .
 ```
 
-### 4. Issue the Command
-Send this exact message to your AI agent to initiate the OS:
-> *"Start immediately by reading your operating protocols from the .ai directory root. Operate as the Principal 10x Engineer & Chief Architect. Do not rely on prior assumptions."*
+### 4. Use the CLI
+```bash
+ai-os status
+ai-os check edit
+ai-os run 02-execution
+ai-os memory ingest
+```
+
+### 5. Enable MCP
+Add `aios_mcp/config.json` to your IDE MCP config or run:
+```bash
+python aios_mcp/aios_server.py
+```
 
 🎯 **Boom. Your AI is now Sovereign.** Watch as it analyzes your request against strict SOLID principles, OWASP standards, and your specific tech stack before it even thinks about generating code.
 
@@ -76,23 +83,55 @@ AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context
 
 ```text
 .ai/                              # The Sovereign Root
+├── AGENTS.md                     # Cross-tool canonical instruction
 ├── global-roles.md               # [Layer 0] Architectural identity & quality gates
 ├── global-workflow.md            # [Core] Cognitive loading & execution protocol
-├── EXAMPLES.md                   # [Reference] ❌ LLM mistakes vs ✅ correct patterns
+├── README.md                     # Human-facing front door
+├── CHANGELOG.md                  # Release notes
 │
-├── .github/                      # 🤝 Community guidelines (Code of Conduct, Security, Contributing)
-├── state/                        # 🧠 Logs & State tracking (CHANGELOG, MEMORY)
+├── .cursor/rules/                # Cursor rule adapters
+├── .claude/                      # Claude Code config, skills, agents
+├── .clinerules/                  # Cline rules
+├── .windsurfrules                # Windsurf rules
+├── .aider.conf.yml               # Aider config
+├── .github/copilot-instructions.md # GitHub Copilot instructions
+│
 ├── rules/                        # 🛡️ Compressed behavioral & structural rules
 ├── tech-stack/                   # 📚 Compressed domain-specific RAG tech-stacks
 ├── workflows/                    # ⚙️ Compressed trigger-based execution protocols
 ├── skills/                       # 🧰 Compressed AI tools & agent personas
+├── state/                        # 🧠 Logs & persistent state
+├── brain/                        # 🧠 Memory database
+├── graphify-out/                 # Knowledge graph
 │
+├── runtime/                      # Runtime kernel (policy, budget, workflow runner)
+├── memory/                       # Memory service (temporal KG + episodic/semantic/factual)
+├── aios_mcp/                     # MCP server
+├── dashboard/                    # Web dashboard
+├── cli.py                        # CLI entry point
+├── install.ps1 / install.sh      # OS installer
 └── scripts/                      # 🔧 Self-Healing Operations
-    ├── validate-globals.ps1      # PowerShell integrity validator
-    └── validate-globals.py       # Cross-platform Python validator
+    ├── validate-globals.py       # Cross-platform integrity validator
+    ├── sync-agent-configs.py     # Sync agent configs across tools
+    ├── ai_memory_engine.py       # Vector memory engine
+    └── graphify_mcp_wrapper.py   # Graphify MCP bridge
 ```
 
 ---
+
+## 🌌 v4.21.0: Runtime Kernel & Global Orchestration
+
+The OS now ships with a real runtime engine:
+
+- **AGENTS.md canonical** — one instruction file consumed by Cursor, Claude, Codex, OpenCode, Cline, Windsurf, Aider, and Copilot.
+- **Runtime kernel** — policy engine with `allow/ask/deny` YAML policies, safe AST evaluation (no `eval`), per-scope token/cost budgets, and durable workflow runner.
+- **Memory service** — SQLite-backed temporal memory with FTS5 search, episodic/semantic/factual/procedural memories, graph relations, and optional vector index (turbovec + sentence-transformers).
+- **Audit logging** — append-only `state/audit.log` for every policy/budget/workflow decision.
+- **MCP server** — FastMCP-based server exposing `query_rules`, `run_workflow`, `check_policy`, `search_memory`, `search_memory_vector`, `get_tech_stack` to any MCP client.
+- **CLI `ai-os`** — `--root` support, `AGENT_OS_ROOT` env, `check --args`, `memory vector`, `run --context`.
+- **Dashboard** — auto-refresh, CORS, optional `AGENT_OS_DASHBOARD_TOKEN` auth, audit endpoint.
+- **Build & deploy** — `pyproject.toml`, `ruff`, `mypy`, `pytest` suite, `Dockerfile`, `docker-compose.yml`, and CI workflow running lint, typecheck, tests, and global validation.
+- **Root discovery** — `config.py` discovers `AGENT_OS_ROOT` env or install dir; no hardcoded `D:/server/.ai`.
 
 ## 🦥 v4.19.0: The Ponytail Philosophy (Lazy Senior Dev)
 

@@ -1,0 +1,22 @@
+# AI Global OS
+
+[FILE] AGENTS
+[OBJ] Cross-tool canonical instruction for all AI coding agents.
+[RULES]
+1. [REQ] Cold Start: Read `global-roles.md` then `global-workflow.md` first. Never cache.
+2. [REQ] Load Context Layers: L0 `rules/core-behavioral-compact.md`, `skills/`; L1 `rules/vocabulary.md`, `rules/anti-patterns.md`, `tech-stack/useful-repos.md`; L2 `rules/*.md` + matched `tech-stack/<pkg>-<ver>.md`; L3 `workflows/*.md` per task.
+3. [REQ] VersionGate `[VER-01]`: Before loading any `tech-stack/` file, read `composer.lock` or `package-lock.json` and load only the matching version file. Never default to v3 for Filament or v11 for Laravel.
+4. [REQ] Use MCP: Query Context7 MCP for any external library/framework before implementing code. Never rely on memory.
+5. [REQ] Graphify: If `graphify-out/graph.json` exists, use `query_graph`/`shortest_path`/`get_node` before raw grep/read. Run `graphify update .` after code edits.
+6. [REQ] Memory: Read `state/MEMORY.md` at session start. Update it at end using `workflows/09-memory-sync.md`.
+7. [REQ] Runtime: Route all tool calls through `runtime/` kernel when present. Obey `allow/ask/deny` policies.
+8. [REQ] Cost: Check `runtime/budget` before every LLM call. Stop on hard cap.
+9. [REQ] Quality: 0 linter warnings. SOLID/DRY/KISS. No `any` types. No inline imports. No raw SQL interpolation.
+10. [REQ] Git: Conventional commits. Atomic. Never `git add .` or force push. Stage only files you modified.
+11. [REQ] Root: Discover OS root from `AGENT_OS_ROOT` env or install dir. Never hardcode `D:/server/.ai`.
+12. [REQ] Runtime Gate: Route all actions through `runtime/kernel.py` (Policy + Budget + Audit). Use `ai-os check <action> --args` or `Kernel.act` before execution.
+13. [REQ] MCP: Use `aios_mcp/aios_server.py` as native MCP server. Prefer `query_rules`, `check_policy`, `search_memory`, `search_memory_vector`.
+14. [REQ] Memory: Run `ai-os memory ingest` after any rule/tech-stack/workflow change.
+15. [REQ] Quality: 0 linter warnings. Run `ruff check .`, `mypy`, `pytest -q`, `python eval/harness.py` before declaring done. No `eval` for policy.
+16. [PROHIBIT] No unauthorized server actions. No destructive bash without validation. No `min/` folders. No generic UIs.
+17. [REQ] Handoff: Run `workflows/09-memory-sync.md` after every milestone.

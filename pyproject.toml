@@ -1,0 +1,100 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aios"
+version = "4.21.0"
+description = "AI Global OS — sovereign AI engineering control plane"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Moataz"}
+]
+keywords = ["ai", "agents", "mcp", "workflow", "governance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pyyaml>=6.0",
+    "mcp>=1.0",
+    "turbovec>=0.1",
+    "numpy>=1.24",
+    "pydantic>=2.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.6",
+    "mypy>=1.0",
+    "types-pyyaml",
+]
+vector = [
+    "sentence-transformers>=2.0",
+]
+
+[project.scripts]
+ai-os = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli", "config"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["runtime*", "memory*", "aios_mcp*"]
+exclude = ["runtime.tests*", "memory.tests*", "tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json", "*.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = [
+    "tmp",
+    "scratch",
+    "brain",
+    "state",
+    "__pycache__",
+    ".git",
+    ".github",
+    "scripts/ui-ux-pro-max",
+    "skills/gsap-animated-frontend",
+    "tmp/**",
+    "scratch/**",
+]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "TID", "RUF"
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+exclude = ["runtime/tests/*", "memory/tests/*", "dashboard/*", "scripts/*"]
+[[tool.mypy.overrides]]
+module = ["yaml", "sentence_transformers", "turbovec", "numpy"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["runtime/tests", "memory/tests", "tests"]
+python_files = "test_*.py"
+pythonpath = ["."]
+addopts = "-ra --cov=runtime --cov=memory --cov=aios_mcp --cov-report=term-missing"
