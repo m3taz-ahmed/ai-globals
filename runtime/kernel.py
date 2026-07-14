@@ -51,6 +51,15 @@ class Kernel:
             self.audit.log("policy.denied", {"action": action_data["type"], "args": kwargs, "decision": decision})
             return {"ok": False, "error": f"Policy denied by {decision['rule']}", "decision": decision}
 
+        if decision["decision"] == "ask" and not action_data.get("approved"):
+            self.audit.log("policy.asked", {"action": action_data["type"], "args": kwargs, "decision": decision})
+            return {
+                "ok": False,
+                "error": "Action requires explicit approval (approved=True)",
+                "requires_approval": True,
+                "decision": decision,
+            }
+
         budget_result = self.budget.check("session", action_data.get("tokens", 0), action_data.get("cost", 0.0))
         self.budget.save()
         if not budget_result["ok"]:
@@ -81,7 +90,7 @@ class Kernel:
 
     def status(self) -> dict[str, Any]:
         return {
-            "version": "4.21.0",
+            "version": config.VERSION,
             "root": str(self.root),
             "workflows": self.list_workflows(),
             "budgets": list(self.budget.budgets.keys()),

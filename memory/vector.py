@@ -87,16 +87,20 @@ class VectorMemory:
         return IdMapIndex is not None and self.index is not None
 
     def add(self, mem_id: str, text: str) -> None:
-        if not self.is_available():
+        self.add_batch([mem_id], [text])
+
+    def add_batch(self, mem_ids: list[str], texts: list[str]) -> None:
+        """Add a batch of memories and persist the index once."""
+        if not self.is_available() or not mem_ids:
             return
         try:
-            vector = self.embedder.embed([text])
+            vector = self.embedder.embed(texts)
         except RuntimeError:
             return
-        u64 = _mem_id_to_uint64(mem_id)
-        self.id_map[str(u64)] = mem_id
-        ids = np.array([u64], dtype=np.uint64)
-        self.index.add_with_ids(vector, ids)
+        u64s = np.array([_mem_id_to_uint64(mid) for mid in mem_ids], dtype=np.uint64)
+        for u64, mid in zip(u64s, mem_ids, strict=True):
+            self.id_map[str(u64)] = mid
+        self.index.add_with_ids(vector, u64s)
         self.index.write(str(self.index_path))
         self._save_map()
 
@@ -116,10 +120,15 @@ class VectorMemory:
         return results
 
     def remove(self, mem_id: str) -> None:
-        if not self.is_available():
+        self.remove_batch([mem_id])
+
+    def remove_batch(self, mem_ids: list[str]) -> None:
+        """Remove a batch of memories and persist the index once."""
+        if not self.is_available() or not mem_ids:
             return
-        u64 = _mem_id_to_uint64(mem_id)
-        self.id_map.pop(str(u64), None)
-        self.index.remove(np.array([u64], dtype=np.uint64))
+        u64s = np.array([_mem_id_to_uint64(mid) for mid in mem_ids], dtype=np.uint64)
+        for u64 in u64s:
+            self.id_map.pop(str(u64), None)
+        self.index.remove(u64s)
         self.index.write(str(self.index_path))
         self._save_map()

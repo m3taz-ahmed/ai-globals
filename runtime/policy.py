@@ -136,8 +136,14 @@ class PolicyEngine:
                     "rule": rule.name,
                     "description": rule.description,
                     "approvers": rule.approvers,
+                    "requires_approval": rule.action == "ask",
                 }
-        return {"decision": self.default_action, "rule": "default", "description": ""}
+        return {
+            "decision": self.default_action,
+            "rule": "default",
+            "description": "",
+            "requires_approval": self.default_action == "ask",
+        }
 
     def can(self, action_type: str, **kwargs: Any) -> dict[str, Any]:
         return self.evaluate({"type": action_type, **kwargs})

@@ -50,7 +50,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if not action or not action.isalnum():
                 self._send(400, b"Invalid action format")
                 return
-            self._send(200, json.dumps(self.kernel.act(action), default=str).encode("utf-8"), "application/json")
+            action_args = {"approved": True} if qs.get("approve", [""])[0] == "1" else {}
+            self._send(200, json.dumps(self.kernel.act(action, **action_args), default=str).encode("utf-8"), "application/json")
         elif parsed.path == "/api/audit":
             self._send_audit()
         elif parsed.path == "/" or parsed.path == "/index.html":

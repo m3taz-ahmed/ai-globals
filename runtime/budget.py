@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -45,13 +47,18 @@ class BudgetManager:
 
     def save(self) -> None:
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
-        self.state_file.write_text(
-            json.dumps(
-                {"budgets": {k: asdict(v) for k, v in self.budgets.items()}, "usage": self.usage},
-                indent=2,
-            ),
-            encoding="utf-8",
+        payload = json.dumps(
+            {"budgets": {k: asdict(v) for k, v in self.budgets.items()}, "usage": self.usage},
+            indent=2,
         )
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=self.state_file.parent, suffix=".json.tmp")
+        try:
+            with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                f.write(payload)
+            os.replace(tmp_path, self.state_file)
+        except Exception:
+            os.remove(tmp_path)
+            raise
 
     def set_budget(self, scope: str, budget: Budget) -> None:
         self.budgets[scope] = budget
@@ -63,23 +70,33 @@ class BudgetManager:
             return {"ok": True, "reason": None, "action": "allow"}
 
         u = self.usage.setdefault(scope, {"tokens": 0, "cost": 0, "calls": 0})
-        u["tokens"] += tokens
-        u["cost"] += cost
-        u["calls"] += calls
+        projected = {
+            "tokens": u["tokens"] + tokens,
+            "cost": u["cost"] + cost,
+            "calls": u["calls"] + calls,
+        }
 
         exceeded = []
-        if budget.max_tokens and u["tokens"] >= budget.max_tokens:
+        if budget.max_tokens and projected["tokens"] >= budget.max_tokens:
             exceeded.append("tokens")
-        if budget.max_cost_usd and u["cost"] >= budget.max_cost_usd:
+        if budget.max_cost_usd and projected["cost"] >= budget.max_cost_usd:
             exceeded.append("cost")
-        if budget.max_calls and u["calls"] >= budget.max_calls:
+        if budget.max_calls and projected["calls"] >= budget.max_calls:
             exceeded.append("calls")
 
         if exceeded:
             if budget.on_exceed == "warn":
+                u.update(projected)
                 return {"ok": True, "reason": f"Budget exceeded: {exceeded}", "action": "warn"}
             if budget.on_exceed == "fallback" and budget.fallback_model:
-                return {"ok": True, "reason": f"Budget exceeded: {exceeded}", "action": "fallback", "fallback_model": budget.fallback_model}
+                u.update(projected)
+                return {
+                    "ok": True,
+                    "reason": f"Budget exceeded: {exceeded}",
+                    "action": "fallback",
+                    "fallback_model": budget.fallback_model,
+                }
             return {"ok": False, "reason": f"Budget exceeded: {exceeded}", "action": "block"}
 
+        u.update(projected)
         return {"ok": True, "reason": None, "action": "allow"}

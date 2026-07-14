@@ -44,6 +44,8 @@ def cmd_status(args: argparse.Namespace) -> int:
 def cmd_check(args: argparse.Namespace) -> int:
     k = Kernel(_root(args))
     action_args = json.loads(args.args) if args.args else {}
+    if args.approve:
+        action_args["approved"] = True
     result = k.act(args.action, **action_args)
     if result["ok"]:
         console.print(Panel(f"[green]Action '{args.action}' Allowed[/green]\n" + json.dumps(result, indent=2)))
@@ -99,6 +101,40 @@ def cmd_graphify(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_version(args: argparse.Namespace) -> int:
+    console.print(f"AI Global OS v{config.VERSION}")
+    return 0
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    root = _root(args)
+    checks = {
+        "root": root.exists(),
+        "pyproject.toml": (root / "pyproject.toml").exists(),
+        "runtime/policies/default.yaml": (root / "runtime" / "policies" / "default.yaml").exists(),
+        "rules directory": (root / "rules").exists(),
+        "workflows directory": (root / "workflows").exists(),
+        "tech-stack directory": (root / "tech-stack").exists(),
+        "state directory": (root / "state").exists(),
+        "brain directory": (root / "brain").exists(),
+    }
+    try:
+        from memory.vector import VectorMemory
+
+        vector = VectorMemory(root)
+        checks["vector index"] = vector.is_available()
+    except Exception:
+        checks["vector index"] = False
+
+    table = Table(title="AI Global OS Doctor")
+    table.add_column("Check", style="cyan")
+    table.add_column("Status", style="green")
+    for name, ok in checks.items():
+        table.add_row(name, "ok" if ok else "missing")
+    console.print(table)
+    return 0 if all(checks.values()) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ai-os", description="AI Global OS CLI")
     parser.add_argument("--root", type=Path, default=None, help="AI Global OS root (default: AGENT_OS_ROOT or install dir)")
@@ -107,10 +143,13 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("status", help="Show system status")
     sub.add_parser("sync", help="Sync agent configs")
     sub.add_parser("graphify", help="Update graphify graph")
+    sub.add_parser("version", help="Show version")
+    sub.add_parser("doctor", help="Check environment health")
 
     p_check = sub.add_parser("check", help="Check policy for action")
     p_check.add_argument("action")
     p_check.add_argument("--args", default="", help="JSON action args")
+    p_check.add_argument("--approve", action="store_true", help="Approve ask decisions")
 
     p_run = sub.add_parser("run", help="Run workflow")
     p_run.add_argument("workflow")
@@ -136,6 +175,8 @@ def main(argv: list[str] | None = None) -> int:
         "memory": cmd_memory,
         "sync": cmd_sync,
         "graphify": cmd_graphify,
+        "version": cmd_version,
+        "doctor": cmd_doctor,
     }
     return commands[args.command](args)
 

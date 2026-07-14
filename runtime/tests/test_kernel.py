@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import config
 from runtime.kernel import Kernel
 
 
@@ -20,7 +21,7 @@ def _kernel(tmp_path: Path) -> Kernel:
 def test_status(tmp_path):
     k = _kernel(tmp_path)
     status = k.status()
-    assert status["version"] == "4.21.0"
+    assert status["version"] == config.VERSION
     assert "workflows" in status
 
 
@@ -34,6 +35,14 @@ def test_act_read_allowed(tmp_path):
 def test_act_write_asked(tmp_path):
     k = _kernel(tmp_path)
     result = k.act("edit")
+    assert not result["ok"]
+    assert result["decision"]["decision"] == "ask"
+    assert result["requires_approval"]
+
+
+def test_act_write_approved(tmp_path):
+    k = _kernel(tmp_path)
+    result = k.act("edit", approved=True)
     assert result["ok"]
     assert result["decision"]["decision"] == "ask"
 

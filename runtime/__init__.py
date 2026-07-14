@@ -1,3 +1,5 @@
 """AI Global OS runtime kernel."""
 
-__version__ = "4.21.0"
+import config
+
+__version__ = config.VERSION

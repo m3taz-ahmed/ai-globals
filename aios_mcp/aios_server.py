@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import json
+import re
+from functools import cache
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -14,8 +16,22 @@ from runtime.kernel import Kernel
 
 mcp = FastMCP("ai-global-os")
 root = config.discover_root()
-kernel = Kernel(root)
-memory = MemoryStore(root)
+
+_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+@cache
+def _kernel() -> Kernel:
+    return Kernel(root)
+
+
+@cache
+def _memory() -> MemoryStore:
+    return MemoryStore(root)
+
+
+def _is_safe_name(name: str) -> bool:
+    return bool(_NAME_RE.fullmatch(name))
 
 
 @mcp.tool()
@@ -32,21 +48,21 @@ def query_rules(query: str) -> str:
 @mcp.tool()
 def run_workflow(id: str, context: dict[str, Any] | None = None) -> str:
     """Run a workflow by ID with optional context."""
-    result = kernel.run_workflow(id, context or {})
+    result = _kernel().run_workflow(id, context or {})
     return json.dumps(result, indent=2, default=str)
 
 
 @mcp.tool()
 def check_policy(action: str, args: dict[str, Any] | None = None) -> str:
     """Check if an action is allowed by policy and budget."""
-    result = kernel.act(action, **(args or {}))
+    result = _kernel().act(action, **(args or {}))
     return json.dumps(result, indent=2, default=str)
 
 
 @mcp.tool()
 def search_memory(query: str, kind: str | None = None) -> str:
     """Search memory store by keyword and optional kind."""
-    results = memory.search(query, kind)
+    results = _memory().search(query, kind)
     return json.dumps(
         [{"id": r.id, "kind": r.kind, "content": r.content[:500]} for r in results],
         indent=2,
@@ -56,14 +72,14 @@ def search_memory(query: str, kind: str | None = None) -> str:
 @mcp.tool()
 def search_memory_vector(query: str, k: int = 5) -> str:
     """Search memory by vector similarity (requires sentence-transformers + turbovec)."""
-    results = memory.search_vector(query, k=k)
+    results = _memory().search_vector(query, k=k)
     return json.dumps(results, indent=2)
 
 
 @mcp.tool()
 def get_related_memories(mem_id: str, relation: str | None = None) -> str:
     """Get memories related to the given memory ID."""
-    results = memory.related(mem_id, relation)
+    results = _memory().related(mem_id, relation)
     return json.dumps(
         [{"id": m.id, "kind": m.kind, "relation": r, "content": m.content[:500]} for m, r in results],
         indent=2,
@@ -73,7 +89,45 @@ def get_related_memories(mem_id: str, relation: str | None = None) -> str:
 @mcp.tool()
 def get_tech_stack(pkg: str, ver: str) -> str:
     """Get the tech-stack file for a package version."""
+    if not _is_safe_name(pkg) or not _is_safe_name(ver):
+        return json.dumps({"ok": False, "error": "Invalid package or version name"})
     path = root / "tech-stack" / f"{pkg}-{ver}.md"
+    if not path.exists():
+        return json.dumps({"exists": False, "path": str(path.relative_to(root))})
+    return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
+
+
+@mcp.tool()
+def list_rules() -> str:
+    """List available rule files."""
+    results = [{"id": p.stem, "file": str(p.relative_to(root))} for p in sorted(root.glob("rules/*.md"))]
+    return json.dumps(results, indent=2)
+
+
+@mcp.tool()
+def get_rule(id: str) -> str:
+    """Get a rule file by its stem (id)."""
+    if not _is_safe_name(id):
+        return json.dumps({"ok": False, "error": "Invalid rule id"})
+    path = root / "rules" / f"{id}.md"
+    if not path.exists():
+        return json.dumps({"exists": False, "path": str(path.relative_to(root))})
+    return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
+
+
+@mcp.tool()
+def list_workflows() -> str:
+    """List available workflow files."""
+    results = [{"id": p.stem, "file": str(p.relative_to(root))} for p in sorted(root.glob("workflows/*.md"))]
+    return json.dumps(results, indent=2)
+
+
+@mcp.tool()
+def get_workflow(id: str) -> str:
+    """Get a workflow file by its stem (id)."""
+    if not _is_safe_name(id):
+        return json.dumps({"ok": False, "error": "Invalid workflow id"})
+    path = root / "workflows" / f"{id}.md"
     if not path.exists():
         return json.dumps({"exists": False, "path": str(path.relative_to(root))})
     return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})

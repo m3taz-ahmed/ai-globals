@@ -128,20 +128,28 @@ class MemoryStore:
             valid_from=now,
             valid_to=valid_to,
         )
+        self.add_batch([mem])
+        return mem
+
+    def add_batch(self, memories: list[Memory]) -> list[Memory]:
+        """Insert a batch of memories in a single SQLite transaction and vector index write."""
+        if not memories:
+            return []
+        rows = [
+            (m.id, m.kind, m.content, m.source, m.meta, m.created_at, m.valid_from, m.valid_to)
+            for m in memories
+        ]
         with self._conn() as conn:
-            conn.execute(
+            conn.executemany(
                 """
                 INSERT INTO memories (id, kind, content, source, meta, created_at, valid_from, valid_to)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (mem.id, mem.kind, mem.content, mem.source, mem.meta, mem.created_at, mem.valid_from, mem.valid_to),
+                rows,
             )
         if self.vector and self.vector.is_available():
-            self.vector.add(mem.id, content)
-        return mem
-
-    def _escape_like(self, value: str) -> str:
-        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            self.vector.add_batch([m.id for m in memories], [m.content for m in memories])
+        return memories
 
     def _fts_query(self, query: str) -> str:
         """Sanitize a query for FTS5 MATCH by quoting each token."""
@@ -151,8 +159,9 @@ class MemoryStore:
         return " ".join(f'"{token.replace(chr(34), chr(34) + chr(34))}"' for token in tokens)
 
     def search(self, query: str, kind: str | None = None, limit: int = 10) -> list[Memory]:
-        """Search memory using FTS5 and optional kind filter."""
+        """Search memory using FTS5 and optional kind filter; excludes invalidated memories."""
         q = self._fts_query(query)
+        now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
             if kind:
                 rows = conn.execute(
@@ -160,10 +169,11 @@ class MemoryStore:
                     SELECT m.* FROM memories m
                     JOIN memories_fts fts ON m.rowid = fts.rowid
                     WHERE m.kind = ? AND memories_fts MATCH ?
+                        AND (m.valid_to IS NULL OR m.valid_to > ?)
                     ORDER BY rank
                     LIMIT ?
                     """,
-                    (kind, q, limit),
+                    (kind, q, now, limit),
                 ).fetchall()
             else:
                 rows = conn.execute(
@@ -171,10 +181,11 @@ class MemoryStore:
                     SELECT m.* FROM memories m
                     JOIN memories_fts fts ON m.rowid = fts.rowid
                     WHERE memories_fts MATCH ?
+                        AND (m.valid_to IS NULL OR m.valid_to > ?)
                     ORDER BY rank
                     LIMIT ?
                     """,
-                    (q, limit),
+                    (q, now, limit),
                 ).fetchall()
         return [self._row_to_memory(row) for row in rows]
 
@@ -228,17 +239,23 @@ class MemoryStore:
         )
 
     def delete_by_source(self, source: str) -> None:
-        if not source:
-            return
+        self.delete_by_source_batch([source])
+
+    def delete_by_source_batch(self, sources: list[str]) -> list[str]:
+        """Delete all memories for a list of sources and remove their vectors in one batch."""
+        if not sources:
+            return []
+        mem_ids: list[str] = []
         with self._conn() as conn:
-            rows = conn.execute("SELECT id FROM memories WHERE source = ?", (source,)).fetchall()
-            if not rows:
-                return
-            mem_ids = [row["id"] for row in rows]
-            conn.execute("DELETE FROM memories WHERE source = ?", (source,))
-        if self.vector and self.vector.is_available():
-            for mem_id in mem_ids:
-                self.vector.remove(mem_id)
+            for source in sources:
+                if not source:
+                    continue
+                rows = conn.execute("SELECT id FROM memories WHERE source = ?", (source,)).fetchall()
+                mem_ids.extend([row["id"] for row in rows])
+                conn.execute("DELETE FROM memories WHERE source = ?", (source,))
+        if self.vector and self.vector.is_available() and mem_ids:
+            self.vector.remove_batch(mem_ids)
+        return mem_ids
 
     def invalidate(self, mem_id: str) -> None:
         now = datetime.now(timezone.utc).isoformat()
