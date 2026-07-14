@@ -256,3 +256,37 @@ class TestWorkflows:
         result = _call("get_workflow", {"id": "../../secret"})
         data = json.loads(result)
         assert data["ok"] is False
+
+
+class TestExtensions:
+    def test_analyze_budget(self):
+        result = _call("analyze_budget", {})
+        data = json.loads(result)
+        assert "usage" in data
+        assert "budgets" in data
+
+    def test_add_and_invalidate_memory(self):
+        result = _call("add_memory", {"kind": "factual", "content": "test new mcp memory", "source": "mcp"})
+        data = json.loads(result)
+        assert data["ok"] is True
+        mem_id = data["id"]
+        
+        result2 = _call("invalidate_memory", {"id": mem_id})
+        data2 = json.loads(result2)
+        assert data2["ok"] is True
+        assert data2["id"] == mem_id
+        
+        result3 = _call("invalidate_memory", {"id": "nonexistent"})
+        data3 = json.loads(result3)
+        assert data3["ok"] is False
+
+    def test_resources_direct_call(self):
+        from aios_mcp.aios_server import get_rule_resource, get_workflow_resource
+        core_rule = get_rule_resource("core")
+        assert "Core rules" in core_rule
+        
+        bad_rule = get_rule_resource("../../etc/passwd")
+        assert bad_rule == ""
+        
+        test_wf = get_workflow_resource("test")
+        assert "[WORKFLOW] test" in test_wf

@@ -12,12 +12,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import config
+from memory.store import MemoryStore
 from runtime.kernel import Kernel
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
     root: Path = config.discover_root()
     kernel = Kernel(root)
+    memory = MemoryStore(root)
 
     def _auth(self) -> bool:
         token = os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
@@ -54,8 +56,36 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(self.kernel.act(action, **action_args), default=str).encode("utf-8"), "application/json")
         elif parsed.path == "/api/audit":
             self._send_audit()
+        elif parsed.path == "/api/memory/search":
+            qs = urllib.parse.parse_qs(parsed.query)
+            q = qs.get("q", [""])[0]
+            kind = qs.get("kind", [""])[0] or None
+            results = self.memory.search(q, kind)
+            items = [{"id": r.id, "kind": r.kind, "source": r.source, "content": r.content} for r in results]
+            self._send(200, json.dumps(items).encode("utf-8"), "application/json")
         elif parsed.path == "/" or parsed.path == "/index.html":
             self._serve_file(self.root / "dashboard" / "index.html")
+        elif parsed.path == "/index.css":
+            self._serve_file(self.root / "dashboard" / "index.css")
+        else:
+            self._send(404, b"Not found")
+
+    def do_POST(self) -> None:
+        if not self._auth():
+            self._send(401, b"Unauthorized")
+            return
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/api/policy/test":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(content_length)) if content_length > 0 else {}
+            action = body.get("action", "")
+            if not action or not action.isalnum():
+                self._send(400, b"Invalid action format")
+                return
+            args = body.get("args", {})
+            # Use dry_run=True to evaluate without audit or budget side effects
+            result = self.kernel.act(action, dry_run=True, **args)
+            self._send(200, json.dumps(result, default=str).encode("utf-8"), "application/json")
         else:
             self._send(404, b"Not found")
 

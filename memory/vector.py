@@ -139,6 +139,6 @@ class VectorMemory:
         u64s = np.array([_mem_id_to_uint64(mid) for mid in mem_ids], dtype=np.uint64)
         for u64 in u64s:
             self.id_map.pop(str(u64), None)
-        self.index.remove(u64s)
+            self.index.remove(int(u64))
         self.index.write(str(self.index_path))
         self._save_map()

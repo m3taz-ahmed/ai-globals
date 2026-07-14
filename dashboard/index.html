@@ -4,76 +4,281 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Global OS Dashboard</title>
-  <style>
-    body { font-family: system-ui, sans-serif; background: #0f1115; color: #e2e8f0; margin: 0; padding: 2rem; }
-    h1 { margin-top: 0; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
-    .card { background: #1a1d23; border-radius: 8px; padding: 1rem; }
-    .metric { font-size: 2rem; font-weight: 700; }
-    .error { color: #ef4444; }
-    .success { color: #22c55e; }
-    ul { padding-left: 1.2rem; }
-    pre { background: #0f1115; padding: 0.5rem; border-radius: 4px; overflow: auto; max-height: 300px; }
-    button { background: #22c55e; color: #0f1115; border: 0; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
-    button:hover { opacity: 0.9; }
-    .muted { color: #94a3b8; }
-  </style>
+  <link rel="stylesheet" href="index.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>AI Global OS</h1>
-  <p class="muted" id="status-line">Loading...</p>
-  <div class="grid">
-    <div class="card"><div>Version</div><div class="metric" id="version">-</div></div>
-    <div class="card"><div>Workflows</div><div class="metric" id="workflow-count">-</div></div>
-    <div class="card"><div>Rules</div><div class="metric" id="rule-count">-</div></div>
-    <div class="card"><div>Budgets</div><div class="metric" id="budget-count">-</div></div>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo"></div>
+        <h2>AI OS</h2>
+      </div>
+      <nav class="nav-menu">
+        <a href="#overview" class="active" onclick="switchTab('overview')">Overview</a>
+        <a href="#memory" onclick="switchTab('memory')">Memory Explorer</a>
+        <a href="#policy" onclick="switchTab('policy')">Policy Sandbox</a>
+        <a href="#audit" onclick="switchTab('audit')">Audit Logs</a>
+      </nav>
+      <div class="status-indicator">
+        <div class="dot" id="status-dot"></div>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h1 id="page-title">Overview</h1>
+        <div class="version-badge" id="version-badge">v---</div>
+      </header>
+
+      <!-- Overview Tab -->
+      <section id="overview-tab" class="tab-content active">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="label">Workflows</span>
+            <span class="value" id="workflow-count">-</span>
+          </div>
+          <div class="metric-card">
+            <span class="label">Rules</span>
+            <span class="value" id="rule-count">-</span>
+          </div>
+          <div class="metric-card">
+            <span class="label">Budgets</span>
+            <span class="value" id="budget-count">-</span>
+          </div>
+        </div>
+
+        <div class="glass-panel mt-2">
+          <div class="panel-header">
+            <h3>Registered Workflows</h3>
+            <button class="btn btn-outline" onclick="loadStatus()">Refresh</button>
+          </div>
+          <ul class="workflow-list" id="workflows-list"></ul>
+        </div>
+      </section>
+
+      <!-- Memory Explorer Tab -->
+      <section id="memory-tab" class="tab-content">
+        <div class="glass-panel">
+          <div class="search-bar">
+            <input type="text" id="memory-query" placeholder="Search memory..." onkeyup="if(event.key === 'Enter') searchMemory()">
+            <select id="memory-kind">
+              <option value="">All Kinds</option>
+              <option value="factual">Factual</option>
+              <option value="semantic">Semantic</option>
+              <option value="episodic">Episodic</option>
+            </select>
+            <button class="btn btn-primary" onclick="searchMemory()">Search</button>
+          </div>
+          <div class="results-container mt-2" id="memory-results">
+            <p class="muted">Enter a query to search FTS memory.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Policy Sandbox Tab -->
+      <section id="policy-tab" class="tab-content">
+        <div class="glass-panel">
+          <p class="muted mb-2">Test policies and budgets via a dry-run evaluation. No audit logs or budget deductions are recorded.</p>
+          <div class="form-group">
+            <label>Action Type</label>
+            <input type="text" id="policy-action" placeholder="e.g. Read, Write, RunCommand">
+          </div>
+          <div class="form-group">
+            <label>Arguments (JSON)</label>
+            <textarea id="policy-args" rows="5" placeholder='{"path": "file.txt", "approved": true}'></textarea>
+          </div>
+          <button class="btn btn-primary mt-1" onclick="testPolicy()">Evaluate Policy</button>
+          
+          <div class="results-container mt-2" id="policy-result" style="display: none;"></div>
+        </div>
+      </section>
+
+      <!-- Audit Logs Tab -->
+      <section id="audit-tab" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Recent Activity</h3>
+            <button class="btn btn-outline" onclick="loadAudit()">Refresh</button>
+          </div>
+          <div class="audit-log-container mt-1" id="audit-logs">
+            <p class="muted">Loading audit logs...</p>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
-  <div class="card" style="margin-top: 1rem;">
-    <h3>Workflows <button onclick="load()">Refresh</button></h3>
-    <ul id="workflows"></ul>
-  </div>
-  <div class="card" style="margin-top: 1rem;">
-    <h3>Policy check: edit</h3>
-    <pre id="policy-check">-</pre>
-  </div>
-  <div class="card" style="margin-top: 1rem;">
-    <h3>Recent audit</h3>
-    <pre id="audit">-</pre>
-  </div>
+
   <script>
-    async function fetchJson(path) {
+    // Navigation
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-menu a').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(`${tabId}-tab`).classList.add('active');
+      document.querySelector(`a[href="#${tabId}"]`).classList.add('active');
+      
+      const titles = {
+        'overview': 'Overview',
+        'memory': 'Memory Explorer',
+        'policy': 'Policy Sandbox',
+        'audit': 'Audit Logs'
+      };
+      document.getElementById('page-title').textContent = titles[tabId];
+      
+      if (tabId === 'audit') loadAudit();
+    }
+
+    // API Helpers
+    async function fetchJson(path, options = {}) {
       try {
-        const res = await fetch(path);
+        const res = await fetch(path, options);
         if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
         return await res.json();
       } catch (e) {
         return { error: e.message };
       }
     }
-    async function load() {
-      const statusLine = document.getElementById('status-line');
+
+    function setStatus(ok, msg) {
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      dot.className = 'dot ' + (ok ? 'online' : 'offline');
+      text.textContent = msg;
+    }
+
+    // Load Overview Status
+    async function loadStatus() {
       const data = await fetchJson('/api/status');
       if (data.error) {
-        statusLine.textContent = 'Error: ' + data.error;
-        statusLine.className = 'error';
+        setStatus(false, 'Disconnected');
         return;
       }
-      statusLine.textContent = 'Connected';
-      statusLine.className = 'success';
-      document.getElementById('version').textContent = data.version;
+      setStatus(true, 'Connected');
+      document.getElementById('version-badge').textContent = 'v' + data.version;
       document.getElementById('workflow-count').textContent = data.workflows.length;
       document.getElementById('rule-count').textContent = data.rules.length;
       document.getElementById('budget-count').textContent = data.budgets.length;
-      const wf = document.getElementById('workflows');
+      
+      const wf = document.getElementById('workflows-list');
       wf.innerHTML = '';
-      data.workflows.forEach(w => { const li = document.createElement('li'); li.textContent = w; wf.appendChild(li); });
-      const check = await fetchJson('/api/check?action=edit');
-      document.getElementById('policy-check').textContent = JSON.stringify(check, null, 2);
-      const audit = await fetchJson('/api/audit');
-      document.getElementById('audit').textContent = JSON.stringify(audit, null, 2);
+      data.workflows.forEach(w => { 
+        const li = document.createElement('li'); 
+        li.textContent = w; 
+        wf.appendChild(li); 
+      });
     }
-    load();
-    setInterval(load, 10000);
+
+    // Memory Search
+    async function searchMemory() {
+      const q = document.getElementById('memory-query').value;
+      const kind = document.getElementById('memory-kind').value;
+      const resContainer = document.getElementById('memory-results');
+      
+      if (!q) {
+        resContainer.innerHTML = '<p class="muted">Enter a query to search FTS memory.</p>';
+        return;
+      }
+      
+      resContainer.innerHTML = '<div class="spinner"></div> Searching...';
+      
+      const data = await fetchJson(`/api/memory/search?q=${encodeURIComponent(q)}&kind=${encodeURIComponent(kind)}`);
+      if (data.error) {
+        resContainer.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        return;
+      }
+      
+      if (data.length === 0) {
+        resContainer.innerHTML = '<p class="muted">No results found.</p>';
+        return;
+      }
+      
+      resContainer.innerHTML = data.map(item => `
+        <div class="memory-item">
+          <div class="memory-header">
+            <span class="badge">${item.kind}</span>
+            <span class="source">${item.source}</span>
+          </div>
+          <pre class="memory-content">${item.content}</pre>
+        </div>
+      `).join('');
+    }
+
+    // Policy Sandbox
+    async function testPolicy() {
+      const action = document.getElementById('policy-action').value;
+      const argsStr = document.getElementById('policy-args').value;
+      const resContainer = document.getElementById('policy-result');
+      
+      if (!action) return;
+      
+      let args = {};
+      if (argsStr) {
+        try {
+          args = JSON.parse(argsStr);
+        } catch (e) {
+          resContainer.style.display = 'block';
+          resContainer.innerHTML = `<div class="error-msg">Invalid JSON in arguments</div>`;
+          return;
+        }
+      }
+      
+      resContainer.style.display = 'block';
+      resContainer.innerHTML = '<div class="spinner"></div> Evaluating...';
+      
+      const data = await fetchJson('/api/policy/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, args })
+      });
+      
+      if (data.error) {
+        resContainer.innerHTML = `<div class="policy-result denied">
+          <h4>Denied</h4>
+          <p>${data.error}</p>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        </div>`;
+      } else {
+        resContainer.innerHTML = `<div class="policy-result allowed">
+          <h4>Allowed</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        </div>`;
+      }
+    }
+
+    // Audit Logs
+    async function loadAudit() {
+      const container = document.getElementById('audit-logs');
+      const data = await fetchJson('/api/audit');
+      if (data.error) {
+        container.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        return;
+      }
+      
+      if (data.length === 0) {
+        container.innerHTML = '<p class="muted">No audit logs found.</p>';
+        return;
+      }
+      
+      container.innerHTML = data.reverse().map(log => {
+        let typeClass = 'info';
+        if (log.type.includes('denied') || log.type.includes('blocked')) typeClass = 'error';
+        if (log.type.includes('allowed')) typeClass = 'success';
+        if (log.type.includes('asked')) typeClass = 'warning';
+        
+        return `
+        <div class="audit-entry">
+          <div class="audit-time">${log.timestamp}</div>
+          <div class="audit-type type-${typeClass}">${log.type}</div>
+          <pre class="audit-data">${JSON.stringify(log.data, null, 2)}</pre>
+        </div>
+      `}).join('');
+    }
+
+    // Init
+    loadStatus();
+    setInterval(loadStatus, 15000);
   </script>
 </body>
 </html>

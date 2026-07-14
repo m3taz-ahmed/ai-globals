@@ -39,6 +39,17 @@ def _truncate(content: str, limit: int = 500) -> str:
     return content if len(content) <= limit else content[:limit] + "..."
 
 
+def _register_plugins() -> None:
+    """Load enabled plugins and register their MCP tools/resources."""
+    kernel = _kernel()
+    memory = _memory()
+    kernel.load_plugins(memory)
+    for tool in kernel.plugins.get_tools():
+        mcp.add_tool(tool)
+    for resource in kernel.plugins.get_resources():
+        mcp.add_resource(resource)
+
+
 @mcp.tool()
 def query_rules(query: str) -> str:
     """Query AI Global OS rules by keyword."""
@@ -62,6 +73,20 @@ def check_policy(action: str, args: dict[str, Any] | None = None) -> str:
     """Check if an action is allowed by policy and budget."""
     result = _kernel().act(action, **(args or {}))
     return json.dumps(result, indent=2, default=str)
+
+
+@mcp.tool()
+def analyze_budget() -> str:
+    """Analyze current token and cost consumption across all budgets and scopes."""
+    kernel = _kernel()
+    return json.dumps(
+        {
+            "usage": kernel.budget.usage,
+            "budgets": {k: v.__dict__ for k, v in kernel.budget.budgets.items()}
+        },
+        indent=2,
+        default=str
+    )
 
 
 @mcp.tool()
@@ -149,6 +174,25 @@ def get_related_memories(mem_id: str, relation: str | None = None) -> str:
 
 
 @mcp.tool()
+def add_memory(kind: str, content: str, source: str) -> str:
+    """Add a new memory to the store."""
+    if kind not in ["factual", "semantic", "episodic"]:
+        return json.dumps({"ok": False, "error": "Invalid kind. Must be factual, semantic, or episodic."})
+    mem = _memory().add(kind, content, source=source)
+    return json.dumps({"ok": True, "id": mem.id})
+
+
+@mcp.tool()
+def invalidate_memory(id: str) -> str:
+    """Invalidate (deprecate) a memory by ID."""
+    store = _memory()
+    if store.get(id) is None:
+        return json.dumps({"ok": False, "error": "Memory not found"})
+    store.invalidate(id)
+    return json.dumps({"ok": True, "id": id})
+
+
+@mcp.tool()
 def get_tech_stack(pkg: str, ver: str) -> str:
     """Get the tech-stack file for a package version."""
     if not _is_safe_name(pkg) or not _is_safe_name(ver):
@@ -195,21 +239,19 @@ def get_workflow(id: str) -> str:
     return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
 
 
-@mcp.resource("rules://vocabulary")
-def get_vocabulary() -> str:
-    path = root / "rules" / "vocabulary.md"
+@mcp.resource("rules://{id}")
+def get_rule_resource(id: str) -> str:
+    if not _is_safe_name(id):
+        return ""
+    path = root / "rules" / f"{id}.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
-@mcp.resource("rules://anti-patterns")
-def get_anti_patterns() -> str:
-    path = root / "rules" / "anti-patterns.md"
-    return path.read_text(encoding="utf-8") if path.exists() else ""
-
-
-@mcp.resource("workflows://02-execution")
-def get_execution_workflow() -> str:
-    path = root / "workflows" / "02-execution.md"
+@mcp.resource("workflows://{id}")
+def get_workflow_resource(id: str) -> str:
+    if not _is_safe_name(id):
+        return ""
+    path = root / "workflows" / f"{id}.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
@@ -217,6 +259,9 @@ def get_execution_workflow() -> str:
 def get_agents() -> str:
     path = root / "AGENTS.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+_register_plugins()
 
 
 if __name__ == "__main__":

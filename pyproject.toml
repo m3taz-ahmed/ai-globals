@@ -51,7 +51,7 @@ py-modules = ["cli", "config"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["runtime*", "memory*", "aios_mcp*"]
+include = ["runtime*", "memory*", "aios_mcp*", "plugins*"]
 exclude = ["runtime.tests*", "memory.tests*", "tests*"]
 
 [tool.setuptools.package-data]

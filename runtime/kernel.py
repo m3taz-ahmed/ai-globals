@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,8 +13,12 @@ import config
 
 from .audit import AuditLogger
 from .budget import BudgetManager
+from .plugin import PluginManager
 from .policy import PolicyEngine
 from .workflow import WorkflowRunner
+
+if TYPE_CHECKING:
+    from memory.store import MemoryStore
 
 
 class ActionSchema(BaseModel):
@@ -38,8 +42,9 @@ class Kernel:
         self.budget = BudgetManager(self.root)
         self.workflows = WorkflowRunner(self.root)
         self.audit = AuditLogger(self.root)
+        self.plugins = PluginManager(self, self.root)
 
-    def act(self, action_type: str, **kwargs: Any) -> dict[str, Any]:
+    def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Evaluate action through policy + budget gates."""
         try:
             action_data = ActionSchema(type=action_type, **kwargs).model_dump()
@@ -48,11 +53,13 @@ class Kernel:
 
         decision = self.policy.can(action_data["type"], **action_data)
         if decision["decision"] == "deny":
-            self.audit.log("policy.denied", {"action": action_data["type"], "args": kwargs, "decision": decision})
+            if not dry_run:
+                self.audit.log("policy.denied", {"action": action_data["type"], "args": kwargs, "decision": decision})
             return {"ok": False, "error": f"Policy denied by {decision['rule']}", "decision": decision}
 
         if decision["decision"] == "ask" and not action_data.get("approved"):
-            self.audit.log("policy.asked", {"action": action_data["type"], "args": kwargs, "decision": decision})
+            if not dry_run:
+                self.audit.log("policy.asked", {"action": action_data["type"], "args": kwargs, "decision": decision})
             return {
                 "ok": False,
                 "error": "Action requires explicit approval (approved=True)",
@@ -60,13 +67,17 @@ class Kernel:
                 "decision": decision,
             }
 
-        budget_result = self.budget.check("session", action_data.get("tokens", 0), action_data.get("cost", 0.0))
-        self.budget.save()
+        budget_result = self.budget.check("session", action_data.get("tokens", 0), action_data.get("cost", 0.0), dry_run=dry_run)
+        if not dry_run:
+            self.budget.save()
+            if not budget_result["ok"]:
+                self.audit.log("budget.blocked", {"action": action_data["type"], "args": kwargs, "budget": budget_result})
+            else:
+                self.audit.log("action.allowed", {"action": action_data["type"], "args": kwargs, "decision": decision, "budget": budget_result})
+
         if not budget_result["ok"]:
-            self.audit.log("budget.blocked", {"action": action_data["type"], "args": kwargs, "budget": budget_result})
             return {"ok": False, "error": budget_result["reason"], "budget": budget_result}
 
-        self.audit.log("action.allowed", {"action": action_data["type"], "args": kwargs, "decision": decision, "budget": budget_result})
         return {
             "ok": True,
             "decision": decision,
@@ -85,6 +96,10 @@ class Kernel:
     def list_workflows(self) -> list[str]:
         return self.workflows.list_workflows()
 
+    def load_plugins(self, memory: MemoryStore | None = None) -> None:
+        """Load all enabled plugins and wire memory if available."""
+        self.plugins.load_all(memory)
+
     def save(self) -> None:
         self.budget.save()
 
@@ -95,6 +110,7 @@ class Kernel:
             "workflows": self.list_workflows(),
             "budgets": list(self.budget.budgets.keys()),
             "rules": [r.name for r in self.policy.rules],
+            "plugins": self.plugins.list_plugins(),
         }
 
 

@@ -127,7 +127,7 @@ class BudgetManager:
                     }
                 )
 
-    def check(self, scope: str, tokens: int = 0, cost: float = 0.0, calls: int = 0) -> dict[str, Any]:
+    def check(self, scope: str, tokens: int = 0, cost: float = 0.0, calls: int = 0, dry_run: bool = False) -> dict[str, Any]:
         """Return {'ok': bool, 'reason': str | None, 'action': str}."""
         with self._lock:
             budget = self.budgets.get(scope)
@@ -153,10 +153,12 @@ class BudgetManager:
 
             if exceeded:
                 if budget.on_exceed == "warn":
-                    u.update(projected)
+                    if not dry_run:
+                        u.update(projected)
                     return {"ok": True, "reason": f"Budget exceeded: {exceeded}", "action": "warn"}
                 if budget.on_exceed == "fallback" and budget.fallback_model:
-                    u.update(projected)
+                    if not dry_run:
+                        u.update(projected)
                     return {
                         "ok": True,
                         "reason": f"Budget exceeded: {exceeded}",
@@ -165,5 +167,6 @@ class BudgetManager:
                     }
                 return {"ok": False, "reason": f"Budget exceeded: {exceeded}", "action": "block"}
 
-            u.update(projected)
+            if not dry_run:
+                u.update(projected)
             return {"ok": True, "reason": None, "action": "allow"}
