@@ -13,6 +13,8 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12"]
     runs-on: ${{ matrix.os }}
+    env:
+      PYTEST_ADDOPTS: "--no-cov"
 
     steps:
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -24,12 +26,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[dev,vector]
+        pip install -e '.[dev]'
     - name: AI OS CI gates
-      run: |
-        ai-os ci
-    - name: Validate globals manifest
-      run: |
-        python eval/harness.py
+      run: ai-os ci
       # Supply-chain hardening: actions above are pinned to immutable commit SHAs.
       # For releases, add SBOM generation (e.g. anchore/syft) and Cosign signing.

@@ -8,7 +8,7 @@ alwaysApply: true
 [OBJ] Cross-tool canonical instruction for all AI coding agents.
 [RULES]
 1. [REQ] Cold Start: Read `global-roles.md` then `global-workflow.md` first. Never cache.
-2. [REQ] Persona: Detect the user's persona with `ai-os persona detect "<user prompt>"` or `Kernel.detect_persona` and adopt the matching persona for the session.
+2. [REQ] Persona: Detect the user's persona with `ai-os persona detect "<user prompt>"` or `Kernel.detect_persona`; adopt the returned persona and read `skills/<skill>/SKILL.md` before acting.
 3. [REQ] Load Context Layers: L0 `rules/core-behavioral-compact.md`, `skills/`; L1 `rules/vocabulary.md`, `rules/anti-patterns.md`, `tech-stack/useful-repos.md`; L2 `rules/*.md` + matched `tech-stack/<pkg>-<ver>.md`; L3 `workflows/*.md` per task.
 4. [REQ] VersionGate `[VER-01]`: Before loading any `tech-stack/` file, read `composer.lock` or `package-lock.json` and load only the matching version file. Never default to v3 for Filament or v11 for Laravel.
 5. [REQ] Use MCP: Query Context7 MCP for any external library/framework before implementing code. Never rely on memory.

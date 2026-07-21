@@ -220,6 +220,18 @@ class PersonaDetector:
         },
     }
 
+    PERSONA_SKILLS: ClassVar[dict[str, str]] = {
+        "ARCH": "ai-agents-architect",
+        "QA": "qa-debugger",
+        "UX": "frontend-ui-expert",
+        "DEV": "backend-api-expert",
+        "SRE": "devops-lord",
+        "SEC": "security-auditor",
+        "GAME": "game-architect",
+        "PLAY": "google-play-warlord",
+        "MOBILE": "mobile-game-producer",
+    }
+
     def __init__(self, default: str = "ARCH") -> None:
         if default not in self.PERSONAS:
             raise ValueError(f"Unknown default persona: {default}")
@@ -244,6 +256,7 @@ class PersonaDetector:
 
         return {
             "persona": best,
+            "skill": self.PERSONA_SKILLS.get(best, self.PERSONA_SKILLS[self.default]),
             "scores": normalized,
             "default": self.default,
         }

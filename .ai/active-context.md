@@ -1,5 +1,24 @@
 # Active Context
 
+## 2026-07-21 (9) — Persona Skills + CI/CD Hardening
+
+- Created three new persona skills with Context7 IDs:
+  - `skills/game-architect/SKILL.md`
+  - `skills/google-play-warlord/SKILL.md`
+  - `skills/mobile-game-producer/SKILL.md`
+- Added `PERSONA_SKILLS` mapping in `runtime/persona.py`; `detect()` now returns `skill` field.
+- Updated `AGENTS.md` and synced all agent config files (`.windsurfrules`, `.cursor/rules/ai-global-os.mdc`, `.claude/CLAUDE.md`) to load the skill returned by persona detection.
+- Improved CI/CD workflows:
+  - `graphify.yml` creates a Pull Request instead of pushing directly, and fails on PRs if graph is stale.
+  - `ci.yml` and `validate.yml` disable `pytest-cov` with `PYTEST_ADDOPTS: --no-cov` for faster matrix runs.
+- Validation: `ruff`, `mypy`, `pytest --no-cov` 263 passed, `eval/harness.py` all_pass true, `validate-globals` zero errors, `graphify update`, `memory ingest` done.
+
+## 2026-07-21 (8) — CI/CD Fix
+
+- Fixed `.github/workflows/graphify.yml`: it was trying `pip install graphify` (package does not exist). Updated to `pip install graphifyy==0.9.16` (official PyPI package; CLI command stays `graphify`), pinned action SHAs, and fixed `git diff`/`commit`/`push` logic.
+- Optimized `.github/workflows/ci.yml` and `validate.yml`: pinned SHAs, removed heavy `[vector]` extra from CI install (vector tests use mocks/tolerant fallbacks), and removed redundant `python eval/harness.py` step since `ai-os ci` already runs it.
+- Local gates still green: ruff, mypy, pytest 262 passed.
+
 ## 2026-07-21 (7) — Auto Persona Selection
 
 - Implemented `runtime/persona.py` with weighted keyword detection for the 9 personas (ARCH, QA, UX, DEV, SRE, SEC, GAME, PLAY, MOBILE).

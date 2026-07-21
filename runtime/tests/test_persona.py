@@ -45,6 +45,7 @@ class TestPersonaDetector:
         d = PersonaDetector()
         result = d.detect("optimize the babylon.js game loop for 60 fps")
         assert result["persona"] == "GAME"
+        assert result["skill"] == "game-architect"
 
     def test_detects_google_play(self):
         d = PersonaDetector()
@@ -63,6 +64,12 @@ class TestPersonaDetector:
 
     def test_detect_persona_helper(self):
         assert detect_persona("deploy with kubernetes and terraform") == "SRE"
+
+    def test_persona_skill_mapping(self):
+        d = PersonaDetector()
+        result = d.detect("backend api server")
+        assert result["persona"] == "DEV"
+        assert result["skill"] == "backend-api-expert"
 
 
 class TestKernelPersonaIntegration:
