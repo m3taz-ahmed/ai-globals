@@ -430,6 +430,12 @@ def main() -> None:
     file_data = run_pass1(rule_files, global_path, manifest, force, ctx)
 
     new_manifest = manifest.copy()
+    # Remove stale manifest entries for files that no longer exist
+    existing_files = set(rule_files)
+    for stale in list(new_manifest.keys()):
+        if stale not in existing_files:
+            del new_manifest[stale]
+
     for rel in file_data:
         h, err = validate_single_file(rel, file_data[rel], ctx, global_path)
         if not err and h:

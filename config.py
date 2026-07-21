@@ -15,13 +15,38 @@ def discover_root() -> Path:
     1. AGENT_OS_ROOT environment variable.
     2. The directory containing the current install (parent of config.py).
     """
-    env_root = os.environ.get("AGENT_OS_ROOT")
+    return _resolve_env_dir("AGENT_OS_ROOT", Path(__file__).resolve().parent)
+
+
+def discover_project_root() -> Path:
+    """Discover active project root.
+
+    Order:
+    1. AGENT_PROJECT_ROOT environment variable.
+    2. AGENT_OS_ROOT environment variable.
+    3. Current working directory if it contains `.ai/active-context.md`.
+    4. The directory containing the current install (parent of config.py).
+    """
+    project_env = os.environ.get("AGENT_PROJECT_ROOT")
+    if project_env:
+        return _resolve_env_dir("AGENT_PROJECT_ROOT", discover_root())
+    os_env = os.environ.get("AGENT_OS_ROOT")
+    if os_env:
+        return _resolve_env_dir("AGENT_OS_ROOT", discover_root())
+    cwd = Path.cwd()
+    if (cwd / ".ai" / "active-context.md").exists():
+        return cwd.resolve()
+    return discover_root()
+
+
+def _resolve_env_dir(env_var: str, fallback: Path) -> Path:
+    env_root = os.environ.get(env_var)
     if env_root:
         path = Path(env_root)
         if path.is_dir():
             return path.resolve()
-        raise ValueError(f"AGENT_OS_ROOT points to non-existent directory: {env_root}")
-    return Path(__file__).resolve().parent
+        raise ValueError(f"{env_var} points to non-existent directory: {env_root}")
+    return fallback
 
 
 def _version() -> str:

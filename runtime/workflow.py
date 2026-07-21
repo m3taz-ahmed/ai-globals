@@ -6,10 +6,14 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from .mcp_client import McpClient, parse_mcp_command
+from .persona import PersonaDetector
 
 
 @dataclass
@@ -34,11 +38,13 @@ class Workflow:
 class WorkflowRunner:
     """Loads and runs markdown workflows with durable SQLite state."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, os_root: Path | None = None) -> None:
         self.root = root
+        self.os_root = os_root or root
         self.dir = root / "workflows"
         self.db_path = root / "state" / "workflow.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.persona = PersonaDetector()
         self._init_schema()
 
     def _conn(self) -> sqlite3.Connection:
@@ -70,7 +76,16 @@ class WorkflowRunner:
             return Workflow.load(path)
         return None
 
-    def run(self, workflow_id: str, context: dict[str, Any]) -> dict[str, Any]:
+    def run(
+        self,
+        workflow_id: str,
+        context: dict[str, Any],
+        act: Callable[..., dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        context = dict(context)
+        prompt = context.get("message") or context.get("request") or context.get("query")
+        if "persona" not in context and isinstance(prompt, str) and prompt.strip():
+            context["persona"] = self.persona.detect(prompt)["persona"]
         wf = self.get(workflow_id)
         if not wf:
             return {"ok": False, "error": f"Workflow {workflow_id} not found"}
@@ -78,11 +93,11 @@ class WorkflowRunner:
         steps = self._parse_steps(wf)
         results = []
         for i, step in enumerate(steps):
-            result = self._execute_step(step, context)
+            result = self._execute_step(step, context, act=act)
             results.append(result)
             self._checkpoint(run_id, i, result)
         self._finish_run(run_id)
-        return {"ok": True, "workflow": workflow_id, "run_id": run_id, "steps": results}
+        return {"ok": True, "workflow": workflow_id, "run_id": run_id, "context": context, "steps": results}
 
     def _start_run(self, workflow_id: str, context: dict[str, Any]) -> str:
         run_id = f"{workflow_id}-{datetime.now(timezone.utc).isoformat()}"
@@ -110,6 +125,12 @@ class WorkflowRunner:
         with self._conn() as conn:
             conn.execute("UPDATE workflow_state SET updated_at = ? WHERE id = ?", (now, run_id))
 
+    def _parse_mcp(self, text: str) -> tuple[str, str, dict[str, Any]] | None:
+        parsed = parse_mcp_command(text)
+        if parsed is None:
+            return None
+        return parsed
+
     def _parse_steps(self, wf: Workflow) -> list[dict[str, Any]]:
         steps = []
         for line in wf.rules:
@@ -118,8 +139,48 @@ class WorkflowRunner:
                 steps.append({"type": m.group(1), "text": m.group(2)})
         return steps
 
-    def _execute_step(self, step: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
-        return {"type": step["type"], "text": step["text"], "status": "ok"}
+    def _execute_step(
+        self,
+        step: dict[str, Any],
+        context: dict[str, Any],
+        act: Callable[..., dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        step_type = step["type"]
+        text = step["text"]
+        result: dict[str, Any] = {"type": step_type, "text": text, "status": "ok"}
+
+        if step_type == "PROHIBIT":
+            result["status"] = "prohibited"
+            return result
+
+        if step_type == "REQ":
+            return result
+
+        if step_type == "CMD" and act:
+            cmd = text.strip()
+            if cmd.startswith("bash:"):
+                shell_cmd = cmd[5:].strip()
+                act_result = act("Bash", command=shell_cmd, approved=True, dry_run=True)
+                result["status"] = "allowed" if act_result["ok"] else act_result.get("decision", {}).get("decision", "denied")
+                result["evaluation"] = act_result
+            elif cmd.startswith("mcp:"):
+                mcp_cmd = cmd[4:].strip()
+                parsed = self._parse_mcp(mcp_cmd)
+                if parsed is None:
+                    result["status"] = "mcp_parse_error"
+                else:
+                    server, tool, args = parsed
+                    client = McpClient(server, self.os_root)
+                    if not client.is_configured():
+                        result["status"] = "mcp_not_configured"
+                    else:
+                        act_result = client.call_tool(tool, args)
+                        result["status"] = "allowed" if act_result["ok"] else "mcp_call_failed"
+                        result["evaluation"] = act_result
+            else:
+                result["status"] = "noop"
+
+        return result
 
     def get_run(self, run_id: str) -> dict[str, Any] | None:
         with self._conn() as conn:

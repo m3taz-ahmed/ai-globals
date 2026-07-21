@@ -1,10 +1,36 @@
-tmp
-scratch
-brain
-state
-__pycache__
+# Git
 .git
 .github
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
 .pytest_cache
 .mypy_cache
 .ruff_cache
+
+# Local state / generated
+state/
+brain/
+graphify-out/
+.agents/
+.coverage
+integrity.manifest
+GRAPH_REPORT.md
+
+# Editors
+.vscode
+.idea
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary scripts / dev helpers
+scripts/apply_enum_replacements.py
+check_action.py
+tmp/
+scratch/

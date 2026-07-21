@@ -1,0 +1,13 @@
+name: time-based-access
+apiVersion: governance.ai-global-os/v1
+default_action: ask
+rules:
+  - name: allow-reads-business-hours
+    condition: "type in ['view', 'Read', 'grep', 'Glob']"
+    action: allow
+    description: Read-only operations allowed during all hours.
+
+  - name: ask-deploys-outside-hours
+    condition: "type in ['deploy', 'release', 'apply']"
+    action: ask
+    description: Deployments require explicit approval outside business hours.

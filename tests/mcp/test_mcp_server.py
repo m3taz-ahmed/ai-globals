@@ -29,6 +29,10 @@ from aios_mcp.aios_server import mcp  # noqa: E402
 
 
 def _call(name: str, arguments: dict) -> str:
+    from aios_mcp import aios_server
+
+    os.environ["AGENT_OS_ROOT"] = str(ROOT)
+    aios_server.reset_state()
     return mcp._tool_manager.get_tool(name).fn(**arguments)
 
 

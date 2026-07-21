@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import re
-from functools import cache
+from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -16,19 +16,44 @@ from memory.store import MemoryStore
 from runtime.kernel import Kernel
 
 mcp = FastMCP("ai-global-os")
-root = config.discover_root()
 
 _NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
+_kernel_instance: Kernel | None = None
+_memory_instance: MemoryStore | None = None
+_current_root: Path | None = None
 
-@cache
+
+def _root() -> Path:
+    """Discover root each call to react to env changes."""
+    return config.discover_root()
+
+
+def reset_state() -> None:
+    """Reset cached kernel and memory instances. Useful for tests and env changes."""
+    global _kernel_instance, _memory_instance, _current_root
+    _kernel_instance = None
+    _memory_instance = None
+    _current_root = None
+
+
 def _kernel() -> Kernel:
-    return Kernel(root)
+    """Return a Kernel instance, recreating if the discovered root changes."""
+    global _kernel_instance, _current_root
+    discovered = _root()
+    if _kernel_instance is None or _current_root != discovered:
+        _current_root = discovered
+        _kernel_instance = Kernel(_current_root)
+    return _kernel_instance
 
 
-@cache
 def _memory() -> MemoryStore:
-    return MemoryStore(root)
+    """Return a MemoryStore instance tied to the discovered root."""
+    global _memory_instance
+    discovered = _root()
+    if _memory_instance is None or _memory_instance.root != discovered:
+        _memory_instance = MemoryStore(discovered)
+    return _memory_instance
 
 
 def _is_safe_name(name: str) -> bool:
@@ -53,6 +78,7 @@ def _register_plugins() -> None:
 @mcp.tool()
 def query_rules(query: str) -> str:
     """Query AI Global OS rules by keyword."""
+    root = _root()
     results: list[dict[str, str]] = []
     for p in root.glob("rules/*.md"):
         content = p.read_text(encoding="utf-8")
@@ -158,7 +184,7 @@ def query_context(query: str, k: int = 5, kind: str | None = None) -> str:
 @mcp.tool()
 def ingest_memory() -> str:
     """Ingest rules, tech-stack, workflows, skills, and AGENTS.md into memory."""
-    ingestor = Ingestor(_memory(), root)
+    ingestor = Ingestor(_memory(), _root())
     ids = ingestor.ingest_all()
     return json.dumps({"ingested": len(ids)}, indent=2)
 
@@ -197,6 +223,7 @@ def get_tech_stack(pkg: str, ver: str) -> str:
     """Get the tech-stack file for a package version."""
     if not _is_safe_name(pkg) or not _is_safe_name(ver):
         return json.dumps({"ok": False, "error": "Invalid package or version name"})
+    root = _root()
     path = root / "tech-stack" / f"{pkg}-{ver}.md"
     if not path.exists():
         return json.dumps({"exists": False, "path": str(path.relative_to(root))})
@@ -206,6 +233,7 @@ def get_tech_stack(pkg: str, ver: str) -> str:
 @mcp.tool()
 def list_rules() -> str:
     """List available rule files."""
+    root = _root()
     results = [{"id": p.stem, "file": str(p.relative_to(root))} for p in sorted(root.glob("rules/*.md"))]
     return json.dumps(results, indent=2)
 
@@ -215,6 +243,7 @@ def get_rule(id: str) -> str:
     """Get a rule file by its stem (id)."""
     if not _is_safe_name(id):
         return json.dumps({"ok": False, "error": "Invalid rule id"})
+    root = _root()
     path = root / "rules" / f"{id}.md"
     if not path.exists():
         return json.dumps({"exists": False, "path": str(path.relative_to(root))})
@@ -224,6 +253,7 @@ def get_rule(id: str) -> str:
 @mcp.tool()
 def list_workflows() -> str:
     """List available workflow files."""
+    root = _root()
     results = [{"id": p.stem, "file": str(p.relative_to(root))} for p in sorted(root.glob("workflows/*.md"))]
     return json.dumps(results, indent=2)
 
@@ -233,6 +263,7 @@ def get_workflow(id: str) -> str:
     """Get a workflow file by its stem (id)."""
     if not _is_safe_name(id):
         return json.dumps({"ok": False, "error": "Invalid workflow id"})
+    root = _root()
     path = root / "workflows" / f"{id}.md"
     if not path.exists():
         return json.dumps({"exists": False, "path": str(path.relative_to(root))})
@@ -243,6 +274,7 @@ def get_workflow(id: str) -> str:
 def get_rule_resource(id: str) -> str:
     if not _is_safe_name(id):
         return ""
+    root = _root()
     path = root / "rules" / f"{id}.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
@@ -251,12 +283,14 @@ def get_rule_resource(id: str) -> str:
 def get_workflow_resource(id: str) -> str:
     if not _is_safe_name(id):
         return ""
+    root = _root()
     path = root / "workflows" / f"{id}.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
 @mcp.resource("os://AGENTS")
 def get_agents() -> str:
+    root = _root()
     path = root / "AGENTS.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
 

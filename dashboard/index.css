@@ -137,6 +137,12 @@ body {
   font-weight: 600;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .version-badge {
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -373,3 +379,33 @@ pre {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* Chat */
+.chat-panel { display: flex; flex-direction: column; height: 70vh; }
+.chat-history { flex-grow: 1; overflow-y: auto; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; }
+.chat-input { display: flex; gap: 0.5rem; }
+.chat-msg { margin-bottom: 0.75rem; padding: 0.5rem; border-radius: 6px; }
+.chat-msg.user { background: rgba(16,185,129,0.1); }
+.chat-msg.assistant { background: rgba(59,130,246,0.1); }
+
+/* Light theme */
+body.light {
+  --bg-base: #f8fafc;
+  --bg-panel: rgba(255, 255, 255, 0.9);
+  --bg-hover: rgba(226, 232, 240, 0.9);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: rgba(15, 23, 42, 0.1);
+  background-image: none;
+}
+body.light pre,
+body.light .memory-item,
+body.light .audit-entry,
+body.light input,
+body.light select,
+body.light textarea,
+body.light .chat-history {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-main);
+}
+body.light .btn-outline { color: var(--text-main); }

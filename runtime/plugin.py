@@ -9,7 +9,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import yaml
 from mcp.server.fastmcp.resources import Resource
@@ -48,6 +48,28 @@ class AIOSPlugin(ABC):
         return []
 
 
+class PluginGuard:
+    """Enforces action permissions for plugins."""
+
+    DENIED_DEFAULT: ClassVar[set[str]] = {"Bash", "RunCommand", "Delete", "Eval", "Write", "Shell"}
+
+    def __init__(self, permissions: list[str] | None = None) -> None:
+        self.allowed: set[str] = set(permissions) if permissions else set()
+        self.denied: set[str] = set(self.DENIED_DEFAULT)
+
+    def is_allowed(self, action: str) -> bool:
+        return action not in self.denied and (not self.allowed or action in self.allowed)
+
+    def wrap(self, fn: Callable[..., Any], plugin_name: str) -> Callable[..., Any]:
+        def guarded(*args: Any, **kwargs: Any) -> Any:
+            action = kwargs.get("action") or (args[0] if args else "unknown")
+            if not self.is_allowed(str(action)):
+                raise RuntimeError(f"Plugin '{plugin_name}' action '{action}' blocked by sandbox")
+            return fn(*args, **kwargs)
+
+        return guarded
+
+
 class PluginManager:
     """Discovers, loads, and manages AIOS plugins."""
 
@@ -57,6 +79,7 @@ class PluginManager:
         self.config_path = self.root / "plugins.yaml"
         self.plugins_dir = self.root / "plugins"
         self._plugins: dict[str, AIOSPlugin] = {}
+        self._guards: dict[str, PluginGuard] = {}
         self._lock = threading.Lock()
         self._loaded = False
 
@@ -66,15 +89,23 @@ class PluginManager:
             return data
         return {}
 
-    def _enabled_plugins(self) -> set[str]:
-        """Return explicitly enabled plugin names from plugins.yaml."""
+    def _plugin_configs(self) -> dict[str, dict[str, Any]]:
+        """Return plugin configs from plugins.yaml."""
         config_data = self._load_config()
         plugins_cfg = config_data.get("plugins", {})
-        enabled: set[str] = set()
+        valid: dict[str, dict[str, Any]] = {}
         for name, cfg in plugins_cfg.items():
             if isinstance(cfg, dict) and cfg.get("enabled", False):
-                enabled.add(name)
-        return enabled
+                valid[name] = cfg
+        return valid
+
+    def _enabled_plugins(self) -> set[str]:
+        """Return explicitly enabled plugin names from plugins.yaml."""
+        return set(self._plugin_configs().keys())
+
+    def _guard_for(self, name: str) -> PluginGuard:
+        cfg = self._plugin_configs().get(name, {})
+        return PluginGuard(cfg.get("permissions"))
 
     def _load_plugin_module(self, name: str) -> Any | None:
         """Load the plugin module using its package path."""
@@ -118,19 +149,23 @@ class PluginManager:
             if self._loaded:
                 return
             for name, cls in self._discover_plugins():
+                guard = self._guard_for(name)
                 try:
                     plugin = cls(self.kernel, memory)
                     plugin.on_load()
                     self._plugins[name] = plugin
+                    self._guards[name] = guard
                 except Exception as exc:
                     warnings.warn(f"Plugin '{name}' failed to initialize: {exc}", stacklevel=2)
             self._loaded = True
 
     def get_tools(self) -> list[Callable[..., Any]]:
-        """Aggregate all tools exposed by loaded plugins."""
+        """Aggregate all sandboxed tools exposed by loaded plugins."""
         tools: list[Callable[..., Any]] = []
-        for plugin in self._plugins.values():
-            tools.extend(plugin.register_mcp_tools())
+        for name, plugin in self._plugins.items():
+            guard = self._guards.get(name, PluginGuard())
+            for tool in plugin.register_mcp_tools():
+                tools.append(guard.wrap(tool, name))
         return tools
 
     def get_resources(self) -> list[Resource]:

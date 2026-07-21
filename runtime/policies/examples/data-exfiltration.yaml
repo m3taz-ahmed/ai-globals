@@ -1,0 +1,13 @@
+name: data-exfiltration-prevention
+apiVersion: governance.ai-global-os/v1
+default_action: ask
+rules:
+  - name: block-external-post
+    condition: "type in ['curl', 'http', 'send_email', 'sms'] or ('curl' in command and ('-X POST' in command or '-X PUT' in command))"
+    action: deny
+    description: Block network writes that could exfiltrate data.
+
+  - name: ask-on-archive-export
+    condition: "'tar' in command or 'zip' in command or 'export' in command"
+    action: ask
+    description: Bulk data exports require explicit approval.

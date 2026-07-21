@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **24 execution protocol files** (11 numbered workflows + 13 standards/reference files). Each activates when the AI detects a specific task type.
+This directory contains **28 execution protocol files** (15 numbered workflows + 13 standards/reference files). Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 
@@ -17,6 +17,10 @@ This directory contains **24 execution protocol files** (11 numbered workflows +
 | New project setup | `08-onboarding.md` | AI initialization, baseline audit, stack detection |
 | Tech discovery / research | `09-discovery.md` | Research and integration of bleeding-edge stacks |
 | Multi-agent execution | `10-saga-reconciliation.md` | Saga State Machine tracking for parallel agents |
+| Backend/logic/security audit | `11-audit-core.md` | Deep audit of backend, logic, and security bugs |
+| UI/UX/visual audit | `12-audit-ui.md` | Teardown of UI, UX, aesthetics, and visual performance |
+| Performance/caching audit | `13-audit-perf.md` | Speed, database, and caching optimization analysis |
+| Simplification review | `14-ponytail-review.md` | Delete over-engineering; replace with minimal native code |
 
 ## Standards & Reference Files
 

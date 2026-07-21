@@ -6,6 +6,7 @@
   <title>AI Global OS Dashboard</title>
   <link rel="stylesheet" href="index.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -18,6 +19,12 @@
         <a href="#overview" class="active" onclick="switchTab('overview')">Overview</a>
         <a href="#memory" onclick="switchTab('memory')">Memory Explorer</a>
         <a href="#policy" onclick="switchTab('policy')">Policy Sandbox</a>
+        <a href="#workflows" onclick="switchTab('workflows')">Workflows</a>
+        <a href="#saga" onclick="switchTab('saga')">Sagas</a>
+        <a href="#chat" onclick="switchTab('chat')">Chat</a>
+        <a href="#stack" onclick="switchTab('stack')">Tech Stack</a>
+        <a href="#telemetry" onclick="switchTab('telemetry')">Telemetry</a>
+        <a href="#system" onclick="switchTab('system')">System</a>
         <a href="#audit" onclick="switchTab('audit')">Audit Logs</a>
       </nav>
       <div class="status-indicator">
@@ -29,7 +36,10 @@
     <main class="main-content">
       <header class="top-bar">
         <h1 id="page-title">Overview</h1>
-        <div class="version-badge" id="version-badge">v---</div>
+        <div class="top-actions">
+          <button class="btn btn-outline" onclick="toggleTheme()">Toggle Theme</button>
+          <div class="version-badge" id="version-badge">v---</div>
+        </div>
       </header>
 
       <!-- Overview Tab -->
@@ -46,6 +56,10 @@
           <div class="metric-card">
             <span class="label">Budgets</span>
             <span class="value" id="budget-count">-</span>
+          </div>
+          <div class="metric-card">
+            <span class="label">Tech Stack</span>
+            <span class="value" id="stack-count">-</span>
           </div>
         </div>
 
@@ -95,6 +109,110 @@
         </div>
       </section>
 
+      <!-- Workflows Tab -->
+      <section id="workflows-tab" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Run Workflow</h3>
+            <button class="btn btn-outline" onclick="loadWorkflows()">Refresh</button>
+          </div>
+          <div class="form-group">
+            <label>Select Workflow</label>
+            <select id="workflow-select">
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Context (JSON)</label>
+            <textarea id="workflow-context" rows="5" placeholder='{"project": "demo"}'></textarea>
+          </div>
+          <button class="btn btn-primary mt-1" onclick="runWorkflow()">Run Workflow</button>
+          <div class="results-container mt-2" id="workflow-result" style="display: none;"></div>
+        </div>
+      </section>
+
+      <!-- Saga Tab -->
+      <section id="saga-tab" class="tab-content">
+        <div class="glass-panel">
+          <h3>Run Saga</h3>
+          <div class="form-group">
+            <label>Saga ID</label>
+            <input type="text" id="saga-id" placeholder="project-setup">
+          </div>
+          <div class="form-group">
+            <label>Steps (JSON)</label>
+            <textarea id="saga-steps" rows="6" placeholder='[{"action":"Reserve","args":{"item":"A"},"compensation":{"action":"Cancel","args":{"item":"A"}}},{"action":"Confirm"}]'></textarea>
+          </div>
+          <div class="form-group">
+            <label>Context (JSON)</label>
+            <textarea id="saga-context" rows="4" placeholder='{"project": "demo"}'></textarea>
+          </div>
+          <button class="btn btn-primary mt-1" onclick="runSaga()">Run Saga</button>
+          <div class="results-container mt-2" id="saga-result" style="display: none;"></div>
+        </div>
+      </section>
+
+      <!-- Chat Tab -->
+      <section id="chat-tab" class="tab-content">
+        <div class="glass-panel chat-panel">
+          <div id="chat-history" class="chat-history"></div>
+          <div class="chat-input">
+            <input type="text" id="chat-message" placeholder="Type a message..." onkeyup="if(event.key === 'Enter') sendChat()">
+            <button class="btn btn-primary" onclick="sendChat()">Send</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tech Stack Tab -->
+      <section id="stack-tab" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Detected Tech Stack</h3>
+            <button class="btn btn-outline" onclick="loadStack()">Refresh</button>
+          </div>
+          <div id="stack-results" class="results-container mt-2">
+            <p class="muted">Loading...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Telemetry Tab -->
+      <section id="telemetry-tab" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Telemetry Events</h3>
+            <button class="btn btn-outline" onclick="loadTelemetry()">Refresh</button>
+          </div>
+          <div class="form-group">
+            <label>Filter by Type</label>
+            <select id="telemetry-type" onchange="loadTelemetry()">
+              <option value="">All</option>
+              <option value="action">Action</option>
+              <option value="workflow">Workflow</option>
+              <option value="saga">Saga</option>
+            </select>
+          </div>
+          <div id="telemetry-results" class="results-container mt-2"></div>
+          <canvas id="telemetry-chart" class="mt-2"></canvas>
+        </div>
+      </section>
+
+      <!-- System Tab -->
+      <section id="system-tab" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>System Health</h3>
+            <button class="btn btn-outline" onclick="loadSystem()">Refresh</button>
+          </div>
+          <div class="metrics-grid" id="system-results">
+            <div class="metric-card"><span class="label">CPU %</span><span class="value" id="cpu-percent">-</span></div>
+            <div class="metric-card"><span class="label">Memory %</span><span class="value" id="memory-percent">-</span></div>
+            <div class="metric-card"><span class="label">Memory Used (MB)</span><span class="value" id="memory-used">-</span></div>
+            <div class="metric-card"><span class="label">Version</span><span class="value" id="system-version">-</span></div>
+          </div>
+        </div>
+      </section>
+
       <!-- Audit Logs Tab -->
       <section id="audit-tab" class="tab-content">
         <div class="glass-panel">
@@ -123,12 +241,29 @@
         'overview': 'Overview',
         'memory': 'Memory Explorer',
         'policy': 'Policy Sandbox',
+        'workflows': 'Workflows',
+        'saga': 'Sagas',
+        'chat': 'Chat',
+        'stack': 'Tech Stack',
+        'telemetry': 'Telemetry',
+        'system': 'System Health',
         'audit': 'Audit Logs'
       };
       document.getElementById('page-title').textContent = titles[tabId];
-      
+
       if (tabId === 'audit') loadAudit();
+      if (tabId === 'workflows') loadWorkflows();
+      if (tabId === 'stack') loadStack();
+      if (tabId === 'telemetry') loadTelemetry();
+      if (tabId === 'system') loadSystem();
     }
+
+    // Theme toggle
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+      localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+    }
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
     // API Helpers
     async function fetchJson(path, options = {}) {
@@ -160,6 +295,7 @@
       document.getElementById('workflow-count').textContent = data.workflows.length;
       document.getElementById('rule-count').textContent = data.rules.length;
       document.getElementById('budget-count').textContent = data.budgets.length;
+      document.getElementById('stack-count').textContent = Object.keys(data.tech_stack || {}).length;
       
       const wf = document.getElementById('workflows-list');
       wf.innerHTML = '';
@@ -240,11 +376,191 @@
           <pre>${JSON.stringify(data, null, 2)}</pre>
         </div>`;
       } else {
-        resContainer.innerHTML = `<div class="policy-result allowed">
-          <h4>Allowed</h4>
+        resContainer.innerHTML = `<div class="policy-result ${data.ok ? 'allowed' : 'denied'}">
+          <h4>${data.ok ? 'Allowed' : 'Blocked/Denied'}</h4>
           <pre>${JSON.stringify(data, null, 2)}</pre>
         </div>`;
       }
+    }
+
+    // Workflows
+    async function loadWorkflows() {
+      const select = document.getElementById('workflow-select');
+      const data = await fetchJson('/api/workflows');
+      if (data.error) {
+        select.innerHTML = '<option value="">Error loading workflows</option>';
+        return;
+      }
+      select.innerHTML = data.map(w => `<option value="${w}">${w}</option>`).join('');
+      if (data.length === 0) {
+        select.innerHTML = '<option value="">No workflows found</option>';
+      }
+    }
+
+    async function runWorkflow() {
+      const workflow = document.getElementById('workflow-select').value;
+      const contextStr = document.getElementById('workflow-context').value;
+      const resContainer = document.getElementById('workflow-result');
+
+      if (!workflow) return;
+
+      let context = {};
+      if (contextStr) {
+        try {
+          context = JSON.parse(contextStr);
+        } catch (e) {
+          resContainer.style.display = 'block';
+          resContainer.innerHTML = `<div class="error-msg">Invalid JSON in context</div>`;
+          return;
+        }
+      }
+
+      resContainer.style.display = 'block';
+      resContainer.innerHTML = '<div class="spinner"></div> Running...';
+
+      const data = await fetchJson('/api/workflow/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workflow_id: workflow, context })
+      });
+
+      if (data.error) {
+        resContainer.innerHTML = `<div class="policy-result denied"><h4>Failed</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+      } else {
+        resContainer.innerHTML = `<div class="policy-result allowed"><h4>Completed</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+      }
+    }
+
+    // Sagas
+    async function runSaga() {
+      const sagaId = document.getElementById('saga-id').value;
+      const stepsStr = document.getElementById('saga-steps').value;
+      const contextStr = document.getElementById('saga-context').value;
+      const resContainer = document.getElementById('saga-result');
+
+      if (!sagaId || !stepsStr) return;
+
+      let steps = [];
+      let context = {};
+      try {
+        steps = JSON.parse(stepsStr);
+        if (contextStr) context = JSON.parse(contextStr);
+      } catch (e) {
+        resContainer.style.display = 'block';
+        resContainer.innerHTML = `<div class="error-msg">Invalid JSON</div>`;
+        return;
+      }
+
+      resContainer.style.display = 'block';
+      resContainer.innerHTML = '<div class="spinner"></div> Running...';
+
+      const data = await fetchJson('/api/saga/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ saga_id: sagaId, steps, context })
+      });
+
+      if (data.error) {
+        resContainer.innerHTML = `<div class="policy-result denied"><h4>Failed</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+      } else {
+        resContainer.innerHTML = `<div class="policy-result ${data.ok ? 'allowed' : 'denied'}"><h4>${data.ok ? 'Completed' : 'Compensated'}</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+      }
+    }
+
+    // Chat
+    async function sendChat() {
+      const input = document.getElementById('chat-message');
+      const msg = input.value.trim();
+      if (!msg) return;
+      const history = document.getElementById('chat-history');
+      history.innerHTML += `<div class="chat-msg user"><strong>You:</strong> ${msg}</div>`;
+      input.value = '';
+      const data = await fetchJson('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const reply = data.reply || data.error || JSON.stringify(data);
+      history.innerHTML += `<div class="chat-msg assistant"><strong>AI OS:</strong> ${reply}</div>`;
+      history.scrollTop = history.scrollHeight;
+    }
+
+    // Tech Stack
+    async function loadStack() {
+      const container = document.getElementById('stack-results');
+      const data = await fetchJson('/api/status');
+      if (data.error) {
+        container.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        return;
+      }
+      const stack = data.tech_stack || {};
+      if (Object.keys(stack).length === 0) {
+        container.innerHTML = '<p class="muted">No lockfiles detected.</p>';
+        return;
+      }
+      container.innerHTML = Object.entries(stack).map(([name, info]) => `
+        <div class="memory-item">
+          <div class="memory-header">
+            <span class="badge">${name}</span>
+            <span class="source">${info.version}</span>
+          </div>
+          <div class="memory-content">${info.path}</div>
+        </div>
+      `).join('');
+    }
+
+    // Telemetry
+    let telemetryChart = null;
+    async function loadTelemetry() {
+      const type = document.getElementById('telemetry-type').value;
+      const container = document.getElementById('telemetry-results');
+      const data = await fetchJson(`/api/telemetry?limit=100&type=${encodeURIComponent(type)}`);
+      if (data.error) {
+        container.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        return;
+      }
+      if (data.length === 0) {
+        container.innerHTML = '<p class="muted">No telemetry events yet.</p>';
+        return;
+      }
+      container.innerHTML = data.map(e => `
+        <div class="audit-entry">
+          <div class="audit-time">${e.timestamp}</div>
+          <div class="audit-type type-${e.status === 'allowed' ? 'success' : 'info'}">${e.type}</div>
+          <pre class="audit-data">${JSON.stringify(e, null, 2)}</pre>
+        </div>
+      `).join('');
+
+      const counts = {};
+      data.forEach(e => { counts[e.action] = (counts[e.action] || 0) + 1; });
+      const ctx = document.getElementById('telemetry-chart').getContext('2d');
+      if (telemetryChart) telemetryChart.destroy();
+      telemetryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(counts),
+          datasets: [{
+            label: 'Events',
+            data: Object.values(counts),
+            backgroundColor: 'rgba(16, 185, 129, 0.5)'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { color: '#f1f5f9' } }, x: { ticks: { color: '#f1f5f9' } } }
+        }
+      });
+    }
+
+    // System
+    async function loadSystem() {
+      const data = await fetchJson('/api/system');
+      if (data.error) return;
+      document.getElementById('cpu-percent').textContent = data.cpu_percent.toFixed(1) + '%';
+      document.getElementById('memory-percent').textContent = data.memory_percent.toFixed(1) + '%';
+      document.getElementById('memory-used').textContent = data.memory_used_mb;
+      document.getElementById('system-version').textContent = data.version;
     }
 
     // Audit Logs

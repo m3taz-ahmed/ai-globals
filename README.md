@@ -1,7 +1,7 @@
 <div align="center">
   <img src="logo.png" width="160" alt="AI Global OS Logo">
-  <h1>🌌 AI Global OS</h1>
-  <p><b>Stop letting AI write spaghetti code. Turn it into your Principal Architect.</b></p>
+  <h1>AI Global OS</h1>
+  <p><strong>Stop letting AI write spaghetti code. Turn it into your Principal Architect.</strong></p>
 
   <p>
     <img src="https://img.shields.io/badge/Version-4.21.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.21.0">
@@ -13,80 +13,114 @@
     <img src="https://img.shields.io/badge/Tech--Stack-Next.js%2015%20%7C%20Laravel%2013%20%7C%20PostgreSQL%2017-EC4899?style=for-the-badge&logo=nextdotjs&logoColor=white&labelColor=1a1a2e" alt="Stack">
     <img src="https://img.shields.io/badge/Quality%20Gate-SOLID%20%7C%20OWASP%20%7C%20WCAG%202.2-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="Quality Gate">
   </p>
-  
-  <p><i>A zero-compromise, version-controlled operating system that permanently eliminates AI context drift, enforces bleeding-edge 2026 engineering standards, and governs every line of generated code.</i></p>
+
+  <p><i>A zero-compromise, version-controlled operating system that eliminates AI context drift, enforces bleeding-edge engineering standards, and governs every line of generated code.</i></p>
 </div>
 
 ---
 
-## 🛑 The AI Trap vs. 🌌 The Sovereign Solution
+## Why AI Global OS exists
 
-Most teams use AI as a high-speed junior developer. It writes fast, but it hallucinates APIs, forgets naming conventions, ignores N+1 query problems, and silently introduces technical debt. 
+Most teams use AI as a high-speed junior developer. It writes fast, but it hallucinates APIs, forgets naming conventions, ignores N+1 queries, and silently ships technical debt.
 
-**AI Global OS** is a Sovereign Architectural Engine. It forces your AI (Cursor, Copilot, Claude, Gemini) to strictly read from a centralized, version-controlled source of truth *before* it writes a single line of code.
+**AI Global OS** is a Sovereign Architectural Engine. It forces Cursor, Copilot, Claude, Gemini, Windsurf, Cline, Aider, and GitHub Copilot to read from a centralized, version-controlled source of truth *before* writing a single line of code.
 
-| The AI Trap (Without OS) 📉 | The Sovereign Solution (With OS) 📈 |
+| Without the OS | With the OS |
 | :--- | :--- |
-| **Context Drift** AI forgets your rules after 5 prompts. | **Persistent Sovereignty** Rules are hard-loaded every single session. |
-| **Silent Tech Debt** AI uses deprecated packages/methods. | **Bleeding-Edge Locked** Enforces Next.js 15 & Laravel 12/13 standards via live MCP Ground-Truths. |
-| **Security Holes** AI writes raw SQL or misses XSS filters. | **OWASP Enforced** Zero-trust validation baked into every response. |
-| **Drive-by Refactoring** AI randomly rewrites working code. | **Surgical Precision** Strict adherence to the `Surgical Changes` principle. |
+| Context drift after a few prompts | Rules hard-loaded every session |
+| Deprecated packages and silent tech debt | Exact-version tech-stack locked via live MCP docs |
+| Raw SQL, missing XSS filters, weak secrets | OWASP, zero-trust, and RBAC enforced by default |
+| Random drive-by refactoring | Surgical changes with policy, budget, and audit gates |
+
+[Read this in Arabic](README-AR.md)
 
 ---
 
-## ⚡ 60-Second "Aha!" Activation
+## Activate in 60 seconds
 
-Stop prompting. Start governing. Experience the shift from AI-as-a-tool to AI-as-an-Architect in under a minute.
+1. **Clone the central brain** to a fixed location (for example `D:/.ai` or `~/.ai`):
+   ```bash
+   git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
+   ```
 
-### 1. Clone the Central Brain
-Clone this repository to a central location on your machine (e.g., `D:/.ai` or `~/.ai`). This will act as the master intelligence for all your projects.
-```bash
-git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
-```
+2. **Install the OS**:
+   ```powershell
+   # Windows
+   .\install.ps1
 
-### 2. Install the OS
-```powershell
-# Windows
-.\install.ps1
+   # macOS / Linux
+   bash install.sh
+   ```
 
-# macOS/Linux
-bash install.sh
-```
+3. **Install Python dependencies** inside the cloned folder:
+   ```bash
+   python -m pip install -e .
+   ```
 
-### 3. Install Dependencies
-The OS requires `pydantic`, `rich`, and other core libraries to function. Run this inside the cloned folder:
-```bash
-python -m pip install -e .
-```
+4. **Use the CLI**:
+   ```bash
+   ai-os status
+   ai-os check edit
+   ai-os run 02-execution
+   ai-os memory ingest
+   ```
 
-### 4. Use the CLI
-```bash
-ai-os status
-ai-os check edit
-ai-os run 02-execution
-ai-os memory ingest
-```
+5. **Enable MCP**:
+   Add `aios_mcp/config.json` to your IDE MCP config, or run:
+   ```bash
+   python aios_mcp/aios_server.py
+   ```
 
-### 5. Enable MCP
-Add `aios_mcp/config.json` to your IDE MCP config or run:
-```bash
-python aios_mcp/aios_server.py
-```
-
-🎯 **Boom. Your AI is now Sovereign.** Watch as it analyzes your request against strict SOLID principles, OWASP standards, and your specific tech stack before it even thinks about generating code.
+Your AI is now sovereign. It analyzes every request against SOLID, OWASP, and your exact tech stack before generating code.
 
 ---
 
-## 🏗️ System Architecture & Intelligence
+## What you get
 
-AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context window bloat while maintaining absolute engineering authority.
+### Nine battle-tested personas
+
+AI Global OS ships with nine hardened professional personas that shape tone, depth, and priorities for every task. Load `global-roles.md` (English) or `global-roles-ar.md` (Arabic) into your agent or IDE to activate them.
+
+- **Principal 10x Engineer & Chief Architect** — infinite scalability, rapid prototyping, zero-defect delivery.
+- **Software Tester** — maximum coverage, edge-case hunting, regression prevention.
+- **Principal Full-Stack Designer & UX Architect** — flawless journeys, rapid prototypes, pixel-perfect consistency.
+- **Master Developer** — system design, secure infrastructure, maximum performance.
+- **God-Tier SRE & Cloud Dictator** — multi-region active-active, GitOps automation, chaos engineering.
+- **Hardcore Linux Kernel Master & SecOps Warlord** — eBPF tracing, microsecond latency, zero-trust networks.
+- **Principal Game Architect & JavaScript Engine Master** — 60 FPS game loops, Capacitor/WebView cross-platform, Babylon.js immersion.
+- **Google Play Ecosystem Warlord** — Play policies, IAP/ad monetization, AAB optimization, ANR/crash annihilation.
+- **Elite Mobile Game Producer & Full-Stack Innovator** — addictive gameplay, Laravel integrations, Fastlane CI/CD, anti-cheat.
+
+### Runtime governance
+
+- **Policy engine** with `allow/ask/deny` YAML policies and safe AST evaluation.
+- **Budget manager** for tokens, cost, and calls per scope.
+- **Durable workflow runner** with SQLite state, saga support, and audit logging.
+- **Memory service** with SQLite + FTS5, episodic/semantic/factual/procedural layers, graph relations, and optional vector index.
+- **MCP server** exposing `query_rules`, `run_workflow`, `check_policy`, `search_memory`, `search_memory_vector`, `get_tech_stack`.
+- **CLI `ai-os`** and a web dashboard with CORS, optional bearer auth, and live telemetry.
+
+### Engineering standards
+
+- **Telegraphic Pseudo-Code** for rules, workflows, skills, and tech-stacks — maximum guidance with minimum tokens.
+- **Lazy-loaded context layers** — only the relevant standards are loaded per task.
+- **Live Ground-Truth** via Context7 MCP before any framework implementation.
+- **Zero `any` types**, no inline imports, no dependency downgrades.
+- **Mandatory gates**: `ruff`, `mypy`, `pytest`, and `python eval/harness.py` must all pass.
+
+---
+
+## System architecture
 
 ```text
-.ai/                              # The Sovereign Root
+.ai/                              # Sovereign root
 ├── AGENTS.md                     # Cross-tool canonical instruction
-├── global-roles.md               # [Layer 0] Architectural identity & quality gates
+├── global-roles.md               # [Layer 0] Personas and identity
+├── global-roles-ar.md            # [Layer 0] Arabic persona charter
 ├── global-workflow.md            # [Core] Cognitive loading & execution protocol
-├── README.md                     # Human-facing front door
+├── README.md                     # Human front door (this file)
+├── README-AR.md                  # Arabic front door
+├── Memory.md                     # Short-term cross-session context
 ├── CHANGELOG.md                  # Release notes
 │
 ├── .cursor/rules/                # Cursor rule adapters
@@ -96,100 +130,53 @@ AI Global OS uses a **lazy-loaded cognitive architecture** to prevent AI context
 ├── .aider.conf.yml               # Aider config
 ├── .github/copilot-instructions.md # GitHub Copilot instructions
 │
-├── rules/                        # 🛡️ Compressed behavioral & structural rules
-├── tech-stack/                   # 📚 Compressed domain-specific RAG tech-stacks
-├── workflows/                    # ⚙️ Compressed trigger-based execution protocols
-├── skills/                       # 🧰 Compressed AI tools & agent personas
-├── state/                        # 🧠 Logs & persistent state
-├── brain/                        # 🧠 Memory database
+├── rules/                        # Compressed behavioral & structural rules
+├── tech-stack/                   # Compressed domain-specific RAG tech-stacks
+├── workflows/                    # Compressed trigger-based execution protocols
+├── skills/                       # Compressed AI tools & agent personas
+│
+├── state/                        # Logs & persistent state
+├── brain/                        # Memory database
 ├── graphify-out/                 # Knowledge graph
 │
-├── runtime/                      # Runtime kernel (policy, budget, workflow runner)
-├── memory/                       # Memory service (temporal KG + episodic/semantic/factual)
+├── runtime/                      # Runtime kernel (policy, budget, workflow, chat, telemetry)
+├── memory/                       # Memory service
 ├── aios_mcp/                     # MCP server
 ├── dashboard/                    # Web dashboard
 ├── cli.py                        # CLI entry point
+├── config.py                     # Root discovery
 ├── install.ps1 / install.sh      # OS installer
-└── scripts/                      # 🔧 Self-Healing Operations
-    ├── validate-globals.py       # Cross-platform integrity validator
-    ├── sync-agent-configs.py     # Sync agent configs across tools
+├── plugins.yaml                  # Plugin manifest
+└── scripts/                      # Self-healing operations
+    ├── validate-globals.py       # Integrity validator
+    ├── sync-agent-configs.py     # Sync configs across tools
     └── graphify_mcp_wrapper.py   # Graphify MCP bridge
 ```
 
 ---
 
-## 🌌 v4.21.0: Runtime Kernel & Global Orchestration
+## Recent highlights (v4.21.0)
 
-The OS now ships with a real runtime engine:
-
-- **AGENTS.md canonical** — one instruction file consumed by Cursor, Claude, Codex, OpenCode, Cline, Windsurf, Aider, and Copilot.
-- **Runtime kernel** — policy engine with `allow/ask/deny` YAML policies, safe AST evaluation (no `eval`), per-scope token/cost budgets, and durable workflow runner.
-- **Memory service** — SQLite-backed temporal memory with FTS5 search, episodic/semantic/factual/procedural memories, graph relations, and optional vector index (turbovec + sentence-transformers).
-- **Audit logging** — append-only `state/audit.log` for every policy/budget/workflow decision.
-- **MCP server** — FastMCP-based server exposing `query_rules`, `run_workflow`, `check_policy`, `search_memory`, `search_memory_vector`, `get_tech_stack` to any MCP client.
-- **CLI `ai-os`** — `--root` support, `AGENT_OS_ROOT` env, `check --args`, `memory vector`, `run --context`.
-- **Dashboard** — auto-refresh, CORS, optional `AGENT_OS_DASHBOARD_TOKEN` auth, audit endpoint.
-- **Build & deploy** — `pyproject.toml`, `ruff`, `mypy`, `pytest` suite, `Dockerfile`, `docker-compose.yml`, and CI workflow running lint, typecheck, tests, and global validation.
-- **Root discovery** — `config.py` discovers `AGENT_OS_ROOT` env or install dir; no hardcoded `D:/server/.ai`.
-
-## 🦥 v4.19.0: The Ponytail Philosophy (Lazy Senior Dev)
-
-AI Global OS now forces agents to act like a **Lazy Senior Developer**. We've natively integrated the [Ponytail](https://github.com/DietrichGebert/ponytail) philosophy to completely eradicate over-engineering:
-
-- **YAGNI by Default:** Agents are strictly forbidden from writing unrequested abstractions, boilerplate, or speculative features.
-- **Native & Stdlib Supremacy:** Agents must utilize native web APIs (like `<input type="date">`) and standard libraries before ever suggesting a third-party dependency.
-- **One-Liner Preference:** If it can be done in one line, it will be. Complex custom code is strictly a last resort.
-- **Built-in Complexity Audits:** New `/ponytail-review` and `/ponytail-audit` skills are available to strip away technical debt and ruthlessly cut bloated code from your diffs.
-- **The Result:** Up to 54% less generated code, ~20% cheaper API costs, and significantly faster execution without sacrificing correctness or safety.
+- Runtime kernel with policy, budget, workflow, saga, chat, telemetry, and plugin support.
+- Memory ingestion with SQLite + FTS5 + optional vector index.
+- MCP server with 12+ tools and dynamic plugin registration.
+- CLI `ai-os` with `status`, `check`, `run`, `memory`, `sync`, `policy`, `budget`, `project`, and `doctor`.
+- Dashboard with auto-refresh, CORS, optional bearer auth, and 10+ API endpoints.
+- Docker hardening with non-root user, healthchecks, and compose support.
+- 11 lord-level mastery skills covering database, language, cloud, devops, frontend, backend, messaging, search/vector, AI/ML, Linux, and security.
+- 9 hardened personas defined in `global-roles.md` and `global-roles-ar.md`.
+- CI pipeline with pinned action SHAs, `ruff`, `mypy`, `pytest`, and `python eval/harness.py`.
 
 ---
 
-## 🚀 v4.18.0: Natively Compressed Architecture
+## Join the movement
 
-This OS now operates with a compiler-like architecture, maximizing AI context efficiency to extremes:
-
-- **Elite Telegraphic Pseudo-Code:** AI no longer reads raw verbose English/Markdown files. All instructions, workflows, skills, and tech stacks are natively compressed into a "Telegraphic Pseudo-Code" format readable instantly by the AI.
-- **Token Efficiency:** By eliminating conversational boilerplate and using structural tags (`[REQ]`, `[CMD]`, `[PROHIBIT]`), the framework ensures that maximum guidance is provided using the minimal possible token footprint.
-- **Context Density Limit-Break:** Achieved an unprecedented reduction in token usage. The entire global intelligence footprint now consumes minimal context while executing multi-layered instructions flawlessly.
-
----
-
-## ⚡ v4.15.0: Micro-DSL Architecture & 50% Token Optimization
-
-This OS doesn't just manage prompts; it enforces the highest echelons of modern software engineering with maximum efficiency:
-
-- **Micro-DSL Dictionary System:** Replaced verbose prose rules with a centralized symbolic vocabulary (e.g., `[BEH-01]`, `[SEC-08]`), ensuring deep context propagation at a fraction of the cost.
-- **50% Token Footprint Reduction:** Cut the active workspace context footprint from ~113,000 to ~57,765 tokens, supercharging AI reasoning speed and extending context windows for complex tasks.
-- **Self-Healing Validation:** Hardened `validate-globals.ps1` and `validate-globals.py` cross-platform validators to automatically reconcile symbolic codes and dynamically respect `.aiignore` parameters.
-
----
-
-## 🔥 v4.14.0: The 2026 Enterprise Blueprint
-
-This OS doesn't just manage prompts; it enforces the highest echelons of modern software engineering:
-
-- **Superpowers Methodology:** Natively integrated workflow hardening that enforces strict Spec Teasing, Digestible Chunking, and Red/Green TDD with autonomous Subagent execution prior to code generation.
-- **Sovereign AI Integration:** Native support for high-throughput Server-Sent Events (SSE) streaming, local Qdrant Vector RAG memory, Sliding Window context optimization, and Redis task-queue offloading.
-- **Inter-Agent Collaboration Handshakes:** Built-in safeguards mandating state machine/Saga reconciliation tracking across delegating subagents during parallel execution to eliminate multi-agent state drift.
-- **Next-Gen Infrastructure:** PostgreSQL 17 (UUIDv7, BRIN), AWS Graviton4 (ARM64), and native Docker SBOMs.
-- **Bleeding-Edge Frontend:** Next.js 15 (`"use cache"`), Tailwind CSS v4, and aggressive WCAG 2.2 AA accessibility mandates.
-- **High-Scale Backend:** Laravel 12/13 with Octane (FrankenPHP) paired with deterministic Cache-Retry Interlocks to prevent thundering-herd retries on expiring cache states.
-- **Deep Observability:** OpenTelemetry (W3C Trace Context) and AI-driven telemetry (Sentry Session Replay).
-- **Hardened Agentic Interfaces:** Strict enforcement of cryptographic `UUIDv4` resource paths to neutralize IDOR exploits, paired with Redis Token-Bucket Rate Limiting against Economic Denial of Sustainability (EDoS) attacks.
-- **Self-Healing Manifests:** Built-in validation scripts (`.ps1`/`.py`) dynamically validate rule integrity, check bilingual version parity across English/Arabic baselines, scan general file mapping references, fix broken cross-references, and provide an interactive self-healing mode.
-
----
-
-## 🤝 Join the Sovereign Engineering Movement
-
-**Tired of fixing AI-generated bugs?** Star this repository to keep your AI rules automatically updated with the latest 2026 engineering standards.
+Star the repository to keep your AI rules automatically updated with the latest engineering standards.
 
 [![Star on GitHub](https://img.shields.io/github/stars/m3taz-ahmed/ai-globals?style=for-the-badge&logo=github&color=FFDD00&labelColor=1a1a2e)](https://github.com/m3taz-ahmed/ai-globals)
 
-### Elevate the OS
-We need Principal Engineers, Security Auditors, and Tech Leads to help harden these rules. 
-- 📖 [**Read the Contributing Guide**](.github/CONTRIBUTING.md) to add your stack.
-- 🛡️ [**Review our Security Policy**](.github/SECURITY.md).
-- 📜 [**Code of Conduct**](.github/CODE_OF_CONDUCT.md).
+- Read the [Contributing Guide](.github/CONTRIBUTING.md) to add your stack.
+- Review the [Security Policy](.github/SECURITY.md).
+- See the [Code of Conduct](.github/CODE_OF_CONDUCT.md).
 
-> *Built for engineers who refuse to settle for mediocre AI output. Engineered with surgical precision by [@m3taz-ahmed](https://github.com/m3taz-ahmed).*
+> Built for engineers who refuse to settle for mediocre AI output. Engineered with surgical precision by [@m3taz-ahmed](https://github.com/m3taz-ahmed).

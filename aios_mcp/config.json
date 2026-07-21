@@ -2,7 +2,10 @@
   "mcpServers": {
     "ai-global-os": {
       "command": "python",
-      "args": ["aios_mcp/aios_server.py"]
+      "args": [
+        "-c",
+        "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or str(pathlib.Path.cwd()); subprocess.run([sys.executable,'-m','aios_mcp.aios_server'], cwd=root)"
+      ]
     }
   }
 }

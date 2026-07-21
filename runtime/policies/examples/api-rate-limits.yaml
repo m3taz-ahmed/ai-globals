@@ -1,0 +1,13 @@
+name: api-rate-limits
+apiVersion: governance.ai-global-os/v1
+default_action: ask
+rules:
+  - name: limit-expensive-llm-calls
+    condition: "type == 'mcp_call_tool' and 'llm' in command"
+    action: ask
+    description: Expensive LLM tool calls require explicit approval.
+
+  - name: allow-cached-reads
+    condition: "type in ['view', 'Read', 'grep', 'Glob']"
+    action: allow
+    description: Cached reads are cheap and always allowed.

@@ -9,9 +9,26 @@ services:
       - AGENT_OS_ROOT=/app
       - AGENT_OS_HOST=0.0.0.0
       - AGENT_OS_DASHBOARD_TOKEN=${AGENT_OS_DASHBOARD_TOKEN:-}
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
     volumes:
       - aios_state:/app/state
       - aios_brain:/app/brain
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
 volumes:
   aios_state:

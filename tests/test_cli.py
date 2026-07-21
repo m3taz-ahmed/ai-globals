@@ -259,6 +259,66 @@ class TestCliQuery:
 
 
 # ---------------------------------------------------------------------------
+# policy
+# ---------------------------------------------------------------------------
+
+class TestCliPolicy:
+    def test_policy_test_dry_run(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main(["--root", str(tmp), "policy", "test", "Read"])
+            captured = capsys.readouterr()
+            assert rc == 0
+            assert "decision" in captured.out
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# budget
+# ---------------------------------------------------------------------------
+
+class TestCliBudget:
+    def test_budget_list(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main(["--root", str(tmp), "budget", "list"])
+            captured = capsys.readouterr()
+            assert rc == 0
+            assert "Budgets" in captured.out
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_budget_set(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main([
+                "--root", str(tmp), "budget", "set",
+                "--scope", "test", "--max-tokens", "1000",
+                "--period", "daily",
+            ])
+            assert rc == 0
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# project
+# ---------------------------------------------------------------------------
+
+class TestCliProject:
+    def test_project_init(self):
+        tmp = Path(tempfile.mkdtemp(prefix="aios_project_test_"))
+        try:
+            rc = main(["project", "init", "--path", str(tmp)])
+            assert rc == 0
+            assert (tmp / ".ai" / "active-context.md").exists()
+            assert (tmp / "runtime" / "policies" / "default.yaml").exists()
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
 # no command → help
 # ---------------------------------------------------------------------------
 

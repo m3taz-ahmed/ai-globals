@@ -1,167 +1,186 @@
 <div align="right" dir="rtl">
   <img src="logo.png" width="160" alt="شعار AI Global OS">
-  <h1>🌌 نظام التشغيل العالمي للذكاء الاصطناعي (AI Global OS)</h1>
-  <p><b>توقف عن السماح للذكاء الاصطناعي بكتابة كود "سباغيتي". حوله إلى مهندس برمجيات رئيسي (Principal Architect).</b></p>
+  <h1>AI Global OS — نظام التشغيل العالمي للذكاء الاصطناعي</h1>
+  <p><strong>توقف عن السماح للذكاء الاصطناعي بكتابة كود سباغيتي. حوّله إلى مهندسك الرئيسي.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/الإصدار-4.21.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.21.0">
-    <img src="https://img.shields.io/badge/الحالة-تصحيح_ذاتي-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
-    <img src="https://img.shields.io/badge/المعمارية-سيادية-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
-    <img src="https://img.shields.io/badge/الرخصة-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
+    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-4.21.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.21.0">
+    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%AD%D8%A7%D9%84%D8%A9-%D8%AA%D8%B5%D8%AD%D9%8A%D8%AD_%D8%B0%D8%A7%D8%AA%D9%8A-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
+    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D9%85%D8%B9%D9%85%D8%A7%D8%B1%D9%8A%D8%A9-%D8%B3%D9%8A%D8%A7%D8%AF%D9%8A%D8%A9-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
+    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/التقنيات-Next.js%2015%20%7C%20Laravel%2013%20%7C%20PostgreSQL%2017-EC4899?style=for-the-badge&logo=nextdotjs&logoColor=white&labelColor=1a1a2e" alt="التقنيات">
-    <img src="https://img.shields.io/badge/بوابة_الجودة-SOLID%20%7C%20OWASP%20%7C%20WCAG%202.2-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="بوابة الجودة">
+    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%AA%D9%82%D9%86%D9%8A%D8%A7%D8%AA-Next.js%2015%20%7C%20Laravel%2013%20%7C%20PostgreSQL%2017-EC4899?style=for-the-badge&logo=nextdotjs&logoColor=white&labelColor=1a1a2e" alt="التقنيات">
+    <img src="https://img.shields.io/badge/%D8%A8%D9%88%D8%A7%D8%A8%D8%A9_%D8%A7%D9%84%D8%AC%D9%88%D8%AF%D8%A9-SOLID%20%7C%20OWASP%20%7C%20WCAG%202.2-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="بوابة الجودة">
   </p>
-  
-  <p><i>نظام تشغيل محكم الإصدار، غير قابل للمساومة، يقضي نهائياً على انحراف السياق (Context Drift) في الذكاء الاصطناعي، يفرض معايير هندسية متطورة لعام 2026، ويحكم كل سطر من الكود المولد.</i></p>
+
+  <p><i>نظام تشغيل محكم الإصدار، غير قابل للمساومة، يقضي نهائياً على انحراف السياق (Context Drift)، ويفرض أحدث معايير الهندسة، ويحكم كل سطر كود مولّد.</i></p>
 </div>
 
 ---
 
 <div dir="rtl">
 
-## 🛑 فخ الذكاء الاصطناعي مقابل 🌌 الحل السيادي
+## لماذا AI Global OS؟
 
-تستخدم معظم الفرق الذكاء الاصطناعي كمبرمج مبتدئ عالي السرعة. يكتب بسرعة، ولكنه يتخيل واجهات برمجة تطبيقات (APIs)، ينسى اتفاقيات التسمية، يتجاهل مشاكل استعلامات N+1، ويدخل ديوناً تقنية بصمت.
+معظم الفرق تستخدم الذكاء الاصطناعي كمبرمج مبتدئ عالي السرعة. يكتب بسرعة، لكنه يتخيل واجهات برمجة (APIs)، وينسى اتفاقيات التسمية، ويتجاهل مشاكل N+1، ويدخل ديوناً تقنية بصمت.
 
-**AI Global OS** هو محرك معماري سيادي. يجبر وكيل الذكاء الاصطناعي الخاص بك (Cursor, Copilot, Claude, Gemini) على القراءة بدقة من مصدر حقيقة مركزي ومحكم الإصدار *قبل* أن يكتب سطراً واحداً من الكود.
+**AI Global OS** هو محرك معماري سيادي. يجبر Cursor, Copilot, Claude, Gemini, Windsurf, Cline, Aider, و GitHub Copilot على القراءة من مصدر حقيقة مركزي ومحكم الإصدار *قبل* كتابة أي سطر كود.
 
-| فخ الذكاء الاصطناعي (بدون النظام) 📉 | الحل السيادي (مع النظام) 📈 |
+| بدون النظام | مع النظام |
 | :--- | :--- |
-| **انحراف السياق (Context Drift)** ينسى الذكاء الاصطناعي قواعدك بعد 5 مطالبات. | **سيادة مستمرة** يتم تحميل القواعد بقوة في كل جلسة عمل. |
-| **ديون تقنية صامتة** يستخدم الذكاء الاصطناعي حزم/طرق مهجورة. | **مواكبة دائمة** يفرض معايير Next.js 15 و Laravel 12/13. |
-| **ثغرات أمنية** يكتب الذكاء الاصطناعي SQL خام أو ينسى فلاتر XSS. | **فرض OWASP** تحقق "انعدام الثقة" (Zero-trust) مدمج في كل استجابة. |
-| **إعادة هيكلة عشوائية** يعيد الذكاء الاصطناعي كتابة كود يعمل بشكل عشوائي. | **دقة جراحية** التزام صارم بمبدأ `التغييرات الجراحية` (Surgical Changes). |
+| انحراف السياق بعد عدد قليل من المطالبات | القواعد تُحمّل في كل جلسة |
+| حزم مهجورة وديون تقنية صامتة | قفل الإصدار الدقيق عبر مستندات MCP الحية |
+| SQL خام، فلاتر XSS مفقودة، أسرار ضعيفة | OWASP، zero-trust، و RBAC مفروضة افتراضياً |
+| إعادة هيكلة عشوائية | تغييرات جراحية ببوابات policy / budget / audit |
+
+[اقرأ النسخة الإنجليزية](README.md)
 
 ---
 
-## ⚡ تفعيل "لحظة الإدراك" في 60 ثانية
+## فعّله في 60 ثانية
 
-توقف عن التلقين. ابدأ بالحكم. اختبر التحول من الذكاء الاصطناعي كأداة إلى الذكاء الاصطناعي كمعمار في أقل من دقيقة.
+1. **استنسخ العقل المركزي** في مكان ثابت (مثلاً `D:/.ai` أو `~/.ai`):
+   ```bash
+   git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
+   ```
 
-### 1. استنساخ العقل المركزي
-قم باستنساخ هذا المستودع في موقع مركزي على جهازك (مثلاً: `D:/.ai` أو `~/.ai`). سيعمل هذا كمصدر الذكاء الرئيسي لجميع مشاريعك.
-```bash
-git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
-```
+2. **ثبّت النظام**:
+   ```powershell
+   # Windows
+   .\install.ps1
 
-### 2. حقن التوجيه العالمي
-قم بلصق هذه الكتلة في ملف `.cursorrules` أو `GEMINI.md` أو موجه النظام الخاص بمشروعك:
-```markdown
-### 🌍 نظام التشغيل العالمي للذكاء الاصطناعي
-- **المسار الجذر:** `D:/.ai` (قم بتعديله لمسار الاستنساخ الخاص بك)
-- **الهوية والقواعد:** ابدأ بقراءة `global-roles.md` و `./rules/` من الجذر.
-- **سير العمل الرئيسي:** زامن دورات التنفيذ باستخدام `./workflows/` و `global-workflow.md`.
-- **مزامنة التقنيات:** احفظ قواعد التقنيات المفقودة تلقائياً في `./tech-stack/` وسجل في `state/CHANGELOG.md`.
-```
+   # macOS / Linux
+   bash install.sh
+   ```
 
-### 3. إصدار الأمر
-أرسل هذه الرسالة بالضبط لوكيل الذكاء الاصطناعي لبدء النظام:
-> *"ابدأ فوراً بقراءة بروتوكولات التشغيل الخاصة بك من جذر دليل .ai. اعمل كمهندس رئيسي (Principal Engineer) ورئيس معمارين (Chief Architect). لا تعتمد على افتراضات سابقة."*
+3. **ثبّت متطلبات Python** داخل المجلد المستنسخ:
+   ```bash
+   python -m pip install -e .
+   ```
 
-🎯 **بوم. أصبح الذكاء الاصطناعي الخاص بك سيادياً.** شاهده وهو يحلل طلبك مقابل مبادئ SOLID الصارمة، معايير OWASP، وتقنياتك المحددة قبل أن يفكر حتى في إنشاء الكود.
+4. **استخدم الـ CLI**:
+   ```bash
+   ai-os status
+   ai-os check edit
+   ai-os run 02-execution
+   ai-os memory ingest
+   ```
+
+5. **فعّل MCP**:
+   أضف `aios_mcp/config.json` لإعدادات MCP في IDE، أو شغّل:
+   ```bash
+   python aios_mcp/aios_server.py
+   ```
+
+الآن أصبح ذكاؤك الاصطناعي سيادياً. يحلل كل طلب مقابل SOLID، OWASP، وتقنيتك المحددة بدقة قبل إنشاء الكود.
 
 ---
 
-## 🏗️ معمارية النظام والذكاء
+## ماذا تحصل عليه؟
 
-يستخدم AI Global OS **معمارية معرفية محملة عند الطلب (Lazy-loaded)** لمنع تضخم نافذة سياق الذكاء الاصطناعي مع الحفاظ على السلطة الهندسية المطلقة.
+### تسع شخصيات محكمة
+
+يأتي AI Global OS بتسع شخصيات مهنية محكمة تحدد النبرة، العمق، وأولويات كل مهمة. حمّل `global-roles.md` (الإنجليزية) أو `global-roles-ar.md` (العربية) في agent أو IDE لتفعيلها.
+
+- **Principal 10x Engineer & Chief Architect** — قابلية توسع لانهائية، نماذج أولية سريعة، تسليم خالٍ من العيوب.
+- **Software Tester** — أقصى تغطية اختبار، اصطياد حالات الحافة، منع الانحدار.
+- **Principal Full-Stack Designer & UX Architect** — رحلات مثالية، نماذج أولية سريعة، تناسق بكسل-مثالي.
+- **Master Developer** — تصميم أنظمة، بنية تحتية آمنة، أقصى أداء.
+- **God-Tier SRE & Cloud Dictator** — active-active متعدد المناطق، أتمتة GitOps، هندسة الفوضى.
+- **Hardcore Linux Kernel Master & SecOps Warlord** — تتبع eBPF، زمن استجابة مايكروثانية، شبكات zero-trust.
+- **Principal Game Architect & JavaScript Engine Master** — حلقات ألعاب 60 FPS، Capacitor/WebView متعدد المنصات، غوص Babylon.js.
+- **Google Play Ecosystem Warlord** — سياسات Play، تحقيق من IAP وإعلانات، تحسين AAB، إبادة ANR والأعطال.
+- **Elite Mobile Game Producer & Full-Stack Innovator** — ميكانيكيات gameplay addictive، تكامل Laravel، Fastlane CI/CD، مكافحة الغش.
+
+### حوكمة تشغيلية
+
+- **محرك السياسات** مع سياسات YAML `allow/ask/deny` وتقييم AST آمن.
+- **مدير الميزانيات** للرموز، التكلفة، والاستدعاءات لكل نطاق.
+- **مشغّل سير العمل** المتين مع حالة SQLite، دعم Saga، وتسجيل audit.
+- **خدمة الذاكرة** مع SQLite + FTS5، طبقات episodic/semantic/factual/procedural، علاقات جراف، وفهرس متجهي اختياري.
+- **خادم MCP** يعرض `query_rules`, `run_workflow`, `check_policy`, `search_memory`, `search_memory_vector`, `get_tech_stack`.
+- **CLI `ai-os`** ولوحة dashboard ويب مع CORS، Bearer auth اختياري، وtelemetry مباشر.
+
+### معايير هندسية
+
+- **Telegraphic Pseudo-Code** للقواعد، سير العمل، المهارات، والتقنيات — أقصى توجيه بأقل توكنز.
+- **طبقات سياق محملة عند الطلب** — فقط المعايير ذات الصلة تُحمّل لكل مهمة.
+- **Ground-Truth الحية** عبر Context7 MCP قبل أي تنفيذ إطار عمل.
+- **صفر `any` types**، لا inline imports، لا downgrade للاعتماديات.
+- **بوابات إلزامية**: `ruff`, `mypy`, `pytest`, و `python eval/harness.py` يجب أن تمر كلها.
+
+---
+
+## معمارية النظام
 
 ```text
 .ai/                              # الجذر السيادي
-├── global-roles.md               # [الطبقة 0] الهوية المعمارية وبوابات الجودة
-├── global-workflow.md            # [الجوهر] بروتوكول التحميل المعرفي والتنفيذ
-├── EXAMPLES.md                   # [المرجع] ❌ أخطاء الـ LLM مقابل ✅ الأنماط الصحيحة
+├── AGENTS.md                     # تعليمات مشتركة عبر الأدوات
+├── global-roles.md               # [الطبقة 0] الشخصيات والهوية (إنجليزي)
+├── global-roles-ar.md            # [الطبقة 0] ميثاق الشخصيات (عربي)
+├── global-workflow.md            # [الجوهر] بروتوكول التحميل والتنفيذ
+├── README.md                     # الباب الأمامي للقارئ الإنجليزي
+├── README-AR.md                  # الباب الأمامي للقارئ العربي (هذا الملف)
+├── Memory.md                     # السياق قصير المدى عبر الجلسات
+├── CHANGELOG.md                  # ملاحظات الإصدار
 │
-├── .github/                      # 🤝 إرشادات المجتمع (السياسات، الأمان، المساهمة)
-├── state/                        # 🧠 سجلات التتبع والذاكرة (CHANGELOG, MEMORY)
-├── rules/                        # 🛡️ قيود موجهة بدقة (مضغوطة)
-│   ├── core-behavioral-compact.md  # 4 مبادئ هندسية غير قابلة للتفاوض
-│   ├── ai-integration-standards.md # طوابير معالجة غير متزامنة، بث SSE، وضغط السياق
-│   └── ... 
+├── .cursor/rules/                # محولات قواعد Cursor
+├── .claude/                      # إعداد Claude Code، مهارات، agents
+├── .clinerules/                  # قواعد Cline
+├── .windsurfrules                # قواعد Windsurf
+├── .aider.conf.yml               # إعداد Aider
+├── .github/copilot-instructions.md # تعليمات GitHub Copilot
 │
-├── tech-stack/                   # 🧠 RAG خاص بالنطاق (مضغوطة)
-│   ├── laravel-12.md             # معايير Laravel 12/13 المحترفة 
-│   ├── react-ecosystem.md        # Next.js 15, React Compiler
-│   └── ... 
+├── rules/                        # قواعد سلوكية وبنيوية مضغوطة
+├── tech-stack/                   # تقنيات RAG خاصة بالنطاق مضغوطة
+├── workflows/                    # بروتوكولات تنفيذ معتمدة على المحفزات
+├── skills/                       # أدوات AI وشخصيات agents مضغوطة
 │
-├── workflows/                    # ⚙️ بروتوكولات تنفيذ تعتمد على المحفزات (مضغوطة)
-│   ├── 01-planning.md            # البوابات المعمارية والاستراتيجية
-│   ├── 02-execution.md           # حلقات التنفيذ الجراحية
-│   └── ... 
+├── state/                        # سجلات والحالة المستمرة
+├── brain/                        # قاعدة بيانات الذاكرة
+├── graphify-out/                 # رسم بياني معرفي
 │
-└── scripts/                      # 🔧 عمليات التصحيح الذاتي
-    ├── validate-globals.ps1      # مدقق النزاهة بـ PowerShell
-    └── validate-globals.py       # مدقق النزاهة متعدد المنصات بـ Python
+├── runtime/                      # نواة التشغيل (policy, budget, workflow, chat, telemetry)
+├── memory/                       # خدمة الذاكرة
+├── aios_mcp/                     # خادم MCP
+├── dashboard/                    # لوحة التحكم الويب
+├── cli.py                        # نقطة دخول CLI
+├── config.py                     # اكتشاف الجذر
+├── install.ps1 / install.sh      # مثبت النظام
+├── plugins.yaml                  # ملف Plugin manifest
+└── scripts/                      # عمليات التصحيح الذاتي
+    ├── validate-globals.py       # مدقق النزاهة
+    ├── sync-agent-configs.py     # مزامنة الإعدادات عبر الأدوات
+    └── graphify_mcp_wrapper.py   # جسر Graphify MCP
 ```
 
 ---
 
-## 🦥 الإصدار 4.19.0: فلسفة المبرمج الكسول (Ponytail Philosophy)
+## أبرز التحديثات (v4.21.0)
 
-يجبر AI Global OS الآن الوكلاء على التصرف مثل **مبرمج خبير وكسول** (Lazy Senior Developer). لقد قمنا بدمج فلسفة [Ponytail](https://github.com/DietrichGebert/ponytail) بشكل أصلي للقضاء تماماً على التعقيد الهندسي المفرط (Over-engineering):
-
-- **YAGNI بشكل افتراضي:** يُمنع الوكلاء تماماً من كتابة أكواد معقدة غير مطلوبة، أو مميزات توقعية (Speculative Features).
-- **السيادة للمكتبات الأصلية والقياسية:** يجب على الوكلاء استخدام واجهات برمجة المتصفح الأصلية (مثل `<input type="date">`) والمكتبات القياسية قبل اقتراح أي حزم خارجية.
-- **أولوية السطر الواحد (One-Liner):** إذا كان بالإمكان حل المشكلة في سطر واحد، فسيتم ذلك. الأكواد المخصصة المعقدة هي الحل الأخير فقط.
-- **تدقيق التعقيد المدمج:** تمت إضافة مهارات جديدة مثل `/ponytail-review` و `/ponytail-audit` لحذف الديون التقنية وتقليص الأكواد المنتفخة من مشروعك بلا رحمة.
-- **النتيجة:** تقليل حجم الكود المولد بنسبة تصل إلى 54%، توفير التكلفة بنسبة ~20%، وسرعة تنفيذ أعلى بكثير دون المساس بالدقة أو الأمان.
-
----
-
-## 🌌 الإصدار 4.21.0: نواة التشغيل والأوركسترية العالمية
-
-- **AGENTS.md** كنص مرجعي واحد لكل الأدوات (Cursor، Claude، Codex، OpenCode، Cline، Windsurf، Aider، Copilot).
-- **نواة التشغيل Runtime** — محرك سياسات `allow/ask/deny` مع تقييم AST آمن (بدون `eval`)، ميزانيات رموز/تكلفة، ومشغّل سير عمل متين.
-- **ذاكرة** — SQLite مع بحث FTS5، ذاكرة زمنية/دلالية/حقيقية/إجرائية، علاقات جراف، وفهرس متجهي اختياري (turbovec + sentence-transformers).
-- **تدقيق Audit** — سجل `state/audit.log` لكل قرار سياسة/ميزانية/سير عمل.
-- **خادم MCP** — بناء FastMCP يعرض `query_rules`, `run_workflow`, `check_policy`, `search_memory`, `search_memory_vector`, `get_tech_stack`.
-- **CLI `ai-os`** — `--root`, `AGENT_OS_ROOT`, `check --args`, `memory vector`, `run --context`.
-- **لوحة Dashboard** — تحديث تلقائي، CORS، توكن `AGENT_OS_DASHBOARD_TOKEN` اختياري، ونقطة audit.
-- **بناء ونشر** — `pyproject.toml`, `ruff`, `mypy`, `pytest`, `Dockerfile`, `docker-compose.yml`, وCI.
-- **اكتشاف Root** — `config.py` يستخدم `AGENT_OS_ROOT` أو مجلد التثبيت؛ لا مسارات `D:/server/.ai` محددة بشكل ثابت.
+- نواة التشغيل مع policy، budget، workflow، saga، chat، telemetry، و plugin.
+- استيعاب الذاكرة SQLite + FTS5 + فهرس متجهي اختياري.
+- خادم MCP مع 12+ أداة وتسجيل plugin ديناميكي.
+- CLI `ai-os` مع `status`, `check`, `run`, `memory`, `sync`, `policy`, `budget`, `project`, `doctor`.
+- Dashboard بتحديث تلقائي، CORS، Bearer auth اختياري، وأكثر من 10 نقاط API.
+- تصليب Docker مع مستخدم غير root، healthchecks، ودعم compose.
+- 11 مهارة lord-level تغطي database، language، cloud، devops، frontend، backend، messaging، search/vector، AI/ML، Linux، و security.
+- 9 شخصيات محكمة في `global-roles.md` و `global-roles-ar.md`.
+- CI pipeline مع SHA pinned للـ actions، `ruff`, `mypy`, `pytest`, و `python eval/harness.py`.
 
 ---
 
-## 🚀 الإصدار 4.15.0: بنية Micro-DSL وتقليل استهلاك التوكنز بنسبة 50%
+## انضم للحركة
 
-هذا النظام لا يدير الموجهات فحسب؛ بل يفرض أعلى مستويات هندسة البرمجيات الحديثة بأقصى كفاءة:
-
-- **نظام قاموس Micro-DSL:** استبدال القواعد النصية الطويلة بمفردات رمزية مركزية (مثل `[BEH-01]`, `[SEC-08]`)، مما يضمن انتشار السياق العميق بجزء بسيط من التكلفة.
-- **تقليل بصمة التوكنز بنسبة 50%:** تقليل حجم السياق النشط لمساحة العمل من حوالي 113,000 إلى 57,765 توكن، مما يضاعف من سرعة تحليل الذكاء الاصطناعي ويوسع نوافذ السياق للمهام المعقدة.
-- **تحقق وإصلاح ذاتي (Self-Healing):** تعزيز نصوص التحقق متعددة المنصات `validate-globals.ps1` و `validate-globals.py` لتسوية وتصحيح الأكواد الرمزية تلقائياً واحترام معلمات `.aiignore` ديناميكياً.
-
----
-
-## 🔥 الإصدار 4.14.0: المخطط الهندسي للمؤسسات 2026
-
-هذا النظام لا يدير الموجهات فحسب؛ بل يفرض أعلى مستويات هندسة البرمجيات الحديثة:
-
-- **منهجية القوى الخارقة (Superpowers):** دمج أصيل لسير العمل يفرض استخراج المتطلبات (Spec Teasing) بشكل صارم، تقسيم المهام (Digestible Chunking)، والتطوير الموجه بالاختبار (Red/Green TDD) باستخدام وكلاء فرعيين (Subagents) قبل كتابة أي كود.
-- **تكامل الذكاء الاصطناعي السيادي:** دعم أصيل لتدفق البيانات عالي الإنتاجية عبر (SSE)، ذاكرة RAG محلية مخصصة عبر Qdrant، ضغط وحفظ السياق (Sliding Window)، وتمرير المهام الخلفية عبر Redis Queues.
-- **مصافحات تعاونية بين الوكلاء (Inter-Agent Handshakes):** ضوابط صارمة تفرض مزامنة وتتبع آلة الحالة (Saga Reconciliation) بين الوكلاء الفرعيين أثناء التنفيذ المتوازي لمنع انقسام حالة النظام.
-- **بنية تحتية من الجيل القادم:** PostgreSQL 17 (UUIDv7, BRIN)، AWS Graviton4 (ARM64)، و Docker SBOMs أصلية.
-- **واجهة أمامية متطورة:** Next.js 15 (`"use cache"`)، Tailwind CSS v4، وتفويضات وصول صارمة WCAG 2.2 AA.
-- **خلفية عالية النطاق:** Laravel 12/13 مع Octane (FrankenPHP) مقترنة بأقفال إعادة المحاولة (Cache-Retry Interlocks) لمنع تدافع الطلبات على الكاش منتهي الصلاحية.
-- **قابلية ملاحظة عميقة:** OpenTelemetry (W3C Trace Context) وتتبع مدعوم بالذكاء الاصطناعي (Sentry Session Replay).
-- **واجهات تخاطب محصنة:** فرض مسارات تعريفية مشفرة بـ `UUIDv4` لمنع ثغرات (IDOR)، مقترنة بخوارزمية (Token-Bucket) عبر Redis لتحديد معدل الطلبات (Rate Limiting) وحماية النظام من هجمات الاستنزاف الاقتصادي (EDoS).
-- **بيانات التصحيح الذاتي:** نصوص برمجية مدمجة (`.ps1`/`.py`) للتحقق ديناميكياً من نزاهة القواعد، تضمن تطابق إصدارات اللغتين الإنجليزية والعربية، تفحص روابط الملفات العامة، تصلح المراجع المكسورة، وتوفر وضعاً تفاعلياً للتصحيح الذاتي.
-
----
-
-## 🤝 انضم إلى حركة الهندسة السيادية
-
-**هل سئمت من إصلاح أخطاء الذكاء الاصطناعي؟** ضع نجمة (Star) لهذا المستودع لإبقاء قواعد الذكاء الاصطناعي الخاصة بك محدثة تلقائياً بأحدث معايير الهندسة لعام 2026.
+ضع نجمة على المستودع لإبقاء قواعد الذكاء الاصطناعي محدثة تلقائياً بأحدث معايير الهندسة.
 
 [![Star on GitHub](https://img.shields.io/github/stars/m3taz-ahmed/ai-globals?style=for-the-badge&logo=github&color=FFDD00&labelColor=1a1a2e)](https://github.com/m3taz-ahmed/ai-globals)
 
-### ارتقِ بالنظام
-نحتاج إلى مهندسين رئيسيين، مدققي أمن، وقادة تقنيين للمساعدة في تقوية هذه القواعد.
-- 📖 [**اقرأ دليل المساهمة**](.github/CONTRIBUTING.md) لإضافة تقنياتك.
-- 🛡️ [**راجع سياسة الأمن**](.github/SECURITY.md).
-- 📜 [**مدونة قواعد السلوك**](.github/CODE_OF_CONDUCT.md).
+- اقرأ [دليل المساهمة](.github/CONTRIBUTING.md) لإضافة تقنياتك.
+- راجع [سياسة الأمان](.github/SECURITY.md).
+- شاهد [مدونة قواعد السلوك](.github/CODE_OF_CONDUCT.md).
 
-> *بُني للمهندسين الذين يرفضون القبول بمخرجات ذكاء اصطناعي متوسطة. هندس بدقة جراحية بواسطة [@m3taz-ahmed](https://github.com/m3taz-ahmed).*
+> بُني للمهندسين الذين يرفضون قبول مخرجات ذكاء اصطناعي متوسطة. هندس بدقة جراحية بواسطة [@m3taz-ahmed](https://github.com/m3taz-ahmed).
 
 </div>

@@ -41,17 +41,27 @@
     ]
   },
   "mcpServers": {
+    "ai-global-os": {
+      "command": "python",
+      "args": [
+        "-c",
+        "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or str(pathlib.Path.home()/'.ai-os'); subprocess.run([sys.executable,'-m','aios_mcp.aios_server'], cwd=root)"
+      ]
+    },
     "context7": {
       "command": "npx",
       "args": ["-y", "@context7/mcp"]
     },
     "graphify": {
       "command": "python",
-      "args": ["D:/server/.ai/scripts/graphify_mcp_wrapper.py"]
+      "args": [
+        "-c",
+        "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or str(pathlib.Path.home()/'.ai-os'); subprocess.run([sys.executable, str(pathlib.Path(root)/'scripts'/'graphify_mcp_wrapper.py')])"
+      ]
     }
   },
   "alwaysAllow": {
     "tools": ["Read", "grep", "Glob", "view"],
-    "mcpTools": ["context7-get-library-docs", "graphify-query"]
+    "mcpTools": ["context7-get-library-docs", "graphify-query", "query_rules", "check_policy", "search_memory", "search_memory_vector"]
   }
 }

@@ -103,41 +103,56 @@ class _SafeEvaluator(ast.NodeVisitor):
 class PolicyEngine:
     """Evaluates agent actions against YAML policies."""
 
-    def __init__(self, root: Path) -> None:
-        self.root = root
+    def __init__(self, os_root: Path, project_root: Path | None = None) -> None:
+        self.os_root = os_root
+        self.project_root = project_root
         self.rules: list[PolicyRule] = []
         self.default_action: Action = "ask"
         self._load()
 
     def _load(self) -> None:
-        policy_dir = self.root / "runtime" / "policies"
-        default = policy_dir / "default.yaml"
-        others = sorted(p for p in policy_dir.glob("*.yaml") if p.name != "default.yaml")
-        if default.exists():
-            self._load_file(default)
-        for path in others:
-            self._load_file(path)
+        roots = [self.os_root]
+        if self.project_root and self.project_root != self.os_root:
+            roots.append(self.project_root)
+        for root in roots:
+            policy_dir = root / "runtime" / "policies"
+            if not policy_dir.exists():
+                continue
+            default = policy_dir / "default.yaml"
+            others = sorted(p for p in policy_dir.rglob("*.yaml") if p.name != "default.yaml")
+            if default.exists():
+                self._load_file(default)
+            for path in others:
+                self._load_file(path)
 
     def _load_file(self, path: Path) -> None:
+        from runtime.schemas import PolicyRuleSchema
+
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        self.default_action = data.get("default_action", self.default_action)
+        default_action = data.get("default_action", self.default_action)
+        if default_action not in ("allow", "ask", "deny"):
+            warnings.warn(f"Skipping malformed policy file {path}: invalid default_action", stacklevel=2)
+            return
+        self.default_action = cast(Action, default_action)
         for r in data.get("rules", []):
             if not isinstance(r, dict):
                 warnings.warn(f"Invalid rule in {path}: {r}", stacklevel=2)
                 continue
-            if not all(k in r for k in ("name", "condition", "action")):
-                warnings.warn(f"Skipping malformed rule in {path}: {r}", stacklevel=2)
+            if r.get("action") not in ("allow", "ask", "deny"):
+                warnings.warn(f"Skipping rule with invalid action in {path}: {r.get('action')}", stacklevel=2)
                 continue
-            if r["action"] not in ("allow", "ask", "deny"):
-                warnings.warn(f"Skipping rule with invalid action in {path}: {r['action']}", stacklevel=2)
+            try:
+                validated = PolicyRuleSchema(**r)
+            except Exception as exc:
+                warnings.warn(f"Skipping malformed rule in {path}: {exc}", stacklevel=2)
                 continue
             self.rules.append(
                 PolicyRule(
-                    name=r["name"],
-                    condition=r["condition"],
-                    action=cast(Action, r["action"]),
-                    description=r.get("description", ""),
-                    approvers=r.get("approvers", []),
+                    name=validated.name,
+                    condition=validated.condition,
+                    action=cast(Action, validated.action),
+                    description=validated.description,
+                    approvers=validated.approvers,
                 )
             )
 
