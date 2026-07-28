@@ -17,7 +17,7 @@ def read_agents() -> str:
         sys.exit(1)
     return AGENTS.read_text(encoding="utf-8")
 
-def canonical_to_cursor_mdc(agents: str, description: str, globs: list, extra: str = "") -> str:
+def canonical_to_cursor_mdc(agents: str, description: str, globs: list[str], extra: str = "") -> str:
     globs_part = ", ".join(f'"{g}"' for g in globs) if globs else ""
     globs_s = f"[{globs_part}]" if globs else "[]"
     # strip YAML frontmatter from AGENTS.md
@@ -53,19 +53,20 @@ def main() -> None:
     # .cursor/rules/ai-global-os.mdc
     (ROOT / ".cursor" / "rules" / "ai-global-os.mdc").write_text(
         canonical_to_cursor_mdc(agents, "AI Global OS canonical adapter", [], ""),
-        encoding="utf-8"
+        encoding="utf-8",
+        newline="\n",
     )
     # .claude/CLAUDE.md
     (ROOT / ".claude" / "CLAUDE.md").write_text(
-        canonical_to_claude(agents), encoding="utf-8"
+        canonical_to_claude(agents), encoding="utf-8", newline="\n"
     )
     # .clinerules/ai-global-os.md
     (ROOT / ".clinerules" / "ai-global-os.md").write_text(
-        canonical_to_clinerules(agents), encoding="utf-8"
+        canonical_to_clinerules(agents), encoding="utf-8", newline="\n"
     )
     # .windsurfrules
     (ROOT / ".windsurfrules").write_text(
-        canonical_to_windsurf(agents), encoding="utf-8"
+        canonical_to_windsurf(agents), encoding="utf-8", newline="\n"
     )
     # .aider.conf.yml preamble
     aider = (
@@ -73,10 +74,10 @@ def main() -> None:
         "model: claude-sonnet-4-6\nauto-commits: false\ndirty-commits: false\n\n"
         f"# AI Global OS\n{agents}\n"
     )
-    (ROOT / ".aider.conf.yml").write_text(aider, encoding="utf-8")
+    (ROOT / ".aider.conf.yml").write_text(aider, encoding="utf-8", newline="\n")
     # .github/copilot-instructions.md
     (ROOT / ".github" / "copilot-instructions.md").write_text(
-        canonical_to_copilot(agents), encoding="utf-8"
+        canonical_to_copilot(agents), encoding="utf-8", newline="\n"
     )
     print("Synced agent configs from AGENTS.md")
 

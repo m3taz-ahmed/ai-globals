@@ -17,6 +17,8 @@ class SubAgent:
 
     id: str
     persona: str
+    personas: list[str]
+    lords: list[str]
     scope: list[str]
     project_root: Path
     kernel: Kernel = field(compare=False)
@@ -33,9 +35,10 @@ class AgentPool:
     def register(
         self,
         agent_id: str,
-        persona: str,
+        personas: list[str],
         scope: list[str],
         project_root: Path | None = None,
+        lords: list[str] | None = None,
     ) -> SubAgent:
         from runtime.kernel import Kernel
 
@@ -44,7 +47,16 @@ class AgentPool:
         for sub in ("runtime/policies", "state", "brain"):
             (root / sub).mkdir(parents=True, exist_ok=True)
         kernel = Kernel(self.os_root, root)
-        agent = SubAgent(id=agent_id, persona=persona, scope=scope, project_root=root, kernel=kernel)
+        primary = personas[0] if personas else "ARCH"
+        agent = SubAgent(
+            id=agent_id,
+            persona=primary,
+            personas=list(personas),
+            lords=list(lords or []),
+            scope=scope,
+            project_root=root,
+            kernel=kernel,
+        )
         with self._lock:
             self._agents[agent_id] = agent
         return agent
@@ -67,6 +79,8 @@ class AgentPool:
             return {
                 agent_id: {
                     "persona": agent.persona,
+                    "personas": agent.personas,
+                    "lords": agent.lords,
                     "scope": agent.scope,
                     "status": agent.kernel.status(),
                 }
@@ -76,6 +90,13 @@ class AgentPool:
     def list_agents(self) -> list[dict[str, Any]]:
         with self._lock:
             return [
-                {"id": a.id, "persona": a.persona, "scope": a.scope, "project_root": str(a.project_root)}
+                {
+                    "id": a.id,
+                    "persona": a.persona,
+                    "personas": a.personas,
+                    "lords": a.lords,
+                    "scope": a.scope,
+                    "project_root": str(a.project_root),
+                }
                 for a in self._agents.values()
             ]

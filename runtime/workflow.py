@@ -38,13 +38,18 @@ class Workflow:
 class WorkflowRunner:
     """Loads and runs markdown workflows with durable SQLite state."""
 
-    def __init__(self, root: Path, os_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        root: Path,
+        os_root: Path | None = None,
+        persona_detector: PersonaDetector | None = None,
+    ) -> None:
         self.root = root
         self.os_root = os_root or root
         self.dir = root / "workflows"
         self.db_path = root / "state" / "workflow.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.persona = PersonaDetector()
+        self.persona = persona_detector or PersonaDetector()
         self._init_schema()
 
     def _conn(self) -> sqlite3.Connection:
@@ -84,8 +89,13 @@ class WorkflowRunner:
     ) -> dict[str, Any]:
         context = dict(context)
         prompt = context.get("message") or context.get("request") or context.get("query")
-        if "persona" not in context and isinstance(prompt, str) and prompt.strip():
-            context["persona"] = self.persona.detect(prompt)["persona"]
+        if "personas" not in context and "persona" not in context and isinstance(prompt, str) and prompt.strip():
+            result = self.persona.detect_multiple(prompt)
+            context["persona"] = result["persona"]
+            context["skill"] = result["skill"]
+            context["personas"] = result["personas"]
+            context["skills"] = result["skills"]
+            context["lords"] = result["lords"]
         wf = self.get(workflow_id)
         if not wf:
             return {"ok": False, "error": f"Workflow {workflow_id} not found"}

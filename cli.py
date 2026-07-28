@@ -321,7 +321,8 @@ def cmd_agent(args: argparse.Namespace) -> int:
     k = _kernel(args)
     if args.subcommand == "spawn":
         scope = json.loads(args.scope) if args.scope else []
-        result = k.spawn_agent(args.agent_id, args.persona, scope)
+        lords = json.loads(args.lords) if getattr(args, "lords", "") else []
+        result = k.spawn_agent(args.agent_id, args.persona, scope, lords=lords)
         print(json.dumps(result, indent=2, default=str))
     elif args.subcommand == "delegate":
         arguments = json.loads(args.args) if args.args else {}
@@ -336,16 +337,17 @@ def cmd_agent(args: argparse.Namespace) -> int:
 
 def cmd_persona(args: argparse.Namespace) -> int:
     k = _kernel(args)
-    if args.subcommand == "list":
+    if args.persona_action == "list":
         print(json.dumps(k.persona.list_personas(), indent=2))
-    elif args.subcommand == "detect":
-        text = args.text
-        if not text and getattr(args, "extra", None):
-            text = " ".join(args.extra)
+    elif args.persona_action == "detect":
+        text = " ".join(args.text)
         if not text:
-            console.print("[red]Provide text with --text or as positional arguments.[/red]")
+            console.print("[red]Provide text as positional arguments.[/red]")
             return 1
-        result = k.detect_persona(text)
+        if args.multi:
+            result = k.persona.detect_multiple(text, max_personas=args.max_personas, max_lords=args.max_lords)
+        else:
+            result = k.detect_persona(text)
         print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
@@ -460,15 +462,23 @@ def main(argv: list[str] | None = None) -> int:
     p_agent = sub.add_parser("agent", help="Sub-agent orchestration")
     p_agent.add_argument("subcommand", choices=["spawn", "delegate", "list", "sync"])
     p_agent.add_argument("--agent-id", default=None)
-    p_agent.add_argument("--persona", default="auto", help="Persona code or 'auto' to detect")
+    p_agent.add_argument("--persona", default="auto", help="Persona code(s) or 'auto' to detect")
+    p_agent.add_argument("--lords", default="", help="JSON list of additional skill names")
     p_agent.add_argument("--scope", default="", help="JSON list of allowed actions")
     p_agent.add_argument("--action", default=None)
     p_agent.add_argument("--args", default="", help="JSON arguments for delegate")
 
     p_persona = sub.add_parser("persona", help="Persona detection")
-    p_persona.add_argument("subcommand", choices=["list", "detect"])
-    p_persona.add_argument("text", nargs="?", default="")
-    p_persona.add_argument("extra", nargs="*", default=[])
+    sp_persona = p_persona.add_subparsers(dest="persona_action", required=True)
+
+    sp_persona.add_parser("list", help="List available personas")
+
+    p_persona_detect = sp_persona.add_parser("detect", help="Detect persona(s) from text")
+    p_persona_detect.add_argument("text", nargs="+", help="Text to analyze")
+    p_persona_detect.add_argument("--multi", action="store_true", default=True, help="Return top-N personas + skills (default)")
+    p_persona_detect.add_argument("--single", dest="multi", action="store_false", help="Return a single persona only")
+    p_persona_detect.add_argument("--max-personas", type=int, default=3, help="Max personas when --multi is used")
+    p_persona_detect.add_argument("--max-lords", type=int, default=5, help="Max additional lord skills to load")
 
     args = parser.parse_args(argv)
     if not args.command:

@@ -1,4 +1,4 @@
-"""Tests for runtime/persona.py and persona integration in the kernel."""
+"""Tests for runtime/persona.py, runtime/skill_resolver.py, and persona integration in the kernel."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ from pathlib import Path
 
 from runtime.kernel import Kernel
 from runtime.persona import PersonaDetector, detect_persona
+from runtime.skill_resolver import SkillResolver
 
 
 def _kernel(tmp_path: Path) -> Kernel:
@@ -21,11 +22,33 @@ def _kernel(tmp_path: Path) -> Kernel:
     return Kernel(tmp_path)
 
 
+class TestSkillResolver:
+    def test_finds_flat_and_directory_skills(self, tmp_path: Path):
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        (skills / "flat.md").write_text("---\nname: flat\n---\n[SKILL] flat\n[OBJ] Test.\n[RULES]\n1. [REQ] R.\n")
+        nested = skills / "nested"
+        nested.mkdir()
+        (nested / "SKILL.md").write_text("---\nname: nested\n---\n[SKILL] nested\n[OBJ] Test.\n[RULES]\n1. [REQ] R.\n")
+
+        resolver = SkillResolver(tmp_path)
+        assert resolver.resolve("flat") == skills / "flat.md"
+        assert resolver.resolve("nested") == nested / "SKILL.md"
+        assert resolver.exists("flat")
+        assert resolver.exists("nested")
+        assert resolver.resolve("missing") is None
+
+    def test_rejects_path_traversal(self, tmp_path: Path):
+        resolver = SkillResolver(tmp_path)
+        assert resolver.resolve("../AGENTS") is None
+        assert resolver.resolve("a/b") is None
+
+
 class TestPersonaDetector:
     def test_list_personas(self):
         d = PersonaDetector()
         assert "ARCH" in d.list_personas()
-        assert len(d.list_personas()) == 9
+        assert len(d.list_personas()) == 17
 
     def test_unknown_default_raises(self):
         try:
@@ -71,6 +94,40 @@ class TestPersonaDetector:
         assert result["persona"] == "DEV"
         assert result["skill"] == "backend-api-expert"
 
+    def test_detect_multiple_returns_primary_and_personas(self):
+        d = PersonaDetector()
+        result = d.detect_multiple("build a secure docker api with kubernetes")
+        assert result["persona"] in ("DEV", "SRE", "API", "SEC", "DEVOPS")
+        assert isinstance(result["personas"], list)
+        assert len(result["personas"]) <= 3
+        assert "skills" in result
+        assert "lords" in result
+
+    def test_detect_multiple_includes_lord_skills(self):
+        d = PersonaDetector()
+        result = d.detect_multiple("optimize react frontend performance with docker")
+        lords = result["lords"]
+        assert "frontend-frameworks-lord" in lords
+        assert "fullstack-optimizer" in lords
+
+    def test_new_persona_data(self):
+        d = PersonaDetector()
+        result = d.detect("design an etl pipeline for postgres")
+        assert result["persona"] == "DATA"
+        assert result["skill"] == "data-engineer"
+
+    def test_new_persona_ml(self):
+        d = PersonaDetector()
+        result = d.detect("train a pytorch model and deploy it as an onnx endpoint")
+        assert result["persona"] == "ML"
+        assert result["skill"] == "ml-engineer"
+
+    def test_new_persona_legal(self):
+        d = PersonaDetector()
+        result = d.detect("write a gdpr privacy policy and check soc2 compliance")
+        assert result["persona"] == "LEGAL"
+        assert result["skill"] == "legal-compliance"
+
 
 class TestKernelPersonaIntegration:
     def test_detect_persona_method(self, tmp_path: Path):
@@ -83,18 +140,29 @@ class TestKernelPersonaIntegration:
         result = k.act("Read", content="audit firewall rules", approved=True)
         assert result["ok"]
         assert result["args"]["persona"] == "SEC"
+        assert "personas" in result["args"]
+        assert "lords" in result["args"]
 
     def test_run_workflow_injects_persona(self, tmp_path: Path):
         k = _kernel(tmp_path)
         result = k.run_workflow("test", {"message": "write unit tests for auth"})
         assert result["ok"]
         assert result["context"]["persona"] == "QA"
+        assert "personas" in result["context"]
 
     def test_spawn_agent_auto_persona(self, tmp_path: Path):
         k = _kernel(tmp_path)
-        result = k.spawn_agent("android-publisher", "auto", ["PublishAAB"])
+        result = k.spawn_agent("android-publisher", "auto", ["Publish", "AAB", "PlayStore"])
         assert result["ok"]
         assert result["persona"] == "PLAY"
+        assert result["personas"] == ["PLAY"]
+
+    def test_spawn_agent_multiple_personas(self, tmp_path: Path):
+        k = _kernel(tmp_path)
+        result = k.spawn_agent("reviewer", "ARCH,QA", ["Read", "Review"])
+        assert result["ok"]
+        assert result["persona"] == "ARCH"
+        assert result["personas"] == ["ARCH", "QA"]
 
     def test_status_includes_personas(self, tmp_path: Path):
         k = _kernel(tmp_path)

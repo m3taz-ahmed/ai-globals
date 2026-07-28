@@ -19,6 +19,7 @@ from .persona import PersonaDetector
 from .plugin import PluginManager
 from .policy import PolicyEngine
 from .saga import Saga, SagaOrchestrator, SagaStep
+from .skill_resolver import SkillResolver
 from .tech_stack import detect_stack
 from .telemetry import TelemetryCollector
 from .workflow import WorkflowRunner
@@ -42,17 +43,24 @@ class WorkflowContextSchema(BaseModel):
 class Kernel:
     """Central runtime for AI Global OS."""
 
-    def __init__(self, root: Path | None = None, project_root: Path | None = None) -> None:
+    def __init__(
+        self,
+        root: Path | None = None,
+        project_root: Path | None = None,
+        persona_detector: PersonaDetector | None = None,
+        skill_resolver: SkillResolver | None = None,
+    ) -> None:
         self.root = root or config.discover_root()
         self.project_root = project_root or root or config.discover_project_root()
+        self.skill_resolver = skill_resolver or SkillResolver(self.root)
+        self.persona = persona_detector or PersonaDetector(skill_resolver=self.skill_resolver)
         self.policy = PolicyEngine(self.root, self.project_root)
         self.budget = BudgetManager(self.project_root)
-        self.workflows = WorkflowRunner(self.project_root, self.root)
+        self.workflows = WorkflowRunner(self.project_root, self.root, persona_detector=self.persona)
         self.saga = self._build_saga_orchestrator()
         self.telemetry = self._build_telemetry_collector()
         self.chat = ChatSession(self.project_root)
         self.pool = AgentPool(self.root)
-        self.persona = PersonaDetector()
         self.audit = AuditLogger(self.project_root)
         self.plugins = PluginManager(self, self.root)
 
@@ -67,12 +75,17 @@ class Kernel:
         return self.persona.detect(text)
 
     def _auto_persona(self, kwargs: dict[str, Any]) -> None:
-        """Inject a persona into kwargs if missing and a text prompt is present."""
-        if "persona" in kwargs:
+        """Inject personas and skills into kwargs if missing and text is present."""
+        if "personas" in kwargs or "persona" in kwargs:
             return
         text = kwargs.get("message") or kwargs.get("content") or kwargs.get("query") or kwargs.get("request")
         if isinstance(text, str) and text.strip():
-            kwargs["persona"] = self.persona.detect(text)["persona"]
+            result = self.persona.detect_multiple(text)
+            kwargs["persona"] = result["persona"]
+            kwargs["skill"] = result["skill"]
+            kwargs["personas"] = result["personas"]
+            kwargs["skills"] = result["skills"]
+            kwargs["lords"] = result["lords"]
 
     def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Evaluate action through policy + budget gates."""
@@ -146,8 +159,13 @@ class Kernel:
     def run_workflow(self, workflow_id: str, context: dict[str, Any]) -> dict[str, Any]:
         context = dict(context)
         prompt = context.get("message") or context.get("request") or context.get("query") or workflow_id
-        if "persona" not in context and isinstance(prompt, str):
-            context["persona"] = self.persona.detect(prompt)["persona"]
+        if "personas" not in context and "persona" not in context and isinstance(prompt, str):
+            result = self.persona.detect_multiple(prompt)
+            context["persona"] = result["persona"]
+            context["skill"] = result["skill"]
+            context["personas"] = result["personas"]
+            context["skills"] = result["skills"]
+            context["lords"] = result["lords"]
         try:
             valid_context = WorkflowContextSchema(**context).model_dump()
         except Exception as e:
@@ -203,12 +221,33 @@ class Kernel:
     def detect_tech_stack(self) -> dict[str, dict[str, object]]:
         return detect_stack(self.project_root, self.root)
 
-    def spawn_agent(self, agent_id: str, persona: str, scope: list[str], project_root: Path | None = None) -> dict[str, Any]:
+    def spawn_agent(
+        self,
+        agent_id: str,
+        persona: str,
+        scope: list[str],
+        project_root: Path | None = None,
+        lords: list[str] | None = None,
+    ) -> dict[str, Any]:
+        extra_lords: list[str] = list(lords or [])
         if persona in ("auto", "", "generalist"):
             prompt = " ".join([agent_id, *scope])
-            persona = self.persona.detect(prompt)["persona"]
-        agent = self.pool.register(agent_id, persona, scope, project_root)
-        return {"ok": True, "id": agent.id, "persona": agent.persona, "scope": agent.scope}
+            result = self.persona.detect_multiple(prompt)
+            personas = result["personas"]
+            extra_lords = sorted(set(extra_lords + result["lords"]))
+        else:
+            personas = [p.strip() for p in persona.split(",") if p.strip()]
+            if not personas:
+                return {"ok": False, "error": "No persona provided"}
+        agent = self.pool.register(agent_id, personas, scope, project_root, lords=extra_lords)
+        return {
+            "ok": True,
+            "id": agent.id,
+            "persona": agent.persona,
+            "personas": agent.personas,
+            "lords": agent.lords,
+            "scope": agent.scope,
+        }
 
     def delegate(self, agent_id: str, action_type: str, **kwargs: Any) -> dict[str, Any]:
         return self.pool.delegate(agent_id, action_type, **kwargs)
