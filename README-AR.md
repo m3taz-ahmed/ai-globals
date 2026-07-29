@@ -11,7 +11,7 @@
   </p>
   <p>
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-17-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="17 شخصية">
-    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA%20Lord-11-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="11 مهارة Lord">
+    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA%20Lord-13-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="13 مهارة Lord">
     <img src="https://img.shields.io/badge/%D8%A8%D9%88%D8%A7%D8%A8%D8%A9_%D8%A7%D9%84%D8%AC%D9%88%D8%AF%D8%A9-SOLID%20%7C%20OWASP%20%7C%20WCAG%202.2-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="بوابة الجودة">
   </p>
 
@@ -65,7 +65,7 @@ AI Global OS ليس مكتبة prompts. إنه طبقة تحكم runtime توض�
 
 ### 1. تكوين الشخصيات + مهارات Lord
 
-النظام يأتي بـ **17 شخصية** (من `ARCH` إلى `LEGAL`) و**11 مهارة lord** (قواعد البيانات، AI/ML، السحابة، DevOps، الأمن، إلخ). لكل طلب يكتشف النظام مجموعة الشخصيات الأكثر ملاءمة ويحمّل ملفات المهارات المطابقة. يمكنك أيضاً إنشاء وكلاء متعددي الشخصيات، مثلاً `ARCH + QA + security-lord`.
+النظام يأتي بـ **17 شخصية** (من `ARCH` إلى `LEGAL`) و**13 مهارة lord** (قواعد البيانات، AI/ML، السحابة، DevOps، الأمن، إلخ). لكل طلب يكتشف النظام مجموعة الشخصيات الأكثر ملاءمة ويحمّل ملفات المهارات المطابقة. يمكنك أيضاً إنشاء وكلاء متعددي الشخصيات، مثلاً `ARCH + QA + security-lord`.
 
 ```bash
 ai-os persona detect --multi "build a secure docker API with postgres"
@@ -253,7 +253,7 @@ global-workflow.md
 
 ---
 
-## الـ 17 شخصية وـ 11 مجال مهارة Lord
+## الـ 17 شخصية وـ 13 مجال مهارة Lord
 
 الشخصيات تحدد **من** يكون الذكاء الاصطناعي. مهارات Lord تضيف **معرفة عميقة بالمجال** عند الحاجة.
 
@@ -277,7 +277,7 @@ global-workflow.md
 | **DOC** | READMEs، API docs، runbooks، changelogs | `technical-writer` |
 | **PERF** | زمن الاستجابة، الإنتاجية، profiling، التحسين | `performance-engineer` |
 
-مهارات Lord: `database-lord`, `ai-ml-lord`, `devops-lord`, `cloud-platforms-lord`, `frontend-frameworks-lord`, `backend-frameworks-lord`, `language-lord`, `linux-systems-lord`, `messaging-streaming-lord`, `search-vector-lord`, `security-lord`.
+مهارات Lord: `database-lord`, `mariadb-lord`, `ai-ml-lord`, `devops-lord`, `cloud-platforms-lord`, `frontend-frameworks-lord`, `backend-frameworks-lord`, `page-sections-lord`, `language-lord`, `linux-systems-lord`, `messaging-streaming-lord`, `search-vector-lord`, `security-lord`.
 
 عندما يمسّ prompt عدة مجالات، يُكوّن النظام لجنة — مثلاً `DEV + API + security-lord` — ويحمّل اتحاد ملفات المهارات ذات الصلة.
 
@@ -292,6 +292,15 @@ global-workflow.md
 - إعادة هيكلة Clean Architecture لنظام الشخصيات/المهارات مع حقن `PersonaDetector` و `SkillResolver`.
 - حوكمة runtime: policy, budget, audit, workflow, saga, telemetry, memory، و MCP server.
 - CI pipeline يشمل `ruff`, `mypy`, `pytest`, `validate-globals`, و `eval/harness.py`.
+
+---
+
+## أحدث الإضافات
+
+- **مهارة `mariadb-lord`** مع IDs لـ Context7 لـ MariaDB docs و Docker و Node/Python connectors، وربط Laravel + Filament + Nova، و patterns الـ multi-tenancy.
+- **مهارة `page-sections-lord`** تحتوي على باترن الـ section-based landing page builder (شبه tourx) مع standard spec و Filament Builder blocks و workflow للتنفيذ.
+- **Workflow `15-page-builder-setup.md`** و triggers جديدة في الـ manifest: `/page-builder`، `page builder`، `landing page`.
+- تحديث `backend-frameworks-lord` و `frontend-frameworks-lord` و `database-lord` و `runtime/persona.py` لربط المهارات الجديدة و keywords الخاصة بيها.
 
 ---
 

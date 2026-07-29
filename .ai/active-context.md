@@ -1,5 +1,38 @@
 # Active Context
 
+## 2026-07-29 (14) — Update README.md and README-AR.md
+- Updated `README.md` and `README-AR.md` badges, lord skill count (11 → 13), lord skill list, and added `mariadb-lord`, `page-sections-lord`.
+- Added "Latest additions" / "أحدث الإضافات" sections documenting `mariadb-lord`, `page-sections-lord`, workflow, and persona wiring.
+
+## 2026-07-29 (13) — Add Page Sections Builder Standard
+- Created `skills/page-sections-lord/SKILL.md` from the tourx pattern: `Page` model with JSON `content`, Filament `Builder` blocks, translatable fields, static pages, API image transformation.
+- Added `skills/page-sections-lord/templates/page-builder-spec.md` with database, Filament, API, and frontend blueprint.
+- Added `workflows/15-page-builder-setup.md` for step-by-step scaffold and updated `manifest.json` triggers `/page-builder`, `page builder`, `landing page`.
+- Wired `page-sections-lord` into UX and DEV personas with `landing page`, `page builder`, `page sections` keywords.
+- Updated `backend-frameworks-lord` and `frontend-frameworks-lord` to cross-reference `page-sections-lord`.
+- Quality gates green, installed, memory ingested (7 memories), graphify updated.
+
+## 2026-07-29 (12) — Extend MariaDB Skill for Filament + Nova
+- Extended `skills/mariadb-lord/SKILL.md` with Filament and Laravel Nova integration on MariaDB.
+- Added Context7 IDs: Filament `/filamentphp/filament`, Filament tenancy `/tomatophp/filament-tenancy`, Filament Shield `/bezhansalleh/filament-shield`, Laravel Nova `/websites/nova_laravel_v5`.
+- Added rules: Filament panel tenant model, `filament-shield` RBAC with `--relationships`, Nova resources/policies, `whenServing` authorization, tenant-aware policies.
+- Updated `skills/backend-frameworks-lord/SKILL.md` to include Filament/Nova IDs and multi-tenancy guidance.
+- Quality gates green, installed, memory ingested (3 memories), graphify unchanged.
+
+## 2026-07-29 (11) — Extend MariaDB Skill for Laravel + Multi-Tenancy
+- Extended `skills/mariadb-lord/SKILL.md` with Laravel integration, MariaDB driver, migrations, and multi-tenancy patterns.
+- Added Context7 IDs: Laravel `/laravel/docs`, Spatie multi-tenancy `/spatie/laravel-multitenancy`, Stancl tenancy `/archtechx/tenancy`.
+- Added multi-tenancy rules: database-per-tenant vs schema-per-tenant vs table-per-tenant, central `landlord` DB, tenant connection switching, `tenants:migrate`, per-tenant backup/restore.
+- Updated `skills/backend-frameworks-lord/SKILL.md` to reference MariaDB and multi-tenancy packages.
+- Quality gates green, installed, and memory ingested (3 memories).
+
+## 2026-07-29 (10) — Add MariaDB Lord Skill
+- Added `skills/mariadb-lord/SKILL.md` with Context7 IDs for official MariaDB docs, Docker image, Node.js/Python connectors.
+- Updated `skills/database-lord/SKILL.md` to include MariaDB in description/IDs and delegate deep questions to `mariadb-lord`.
+- Wired `mariadb-lord` into DATA and PERF persona lords and added MariaDB/Galera keywords for auto-detection.
+- Quality gates green: ruff, mypy, pytest, eval/harness.
+- Graphify graph rebuilt; memory ingest run.
+
 ## 2026-07-21 (9) — Persona Skills + CI/CD Hardening
 
 - Created three new persona skills with Context7 IDs:

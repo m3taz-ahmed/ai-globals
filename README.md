@@ -11,7 +11,7 @@
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-17%20Roles-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="17 Personas">
-    <img src="https://img.shields.io/badge/Lord%20Skills-11%20Domains-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="11 Lord Skill Domains">
+    <img src="https://img.shields.io/badge/Lord%20Skills-13%20Domains-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="13 Lord Skill Domains">
     <img src="https://img.shields.io/badge/Quality%20Gate-SOLID%20%7C%20OWASP%20%7C%20WCAG%202.2-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="Quality Gate">
   </p>
 
@@ -294,7 +294,7 @@ For **project-level** rules, use the adapter files in the table above instead.
 
 ---
 
-## The 17 personas and 11 lord skill domains
+## The 17 personas and 13 lord skill domains
 
 Personas shape **who** the AI acts like. Lord skills add **deep domain knowledge** on demand.
 
@@ -318,7 +318,7 @@ Personas shape **who** the AI acts like. Lord skills add **deep domain knowledge
 | **DOC** | READMEs, API docs, runbooks, changelogs | `technical-writer` |
 | **PERF** | Latency, throughput, profiling, optimization | `performance-engineer` |
 
-Lord skills: `database-lord`, `ai-ml-lord`, `devops-lord`, `cloud-platforms-lord`, `frontend-frameworks-lord`, `backend-frameworks-lord`, `language-lord`, `linux-systems-lord`, `messaging-streaming-lord`, `search-vector-lord`, `security-lord`.
+Lord skills: `database-lord`, `mariadb-lord`, `ai-ml-lord`, `devops-lord`, `cloud-platforms-lord`, `frontend-frameworks-lord`, `backend-frameworks-lord`, `page-sections-lord`, `language-lord`, `linux-systems-lord`, `messaging-streaming-lord`, `search-vector-lord`, `security-lord`.
 
 When a prompt touches multiple domains, the OS composes a panel — for example `DEV + API + security-lord` — and loads the union of relevant skill files.
 
@@ -333,6 +333,15 @@ When a prompt touches multiple domains, the OS composes a panel — for example 
 - Clean Architecture refactor of the persona/skill subsystem with injected `PersonaDetector` and `SkillResolver`.
 - Runtime governance: policy, budget, audit, workflow, saga, telemetry, memory, and MCP server.
 - CI pipeline with `ruff`, `mypy`, `pytest`, `validate-globals`, and `eval/harness.py`.
+
+---
+
+## Latest additions
+
+- **`mariadb-lord`** skill with Context7 IDs for MariaDB docs, Docker, Node/Python connectors, Laravel + Filament + Nova integration, and multi-tenancy patterns.
+- **`page-sections-lord`** skill capturing the section-based landing page builder pattern (Tourx-style) with a standard spec, Filament Builder blocks, and a setup workflow.
+- **Workflow `15-page-builder-setup.md`** and manifest triggers `/page-builder`, `page builder`, `landing page`.
+- Updated `backend-frameworks-lord`, `frontend-frameworks-lord`, `database-lord`, and `runtime/persona.py` to wire the new skills and keywords.
 
 ---
 

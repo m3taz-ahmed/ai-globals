@@ -40,6 +40,9 @@
     "audit-perf": "workflows/13-audit-perf.md",
     "/ponytail-review": "workflows/14-ponytail-review.md",
     "ponytail-review": "workflows/14-ponytail-review.md",
+    "/page-builder": "workflows/15-page-builder-setup.md",
+    "page builder": "workflows/15-page-builder-setup.md",
+    "landing page": "workflows/15-page-builder-setup.md",
     "/execute": "workflows/02-execution.md",
     "execute": "workflows/02-execution.md"
   },
