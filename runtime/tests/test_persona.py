@@ -48,7 +48,7 @@ class TestPersonaDetector:
     def test_list_personas(self):
         d = PersonaDetector()
         assert "ARCH" in d.list_personas()
-        assert len(d.list_personas()) == 17
+        assert len(d.list_personas()) == 18
 
     def test_unknown_default_raises(self):
         try:
@@ -127,6 +127,19 @@ class TestPersonaDetector:
         result = d.detect("write a gdpr privacy policy and check soc2 compliance")
         assert result["persona"] == "LEGAL"
         assert result["skill"] == "legal-compliance"
+
+
+    def test_detects_proposal(self):
+        d = PersonaDetector()
+        result = d.detect("write a bilingual website proposal in arabic and english with pricing and timeline")
+        assert result["persona"] == "PROPOSAL"
+        assert result["skill"] == "proposal-writer"
+
+    def test_detects_proposal_arabic(self):
+        d = PersonaDetector()
+        result = d.detect("عايز بروبوزل للموقع بتاعي بالعربي والإنجليزي")
+        assert result["persona"] == "PROPOSAL"
+        assert result["skill"] == "proposal-writer"
 
 
 class TestKernelPersonaIntegration:

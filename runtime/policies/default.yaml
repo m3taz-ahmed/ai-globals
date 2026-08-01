@@ -17,6 +17,21 @@ rules:
     action: ask
     description: Writes require approval unless explicitly approved.
 
+  - name: allow-targeted-git-add
+    condition: "'git add ' in command and 'git add .' not in command and 'git add -A' not in command"
+    action: allow
+    description: Allow targeted git add of specific files.
+
+  - name: block-git-danger
+    condition: "'git reset --hard' in command or 'git checkout .' in command or 'git clean -fd' in command or 'git add -A' in command or 'git add .' in command or 'git push -f' in command or 'git stash' in command"
+    action: deny
+    description: Forbidden git operations.
+
+  - name: deny-git-writes
+    condition: "'git commit' in command or 'git push' in command"
+    action: deny
+    description: Git commits and pushes are forbidden without explicit user approval.
+
   - name: require-approval-for-bash
     condition: "type == 'Bash' or type == 'exec'"
     action: ask
@@ -26,11 +41,6 @@ rules:
     condition: "type in ['curl', 'http', 'send_email', 'sms', 'deploy'] or 'curl' in command"
     action: deny
     description: No unauthorized server actions.
-
-  - name: block-git-danger
-    condition: "'git reset --hard' in command or 'git checkout .' in command or 'git clean -fd' in command or 'git add -A' in command or 'git add .' in command or 'git push -f' in command or 'git stash' in command"
-    action: deny
-    description: Forbidden git operations.
 
   - name: allow-status-reads
     condition: "type in ['git status', 'git diff', 'git log', 'ls', 'pwd']"
