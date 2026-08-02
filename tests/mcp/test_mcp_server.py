@@ -294,3 +294,31 @@ class TestExtensions:
         
         test_wf = get_workflow_resource("test")
         assert "[WORKFLOW] test" in test_wf
+
+
+class TestSecurity:
+    def test_get_tech_stack_rejects_path_traversal(self):
+        result = _call("get_tech_stack", {"pkg": "../etc", "ver": "passwd"})
+        data = json.loads(result)
+        assert data["ok"] is False
+
+    def test_get_tech_stack_resolves_path(self):
+        (ROOT / "tech-stack" / "MyLib-1.0.0.md").write_text("# MyLib", encoding="utf-8")
+        result = _call("get_tech_stack", {"pkg": "MyLib", "ver": "1.0.0"})
+        data = json.loads(result)
+        assert data["exists"] is True
+
+    def test_search_memory_rejects_negative_limit(self):
+        result = _call("search_memory", {"query": "behavioral", "limit": -5})
+        data = json.loads(result)
+        assert isinstance(data, list)
+
+    def test_query_context_rejects_huge_k(self):
+        result = _call("query_context", {"query": "test", "k": 500})
+        data = json.loads(result)
+        assert isinstance(data, list)
+
+    def test_add_memory_rejects_empty_content(self):
+        result = _call("add_memory", {"kind": "factual", "content": "", "source": "mcp"})
+        data = json.loads(result)
+        assert data["ok"] is False

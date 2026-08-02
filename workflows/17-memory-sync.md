@@ -1,4 +1,4 @@
-[WORKFLOW] 09-memory-sync
+[WORKFLOW] 17-memory-sync
 [OBJ] Compress session learnings into continuous context.
 [RULES]
 1. [REQ] Trigger: Run at end of session/task.

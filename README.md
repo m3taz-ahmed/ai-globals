@@ -200,8 +200,9 @@ Think of AI Global OS as the "policy and training layer" that makes every AI ass
 
 3. **Install Python dependencies** inside the cloned folder:
    ```bash
-   python -m pip install -e .
+   python -m pip install -e '.[graphify]'
    ```
+   For development (tests, linting, graph), use `'.[dev,graphify]'`.
 
 4. **Use the CLI**:
    ```bash

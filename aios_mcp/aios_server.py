@@ -17,11 +17,14 @@ from runtime.kernel import Kernel
 
 mcp = FastMCP("ai-global-os")
 
-_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 
 _kernel_instance: Kernel | None = None
 _memory_instance: MemoryStore | None = None
 _current_root: Path | None = None
+
+_MAX_RESULTS = 100
+_MAX_INPUT_LENGTH = 100_000
 
 
 def _root() -> Path:
@@ -57,7 +60,20 @@ def _memory() -> MemoryStore:
 
 
 def _is_safe_name(name: str) -> bool:
+    """Reject path separators, parent-directory references, and overlong names."""
+    if not name or ".." in name or "/" in name or "\\" in name or len(name) > 128:
+        return False
     return bool(_NAME_RE.fullmatch(name))
+
+
+def _resolve_path(root: Path, relative: Path) -> Path | None:
+    """Resolve a relative path and ensure it stays under root."""
+    target = (root / relative).resolve()
+    try:
+        target.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return target
 
 
 def _truncate(content: str, limit: int = 500) -> str:
@@ -116,9 +132,14 @@ def analyze_budget() -> str:
 
 
 @mcp.tool()
-def search_memory(query: str, kind: str | None = None) -> str:
+def search_memory(query: str, kind: str | None = None, limit: int = 20) -> str:
     """Search memory store by keyword and optional kind."""
-    results = _memory().search(query, kind)
+    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
+        return json.dumps({"ok": False, "error": "Invalid query"})
+    if kind is not None and not _is_safe_name(kind):
+        return json.dumps({"ok": False, "error": "Invalid kind"})
+    limit = max(1, min(limit, _MAX_RESULTS))
+    results = _memory().search(query, kind, limit=limit)
     return json.dumps(
         [{"id": r.id, "kind": r.kind, "source": r.source, "content": _truncate(r.content)} for r in results],
         indent=2,
@@ -128,6 +149,11 @@ def search_memory(query: str, kind: str | None = None) -> str:
 @mcp.tool()
 def search_memory_vector(query: str, k: int = 5, kind: str | None = None) -> str:
     """Search memory by vector similarity (requires sentence-transformers + turbovec)."""
+    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
+        return json.dumps({"ok": False, "error": "Invalid query"})
+    if kind is not None and not _is_safe_name(kind):
+        return json.dumps({"ok": False, "error": "Invalid kind"})
+    k = max(1, min(k, _MAX_RESULTS))
     results = _memory().search_vector(query, k=k, kind=kind)
     return json.dumps(results, indent=2)
 
@@ -135,6 +161,11 @@ def search_memory_vector(query: str, k: int = 5, kind: str | None = None) -> str
 @mcp.tool()
 def query_context(query: str, k: int = 5, kind: str | None = None) -> str:
     """Hybrid FTS + vector search across rules, tech-stack, workflows, and skills."""
+    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
+        return json.dumps({"ok": False, "error": "Invalid query"})
+    if kind is not None and not _is_safe_name(kind):
+        return json.dumps({"ok": False, "error": "Invalid kind"})
+    k = max(1, min(k, _MAX_RESULTS))
     store = _memory()
     fts_results = store.search(query, kind=kind, limit=k)
     vector_results = store.search_vector(query, k=k, kind=kind)
@@ -192,6 +223,10 @@ def ingest_memory() -> str:
 @mcp.tool()
 def get_related_memories(mem_id: str, relation: str | None = None) -> str:
     """Get memories related to the given memory ID."""
+    if not isinstance(mem_id, str) or not mem_id or len(mem_id) > 128:
+        return json.dumps({"ok": False, "error": "Invalid mem_id"})
+    if relation is not None and not _is_safe_name(relation):
+        return json.dumps({"ok": False, "error": "Invalid relation"})
     results = _memory().related(mem_id, relation)
     return json.dumps(
         [{"id": m.id, "kind": m.kind, "relation": r, "content": _truncate(m.content)} for m, r in results],
@@ -204,6 +239,10 @@ def add_memory(kind: str, content: str, source: str) -> str:
     """Add a new memory to the store."""
     if kind not in ["factual", "semantic", "episodic"]:
         return json.dumps({"ok": False, "error": "Invalid kind. Must be factual, semantic, or episodic."})
+    if not isinstance(content, str) or not content or len(content) > _MAX_INPUT_LENGTH:
+        return json.dumps({"ok": False, "error": "Invalid content"})
+    if not isinstance(source, str) or not source or len(source) > 1024:
+        return json.dumps({"ok": False, "error": "Invalid source"})
     mem = _memory().add(kind, content, source=source)
     return json.dumps({"ok": True, "id": mem.id})
 
@@ -211,6 +250,8 @@ def add_memory(kind: str, content: str, source: str) -> str:
 @mcp.tool()
 def invalidate_memory(id: str) -> str:
     """Invalidate (deprecate) a memory by ID."""
+    if not isinstance(id, str) or not id or len(id) > 128:
+        return json.dumps({"ok": False, "error": "Invalid id"})
     store = _memory()
     if store.get(id) is None:
         return json.dumps({"ok": False, "error": "Memory not found"})
@@ -224,7 +265,9 @@ def get_tech_stack(pkg: str, ver: str) -> str:
     if not _is_safe_name(pkg) or not _is_safe_name(ver):
         return json.dumps({"ok": False, "error": "Invalid package or version name"})
     root = _root()
-    path = root / "tech-stack" / f"{pkg}-{ver}.md"
+    path = _resolve_path(root, Path("tech-stack") / f"{pkg}-{ver}.md")
+    if path is None:
+        return json.dumps({"ok": False, "error": "Invalid path"})
     if not path.exists():
         return json.dumps({"exists": False, "path": str(path.relative_to(root))})
     return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
@@ -244,7 +287,9 @@ def get_rule(id: str) -> str:
     if not _is_safe_name(id):
         return json.dumps({"ok": False, "error": "Invalid rule id"})
     root = _root()
-    path = root / "rules" / f"{id}.md"
+    path = _resolve_path(root, Path("rules") / f"{id}.md")
+    if path is None:
+        return json.dumps({"ok": False, "error": "Invalid path"})
     if not path.exists():
         return json.dumps({"exists": False, "path": str(path.relative_to(root))})
     return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
@@ -264,7 +309,9 @@ def get_workflow(id: str) -> str:
     if not _is_safe_name(id):
         return json.dumps({"ok": False, "error": "Invalid workflow id"})
     root = _root()
-    path = root / "workflows" / f"{id}.md"
+    path = _resolve_path(root, Path("workflows") / f"{id}.md")
+    if path is None:
+        return json.dumps({"ok": False, "error": "Invalid path"})
     if not path.exists():
         return json.dumps({"exists": False, "path": str(path.relative_to(root))})
     return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
@@ -275,8 +322,10 @@ def get_rule_resource(id: str) -> str:
     if not _is_safe_name(id):
         return ""
     root = _root()
-    path = root / "rules" / f"{id}.md"
-    return path.read_text(encoding="utf-8") if path.exists() else ""
+    path = _resolve_path(root, Path("rules") / f"{id}.md")
+    if path is None or not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8")
 
 
 @mcp.resource("workflows://{id}")
@@ -284,8 +333,10 @@ def get_workflow_resource(id: str) -> str:
     if not _is_safe_name(id):
         return ""
     root = _root()
-    path = root / "workflows" / f"{id}.md"
-    return path.read_text(encoding="utf-8") if path.exists() else ""
+    path = _resolve_path(root, Path("workflows") / f"{id}.md")
+    if path is None or not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8")
 
 
 @mcp.resource("os://AGENTS")

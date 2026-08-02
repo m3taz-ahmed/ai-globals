@@ -38,6 +38,10 @@ dev = [
     "ruff>=0.6,<1.0",
     "mypy>=1.0,<2.0",
     "types-pyyaml",
+    "graphifyy>=0.9.16,<0.9.17",
+]
+graphify = [
+    "graphifyy>=0.9.16,<0.9.17",
 ]
 vector = [
     "sentence-transformers>=2.0,<3.0",

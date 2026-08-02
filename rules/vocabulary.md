@@ -47,6 +47,7 @@
 [TEST-04]: Pest 3+ (backend), Vitest+RTL (frontend).
 [TEST-05]: Playwright POM. Mocks for external APIs.
 [TEST-06]: 80% logic, 90% APIs, 70% total coverage.
+[TEST-07]: No full `php artisan test` suites. Targeted, fastest execution only in extreme necessity.
 
 [GIT]
 [GIT-01]: Conventional atomic commits.

@@ -9,6 +9,6 @@
 6. [CMD] `/maintain` -> Clear tech debt (`06-maintenance.md`).
 7. [CMD] `/audit` -> OWASP security check (`07-security-audit.md`).
 8. [CMD] `/prompt` -> PAUSE: Interrogate user for requirements (`00-prompt-architecting.md`).
-9. [CMD] `/sync` -> Compress memory (`09-memory-sync.md`).
+9. [CMD] `/sync` -> Compress memory (`17-memory-sync.md`).
 10. [CMD] `/menu` -> Show this list.
-11. [REQ] Standards: Refer to `api-design-standards.md` (REST), `frontend-state-standards.md` (State), `security-standards.md` (SSRF/Mass Assignment).
+11. [REQ] Standards: Refer to `tech-stack/api-design-standards.md` (REST), `tech-stack/frontend-state-standards.md` (State), `workflows/security-standards.md` (SSRF/Mass Assignment).

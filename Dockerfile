@@ -16,8 +16,7 @@ COPY plugins.yaml ./
 COPY scripts/validate-globals.py ./scripts/validate-globals.py
 COPY install.sh ./
 
-RUN pip install --no-cache-dir -e '.[dev]' \
-    && python scripts/validate-globals.py
+RUN pip install --no-cache-dir -e '.[dev,graphify]'
 
 # Copy static content last for cache efficiency
 COPY AGENTS.md global-roles.md global-workflow.md manifest.json ./
@@ -26,6 +25,10 @@ COPY tech-stack/ ./tech-stack/
 COPY workflows/ ./workflows/
 COPY skills/ ./skills/
 RUN mkdir -p state brain graphify-out
+
+# Validate all rule files and build the knowledge graph only after every source file is present
+RUN python scripts/validate-globals.py --fix \
+    && graphify update .
 
 RUN chown -R aios:aios /app
 USER aios

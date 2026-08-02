@@ -1,0 +1,684 @@
+personas:
+  ARCH:
+    name: Principal 10x Engineer & Chief Architect
+    weight: 1.0
+    skill: ai-agents-architect
+    lords:
+    - subagent-driven-development
+    keywords:
+    - architecture
+    - scalability
+    - scalable
+    - system design
+    - microservices
+    - distributed
+    - ddd
+    - domain driven
+    - design pattern
+    - refactor
+    - schema
+    - data model
+    - event driven
+    - principal engineer
+    - chief architect
+    - platform
+  QA:
+    name: Software Tester
+    weight: 1.2
+    skill: qa-debugger
+    lords:
+    - test-driven-development
+    - test-guard
+    keywords:
+    - test
+    - tests
+    - testing
+    - coverage
+    - pytest
+    - unit test
+    - unit tests
+    - unit testing
+    - integration test
+    - e2e
+    - edge case
+    - regression
+    - qa
+    - quality assurance
+    - bug hunt
+    - fuzz
+    - tdd
+  UX:
+    name: Principal Full-Stack Designer & UX Architect
+    weight: 1.1
+    skill: frontend-ui-expert
+    lords:
+    - frontend-frameworks-lord
+    - gsap-animated-frontend
+    - page-sections-lord
+    keywords:
+    - ui
+    - ux
+    - design
+    - user journey
+    - user experience
+    - prototype
+    - wireframe
+    - figma
+    - accessibility
+    - wcag
+    - pixel perfect
+    - frontend design
+    - animation
+    - interaction
+    - responsive
+    - landing page
+    - page builder
+    - page sections
+    - content page
+    - hero section
+    - builder
+  DEV:
+    name: Master Developer
+    weight: 1.0
+    skill: backend-api-expert
+    lords:
+    - clean-code-guard
+    - language-lord
+    - page-sections-lord
+    keywords:
+    - backend
+    - api
+    - server
+    - database
+    - crud
+    - feature
+    - implement
+    - function
+    - endpoint
+    - service
+    - repository
+    - clean code
+    - performance
+    - optimize
+    - refactor code
+    - page builder
+    - landing page
+    - page sections
+    - filament builder
+    - content page
+    - hero section
+    - builder
+  SRE:
+    name: God-Tier SRE & Cloud Dictator
+    weight: 1.2
+    skill: sre
+    lords:
+    - cloud-platforms-lord
+    - devops-lord
+    - linux-systems-lord
+    keywords:
+    - cloud
+    - aws
+    - gcp
+    - azure
+    - kubernetes
+    - k8s
+    - docker
+    - terraform
+    - observability
+    - monitoring
+    - logging
+    - chaos
+    - reliability
+    - sre
+    - devops
+    - infrastructure
+  SEC:
+    name: Hardcore Linux Kernel Master & SecOps Warlord
+    weight: 1.3
+    skill: security-auditor
+    lords:
+    - security-lord
+    - linux-systems-lord
+    keywords:
+    - security
+    - secure
+    - vulnerability
+    - zero trust
+    - zerotrust
+    - auth
+    - authentication
+    - authorization
+    - ebpf
+    - linux
+    - kernel
+    - penetration
+    - pentest
+    - encryption
+    - audit
+    - firewall
+    - ids
+    - ips
+    - cve
+  GAME:
+    name: Principal Game Architect & JavaScript Engine Master
+    weight: 1.3
+    skill: game-architect
+    lords: []
+    keywords:
+    - game
+    - game loop
+    - gameplay
+    - render
+    - rendering
+    - babylon
+    - babylon.js
+    - three.js
+    - unity
+    - unreal
+    - capacitor
+    - 60 fps
+    - 60fps
+    - frame drop
+    - webgl
+    - webgpu
+    - shader
+    - physics engine
+    - collision
+  PLAY:
+    name: Google Play Ecosystem Warlord & Android Publishing Expert
+    weight: 1.3
+    skill: google-play-warlord
+    lords: []
+    keywords:
+    - google play
+    - play console
+    - play store
+    - android publish
+    - publish app
+    - aab
+    - apk
+    - iap
+    - in app purchase
+    - aso
+    - anr
+    - crash
+    - target api
+    - targetsdk
+    - app bundle
+    - rollout
+  MOBILE:
+    name: Elite Mobile Game Producer & Full-Stack Innovator
+    weight: 1.2
+    skill: mobile-game-producer
+    lords:
+    - game-architect
+    keywords:
+    - mobile game
+    - mobile app
+    - fastlane
+    - anti cheat
+    - anticheat
+    - game state
+    - retention
+    - ltv
+    - lifetime value
+    - ios
+    - flutter
+    - react native
+    - push notification
+    - offline sync
+    - mobile
+  DATA:
+    name: Data Engineer & DBA
+    weight: 1.2
+    skill: data-engineer
+    lords:
+    - database-lord
+    - mariadb-lord
+    keywords:
+    - data
+    - database
+    - sql
+    - etl
+    - analytics
+    - data pipeline
+    - data warehouse
+    - big data
+    - spark
+    - airflow
+    - data modeling
+    - data migration
+    - data quality
+    - query optimization
+    - mariadb
+    - galera
+    - schema
+    - migration
+    - backup
+    - replication
+    - indexing
+    - db
+  ML:
+    name: Machine Learning Engineer
+    weight: 1.3
+    skill: ml-engineer
+    lords:
+    - ai-ml-lord
+    - search-vector-lord
+    keywords:
+    - machine learning
+    - ml
+    - model
+    - training
+    - inference
+    - tensorflow
+    - pytorch
+    - scikit-learn
+    - neural network
+    - deep learning
+    - llm
+    - openai
+    - anthropic
+    - onnx
+    - model deployment
+    - mlops
+    - fine tuning
+    - embedding
+    - vector
+    - classification
+    - regression
+  DEVOPS:
+    name: DevOps & CI/CD Engineer
+    weight: 1.2
+    skill: devops-engineer
+    lords:
+    - devops-lord
+    - cloud-platforms-lord
+    - linux-systems-lord
+    keywords:
+    - devops
+    - cicd
+    - ci/cd
+    - pipeline
+    - jenkins
+    - github actions
+    - gitlab ci
+    - automation
+    - docker registry
+    - artifact management
+    - deployment
+    - release
+    - infrastructure as code
+    - iac
+    - terraform
+    - ansible
+  API:
+    name: API Architect & Integration Specialist
+    weight: 1.1
+    skill: api-architect
+    lords:
+    - backend-frameworks-lord
+    - security-lord
+    keywords:
+    - api
+    - rest
+    - graphql
+    - microservices
+    - integration
+    - api gateway
+    - swagger
+    - openapi
+    - api documentation
+    - rate limiting
+    - api versioning
+    - webhook
+    - endpoint
+  LEGAL:
+    name: Legal & Compliance Officer
+    weight: 1.3
+    skill: legal-compliance
+    lords: []
+    keywords:
+    - gdpr
+    - compliance
+    - privacy
+    - legal
+    - data protection
+    - regulatory
+    - audit
+    - terms of service
+    - privacy policy
+    - cookie consent
+    - data retention
+    - license
+    - coppa
+    - hipaa
+    - soc2
+  PRODUCT:
+    name: Product Manager
+    weight: 1.1
+    skill: product-manager
+    lords: []
+    keywords:
+    - requirements
+    - user story
+    - roadmap
+    - product
+    - user research
+    - product backlog
+    - feature prioritization
+    - product strategy
+    - market analysis
+    - user feedback
+    - mvp
+    - prd
+  DOC:
+    name: Technical Writer & Documentation Lead
+    weight: 1.0
+    skill: technical-writer
+    lords:
+    - docs-guard
+    keywords:
+    - documentation
+    - readme
+    - api docs
+    - changelog
+    - technical writing
+    - docs
+    - wiki
+    - guide
+    - tutorial
+    - how-to
+  PERF:
+    name: Performance Engineer
+    weight: 1.1
+    skill: performance-engineer
+    lords:
+    - fullstack-optimizer
+    - database-lord
+    - mariadb-lord
+    - language-lord
+    keywords:
+    - performance
+    - profiling
+    - latency
+    - benchmark
+    - optimization
+    - throughput
+    - memory leak
+    - cpu
+    - bottleneck
+    - load test
+    - stress test
+    - caching
+    - query optimization
+  PROPOSAL:
+    name: Proposal Specialist & Bid Strategist
+    weight: 1.3
+    skill: proposal-writer
+    lords: []
+    keywords:
+    - proposal
+    - proposals
+    - bid
+    - bids
+    - website proposal
+    - web proposal
+    - digital proposal
+    - service proposal
+    - sales proposal
+    - client proposal
+    - rfp
+    - request for proposal
+    - quotation
+    - quote
+    - quotes
+    - pitch
+    - scope of work
+    - sow
+    - proposal writing
+    - proposal writer
+    - بروبوزل
+    - عروض
+    - عروض أسعار
+    - عرض سعر
+    - كتابة عروض
+    - موقع
+    - مواقع
+    - تصميم موقع
+    - تطوير موقع
+lord_skills:
+  database-lord:
+  - database
+  - sql
+  - postgres
+  - mysql
+  - mongodb
+  - redis
+  - sqlite
+  - query
+  - schema
+  - migration
+  - index
+  - replication
+  - sharding
+  - backup
+  - transaction
+  - wal
+  - mvcc
+  - lsm
+  - btree
+  - normalize
+  ai-ml-lord:
+  - machine learning
+  - ml
+  - model
+  - training
+  - inference
+  - pytorch
+  - tensorflow
+  - scikit-learn
+  - neural network
+  - deep learning
+  - llm
+  - openai
+  - anthropic
+  - onnx
+  - fine tuning
+  - embedding
+  - vector
+  - classification
+  - regression
+  - clustering
+  - transformer
+  devops-lord:
+  - docker
+  - kubernetes
+  - k8s
+  - terraform
+  - ansible
+  - cicd
+  - ci/cd
+  - pipeline
+  - deploy
+  - helm
+  - gitops
+  - podman
+  - container
+  - registry
+  - artifact
+  - github actions
+  - gitlab ci
+  cloud-platforms-lord:
+  - aws
+  - azure
+  - gcp
+  - cloud
+  - serverless
+  - lambda
+  - ec2
+  - s3
+  - cloudfront
+  - gke
+  - aks
+  - ecs
+  - vpc
+  - iam
+  - landing zone
+  - multi cloud
+  - hybrid cloud
+  frontend-frameworks-lord:
+  - react
+  - vue
+  - angular
+  - svelte
+  - frontend framework
+  - component
+  - hooks
+  - signals
+  - routing
+  - csr
+  - ssr
+  - ssg
+  - islands
+  backend-frameworks-lord:
+  - laravel
+  - django
+  - spring
+  - spring boot
+  - express
+  - nestjs
+  - rails
+  - asp.net
+  - backend framework
+  - orm
+  - middleware
+  - auth
+  language-lord:
+  - python
+  - javascript
+  - typescript
+  - java
+  - c#
+  - c++
+  - go
+  - golang
+  - rust
+  - php
+  - ruby
+  - language design
+  - runtime
+  - compiler
+  - garbage collector
+  - memory model
+  linux-systems-lord:
+  - linux
+  - kernel
+  - systemd
+  - ebpf
+  - ubuntu
+  - debian
+  - syscall
+  - file system
+  - network namespace
+  - cgroup
+  - selinux
+  - sysctl
+  messaging-streaming-lord:
+  - kafka
+  - rabbitmq
+  - nats
+  - redis streams
+  - event-driven
+  - pub sub
+  - streaming
+  - message broker
+  - queue
+  - topic
+  - partition
+  search-vector-lord:
+  - elasticsearch
+  - opensearch
+  - meilisearch
+  - vector search
+  - pinecone
+  - milvus
+  - rag
+  - vector db
+  - embedding search
+  - hybrid search
+  security-lord:
+  - owasp
+  - vulnerability
+  - pentest
+  - penetration
+  - encryption
+  - xss
+  - sql injection
+  - csrf
+  - auth
+  - zero trust
+  - firewall
+  - cve
+  - secure
+  - sanitize
+  fullstack-optimizer:
+  - performance
+  - bundle
+  - caching
+  - i18n
+  - localization
+  - optimization
+  - fullstack
+  - cdn
+  - compression
+  - lazy load
+  - preload
+  clean-code-guard:
+  - clean code
+  - refactor
+  - solid
+  - dry
+  - kiss
+  - code smell
+  - technical debt
+  - readability
+  - maintainability
+  test-guard:
+  - test
+  - unit test
+  - integration test
+  - coverage
+  - tdd
+  - mock
+  - fixture
+  - assertion
+  - regression test
+  frontend-ui-expert:
+  - tailwind
+  - design system
+  - ui
+  - ux
+  - figma
+  - component library
+  - accessibility
+  - wcag
+  - responsive
+  - icon
+  gsap-animated-frontend:
+  - gsap
+  - animation
+  - motion
+  - scroll trigger
+  - timeline
+  - easing
+  docs-guard:
+  - documentation
+  - readme
+  - docs
+  - api docs
+  - changelog
+  - wiki
+default: ARCH
+persona_lord_bonus: 0.5

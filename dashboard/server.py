@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hmac
 import json
 import mimetypes
 import os
@@ -20,6 +21,10 @@ from memory.store import MemoryStore
 from runtime.kernel import Kernel
 from runtime.metrics import format_metrics
 from runtime.telemetry import system_metrics
+
+_MAX_BODY_SIZE = int(os.environ.get("AGENT_OS_DASHBOARD_MAX_BODY_SIZE", "1048576"))
+_ALLOWED_ORIGINS = {o.strip() for o in os.environ.get("AGENT_OS_DASHBOARD_ORIGINS", "http://127.0.0.1:8080,http://localhost:8080").split(",") if o.strip()}
+_TRUSTED_PROXIES = {ip.strip() for ip in os.environ.get("AGENT_OS_DASHBOARD_TRUSTED_PROXIES", "").split(",") if ip.strip()}
 
 # Shared instances so state (budget, audit, chat) is consistent across requests.
 _kernel_cache: tuple[Path, Kernel] | None = None
@@ -66,8 +71,12 @@ def _check_rate_limit(client_ip: str) -> bool:
 
 
 def _client_ip(handler: DashboardHandler) -> str:
-    forwarded = handler.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-    return forwarded or handler.client_address[0]
+    direct = handler.client_address[0]
+    if direct in _TRUSTED_PROXIES:
+        forwarded = handler.headers.get("X-Forwarded-For", "").split(",")[-1].strip()
+        if forwarded:
+            return forwarded
+    return direct
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -84,17 +93,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
         configured = os.environ.get("AGENT_OS_DASHBOARD_ORIGIN")
         if configured:
             return configured
-        return self.headers.get("Origin", "")
+        request_origin = self.headers.get("Origin", "")
+        if request_origin in _ALLOWED_ORIGINS:
+            return request_origin
+        return ""
 
     def _cors_headers(self) -> None:
         origin = self._origin()
         if origin:
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Access-Control-Allow-Credentials", "true")
-        else:
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-CSRF-Token, X-Requested-With")
 
     def _send(
         self, code: int, body: bytes, content_type: str = "text/plain", cors: bool = True
@@ -111,7 +122,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if not token:
             return True
         header = self.headers.get("Authorization", "")
-        return header == f"Bearer {token}"
+        return hmac.compare_digest(header, f"Bearer {token}")
+
+    def _csrf(self) -> bool:
+        """State-changing requests must carry a non-forgeable custom header.
+
+        Cross-origin web pages cannot set custom headers unless CORS explicitly
+        allows them, and the strict CORS origin policy above blocks untrusted
+        origins. Same-origin dashboard JS sets this header on every POST.
+        """
+        return self.headers.get("X-Requested-With") == "AIOS-Dashboard"
 
     def do_OPTIONS(self) -> None:
         self._send(204, b"", cors=True)
@@ -122,6 +142,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         if not self._auth():
             self._send(401, b"Unauthorized", cors=True)
+            return
+        if self.command == "POST" and not self._csrf():
+            self._send(403, b"CSRF protection failed", cors=True)
             return
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/status":
@@ -169,6 +192,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         if content_length <= 0:
             return {}
+        if content_length > _MAX_BODY_SIZE:
+            self._send(413, b"Payload too large")
+            return None
         try:
             data = self.rfile.read(content_length)
             return cast(dict[str, Any], json.loads(data.decode("utf-8")))

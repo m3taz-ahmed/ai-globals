@@ -38,7 +38,7 @@ This directory contains **28 execution protocol files** (15 numbered workflows +
 | `commands-reference.md` | Full CLI/tooling reference |
 | `monthly-maintenance.md` | Monthly audit protocol |
 | `update-me.md` | AI self-update protocol |
-| `09-memory-sync.md` | State handoff and memory sync on milestones |
+| `17-memory-sync.md` | State handoff and memory sync on milestones |
 
 ## Execution Model
 

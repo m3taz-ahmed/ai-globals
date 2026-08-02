@@ -15,4 +15,4 @@
 12. [CMD] Run `php artisan migrate --seed` and test API responses.
 13. [REQ] For frontend, create one component per section type and render from `content` array.
 14. [REQ] If multi-tenancy is required, route to `mariadb-lord` and apply tenant scope to pages, static pages, and storage paths.
-15. [REQ] Quality: run `php artisan test`, `pint`, `phpstan`, and verify image URL transformation for all nested block data.
+15. [REQ] Quality: run `pint`, `phpstan`, and a targeted `php artisan test --filter=<PageBuilder|changed feature>` (or the fastest single-file Pest/PHPUnit equivalent); verify image URL transformation for all nested block data.

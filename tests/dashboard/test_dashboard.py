@@ -7,6 +7,8 @@ import urllib.request
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+import pytest
+
 from dashboard.server import DashboardHandler, ThreadingHTTPServer
 
 
@@ -53,6 +55,7 @@ def test_dashboard_health():
 
 def test_dashboard_cors_preflight():
     tmp = Path(tempfile.mkdtemp(prefix="aios_dash_cors_"))
+    os.environ["AGENT_OS_DASHBOARD_ORIGIN"] = "http://example.com"
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -64,6 +67,7 @@ def test_dashboard_cors_preflight():
             assert "POST" in resp.headers.get("Access-Control-Allow-Methods", "")
     finally:
         server.shutdown()
+        os.environ.pop("AGENT_OS_DASHBOARD_ORIGIN", None)
 
 
 def test_dashboard_memory_search():
@@ -86,7 +90,7 @@ def test_dashboard_policy_test():
         req = Request(
             f"http://127.0.0.1:{port}/api/policy/test",
             data=json.dumps({"action": "Read", "args": {"path": "foo"}}).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "X-Requested-With": "AIOS-Dashboard"},
             method="POST",
         )
         with urlopen(req) as resp:
@@ -95,3 +99,83 @@ def test_dashboard_policy_test():
             assert data["decision"]["decision"] == "allow"
     finally:
         server.shutdown()
+
+
+def test_dashboard_post_requires_csrf_header():
+    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_csrf_"))
+    server, port = _serve(tmp)
+    try:
+        time.sleep(0.1)
+        req = Request(
+            f"http://127.0.0.1:{port}/api/policy/test",
+            data=json.dumps({"action": "Read"}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urlopen(req)
+        assert exc.value.code == 403
+    finally:
+        server.shutdown()
+
+
+def test_dashboard_denies_untrusted_origin():
+    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_origin_"))
+    server, port = _serve(tmp)
+    try:
+        time.sleep(0.1)
+        req = Request(f"http://127.0.0.1:{port}/api/status", method="GET")
+        req.add_header("Origin", "http://evil.com")
+        with urlopen(req) as resp:
+            assert "Access-Control-Allow-Origin" not in resp.headers
+    finally:
+        server.shutdown()
+
+
+def test_dashboard_enforces_bearer_token():
+    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_auth_"))
+    os.environ["AGENT_OS_DASHBOARD_TOKEN"] = "secret-token"
+    server, port = _serve(tmp)
+    try:
+        time.sleep(0.1)
+        req = Request(f"http://127.0.0.1:{port}/api/status", method="GET")
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urlopen(req)
+        assert exc.value.code == 401
+
+        req = Request(f"http://127.0.0.1:{port}/api/status", method="GET")
+        req.add_header("Authorization", "Bearer secret-token")
+        with urlopen(req) as resp:
+            assert resp.status == 200
+    finally:
+        server.shutdown()
+        os.environ.pop("AGENT_OS_DASHBOARD_TOKEN", None)
+
+
+def test_dashboard_payload_size_limit():
+    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_size_"))
+    import dashboard.server as dash_server
+    original_max = dash_server._MAX_BODY_SIZE
+    dash_server._MAX_BODY_SIZE = 64
+    try:
+        server, port = _serve(tmp)
+        try:
+            time.sleep(0.1)
+            body = json.dumps({"action": "Read", "args": {"x": "y" * 100}}).encode("utf-8")
+            req = Request(
+                f"http://127.0.0.1:{port}/api/policy/test",
+                data=body,
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "AIOS-Dashboard",
+                    "Content-Length": str(len(body)),
+                },
+                method="POST",
+            )
+            with pytest.raises(urllib.error.HTTPError) as exc:
+                urlopen(req)
+            assert exc.value.code == 413
+        finally:
+            server.shutdown()
+    finally:
+        dash_server._MAX_BODY_SIZE = original_max

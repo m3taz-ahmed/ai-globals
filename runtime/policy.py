@@ -96,7 +96,8 @@ class _SafeEvaluator(ast.NodeVisitor):
         try:
             tree = ast.parse(expression, mode="eval")
             return bool(self.visit(tree))
-        except Exception:
+        except Exception as exc:
+            warnings.warn(f"Policy condition evaluation failed for '{expression}': {exc}", stacklevel=2)
             return False
 
 

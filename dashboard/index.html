@@ -267,6 +267,7 @@
 
     // API Helpers
     async function fetchJson(path, options = {}) {
+      options.headers = Object.assign({}, options.headers, { 'X-Requested-With': 'AIOS-Dashboard' });
       try {
         const res = await fetch(path, options);
         if (!res.ok) throw new Error(res.status + ' ' + res.statusText);

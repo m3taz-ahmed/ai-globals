@@ -39,7 +39,7 @@
 - [REQ] Format: Use telegraphic `[FILE]/[OBJ]/[RULES]` format. Max 10 lines.
 - [REQ] Fields: version, sprint name, status (active/stable/blocked), DONE items, NEXT items.
 - [REQ] Location: `.ai/active-context.md` at project root. Add to `.gitignore`.
-- [REQ] Update: Rewrite on every milestone or session handoff via `workflows/09-memory-sync.md`.
+- [REQ] Update: Rewrite on every milestone or session handoff via `workflows/17-memory-sync.md`.
 - [EXAMPLE] |
     [FILE] active-context
     [OBJ] Current sprint state.

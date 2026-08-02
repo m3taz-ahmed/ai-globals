@@ -14,6 +14,14 @@ else
     rm -rf "$ROOT/.git" "$ROOT/.github"
 fi
 
+# Install OS Python dependencies (including graphify for the knowledge graph)
+cd "$ROOT"
+python -m pip install -e '.[dev,graphify]'
+
+# Build the integrity manifest and knowledge graph from the installed source
+python scripts/validate-globals.py --fix
+graphify update .
+
 # Symlink agent configs
 mkdir -p "$HOME/.claude"
 ln -sf "$ROOT/.claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md" 2>/dev/null || cp "$ROOT/.claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"

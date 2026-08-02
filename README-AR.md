@@ -159,8 +159,9 @@ ai-os persona detect --multi "build a secure docker API with postgres"
 
 3. **ثبّت اعتمادات Python** داخل المجلد المنسوخ:
    ```bash
-   python -m pip install -e .
+   python -m pip install -e '.[graphify]'
    ```
+   للتطوير (tests، linting، graph)، استخدم `'.[dev,graphify]'`.
 
 4. **استخدم CLI**:
    ```bash

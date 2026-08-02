@@ -17,6 +17,23 @@ Get-ChildItem -Path $Repo -Exclude @(".git", ".github") | ForEach-Object {
     }
 }
 
+# Install OS Python dependencies (including graphify for the knowledge graph)
+$PipSpec = $Root + '[dev,graphify]'
+& python -m pip install -e $PipSpec
+if ($LASTEXITCODE -ne 0) { throw "Failed to install aios dependencies" }
+
+# Build the integrity manifest and knowledge graph from the installed source
+$OriginalLocation = Get-Location
+Set-Location $Root
+try {
+    & python scripts\validate-globals.py --fix
+    if ($LASTEXITCODE -ne 0) { throw "validate-globals failed" }
+    & python -m graphify update .
+    if ($LASTEXITCODE -ne 0) { throw "graphify update failed" }
+} finally {
+    Set-Location $OriginalLocation
+}
+
 # Symlink or copy agent configs into common locations
 $Config = @{
     "$env:USERPROFILE\.claude\CLAUDE.md" = "$Root\.claude\CLAUDE.md"
