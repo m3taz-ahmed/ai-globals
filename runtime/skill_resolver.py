@@ -15,19 +15,31 @@ class SkillResolver:
     skills, and subskills can coexist.
     """
 
-    def __init__(self, root: Path | None = None) -> None:
+    def __init__(self, root: Path | None = None, project_root: Path | None = None) -> None:
         self.root = root or config.discover_root()
+        self.project_root = project_root
         self.skills_dir = self.root / "skills"
+        self.project_skills_dir = self.project_root / ".ai" / "skills" if self.project_root else None
+
+    def _candidate_paths(self, name: str) -> list[Path]:
+        """OS and project-level skill candidates."""
+        if not name or ".." in name or "/" in name or "\\" in name:
+            return []
+        candidates: list[Path] = []
+        if self.project_skills_dir and self.project_skills_dir.is_dir():
+            candidates.extend([
+                self.project_skills_dir / f"{name}.md",
+                self.project_skills_dir / name / "SKILL.md",
+            ])
+        candidates.extend([
+            self.skills_dir / f"{name}.md",
+            self.skills_dir / name / "SKILL.md",
+        ])
+        return candidates
 
     def resolve(self, name: str) -> Path | None:
         """Return the absolute path for a skill name, or None if not found."""
-        if not name or ".." in name or "/" in name or "\\" in name:
-            return None
-        candidates = [
-            self.skills_dir / f"{name}.md",
-            self.skills_dir / name / "SKILL.md",
-        ]
-        for candidate in candidates:
+        for candidate in self._candidate_paths(name):
             if candidate.is_file():
                 return candidate
         return None
@@ -44,13 +56,14 @@ class SkillResolver:
         return path.read_text(encoding="utf-8")
 
     def list_skills(self) -> list[str]:
-        """Return all valid skill names found in `skills/`."""
+        """Return all valid skill names found in OS and project `skills/`."""
         names: set[str] = set()
-        if not self.skills_dir.is_dir():
-            return []
-        for path in self.skills_dir.iterdir():
-            if path.is_file() and path.suffix == ".md":
-                names.add(path.stem)
-            elif path.is_dir() and (path / "SKILL.md").is_file():
-                names.add(path.name)
+        for directory in (self.project_skills_dir, self.skills_dir):
+            if directory is None or not directory.is_dir():
+                continue
+            for path in directory.iterdir():
+                if path.is_file() and path.suffix == ".md":
+                    names.add(path.stem)
+                elif path.is_dir() and (path / "SKILL.md").is_file():
+                    names.add(path.name)
         return sorted(names)

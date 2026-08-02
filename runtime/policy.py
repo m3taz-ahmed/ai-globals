@@ -176,4 +176,9 @@ class PolicyEngine:
         }
 
     def can(self, action_type: str, **kwargs: Any) -> dict[str, Any]:
+        # Policies reference `command` in membership checks; ensure it is a
+        # string to avoid `NoneType` iteration warnings when the action does
+        # not carry a shell command (e.g. `write`, `edit`).
+        if "command" not in kwargs or kwargs.get("command") is None:
+            kwargs["command"] = ""
         return self.evaluate({"type": action_type, **kwargs})

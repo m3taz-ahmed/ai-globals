@@ -40,12 +40,18 @@ $Config = @{
     "$env:USERPROFILE\.claude\settings.json" = "$Root\.claude\settings.json"
     "$env:USERPROFILE\.claude\skills" = "$Root\.claude\skills"
     "$env:USERPROFILE\.claude\agents" = "$Root\.claude\agents"
+    "$env:USERPROFILE\.devin\skills\global-os" = "$Root\.devin\skills\global-os"
+    "$env:USERPROFILE\.windsurf\skills\global-os" = "$Root\.windsurf\skills\global-os"
     "$env:USERPROFILE\.aider.conf.yml" = "$Root\.aider.conf.yml"
 }
 
 foreach ($Target in $Config.Keys) {
     $Source = $Config[$Target]
     if (Test-Path $Target) { Remove-Item -Path $Target -Force -Recurse }
+    $Parent = Split-Path -Path $Target -Parent
+    if ($Parent -and -not (Test-Path $Parent)) {
+        New-Item -ItemType Directory -Path $Parent -Force | Out-Null
+    }
     if (Test-Path $Source -PathType Container) {
         try {
             New-Item -ItemType SymbolicLink -Path $Target -Target $Source -Force | Out-Null

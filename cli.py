@@ -46,6 +46,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     table.add_row("Root", status["root"])
     table.add_row("Personas", str(len(status["personas"])))
+    table.add_row("Skills", str(len(status["skills"])))
     table.add_row("Workflows", str(len(status["workflows"])))
     table.add_row("Budgets", str(len(status["budgets"])))
     table.add_row("Rules", str(len(status["rules"])))
@@ -352,6 +353,26 @@ def cmd_persona(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_skill(args: argparse.Namespace) -> int:
+    k = _kernel(args)
+    resolver = k.skill_resolver
+    if args.skill_subcommand == "list":
+        for name in resolver.list_skills():
+            console.print(f"[cyan]{name}[/cyan]")
+    elif args.skill_subcommand == "invoke":
+        content = resolver.load(args.name)
+        if content is None:
+            console.print(f"[red]Skill '{args.name}' not found[/red]")
+            return 1
+        console.print(Panel(f"[cyan]{args.name}[/cyan]\n\n{content}", title="Skill"))
+    elif args.skill_subcommand == "search":
+        query = args.query.lower()
+        for name in resolver.list_skills():
+            if query in name.lower():
+                console.print(f"[cyan]{name}[/cyan]")
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     os_root = _root(args)
     project_root = _project_root(args)
@@ -480,6 +501,14 @@ def main(argv: list[str] | None = None) -> int:
     p_persona_detect.add_argument("--max-personas", type=int, default=3, help="Max personas when --multi is used")
     p_persona_detect.add_argument("--max-lords", type=int, default=5, help="Max additional lord skills to load")
 
+    p_skill = sub.add_parser("skill", help="Skill commands")
+    sp_skill = p_skill.add_subparsers(dest="skill_subcommand", required=True)
+    sp_skill.add_parser("list", help="List available skills")
+    p_skill_invoke = sp_skill.add_parser("invoke", help="Show a skill's markdown content")
+    p_skill_invoke.add_argument("name", help="Skill name")
+    p_skill_search = sp_skill.add_parser("search", help="Search skills by name keyword")
+    p_skill_search.add_argument("query", help="Search keyword")
+
     args = parser.parse_args(argv)
     if not args.command:
         parser.print_help()
@@ -502,6 +531,7 @@ def main(argv: list[str] | None = None) -> int:
         "ci": cmd_ci,
         "agent": cmd_agent,
         "persona": cmd_persona,
+        "skill": cmd_skill,
         "sync": cmd_sync,
         "graphify": cmd_graphify,
         "version": cmd_version,

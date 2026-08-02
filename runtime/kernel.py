@@ -52,7 +52,7 @@ class Kernel:
     ) -> None:
         self.root = root or config.discover_root()
         self.project_root = project_root or root or config.discover_project_root()
-        self.skill_resolver = skill_resolver or SkillResolver(self.root)
+        self.skill_resolver = skill_resolver or SkillResolver(self.root, self.project_root)
         self.persona = persona_detector or PersonaDetector(skill_resolver=self.skill_resolver)
         self.policy = PolicyEngine(self.root, self.project_root)
         self.budget = BudgetManager(self.project_root)
@@ -261,6 +261,7 @@ class Kernel:
             "workflows": self.list_workflows(),
             "budgets": list(self.budget.budgets.keys()),
             "rules": [r.name for r in self.policy.rules],
+            "skills": self.skill_resolver.list_skills(),
             "plugins": self.plugins.list_plugins(),
             "tech_stack": self.detect_tech_stack(),
             "agents": self.pool.list_agents(),

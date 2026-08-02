@@ -1,5 +1,15 @@
 # Active Context
 
+## 2026-08-02 (15) — AI Global OS usability fixes
+- Fixed `runtime/policy.py` `NoneType` warning by defaulting `command` to `""` in `PolicyEngine.can()`.
+- Added `ai-os skill` CLI subcommand (`list`, `invoke`, `search`) backed by `SkillResolver`.
+- Extended `SkillResolver` to search both OS root `skills/` and project `.ai/skills/`.
+- Updated `runtime/kernel.py` to pass `project_root` to `SkillResolver` and include `skills` in `status()`.
+- Fixed `memory/vector.py` `allowlist` search to ignore missing ids, resolving 2 `test_cli.py` failures.
+- Added `.devin/skills/global-os/SKILL.md` and `.windsurf/skills/global-os/SKILL.md` plus `install.ps1` support so the `global-os` skill is discovered by Devin and Windsurf.
+- Quality gates green: `ruff`, `mypy`, `pytest -q` 271 passed, `python eval/harness.py` all_pass true.
+- Memory ingested and `graphify update . --force` run.
+
 ## 2026-07-29 (14) — Update README.md and README-AR.md
 - Updated `README.md` and `README-AR.md` badges, lord skill count (11 → 13), lord skill list, and added `mariadb-lord`, `page-sections-lord`.
 - Added "Latest additions" / "أحدث الإضافات" sections documenting `mariadb-lord`, `page-sections-lord`, workflow, and persona wiring.

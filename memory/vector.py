@@ -116,7 +116,11 @@ class VectorMemory:
         if ids is not None:
             if not ids:
                 return []
-            allowlist = np.array([_mem_id_to_uint64(mid) for mid in ids], dtype=np.uint64)
+            u64s = [_mem_id_to_uint64(mid) for mid in ids]
+            present = [u for u in u64s if str(int(u)) in self.id_map]
+            if not present:
+                return []
+            allowlist = np.array(present, dtype=np.uint64)
         scores, ids_arr = self.index.search(vector, k=k, allowlist=allowlist)
         results = []
         # Turbovec may return fewer than k results (e.g., empty index → shape (1,0))
