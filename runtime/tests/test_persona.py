@@ -48,7 +48,8 @@ class TestPersonaDetector:
     def test_list_personas(self):
         d = PersonaDetector()
         assert "ARCH" in d.list_personas()
-        assert len(d.list_personas()) == 18
+        assert "CV" in d.list_personas()
+        assert len(d.list_personas()) == 19
 
     def test_unknown_default_raises(self):
         try:
@@ -140,6 +141,18 @@ class TestPersonaDetector:
         result = d.detect("عايز بروبوزل للموقع بتاعي بالعربي والإنجليزي")
         assert result["persona"] == "PROPOSAL"
         assert result["skill"] == "proposal-writer"
+
+    def test_detects_cv(self):
+        d = PersonaDetector()
+        result = d.detect("write a bilingual cv in arabic and english for a software engineer")
+        assert result["persona"] == "CV"
+        assert result["skill"] == "cv-writer"
+
+    def test_detects_cv_arabic(self):
+        d = PersonaDetector()
+        result = d.detect("عايز cv احترافي بالعربي والإنجليزي")
+        assert result["persona"] == "CV"
+        assert result["skill"] == "cv-writer"
 
 
 class TestKernelPersonaIntegration:

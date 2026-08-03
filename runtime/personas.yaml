@@ -448,6 +448,44 @@ personas:
     - مواقع
     - تصميم موقع
     - تطوير موقع
+  CV:
+    name: CV/Resume Specialist & Career Writer
+    weight: 1.3
+    skill: cv-writer
+    lords:
+    - docs-guard
+    - language-lord
+    keywords:
+    - cv
+    - resume
+    - curriculum vitae
+    - السيرة الذاتية
+    - سيرة ذاتية
+    - كتابة cv
+    - عمل cv
+    - تطوير cv
+    - cv عربي
+    - cv إنجليزي
+    - cv بالعربي
+    - cv بالإنجليزي
+    - cv احترافي
+    - cv ats
+    - resume writing
+    - cv writer
+    - resume writer
+    - linkedin summary
+    - cover letter
+    - letter of interest
+    - motivation letter
+    - خطاب التغطية
+    - رسالة تغطية
+    - ملخص لينكدإن
+    - ملخص linkedin
+    - career
+    - job application
+    - apply for job
+    - portfolio
+    - معرض أعمال
 lord_skills:
   database-lord:
   - database
@@ -680,5 +718,36 @@ lord_skills:
   - api docs
   - changelog
   - wiki
+  cv-writer:
+  - cv
+  - resume
+  - curriculum vitae
+  - السيرة الذاتية
+  - سيرة ذاتية
+  - كتابة cv
+  - عمل cv
+  - تطوير cv
+  - cv عربي
+  - cv إنجليزي
+  - cv بالعربي
+  - cv بالإنجليزي
+  - cv احترافي
+  - cv ats
+  - resume writing
+  - cv writer
+  - resume writer
+  - linkedin summary
+  - cover letter
+  - letter of interest
+  - motivation letter
+  - خطاب التغطية
+  - رسالة تغطية
+  - ملخص لينكدإن
+  - ملخص linkedin
+  - career
+  - job application
+  - apply for job
+  - portfolio
+  - معرض أعمال
 default: ARCH
 persona_lord_bonus: 0.5

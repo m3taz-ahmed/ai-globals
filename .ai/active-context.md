@@ -1,5 +1,15 @@
 # Active Context
 
+## 2026-08-03 (16) — Add CV-writer persona and skill
+- Created `skills/cv-writer/SKILL.md` for ATS-optimized, bilingual Arabic/English CVs, cover letters, LinkedIn summaries, and portfolio copy.
+- Added `CV` persona to `runtime/personas.yaml` with Arabic/English keywords and `cv-writer` lord skill.
+- Updated `global-roles.md`, `AGENTS.md`, `.github/copilot-instructions.md` to include the `CV` persona.
+- Added `test_detects_cv` and `test_detects_cv_arabic` to `runtime/tests/test_persona.py`.
+- Bumped `tool.mypy.python_version` to `3.12` in `pyproject.toml` to fix mypy parse errors with installed numpy type stubs.
+- Quality gates green: `ruff`, `mypy`, `pytest -q` 284 passed, `python eval/harness.py` all_pass true.
+- Memory ingested and `graphify update .` run.
+- Staged 7 files for commit.
+
 ## 2026-08-02 (15) — AI Global OS usability fixes
 - Fixed `runtime/policy.py` `NoneType` warning by defaulting `command` to `""` in `PolicyEngine.can()`.
 - Added `ai-os skill` CLI subcommand (`list`, `invoke`, `search`) backed by `SkillResolver`.
