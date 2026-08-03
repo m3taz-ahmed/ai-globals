@@ -9,6 +9,7 @@
 ### Changed
 - Hardened `dashboard/server.py` with configurable CORS origin, CSRF header checks, max body size, robust Bearer auth, and `X-Forwarded-For` trust validation.
 - Hardened `aios_mcp/aios_server.py` with stricter safe-name validation, path-resolution checks, and input bounds on search/memory tools.
+- Hardened `scripts/validate-globals.py` to ignore install-only/dead file refs and tightened wildcard-prefix detection.
 - Updated `graphifyy` pin to `>=0.9.16,<0.9.17` to match CI.
 - Renamed `workflows/09-memory-sync.md` to `workflows/17-memory-sync.md` and updated all references/adapters.
 - Reduced overlap between maintenance workflow files.

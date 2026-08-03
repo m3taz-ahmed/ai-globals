@@ -281,9 +281,13 @@ IGNORED_FILE_REFS = {
     'feature_request.md', 'tech_stack_request.md', 'pull_request_template.md',
     'active-context.md', 'skill.md', 'memory-archive.md',
     # project-specific placeholder files (referenced conceptually, not tracked)
-    'spec.md', 'plan.md', 'tasks.md', 'pxx-name.md',
+    'spec.md', 'plan.md', 'implementation_plan.md', 'tasks.md', 'pxx-name.md',
     # external/generated files (agent config, graphify output, ponytail ledger)
     'claude.md', 'agents.md', 'graph_report.md', 'ponytail-debt.md',
+    # GitHub-specific adapters not copied by install.ps1
+    'copilot-instructions.md',
+    # dead/renamed historical references in CHANGELOG
+    '09-memory-sync.md',
 }
 
 def check_file_references(content: str, rel_name: str, ctx: ValidationContext, global_path: str) -> bool:
@@ -293,7 +297,8 @@ def check_file_references(content: str, rel_name: str, ctx: ValidationContext, g
         if re.match(r"^\s+[§S]\s*\d+", content[ref.end():]):
             continue
         # Skip wildcard/template references like .gsap/pages/*.animation.md or .gsap/pages/<page>.animation.md
-        prefix = content[max(0, ref.start()-40):ref.start()]
+        # Use a tight window so version ranges like <0.9.17 in the previous line do not hide real refs.
+        prefix = content[max(0, ref.start()-12):ref.start()]
         if '*' in prefix or '<' in prefix or '>' in prefix:
             continue
         target = raw_t.replace("/", os.sep)
