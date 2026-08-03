@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 import config
 
+from .approval_cache import ApprovalCache
 from .audit import AuditLogger
 from .budget import BudgetManager
 from .chat import ChatSession
@@ -62,6 +63,7 @@ class Kernel:
         self.chat = ChatSession(self.project_root)
         self.pool = AgentPool(self.root)
         self.audit = AuditLogger(self.project_root)
+        self.approval_cache = ApprovalCache()
         self.plugins = PluginManager(self, self.root)
 
     def _build_saga_orchestrator(self) -> SagaOrchestrator:
@@ -87,6 +89,120 @@ class Kernel:
             kwargs["skills"] = result["skills"]
             kwargs["lords"] = result["lords"]
 
+    def _check_cached_approval(self, action_data: dict[str, Any]) -> bool:
+        return self.approval_cache.is_approved(action_data)
+
+    def _cache_approval(self, action_data: dict[str, Any], dry_run: bool) -> None:
+        if not dry_run:
+            self.approval_cache.approve(action_data)
+
+    def _handle_policy_denied(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        if not dry_run:
+            self.audit.log("policy.denied", {"action": action_data["type"], "args": kwargs, "decision": decision})
+        self.telemetry.record(
+            event_type="action",
+            action=action_data["type"],
+            status="policy_denied",
+            tokens=action_data.get("tokens", 0),
+            cost=action_data.get("cost", 0.0),
+            metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
+        )
+        return {"ok": False, "error": f"Policy denied by {decision['rule']}", "decision": decision}
+
+    def _handle_policy_ask(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        if not dry_run:
+            self.audit.log("policy.asked", {"action": action_data["type"], "args": kwargs, "decision": decision})
+        self.telemetry.record(
+            event_type="action",
+            action=action_data["type"],
+            status="ask",
+            tokens=action_data.get("tokens", 0),
+            cost=action_data.get("cost", 0.0),
+            metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
+        )
+        return {
+            "ok": False,
+            "error": "Action requires explicit approval (approved=True)",
+            "requires_approval": True,
+            "decision": decision,
+        }
+
+    def _resolve_approval(self, action_data: dict[str, Any], dry_run: bool) -> bool:
+        if action_data.get("approved"):
+            self._cache_approval(action_data, dry_run)
+            return True
+        if self._check_cached_approval(action_data):
+            action_data["approved"] = True
+            return True
+        return False
+
+    def _build_budget_kwargs(self, action_data: dict[str, Any]) -> dict[str, Any]:
+        budget_kwargs: dict[str, Any] = {}
+        if "rollout_id" in action_data:
+            budget_kwargs["rollout_id"] = action_data["rollout_id"]
+        if "token_weight" in action_data:
+            budget_kwargs["token_weight"] = action_data["token_weight"]
+        if "input_tokens" in action_data and "output_tokens" in action_data:
+            budget_kwargs["input_tokens"] = action_data["input_tokens"]
+            budget_kwargs["output_tokens"] = action_data["output_tokens"]
+        return budget_kwargs
+
+    def _audit_budget(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        budget_result: dict[str, Any],
+        dry_run: bool,
+    ) -> None:
+        if dry_run:
+            return
+        self.budget.save()
+        if not budget_result["ok"]:
+            self.audit.log("budget.blocked", {"action": action_data["type"], "args": kwargs, "budget": budget_result})
+        else:
+            self.audit.log("action.allowed", {"action": action_data["type"], "args": kwargs, "decision": decision, "budget": budget_result})
+
+    def _finalize_action(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        budget_result: dict[str, Any],
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        self._audit_budget(action_data, kwargs, decision, budget_result, dry_run)
+        ok = budget_result["ok"]
+        self.telemetry.record(
+            event_type="action",
+            action=action_data["type"],
+            status="allowed" if ok else "budget_blocked",
+            tokens=action_data.get("tokens", 0),
+            cost=action_data.get("cost", 0.0),
+            metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
+        )
+        if not ok:
+            return {"ok": False, "error": budget_result["reason"], "budget": budget_result}
+        return {
+            "ok": True,
+            "decision": decision,
+            "budget": budget_result,
+            "action": action_data["type"],
+            "args": kwargs,
+        }
+
     def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Evaluate action through policy + budget gates."""
         self._auto_persona(kwargs)
@@ -97,64 +213,19 @@ class Kernel:
 
         decision = self.policy.can(action_data["type"], **action_data)
         if decision["decision"] == "deny":
-            if not dry_run:
-                self.audit.log("policy.denied", {"action": action_data["type"], "args": kwargs, "decision": decision})
-            self.telemetry.record(
-                event_type="action",
-                action=action_data["type"],
-                status="policy_denied",
-                tokens=action_data.get("tokens", 0),
-                cost=action_data.get("cost", 0.0),
-                metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
-            )
-            return {"ok": False, "error": f"Policy denied by {decision['rule']}", "decision": decision}
+            return self._handle_policy_denied(action_data, kwargs, decision, dry_run)
 
-        if decision["decision"] == "ask" and not action_data.get("approved"):
-            if not dry_run:
-                self.audit.log("policy.asked", {"action": action_data["type"], "args": kwargs, "decision": decision})
-            self.telemetry.record(
-                event_type="action",
-                action=action_data["type"],
-                status="ask",
-                tokens=action_data.get("tokens", 0),
-                cost=action_data.get("cost", 0.0),
-                metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
-            )
-            return {
-                "ok": False,
-                "error": "Action requires explicit approval (approved=True)",
-                "requires_approval": True,
-                "decision": decision,
-            }
+        if decision["decision"] == "ask" and not self._resolve_approval(action_data, dry_run):
+            return self._handle_policy_ask(action_data, kwargs, decision, dry_run)
 
-        budget_result = self.budget.check("session", action_data.get("tokens", 0), action_data.get("cost", 0.0), dry_run=dry_run)
-        if not dry_run:
-            self.budget.save()
-            if not budget_result["ok"]:
-                self.audit.log("budget.blocked", {"action": action_data["type"], "args": kwargs, "budget": budget_result})
-            else:
-                self.audit.log("action.allowed", {"action": action_data["type"], "args": kwargs, "decision": decision, "budget": budget_result})
-
-        ok = budget_result["ok"]
-        self.telemetry.record(
-            event_type="action",
-            action=action_data["type"],
-            status="allowed" if ok else "budget_blocked",
-            tokens=action_data.get("tokens", 0),
-            cost=action_data.get("cost", 0.0),
-            metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
+        budget_result = self.budget.check(
+            "session",
+            action_data.get("tokens", 0),
+            action_data.get("cost", 0.0),
+            dry_run=dry_run,
+            **self._build_budget_kwargs(action_data),
         )
-
-        if not ok:
-            return {"ok": False, "error": budget_result["reason"], "budget": budget_result}
-
-        return {
-            "ok": True,
-            "decision": decision,
-            "budget": budget_result,
-            "action": action_data["type"],
-            "args": kwargs,
-        }
+        return self._finalize_action(action_data, kwargs, decision, budget_result, dry_run)
 
     def run_workflow(self, workflow_id: str, context: dict[str, Any]) -> dict[str, Any]:
         context = dict(context)

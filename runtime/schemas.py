@@ -18,6 +18,10 @@ class BudgetSchema(BaseModel):
     period: str = "session"
     on_exceed: str = "block"
     fallback_model: str | None = None
+    rollout_max_tokens: int | None = None
+    rollout_reminder_threshold: float | None = None
+    token_weight_input: float = 1.0
+    token_weight_output: float = 1.0
 
     @field_validator("period")
     @classmethod

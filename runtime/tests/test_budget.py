@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from runtime.budget import ALLOWED_EXCEED, ALLOWED_PERIODS, Budget, BudgetManager
+from runtime.schemas import BudgetSchema
 
 # ---------------------------------------------------------------------------
 # Budget.__post_init__ — normalization
@@ -249,4 +250,111 @@ class TestBudgetSaveErrorPath:
         bm.set_budget("t", Budget(max_tokens=100))
         bm.save()  # no exception
         assert bm.state_file.exists()
+
+
+# ---------------------------------------------------------------------------
+# Budget — rollout and token-weight fields
+# ---------------------------------------------------------------------------
+
+class TestBudgetNewFields:
+    def test_default_rollout_fields(self):
+        b = Budget()
+        assert b.rollout_max_tokens is None
+        assert b.rollout_reminder_threshold is None
+        assert b.token_weight_input == 1.0
+        assert b.token_weight_output == 1.0
+
+    def test_schema_defaults(self):
+        s = BudgetSchema()
+        assert s.rollout_max_tokens is None
+        assert s.rollout_reminder_threshold is None
+        assert s.token_weight_input == 1.0
+        assert s.token_weight_output == 1.0
+
+
+# ---------------------------------------------------------------------------
+# BudgetManager.check_rollout
+# ---------------------------------------------------------------------------
+
+class TestBudgetCheckRollout:
+    def test_rollout_tracks_and_reminds(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        budget = Budget(rollout_max_tokens=100, rollout_reminder_threshold=0.8)
+
+        r1 = bm.check_rollout("r1", tokens=20, budget=budget)
+        assert r1["ok"] is True
+        assert r1["reminder"] is None
+        assert bm.usage["rollout:r1"]["tokens"] == 20
+
+        r2 = bm.check_rollout("r1", tokens=70, budget=budget)
+        assert r2["ok"] is True
+        assert r2["reminder"] is not None and "80%" in r2["reminder"]
+        assert bm.usage["rollout:r1"]["tokens"] == 90
+
+        r3 = bm.check_rollout("r1", tokens=20, budget=budget)
+        assert r3["ok"] is False
+        assert r3["action"] == "block"
+
+    def test_rollout_dry_run_does_not_update(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        budget = Budget(rollout_max_tokens=100)
+        r1 = bm.check_rollout("r1", tokens=50, dry_run=True, budget=budget)
+        assert r1["ok"] is True
+        assert bm.usage["rollout:r1"]["tokens"] == 0
+
+
+# ---------------------------------------------------------------------------
+# BudgetManager.check — rollout, token weighting
+# ---------------------------------------------------------------------------
+
+class TestBudgetCheckRolloutAndWeights:
+    def test_check_includes_rollout_result(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        bm.set_budget("r", Budget(max_tokens=1000, rollout_max_tokens=100))
+        result = bm.check("r", tokens=30, rollout_id="r1")
+        assert result["ok"] is True
+        assert result["rollout"]["ok"] is True
+        assert bm.usage["rollout:r1"]["tokens"] == 30
+
+    def test_check_rollout_blocks_when_exceeded(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        bm.set_budget("r", Budget(max_tokens=1000, rollout_max_tokens=50))
+        result = bm.check("r", tokens=60, rollout_id="r1")
+        assert result["ok"] is False
+        assert result["rollout"]["ok"] is False
+        assert result["rollout"]["action"] == "block"
+
+    def test_check_rollout_reminder_on_threshold_cross(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        bm.set_budget(
+            "r",
+            Budget(max_tokens=1000, rollout_max_tokens=100, rollout_reminder_threshold=0.8),
+        )
+        r1 = bm.check("r", tokens=70, rollout_id="r1")
+        assert r1["rollout"]["reminder"] is None
+        r2 = bm.check("r", tokens=20, rollout_id="r1")
+        assert r2["reminder"] is not None and "80%" in r2["reminder"]
+
+    def test_input_output_token_weights(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        bm.set_budget("r", Budget(max_tokens=100, token_weight_input=2.0, token_weight_output=3.0))
+        result = bm.check("r", input_tokens=10, output_tokens=5)
+        assert result["ok"] is True
+        assert bm.usage["r"]["tokens"] == 35  # 10*2 + 5*3
+
+    def test_token_weight_scalar(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        bm.set_budget("r", Budget(max_tokens=100))
+        result = bm.check("r", tokens=10, token_weight=2.0)
+        assert result["ok"] is True
+        assert bm.usage["r"]["tokens"] == 20
+
+    def test_check_dry_run_does_not_update(self, tmp_path: Path):
+        bm = BudgetManager(tmp_path)
+        bm.set_budget("r", Budget(max_tokens=100, rollout_max_tokens=50))
+        result = bm.check("r", tokens=20, rollout_id="r1", dry_run=True)
+        assert result["ok"] is True
+        assert result["rollout"]["ok"] is True
+        assert bm.usage["r"]["tokens"] == 0
+        assert bm.usage["rollout:r1"]["tokens"] == 0
 

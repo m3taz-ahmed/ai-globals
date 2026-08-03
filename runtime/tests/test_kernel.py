@@ -51,3 +51,47 @@ def test_act_destructive_denied(tmp_path):
     k = _kernel(tmp_path)
     result = k.act("rm", command="rm -rf /")
     assert not result["ok"]
+
+
+def test_act_cached_after_approval(tmp_path):
+    k = _kernel(tmp_path)
+    first = k.act("write")
+    assert not first["ok"]
+    assert first["requires_approval"]
+
+    approved = k.act("write", approved=True)
+    assert approved["ok"]
+    assert approved["decision"]["decision"] == "ask"
+
+    cached = k.act("write")
+    assert cached["ok"]
+    assert cached["decision"]["decision"] == "ask"
+
+    k.approval_cache.clear()
+    after_clear = k.act("write")
+    assert not after_clear["ok"]
+    assert after_clear["requires_approval"]
+
+
+def test_approval_cache_respects_fields(tmp_path):
+    k = _kernel(tmp_path)
+    r1 = k.act("write", path="/tmp/a", approved=True)
+    assert r1["ok"]
+
+    r2 = k.act("write", path="/tmp/b")
+    assert not r2["ok"]
+    assert r2["requires_approval"]
+
+    r3 = k.act("write", path="/tmp/a")
+    assert r3["ok"]
+
+
+def test_dry_run_does_not_cache_approval(tmp_path):
+    k = _kernel(tmp_path)
+    dry = k.act("write", dry_run=True)
+    assert not dry["ok"]
+    assert dry.get("requires_approval")
+
+    second = k.act("write")
+    assert not second["ok"]
+    assert second["requires_approval"]

@@ -13,6 +13,7 @@ from typing import Any
 
 import config
 
+from .hybrid import HybridSearcher
 from .vector import VectorMemory
 
 
@@ -218,6 +219,20 @@ class MemoryStore:
             if not ids:
                 return []
         return self.vector.search(query, k=k, ids=ids)
+
+    def search_hybrid(
+        self, query: str, k: int = 5, kind: str | None = None,
+        source: str | None = None, explain: bool = False
+    ) -> list[dict[str, Any]]:
+        """Hybrid search combining FTS, vector, and entity boosting."""
+        if not self.vector or not self.vector.is_available():
+            return [
+                {"id": m.id, "kind": m.kind, "source": m.source,
+                 "content": m.content, "score": None}
+                for m in self.search(query, kind=kind, limit=k)
+            ]
+        return HybridSearcher(self).search(
+            query, k=k, kind=kind, source=source, explain=explain)
 
     def relate(self, source_id: str, target_id: str, relation: str) -> None:
         now = datetime.now(timezone.utc).isoformat()

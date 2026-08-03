@@ -8,7 +8,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -79,25 +78,9 @@ def cmd_run(args: argparse.Namespace) -> int:
 def cmd_query(args: argparse.Namespace) -> int:
     root = _project_root(args)
     store = MemoryStore(root)
-    seen: set[str] = set()
-    results: list[dict[str, Any]] = []
-
-    for mem in store.search(args.query, kind=args.kind, limit=args.limit):
-        seen.add(mem.id)
-        results.append(
-            {"id": mem.id, "kind": mem.kind, "source": mem.source, "content": mem.content[:500], "fts": True, "score": None}
-        )
-
-    for vr in store.search_vector(args.query, k=args.limit, kind=args.kind):
-        if vr["id"] in seen:
-            continue
-        found = store.get(vr["id"])
-        if found is None:
-            continue
-        seen.add(found.id)
-        results.append(
-            {"id": found.id, "kind": found.kind, "source": found.source, "content": found.content[:500], "fts": False, "score": vr["score"]}
-        )
+    results = store.search_hybrid(
+        args.query, k=args.limit, kind=args.kind, explain=getattr(args, "explain", False)
+    )
 
     table = Table(title="Hybrid Context Query")
     table.add_column("Kind", style="cyan")
@@ -430,6 +413,7 @@ def main(argv: list[str] | None = None) -> int:
     p_query.add_argument("query")
     p_query.add_argument("--kind", default=None)
     p_query.add_argument("--limit", type=int, default=10)
+    p_query.add_argument("--explain", action="store_true")
 
     p_mem = sub.add_parser("memory", help="Memory commands")
     p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest"])

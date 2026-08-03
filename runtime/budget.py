@@ -28,6 +28,10 @@ class Budget:
     period: Period = "session"
     on_exceed: ExceedAction = "block"
     fallback_model: str | None = None
+    rollout_max_tokens: int | None = None
+    rollout_reminder_threshold: float | None = None
+    token_weight_input: float = 1.0
+    token_weight_output: float = 1.0
 
     def __post_init__(self) -> None:
         if self.period not in ALLOWED_PERIODS:
@@ -44,7 +48,7 @@ class BudgetManager:
         self.state_file = root / "state" / "budget.json"
         self.budgets: dict[str, Budget] = {}
         self.usage: dict[str, dict[str, Any]] = {}
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._load()
 
     def _load(self) -> None:
@@ -127,7 +131,84 @@ class BudgetManager:
                     }
                 )
 
-    def check(self, scope: str, tokens: int = 0, cost: float = 0.0, calls: int = 0, dry_run: bool = False) -> dict[str, Any]:
+    def _weighted_tokens(
+        self,
+        budget: Budget,
+        tokens: int,
+        token_weight: float | None,
+        input_tokens: int | None,
+        output_tokens: int | None,
+    ) -> int:
+        if input_tokens is not None and output_tokens is not None:
+            return int(input_tokens * budget.token_weight_input + output_tokens * budget.token_weight_output)
+        if token_weight is not None:
+            return int(tokens * token_weight)
+        return tokens
+
+    def _rollout_reminder(
+        self,
+        usage_tokens: int,
+        projected_tokens: int,
+        max_tokens: int | None,
+        threshold: float | None,
+    ) -> str | None:
+        if not max_tokens or threshold is None:
+            return None
+        threshold_tokens = threshold * max_tokens
+        if usage_tokens < threshold_tokens <= projected_tokens:
+            return f"Rollout token usage at {threshold:.0%} of {max_tokens}"
+        return None
+
+    def check_rollout(
+        self,
+        rollout_id: str,
+        tokens: int = 0,
+        cost: float = 0.0,
+        dry_run: bool = False,
+        budget: Budget | None = None,
+    ) -> dict[str, Any]:
+        """Track usage per rollout and enforce rollout_max_tokens."""
+        with self._lock:
+            key = f"rollout:{rollout_id}"
+            u = self.usage.setdefault(key, {"tokens": 0, "cost": 0, "calls": 0})
+            projected_tokens = u["tokens"] + tokens
+            projected_cost = u["cost"] + cost
+            max_tokens = budget.rollout_max_tokens if budget else None
+            threshold = budget.rollout_reminder_threshold if budget else None
+
+            if max_tokens and projected_tokens >= max_tokens:
+                return {
+                    "ok": False,
+                    "reason": "Rollout budget exceeded: tokens",
+                    "action": "block",
+                    "rollout_id": rollout_id,
+                    "reminder": None,
+                }
+
+            reminder = self._rollout_reminder(u["tokens"], projected_tokens, max_tokens, threshold)
+            if not dry_run:
+                u.update({"tokens": projected_tokens, "cost": projected_cost, "calls": 0})
+
+            return {
+                "ok": True,
+                "reason": None,
+                "action": "allow",
+                "rollout_id": rollout_id,
+                "reminder": reminder,
+            }
+
+    def check(
+        self,
+        scope: str,
+        tokens: int = 0,
+        cost: float = 0.0,
+        calls: int = 0,
+        dry_run: bool = False,
+        rollout_id: str | None = None,
+        token_weight: float | None = None,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+    ) -> dict[str, Any]:
         """Return {'ok': bool, 'reason': str | None, 'action': str}."""
         with self._lock:
             budget = self.budgets.get(scope)
@@ -137,8 +218,9 @@ class BudgetManager:
             self._reset_if_needed(scope, budget)
 
             u = self.usage[scope]
+            effective_tokens = self._weighted_tokens(budget, tokens, token_weight, input_tokens, output_tokens)
             projected = {
-                "tokens": u["tokens"] + tokens,
+                "tokens": u["tokens"] + effective_tokens,
                 "cost": u["cost"] + cost,
                 "calls": u["calls"] + calls,
             }
@@ -167,6 +249,22 @@ class BudgetManager:
                     }
                 return {"ok": False, "reason": f"Budget exceeded: {exceeded}", "action": "block"}
 
+            if rollout_id:
+                rollout_result = self.check_rollout(rollout_id, effective_tokens, cost, dry_run, budget)
+                if not rollout_result["ok"]:
+                    return {
+                        "ok": False,
+                        "reason": rollout_result["reason"],
+                        "action": "block",
+                        "rollout": rollout_result,
+                        "reminder": None,
+                    }
+
             if not dry_run:
                 u.update(projected)
-            return {"ok": True, "reason": None, "action": "allow"}
+
+            result: dict[str, Any] = {"ok": True, "reason": None, "action": "allow"}
+            if rollout_id:
+                result["rollout"] = rollout_result
+                result["reminder"] = rollout_result["reminder"]
+            return result
