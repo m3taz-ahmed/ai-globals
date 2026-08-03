@@ -1,7 +1,7 @@
 <div align="right" dir="rtl">
   <img src="logo.png" width="160" alt="شعار AI Global OS">
   <h1>AI Global OS — نظام التشغيل العالمي للذكاء الاصطناعي</h1>
-  <p><strong>توقف عن السماح للذكاء الاصطناعي بكتابة كود سباغيتي. حوّله إلى مهندسك الرئيسي.</strong></p>
+  <p><strong>توقف عن السماح للذكاء الاصطناعي بكتابة كود فوضوي. حوّله إلى مهندسك الرئيسي.</strong></p>
 
   <p>
     <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-4.22.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.22.0">
@@ -10,9 +10,9 @@
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-17-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="17 شخصية">
-    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA%20Lord-13-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="13 مهارة Lord">
-    <img src="https://img.shields.io/badge/%D8%A8%D9%88%D8%A7%D8%A8%D8%A9_%D8%A7%D9%84%D8%AC%D9%88%D8%AF%D8%A9-SOLID%20%7C%20OWASP%20%7C%20WCAG%202.2-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="بوابة الجودة">
+    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-19-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 شخصية">
+    <img src="https://img.shields.io/badge/%D8%A7%D9%84%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-54%20%D9%85%D8%AA%D8%AE%D8%B5%D8%B5%D8%A9-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="54 مهارة متخصصة">
+    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-31%20%D9%85%D8%AA%D9%8A%D9%86-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="31 سير عمل متين">
   </p>
 
   <p><i>نظام تشغيل محكم الإصدار، غير قابل للمساومة، يقضي نهائياً على انحراف السياق (Context Drift)، ويفرض أحدث معايير الهندسة، ويحكم كل سطر كود مولّد.</i></p>
@@ -21,6 +21,29 @@
 ---
 
 <div dir="rtl">
+
+[اقرأ النسخة الإنجليزية](README.md)
+
+---
+
+## جدول المحتويات
+
+1. [لماذا AI Global OS؟](#%D9%84%D9%85%D8%A7%D8%B0%D8%A7-ai-global-os)
+2. [المتطلبات قبل البدء](#%D8%A7%D9%84%D9%85%D8%AA%D8%B7%D9%84%D8%A8%D8%A7%D8%AA-%D9%82%D8%A8%D9%84-%D8%A7%D9%84%D8%A8%D8%AF%D8%A1)
+3. [التفعيل في 60 ثانية](#%D8%A7%D9%84%D8%AA%D9%81%D8%B9%D9%8A%D9%84-%D9%81%D9%8A-60-%D8%AB%D8%A7%D9%86%D9%8A%D8%A9)
+4. [الركائز الست لـ AI Global OS](#%D8%A7%D9%84%D8%B1%D9%83%D8%A7%D8%A6%D8%B2-%D8%A7%D9%84%D8%B3%D8%AA-%D9%84%D9%80-ai-global-os)
+5. [لوحة المعلومات والمراقبة](#%D9%84%D9%88%D8%AD%D8%A9-%D8%A7%D9%84%D9%85%D8%B9%D9%84%D9%88%D9%85%D8%A7%D8%AA-%D9%88%D8%A7%D9%84%D9%85%D8%B1%D8%A7%D9%82%D8%A8%D8%A9)
+6. [معمارية النظام](#%D9%85%D8%B9%D9%85%D8%A7%D8%B1%D9%8A%D8%A9-%D8%A7%D9%84%D9%86%D8%B8%D8%A7%D9%85)
+7. [لغير المبرمجين: ماذا يعني ذلك لفريقك؟](#%D9%84%D8%BA%D9%8A%D8%B1-%D8%A7%D9%84%D9%85%D8%A8%D8%B1%D9%85%D8%AC%D9%8A%D9%86-%D9%85%D8%A7%D8%B0%D8%A7-%D9%8A%D8%B9%D9%86%D9%8A-%D8%B0%D9%84%D9%83-%D9%84%D9%81%D8%B1%D9%8A%D9%82%D9%83)
+8. [ربط النظام بـ AI agent](#%D8%B1%D8%A8%D8%B7-%D8%A7%D9%84%D9%86%D8%B8%D8%A7%D9%85-%D8%A8%D9%80-ai-agent)
+9. [القواعد العامة لوضعها في AI agent IDE](#%D8%A7%D9%84%D9%82%D9%88%D8%A7%D8%B9%D8%AF-%D8%A7%D9%84%D8%B9%D8%A7%D9%85%D8%A9-%D9%84%D9%88%D8%B6%D8%B9%D9%87%D8%A7-%D9%81%D9%8A-ai-agent-ide)
+10. [مرجع أوامر CLI](#%D9%85%D8%B1%D8%AC%D8%B9-%D8%A3%D9%88%D8%A7%D9%85%D8%B1-cli)
+11. [الـ 19 شخصية وـ 13 مجال مهارة Lord](#%D8%A7%D9%84%D9%80-19-%D8%B4%D8%AE%D8%B5%D9%8A%D8%A9-%D9%88%D9%80-13-%D9%85%D8%AC%D8%A7%D9%84-%D9%85%D9%87%D8%A7%D8%B1%D8%A9-lord)
+12. [سير العمل (Workflows)](#%D8%B3%D9%8A%D8%B1-%D8%A7%D9%84%D8%B9%D9%85%D9%84-workflows)
+13. [أبرز المستجدات والميزات الجديدة](#%D8%A3%D8%A8%D8%B1%D8%B2-%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%AC%D8%AF%D8%A7%D8%AA-%D9%88%D8%A7%D9%84%D9%85%D9%8A%D8%B2%D8%A7%D8%AA-%D8%A7%D9%84%D8%AC%D8%AF%D9%8A%D8%AF%D8%A9)
+14. [بوابات الجودة والمساهمة](#%D8%A8%D9%88%D8%A7%D8%A8%D8%A7%D8%AA-%D8%A7%D9%84%D8%AC%D9%88%D8%AF%D8%A9-%D9%88%D8%A7%D9%84%D9%85%D8%B3%D8%A7%D9%87%D9%85%D8%A9)
+
+---
 
 ## لماذا AI Global OS؟
 
@@ -35,8 +58,6 @@
 | SQL خام، فلاتر XSS مفقودة، أسرار ضعيفة | OWASP، zero-trust، و RBAC مفروضة افتراضياً |
 | إعادة هيكلة عشوائية | تغييرات جراحية ببوابات policy / budget / audit |
 | إجابات AI بنفس الأسلوب دائماً | الشخصية/المهارات المناسبة لكل مهمة |
-
-[اقرأ النسخة الإنجليزية](README.md)
 
 ---
 
@@ -59,13 +80,72 @@
 
 ---
 
-## للمبرمجين: ما الذي يفعله ولماذا هو مختلف
+## التفعيل في 60 ثانية
+
+> تأكد إن **Python 3.10+** و **Git** مثبّتين. النظام أساساً Pure Python؛ Node.js محتاج بس لو هتوسّع الـ dashboard/frontend.
+
+1. **استنسخ الدماغ المركزي** في مكان ثابت (مثلاً `D:/.ai` أو `~/.ai`):
+   ```bash
+   git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
+   ```
+
+2. **ثبّت النظام**:
+   ```powershell
+   # Windows
+   .\install.ps1
+
+   # macOS / Linux
+   bash install.sh
+   ```
+   المثبّت ينسخ المستودع إلى مجلد جذر النظام، ويثبّت حزمة `aios` مع extras `[dev,graphify]`، ويبني ملف integrity manifest، وينشئ أمر CLI `ai-os`.
+
+3. **ثبّت اعتمادات Python** داخل المجلد المنسوخ (لو تخطيت المثبّت):
+   ```bash
+   python -m pip install -e '.[graphify]'
+   ```
+   للتطوير (tests، linting، graph)، استخدم `'.[dev,graphify]'`.
+
+4. **تحقق من التثبيت**:
+   ```bash
+   ai-os doctor
+   ai-os status
+   ```
+   `doctor` يتحقق من صحة جذر النظام والسياسات والقواعد والفهرس المتجهي. `status` يطبع عدد الشخصيات والمهارات وسير العمل والميزانيات.
+
+5. **استخدم CLI**:
+   ```bash
+   ai-os persona detect --multi "وصف مهمتك"
+   ai-os check edit
+   ai-os run 02-execution
+   ai-os memory ingest
+   ```
+
+6. **شغّل لوحة المعلومات المحلية** (اختياري):
+   ```bash
+   python dashboard/server.py 8080
+   ```
+   ثم افتح `http://127.0.0.1:8080`. اضبط `AGENT_OS_DASHBOARD_TOKEN` لتفعيل Bearer auth.
+
+7. **فعّل خادم MCP**:
+   أضف `aios_mcp/config.json` إلى إعدادات MCP في IDE، أو شغّل:
+   ```bash
+   python aios_mcp/aios_server.py
+   ```
+
+8. **وجّه AI agent بتاعك لقواعد النظام**:
+   شوف قسم [ربط النظام بـ AI agent](#%D8%B1%D8%A8%D8%B7-%D8%A7%D9%84%D9%86%D8%B8%D8%A7%D9%85-%D8%A8%D9%80-ai-agent) عشان تعرف الملف اللي هتحطّه في Cursor, Copilot, Claude, Windsurf, Cline, أو Aider.
+
+الآن أصبح ذكاؤك الاصطناعي سيادياً. يحلل كل طلب مقابل SOLID، OWASP، WCAG، وتكدسك التقني الدقيق قبل توليد أي كود.
+
+---
+
+## الركائز الست لـ AI Global OS
 
 AI Global OS ليس مكتبة prompts. إنه طبقة تحكم runtime توضع بينك وبين كل وكيل ذكاء اصطناعي تستخدمه.
 
 ### 1. تكوين الشخصيات + مهارات Lord
 
-النظام يأتي بـ **17 شخصية** (من `ARCH` إلى `LEGAL`) و**13 مهارة lord** (قواعد البيانات، AI/ML، السحابة، DevOps، الأمن، إلخ). لكل طلب يكتشف النظام مجموعة الشخصيات الأكثر ملاءمة ويحمّل ملفات المهارات المطابقة. يمكنك أيضاً إنشاء وكلاء متعددي الشخصيات، مثلاً `ARCH + QA + security-lord`.
+النظام يأتي بـ **19 شخصية** (من `ARCH` إلى `CV`) و**13 مهارة lord**. لكل طلب يكتشف النظام مجموعة الشخصيات الأكثر ملاءمة ويحمّل ملفات المهارات المطابقة. يمكنك أيضاً إنشاء وكلاء متعددي الشخصيات، مثلاً `ARCH + QA + security-lord`.
 
 ```bash
 ai-os persona detect --multi "build a secure docker API with postgres"
@@ -73,6 +153,8 @@ ai-os persona detect --multi "build a secure docker API with postgres"
 ```
 
 يُنفّذ ذلك في `runtime/persona.py` + `runtime/skill_resolver.py` ويُستخدم من `Kernel` و `WorkflowRunner` و `AgentPool`.
+
+**جديد:** يمكن لملفات المهارات والقواعد أن تعلن frontmatter من نوع YAML لتحديد متى تكون نشطة بالنسبة لمسارات أو تكدسات أو شخصيات محددة. Runtime يُرشّح المهارات تلقائياً، فلا يحصل الوكيل أبداً على إرشادات غير ذات صلة.
 
 ### 2. حوكمة Runtime
 
@@ -85,13 +167,37 @@ ai-os persona detect --multi "build a secure docker API with postgres"
 - **Saga orchestrator** — إجراءات تعويضية للعمليات الطويلة.
 - **Telemetry** — أحداث منظمة للمراقبة.
 
+**جديد:** يقبل `Kernel.act` و `run_workflow` و `chat_message` و `run_saga` معامل `fresh_context`. عند التفعيل، يعيد Kernel ضبط ميزانية الجلسة ويُعيد اشتقاق مفاتيح الشخصية/المهارات المُحقنة تلقائياً، حتى لا ترث جلسة دردشة أو workflow سياقاً قديماً.
+
 ### 3. حقيقة حية، لا ذاكرة قديمة
 
 قبل تنفيذ أي مكتبة أو إطار خارجي، يستعلم النظام من Context7 MCP (`resolve-library-id` ثم `get-library-docs`) ليتطابق الكود المولّد مع API الحقيقي. إذا وُجد `graphify-out/graph.json`، يتنقل النظام في الرسم البياني للمعرفة بدلاً من `grep` أعمى.
 
+يمكنك أيضاً استعلام هذه الأدوات من CLI:
+
+```bash
+# عرض المهارات
+ai-os skill list
+
+# قراءة مهارة
+ai-os skill invoke technical-writer
+
+# البحث في المهارات
+ai-os skill search security
+
+# استدعاء أداة MCP خارجية
+ai-os mcp context7 resolve-library-id --args '{"library":"fastapi"}'
+```
+
 ### 4. ذاكرة موثوقة
 
 خدمة الذاكرة تستخدم SQLite + FTS5 مع فهرس vector اختياري. تخزّن سياقات episodic / semantic / factual / procedural. بعد كل تغيير في rules أو tech-stack أو workflows، يشغّل `ai-os memory ingest` لتحديث الفهرس.
+
+```bash
+ai-os memory ingest
+ai-os memory search "docker deployment"
+ai-os query "auth pattern"
+```
 
 ### 5. معايير هندسية مفروضة بالكود
 
@@ -125,6 +231,74 @@ ai-os persona detect --multi "build a secure docker API with postgres"
 
 ---
 
+## لوحة المعلومات والمراقبة
+
+لوحة معلومات AI Global OS هي واجهة ويب مظلمة على غرار مركز القيادة لتشغيل النظام ورصده. إنها ليست صفحة تسويق؛ بل مقصورة تشغيلية تتيح لك رؤية الشخصيات وحالة runtime والميزانية والذاكرة والمهارات وgraphify والtelemetry في مكان واحد.
+
+الميزات الرئيسية (المحددة في `DESIGN.md`):
+
+- **لوحة الأوامر (Command palette)** — اضغط `Cmd/Ctrl + K` لفتح لوحة أوامر عالمية.
+- **بطاقات المقاييس (Bento-grid)** — الجلسات النشطة، التوكينز المستخدمة، نسبة إصابة الذاكرة، عقد graphify، المهارات المعلقة، آخر تدقيق.
+- **حبات الحالة (Status pills)** — أخضر للمسموح/المكتمل، برتقالي للتحذيرات، أحمر للمحظور/الممنوع.
+- **لوحات زجاجية (Glass panels)** ونظام ألوان فحمي لازوردي عميق مع لمسات سماوي (حالة AI)، بنفسجي (المعرفة)، و石灰 (النجاح).
+- **الأمان** — قائمة CORS المسموحة، فحوصات CSRF header، حدود حجم الطلب، وتوثيق Bearer اختياري عبر `AGENT_OS_DASHBOARD_TOKEN`.
+
+شغّلها بـ:
+
+```bash
+python dashboard/server.py 8080
+```
+
+---
+
+## معمارية النظام
+
+```text
+.ai/                              # Sovereign root
+├── AGENTS.md                     # Cross-tool canonical instruction
+├── global-roles.md               # [Layer 0] Personas and identity
+├── global-roles-ar.md            # [Layer 0] Arabic persona charter
+├── global-workflow.md            # [Core] Cognitive loading & execution protocol
+├── README.md                     # Human front door
+├── README-AR.md                  # Arabic front door (this file)
+├── Memory.md                     # Short-term cross-session context
+├── state/CHANGELOG.md            # Release notes
+│
+├── .cursor/rules/                # Cursor rule adapters
+├── .claude/                      # Claude Code config, skills, agents
+├── .clinerules/                  # Cline rules
+├── .windsurfrules                # Windsurf rules
+├── .aider.conf.yml               # Aider config
+├── .github/copilot-instructions.md # GitHub Copilot instructions
+├── .devin/skills/global-os/      # Devin skill adapter
+├── .windsurf/skills/global-os/   # Windsurf skill adapter
+│
+├── rules/                        # Compressed behavioral & structural rules
+├── tech-stack/                   # Compressed domain-specific RAG tech-stacks
+├── workflows/                    # Compressed trigger-based execution protocols
+├── skills/                       # Persona + lord skill files
+│
+├── state/                        # Logs & persistent state
+├── brain/                        # Memory database
+├── graphify-out/                 # Knowledge graph
+│
+├── runtime/                      # Runtime kernel (policy, budget, workflow, chat, telemetry)
+├── memory/                       # Memory service
+├── aios_mcp/                     # MCP server
+├── dashboard/                    # Web dashboard
+├── cli.py                        # CLI entry point
+├── config.py                     # Root discovery
+├── install.ps1 / install.sh      # OS installer
+├── plugins.yaml                  # Plugin manifest
+├── pyproject.toml                # Package metadata
+└── scripts/                      # Self-healing operations
+    ├── validate-globals.py       # Integrity validator
+    ├── sync-agent-configs.py     # Sync configs across tools
+    └── graphify_mcp_wrapper.py   # Graphify MCP bridge
+```
+
+---
+
 ## لغير المبرمجين: ماذا يعني ذلك لفريقك؟
 
 **الملخص المختصر:** AI Global OS يحوّل البرمجة المساعدة بالذكاء الاصطناعي الفوضوية إلى عملية منضبطة وقابلة للتكرار تحمي الجودة وتقلل المخاطر.
@@ -139,53 +313,7 @@ ai-os persona detect --multi "build a secure docker API with postgres"
 
 ---
 
-## التفعيل في 60 ثانية
-
-> تأكد إن **Python 3.10+** و **Git** مثبّتين. النظام أساساً Pure Python؛ Node.js محتاج بس لو هتوسّع الـ dashboard/frontend.
-
-1. **استنسخ الدماغ المركزي** في مكان ثابت (مثلاً `D:/.ai` أو `~/.ai`):
-   ```bash
-   git clone https://github.com/m3taz-ahmed/ai-globals.git D:/.ai
-   ```
-
-2. **ثبّت النظام**:
-   ```powershell
-   # Windows
-   .\install.ps1
-
-   # macOS / Linux
-   bash install.sh
-   ```
-
-3. **ثبّت اعتمادات Python** داخل المجلد المنسوخ:
-   ```bash
-   python -m pip install -e '.[graphify]'
-   ```
-   للتطوير (tests، linting، graph)، استخدم `'.[dev,graphify]'`.
-
-4. **استخدم CLI**:
-   ```bash
-   ai-os status
-   ai-os persona detect --multi "وصف مهمتك"
-   ai-os check edit
-   ai-os run 02-execution
-   ai-os memory ingest
-   ```
-
-5. **فعّل MCP**:
-   أضف `aios_mcp/config.json` إلى إعدادات MCP في IDE، أو شغّل:
-   ```bash
-   python aios_mcp/aios_server.py
-   ```
-
-6. **وجّه AI agent بتاعك لقواعد النظام**:
-   شوف القسم اللي جاي عشان تعرف الملف اللي هتحطّه في Cursor, Copilot, Claude, Windsurf, Cline, أو Aider.
-
-الآن أصبح ذكاؤك الاصطناعي سيادياً. يحلل كل طلب مقابل SOLID، OWASP، WCAG، وتكدسك التقني الدقيق قبل توليد أي كود.
-
----
-
-## وصل AI Global OS بـ AI agent بتاعك
+## ربط النظام بـ AI agent
 
 بعد ما تستنسخ، قول لـ AI coding tool بتاعك إنه يقرأ قواعد النظام. كل أداة ليها adapter file خاص بيها:
 
@@ -197,9 +325,11 @@ ai-os persona detect --multi "build a secure docker API with postgres"
 | **Cline** | `.clinerules/ai-global-os.md` |
 | **Aider** | `.aider.conf.yml` |
 | **GitHub Copilot (داخل المستودع)** | `.github/copilot-instructions.md` |
+| **Devin** | `.devin/skills/global-os/SKILL.md` |
 | **أي agent تاني** | حمّل `AGENTS.md` + `global-roles.md` + `global-workflow.md` في الـ system prompt / project instructions. |
 
 أسرع setup عام هو إنك توجّه الـ agent لـ:
+
 ```text
 AGENTS.md
 global-roles.md
@@ -210,7 +340,7 @@ global-workflow.md
 
 ---
 
-## قواعد عامة (global rules) تحطّها في AI agent IDE
+## القواعد العامة لوضعها في AI agent IDE
 
 لو IDE بتاعك عنده **global / user-level rules** أو **system instructions** (مثلاً Cursor User Rules, Windsurf Global Rules, Claude Project Instructions)، انسخ السياق اللي تحت ده. هو اللي بيعلّم أي جلسة AI إزاي تشتغل مع AI Global OS.
 
@@ -254,7 +384,46 @@ global-workflow.md
 
 ---
 
-## الـ 17 شخصية وـ 13 مجال مهارة Lord
+## مرجع أوامر CLI
+
+الأمر `ai-os` هو الواجهة الأساسية للنظام. كل الأوامر بتدعم `--root` و `--project` لتجاوز جذر النظام والمشروع المكتشفين تلقائياً.
+
+| الأمر | الغرض | مثال |
+| :--- | :--- | :--- |
+| `status` | عرض جذر النظام وعدد الشخصيات والمهارات وسير العمل والميزانيات والقواعد. | `ai-os status` |
+| `doctor` | التحقق من صحة البيئة. | `ai-os doctor` |
+| `version` | طباعة إصدار النظام. | `ai-os version` |
+| `sync` | مزامنة إعدادات الوكلاء عبر الأدوات. | `ai-os sync` |
+| `persona detect` | اكتشاف أفضل شخصية/شخصيات للمهمة. | `ai-os persona detect --multi "secure API"` |
+| `persona list` | عرض كل الشخصيات. | `ai-os persona list` |
+| `skill list` | عرض المهارات المتاحة. | `ai-os skill list` |
+| `skill invoke` | عرض محتوى مهارة Markdown. | `ai-os skill invoke database-lord` |
+| `skill search` | البحث في المهارات بكلمة مفتاحية. | `ai-os skill search mariadb` |
+| `check` | سؤال محرك السياسة عما إذا كان الإجراء مسموحاً. | `ai-os check edit --args '{"file":"x.py"}'` |
+| `policy test` | تشغيل تجريبي لقرار السياسة. | `ai-os policy test edit --args '{"file":"x.py"}'` |
+| `run` | تنفيذ سير عمل markdown متين. | `ai-os run 02-execution` |
+| `saga` | تشغيل saga مع compensations. | `ai-os saga my-saga --steps '[...]'` |
+| `query` | بحث هجين عبر الذاكرة. | `ai-os query "auth pattern"` |
+| `memory search` | البحث في الذاكرة حسب النوع. | `ai-os memory search "docker"` |
+| `memory ingest` | إعادة استيعاب rules و skills و workflows. | `ai-os memory ingest` |
+| `budget list` | عرض الميزانيات المُعدة. | `ai-os budget list` |
+| `budget set` | تحديث ميزانية. | `ai-os budget set --scope global --max-tokens 100000` |
+| `project init` | إنشاء هيكل مشروع جديد مع هيكل النظام. | `ai-os project init --path ./my-project` |
+| `agent spawn` | إنشاء وكيل فرعي بشخصية معينة. | `ai-os agent spawn --persona ARCH,QA --agent-id worker-1` |
+| `agent list` | عرض الوكلاء النشطين. | `ai-os agent list` |
+| `chat` | REPL دردشة مستمر أو رسالة فورية. | `ai-os chat "hello"` |
+| `ci` | تشغيل بوابات الجودة المدمجة. | `ai-os ci` |
+| `stack detect` | اكتشاف التكدس التقني للمشروع الحالي. | `ai-os stack detect` |
+| `stack show` | عرض مستندات التكدس التقني المحمّلة. | `ai-os stack show` |
+| `mcp` | استدعاء أداة MCP خارجية. | `ai-os mcp context7 resolve-library-id --args '{"library":"fastapi"}'` |
+| `telemetry summary` | عرض ملخص Telemetry. | `ai-os telemetry summary` |
+| `graphify` | إعادة بناء الرسم البياني للمعرفة. | `ai-os graphify` |
+
+شغّل `ai-os --help` للقائمة الكاملة، و `ai-os <command> --help` لخيارات أمر محدد.
+
+---
+
+## الـ 19 شخصية وـ 13 مجال مهارة Lord
 
 الشخصيات تحدد **من** يكون الذكاء الاصطناعي. مهارات Lord تضيف **معرفة عميقة بالمجال** عند الحاجة.
 
@@ -277,37 +446,94 @@ global-workflow.md
 | **PRODUCT** | المتطلبات، roadmaps، الأولويات، المقاييس | `product-manager` |
 | **DOC** | READMEs، API docs، runbooks، changelogs | `technical-writer` |
 | **PERF** | زمن الاستجابة، الإنتاجية، profiling، التحسين | `performance-engineer` |
+| **PROPOSAL** | العطاءات والمقترحات، نصوص عربية/إنجليزية | `proposal-writer` |
+| **CV** | سير ذاتية محسّنة لـ ATS، LinkedIn، خطابات تغطية | `cv-writer` |
 
-مهارات Lord: `database-lord`, `mariadb-lord`, `ai-ml-lord`, `devops-lord`, `cloud-platforms-lord`, `frontend-frameworks-lord`, `backend-frameworks-lord`, `page-sections-lord`, `language-lord`, `linux-systems-lord`, `messaging-streaming-lord`, `search-vector-lord`, `security-lord`.
+مجالات مهارات Lord: `database-lord`، `mariadb-lord`، `ai-ml-lord`، `devops-lord`، `cloud-platforms-lord`، `frontend-frameworks-lord`، `backend-frameworks-lord`، `page-sections-lord`، `language-lord`، `linux-systems-lord`، `messaging-streaming-lord`، `search-vector-lord`، `security-lord`.
 
 عندما يمسّ prompt عدة مجالات، يُكوّن النظام لجنة — مثلاً `DEV + API + security-lord` — ويحمّل اتحاد ملفات المهارات ذات الصلة.
 
 ---
 
-## أبرز المستجدات (v4.22.0)
+## سير العمل (Workflows)
 
+سير العمل (Workflows) بروتوكولات تنفيذ مكتوبة بـ Markdown ومخزنة في `workflows/`. وهي مدعومة بـ SQLite، تدعم checkpoints، ويمكن تشغيلها من CLI أو الوكيل.
+
+سير العمل الأساسية:
+
+| المعرف | الغرض |
+| :--- | :--- |
+| `00-prompt-architecting` | صياغة prompt مهندسية. |
+| `01-planning` | تخطيط feature أو مهمة من البداية للنهاية. |
+| `02-execution` | تنفيذ مهمة مخططة. |
+| `03-debugging` | تصحيح نظام معطل. |
+| `04-deployment` | نشر آمن للإنتاج. |
+| `05-code-review` | مراجعة الكود مقابل المعايير. |
+| `06-maintenance` | الصيانة الدورية. |
+| `07-security-audit` | تدقيق أمني. |
+| `08-onboarding` | إدماج مشروع أو مطور جديد. |
+| `09-discovery` | استكشاف codebase غير مألوف. |
+| `10-saga-reconciliation` | تسوية saga فاشل. |
+| `11-audit-core` | قائمة تدقيق أساسية. |
+| `12-audit-ui` | قائمة تدقيق UI/UX. |
+| `13-audit-perf` | قائمة تدقيق الأداء. |
+| `14-ponytail-review` | مراجعة الديون التقنية. |
+| `15-page-builder-setup` | بناء page builder قائم على الأقسام. |
+| `16-cleanup-and-scm` | التنظيف وتجهيز التغييرات. |
+| `17-memory-sync` | مزامنة الذاكرة بعد milestone. |
+
+شغّل أي workflow بـ:
+
+```bash
+ai-os run 02-execution
+```
+
+---
+
+## أبرز المستجدات والميزات الجديدة
+
+### v4.22.0
+
+- **19 شخصية و 54 مهارة متخصصة**، بما في ذلك الشخصيتين الجديدتين `PROPOSAL` و `CV`.
 - **تكوين multi-persona + مهارات lord** عبر `PersonaDetector.detect_multiple` و `SkillResolver` ودمج `Kernel`/`WorkflowRunner`/`AgentPool`.
-- **17 شخصية** مُعرّفة في `global-roles.md` و `global-roles-ar.md`.
-- **9 ملفات مهارات شخصية جديدة**: `data-engineer`, `ml-engineer`, `devops-engineer`, `api-architect`, `legal-compliance`, `product-manager`, `technical-writer`, `performance-engineer`, `sre`.
-- **تحسينات CLI**: `ai-os persona detect --multi` و `ai-os agent spawn --persona ARCH,QA`.
-- إعادة هيكلة Clean Architecture لنظام الشخصيات/المهارات مع حقن `PersonaDetector` و `SkillResolver`.
+- **تعريفات الشخصيات الخارجية** في `runtime/personas.yaml` بحيث يمكن تحديث wiring الشخصيات بدون تعديل الكود.
+- **إعادة هيكلة Clean Architecture** لنظام الشخصيات/المهارات مع حقن الاعتماديات.
 - حوكمة runtime: policy, budget, audit, workflow, saga, telemetry, memory، و MCP server.
 - CI pipeline يشمل `ruff`, `mypy`, `pytest`, `validate-globals`, و `eval/harness.py`.
 
+### أحدث الإضافات
+
+- **القواعد الشرطية مع YAML frontmatter** (`runtime/rule_frontmatter.py` + `runtime/skill_resolver.py`). يمكن لملفات المهارة والقواعد الإعلان عن فلاتر `paths` و `stack` و `personas`. Runtime يحمّل فقط المهارات المطابقة للسياق الحالي، ونقطة نهاية MCP `query_rules` ترجع القواعد النشطة فقط.
+- **حدود السياق الطازج (Fresh-context boundary)** (`runtime/kernel.py` + `runtime/budget.py`). معامل `fresh_context` يعيد ضبط ميزانيات الجلسة ويُعيد اشتقاق مفاتيح الشخصية/المهارة المُحقنة تلقائياً لجلسات دردشة أو workflows نظيفة.
+- **أمر `ai-os skill` CLI** (`list`، `invoke`، `search`) بدعم من `SkillResolver`. يبحث في كل من `skills/` بجذر النظام و `.ai/skills/` بالمشروع.
+- **شخصية `CV` ومهارة `cv-writer`** لكتابة سير ذاتية محسّنة لـ ATS بالعربية/الإنجليزية، وخطابات تغطية، وملخصات LinkedIn، ونصوص portfolio.
+- **نظام تصميم لوحة المعلومات** (`DESIGN.md`) — مركز قيادة AI مظلم، رموز ألوان cyan/violet/lime، لوحة أوامر (`Cmd/Ctrl+K`)، حبات حالة، بطاقات bento، ولوحات زجاجية.
+- **تصليب Dashboard و MCP** — قائمة CORS origin قابلة للضبط، فحوصات CSRF header، حدود حجم الطلب، توثيق Bearer أقوى، والتحقق المشدد من المسارات والمدخلات.
+- **مهارة `mariadb-lord`** مع IDs لـ Context7 لـ MariaDB docs و Docker و connectors Node/Python وربط Laravel + Filament + Nova و patterns الـ multi-tenancy.
+- **مهارة `page-sections-lord`** تحتوي على باترن الـ section-based landing page builder مع standard spec و Filament Builder blocks و workflow للتنفيذ.
+- **بحث useful-repos** — إضافة 55 مستودع GitHub موثق في `tech-stack/useful-repos.md` عبر مجالات البرمجة و UI/UX والتصميم المتجاوب وقواعد البيانات.
+
 ---
 
-## أحدث الإضافات
+## بوابات الجودة والمساهمة
 
-- **مهارة `mariadb-lord`** مع IDs لـ Context7 لـ MariaDB docs و Docker و Node/Python connectors، وربط Laravel + Filament + Nova، و patterns الـ multi-tenancy.
-- **مهارة `page-sections-lord`** تحتوي على باترن الـ section-based landing page builder (شبه tourx) مع standard spec و Filament Builder blocks و workflow للتنفيذ.
-- **Workflow `15-page-builder-setup.md`** و triggers جديدة في الـ manifest: `/page-builder`، `page builder`، `landing page`.
-- تحديث `backend-frameworks-lord` و `frontend-frameworks-lord` و `database-lord` و `runtime/persona.py` لربط المهارات الجديدة و keywords الخاصة بيها.
+قبل أي handoff، يشغّل النظام:
 
----
+```bash
+ruff check .
+mypy
+pytest -q
+python eval/harness.py
+```
 
-## انضم للحركة
+يجب أن تمر جميعها. بعد تغيير `rules/` أو `tech-stack/` أو `workflows/` أو `skills/`، شغّل:
 
-اجعل النجمة ⭐ على المستودع ليحافظ قواعد AI لديك على تحديثها بأحدث معايير الهندسة.
+```bash
+ai-os memory ingest
+graphify update .
+```
+
+اجعل النجمة على المستودع ليحافظ قواعد AI لديك على تحديثها بأحدث معايير الهندسة.
 
 [![Star on GitHub](https://img.shields.io/github/stars/m3taz-ahmed/ai-globals?style=for-the-badge&logo=github&color=FFDD00&labelColor=1a1a2e)](https://github.com/m3taz-ahmed/ai-globals)
 

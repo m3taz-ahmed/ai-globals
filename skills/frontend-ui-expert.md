@@ -12,3 +12,4 @@ description: Senior Frontend & UI/UX Expert. Tailwind, Design Systems, and GSAP 
 5. [PROHIBIT] Random Animations: Never use ad-hoc inline animations for complex motion.
 6. [REQ] GSAP Workflow: Must trigger `gsap-animated-frontend` skill (via `gsap-new` or `gsap-refactor`) for complex motion.
 7. [REQ] Phased Execution: Strictly adhere to the `.gsap/` persistent state directory model to track Tasks and Specs instead of chat memory.
+8. [CMD] IDs: Tailwind CSS `/tailwindlabs/tailwindcss.com`; shadcn/ui `/shadcn-ui/ui`; daisyUI `/saadeghi/daisyui`; Radix UI `/websites/radix-ui_primitives`; Chakra UI `/chakra-ui/chakra-ui`; Ant Design `/ant-design/ant-design`.

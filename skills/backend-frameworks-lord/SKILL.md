@@ -5,7 +5,7 @@ description: Architect-level command of Laravel, Filament, Nova, Django, Spring 
 [SKILL] backend-frameworks-lord
 [OBJ] Design server-side apps and admin panels across Laravel, Filament, Nova, Django, Spring Boot, Express, NestJS, Rails, ASP.NET Core.
 [RULES]
-1. [CMD] IDs: Laravel `/laravel/docs`, Django `/websites/djangoproject_en_5_2`, Spring Boot `/spring-projects/spring-boot`, Express `/expressjs/express`, NestJS `/websites/nestjs`, Rails `/websites/guides_rubyonrails_v8_0`, ASP.NET Core `/dotnet/aspnetcore.docs`; Filament `/filamentphp/filament`; Filament Shield `/bezhansalleh/filament-shield`; Laravel Nova `/websites/nova_laravel_v5`; Laravel multi-tenancy `/spatie/laravel-multitenancy`, `/archtechx/tenancy`; MariaDB `mariadb-lord`; page sections `page-sections-lord`.
+1. [CMD] IDs: Laravel `/laravel/docs`, Django `/websites/djangoproject_en_5_2`, Spring Boot `/spring-projects/spring-boot`, Express `/expressjs/express`, NestJS `/websites/nestjs`, Rails `/websites/guides_rubyonrails_v8_0`, ASP.NET Core `/dotnet/aspnetcore.docs`; Filament `/filamentphp/filament`; Filament Shield `/bezhansalleh/filament-shield`; Laravel Nova `/websites/nova_laravel_v5`; Laravel multi-tenancy `/spatie/laravel-multitenancy`, `/archtechx/tenancy`; Prisma `/prisma/web` source `/prisma/prisma`; MariaDB `mariadb-lord`; page sections `page-sections-lord`.
 2. [REQ] Pillar coverage: request lifecycle, DI/IoC, data access/ORM, validation/serialization, auth/authz, API design, async/background work, testing, performance/operations.
 3. [REQ] Query framework ID with full question + topic (routing, orm, validation, authentication).
 4. [REQ] Framework choice: compare language ecosystem, concurrency model, ORM, deployment target, team skills.

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Global OS Dashboard</title>
   <link rel="stylesheet" href="index.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -37,6 +37,10 @@
       <header class="top-bar">
         <h1 id="page-title">Overview</h1>
         <div class="top-actions">
+          <div class="command-trigger" onclick="openCommandPalette()" title="Open command palette (Cmd/Ctrl + K)">
+            <span>Search or run command...</span>
+            <kbd>⌘ K</kbd>
+          </div>
           <button class="btn btn-outline" onclick="toggleTheme()">Toggle Theme</button>
           <div class="version-badge" id="version-badge">v---</div>
         </div>
@@ -46,20 +50,24 @@
       <section id="overview-tab" class="tab-content active">
         <div class="metrics-grid">
           <div class="metric-card">
-            <span class="label">Workflows</span>
+            <span class="label"><span>Workflows</span><span class="status-pill info" id="workflow-pill">Live</span></span>
             <span class="value" id="workflow-count">-</span>
+            <span class="trend up" id="workflow-trend">AI agents ready</span>
           </div>
           <div class="metric-card">
-            <span class="label">Rules</span>
+            <span class="label"><span>Rules</span><span class="status-pill success" id="rule-pill">Synced</span></span>
             <span class="value" id="rule-count">-</span>
+            <span class="trend" id="rule-trend">from validate-globals</span>
           </div>
           <div class="metric-card">
-            <span class="label">Budgets</span>
+            <span class="label"><span>Budgets</span><span class="status-pill warning" id="budget-pill">Active</span></span>
             <span class="value" id="budget-count">-</span>
+            <span class="trend" id="budget-trend">daily + session</span>
           </div>
           <div class="metric-card">
-            <span class="label">Tech Stack</span>
+            <span class="label"><span>Tech Stack</span><span class="status-pill info" id="stack-pill">Detected</span></span>
             <span class="value" id="stack-count">-</span>
+            <span class="trend" id="stack-trend">lockfile driven</span>
           </div>
         </div>
 
@@ -228,6 +236,14 @@
     </main>
   </div>
 
+    <!-- Command Palette -->
+    <div id="command-palette" class="command-palette-overlay" onclick="if (event.target === this) closeCommandPalette()">
+      <div class="command-palette">
+        <input type="text" id="command-input" placeholder="Search workflows, skills, memory..." oninput="filterCommands()" onkeydown="handleCommandKey(event)">
+        <div class="command-list" id="command-list"></div>
+      </div>
+    </div>
+
   <script>
     // Navigation
     function switchTab(tabId) {
@@ -265,6 +281,103 @@
     }
     if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
 
+    // Command Palette
+    const COMMANDS = [
+      { id: 'tab-overview', label: 'Overview', section: 'Navigation', run: () => switchTab('overview'), shortcut: 'O' },
+      { id: 'tab-memory', label: 'Memory Explorer', section: 'Navigation', run: () => switchTab('memory'), shortcut: 'M' },
+      { id: 'tab-policy', label: 'Policy Sandbox', section: 'Navigation', run: () => switchTab('policy'), shortcut: 'P' },
+      { id: 'tab-workflows', label: 'Workflows', section: 'Navigation', run: () => { switchTab('workflows'); loadWorkflows(); }, shortcut: 'W' },
+      { id: 'tab-saga', label: 'Sagas', section: 'Navigation', run: () => switchTab('saga'), shortcut: 'S' },
+      { id: 'tab-chat', label: 'Chat', section: 'Navigation', run: () => switchTab('chat'), shortcut: 'C' },
+      { id: 'tab-stack', label: 'Tech Stack', section: 'Navigation', run: () => { switchTab('stack'); loadStack(); }, shortcut: 'T' },
+      { id: 'tab-telemetry', label: 'Telemetry', section: 'Navigation', run: () => { switchTab('telemetry'); loadTelemetry(); }, shortcut: 'E' },
+      { id: 'tab-system', label: 'System Health', section: 'Navigation', run: () => { switchTab('system'); loadSystem(); }, shortcut: 'H' },
+      { id: 'tab-audit', label: 'Audit Logs', section: 'Navigation', run: () => { switchTab('audit'); loadAudit(); }, shortcut: 'A' },
+      { id: 'action-refresh', label: 'Refresh status', section: 'Actions', run: () => loadStatus(), shortcut: 'R' },
+      { id: 'action-theme', label: 'Toggle theme', section: 'Actions', run: () => toggleTheme(), shortcut: 'L' },
+    ];
+
+    let selectedCommand = 0;
+    let filteredCommands = [];
+
+    function openCommandPalette() {
+      const overlay = document.getElementById('command-palette');
+      const input = document.getElementById('command-input');
+      overlay.classList.add('open');
+      input.value = '';
+      input.focus();
+      selectedCommand = 0;
+      filterCommands();
+    }
+
+    function closeCommandPalette() {
+      document.getElementById('command-palette').classList.remove('open');
+    }
+
+    function filterCommands() {
+      const q = document.getElementById('command-input').value.toLowerCase().trim();
+      filteredCommands = q
+        ? COMMANDS.filter(c => c.label.toLowerCase().includes(q) || c.section.toLowerCase().includes(q))
+        : COMMANDS.slice();
+      selectedCommand = Math.min(selectedCommand, Math.max(0, filteredCommands.length - 1));
+      renderCommandList();
+    }
+
+    function renderCommandList() {
+      const container = document.getElementById('command-list');
+      if (filteredCommands.length === 0) {
+        container.innerHTML = '<div class="command-section-title">No matching commands</div>';
+        return;
+      }
+      const sections = {};
+      filteredCommands.forEach((c, i) => {
+        if (!sections[c.section]) sections[c.section] = [];
+        sections[c.section].push({ ...c, index: i });
+      });
+      container.innerHTML = Object.entries(sections).map(([section, items]) => `
+        <div class="command-section-title">${section}</div>
+        ${items.map(item => `
+          <div class="command-item ${item.index === selectedCommand ? 'selected' : ''}" onclick="executeCommand(${item.index})" data-index="${item.index}">
+            <span>${item.label}</span>
+            <span class="cmd-shortcut">${item.shortcut}</span>
+          </div>
+        `).join('')}
+      `).join('');
+    }
+
+    function handleCommandKey(e) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedCommand = (selectedCommand + 1) % filteredCommands.length;
+        renderCommandList();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedCommand = (selectedCommand - 1 + filteredCommands.length) % filteredCommands.length;
+        renderCommandList();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        executeCommand(selectedCommand);
+      } else if (e.key === 'Escape') {
+        closeCommandPalette();
+      }
+    }
+
+    function executeCommand(index) {
+      const cmd = filteredCommands[index];
+      if (!cmd) return;
+      closeCommandPalette();
+      cmd.run();
+    }
+
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        openCommandPalette();
+      } else if (e.key === 'Escape') {
+        closeCommandPalette();
+      }
+    });
+
     // API Helpers
     async function fetchJson(path, options = {}) {
       options.headers = Object.assign({}, options.headers, { 'X-Requested-With': 'AIOS-Dashboard' });
@@ -289,6 +402,8 @@
       const data = await fetchJson('/api/status');
       if (data.error) {
         setStatus(false, 'Disconnected');
+        document.getElementById('workflow-pill').textContent = 'Offline';
+        document.getElementById('workflow-pill').className = 'status-pill danger';
         return;
       }
       setStatus(true, 'Connected');
@@ -297,6 +412,15 @@
       document.getElementById('rule-count').textContent = data.rules.length;
       document.getElementById('budget-count').textContent = data.budgets.length;
       document.getElementById('stack-count').textContent = Object.keys(data.tech_stack || {}).length;
+
+      document.getElementById('workflow-pill').textContent = data.workflows.length > 0 ? 'Live' : 'Idle';
+      document.getElementById('workflow-pill').className = 'status-pill ' + (data.workflows.length > 0 ? 'info' : 'warning');
+      document.getElementById('rule-pill').textContent = data.rules.length > 0 ? 'Synced' : 'Empty';
+      document.getElementById('rule-pill').className = 'status-pill ' + (data.rules.length > 0 ? 'success' : 'warning');
+      document.getElementById('budget-pill').textContent = data.budgets.length > 0 ? 'Active' : 'No limits';
+      document.getElementById('budget-pill').className = 'status-pill ' + (data.budgets.length > 0 ? 'warning' : 'danger');
+      document.getElementById('stack-pill').textContent = Object.keys(data.tech_stack || {}).length > 0 ? 'Detected' : 'None';
+      document.getElementById('stack-pill').className = 'status-pill ' + (Object.keys(data.tech_stack || {}).length > 0 ? 'info' : 'warning');
       
       const wf = document.getElementById('workflows-list');
       wf.innerHTML = '';

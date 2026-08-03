@@ -280,6 +280,7 @@ IGNORED_FILE_REFS = {
     'tech-stack\\xxx.md', 'verification-patterns.md', 'filename.md', 'bug_report.md',
     'feature_request.md', 'tech_stack_request.md', 'pull_request_template.md',
     'active-context.md', 'skill.md', 'memory-archive.md',
+    'rounded.md', 'spacing.md',
     # project-specific placeholder files (referenced conceptually, not tracked)
     'spec.md', 'plan.md', 'implementation_plan.md', 'tasks.md', 'pxx-name.md',
     # external/generated files (agent config, graphify output, ponytail ledger)

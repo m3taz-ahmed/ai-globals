@@ -1,5 +1,17 @@
 # Active Context
 
+## 2026-08-03 (20) — Research, useful-repos, skills, examples, evaluation, DESIGN.md, and dashboard refresh
+- Surveyed 50 top GitHub repositories across Programming, UI/UX, Structure Design, Responsive Design, and Databases.
+- Updated `tech-stack/useful-repos.md` with 55 verified entries (deduplicated `saadeghi/daisyui`).
+- Added Context7 IDs to `skills/database-lord/SKILL.md`, `skills/frontend-ui-expert.md`, `skills/frontend-frameworks-lord/SKILL.md`, `skills/backend-frameworks-lord/SKILL.md`.
+- Created `skills/examples/clean-architecture.md`, `skills/examples/responsive-tokens.md`, `skills/examples/database-internals.md`.
+- Evaluated `facebook/astryx` and `VoltAgent/awesome-design-md` as MCP-native design systems; added the decision to `tech-stack/design-foundations.md`.
+- Created `DESIGN.md` at project root, inspired by Sentry and Linear templates from `awesome-design-md`.
+- Refreshed `dashboard/index.html` and `dashboard/index.css` to match `DESIGN.md`: dark-first AI command center, cyan/violet/lime tokens, command palette (`Cmd/Ctrl+K`), status pills, bento metric cards, glass panels.
+- Ingested `DESIGN.md` into memory; restarted dashboard server on port 3000.
+- Quality gates green: `ruff`, `mypy`, `python eval/harness.py` all_pass true.
+- `graphify` and `ai-os memory ingest --root D:\\server\\.ai` run to sync memory and knowledge graph.
+
 ## 2026-08-03 (19) — Research top UI/UX/Responsive Design GitHub repos
 - Surveyed widely-used, responsive UI/UX design systems on GitHub and updated `tech-stack/useful-repos.md`.
 - Added verified, high-impact repositories:
