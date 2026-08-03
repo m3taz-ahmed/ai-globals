@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import config
+from runtime.budget import Budget
+from runtime.chat import ChatSession
 from runtime.kernel import Kernel
 
 
@@ -95,3 +97,30 @@ def test_dry_run_does_not_cache_approval(tmp_path):
     second = k.act("write")
     assert not second["ok"]
     assert second["requires_approval"]
+
+
+def test_fresh_act_resets_budget_session(tmp_path):
+    k = _kernel(tmp_path)
+    k.budget.budgets["session"] = Budget(max_tokens=2, period="session")
+    assert k.act("Read", tokens=1)["ok"]
+    assert not k.act("Read", tokens=1)["ok"]
+    assert k.act("Read", tokens=1, fresh_context=True)["ok"]
+
+
+def test_fresh_chat_creates_new_session(tmp_path):
+    k = _kernel(tmp_path)
+    result = k.chat_message("hello", fresh_context=True)
+    assert result["ok"]
+    assert "session_id" in result
+    session = ChatSession(tmp_path, result["session_id"])
+    assert len(session.history()) == 2
+
+
+def test_fresh_workflow_resets_derived_context(tmp_path):
+    k = _kernel(tmp_path)
+    context = {"message": "optimize react frontend", "persona": "ARCH", "skills": ["x"]}
+    result = k.run_workflow("test", context, fresh_context=True)
+    assert result["ok"]
+    assert "session_id" in result
+    assert context["persona"] == "ARCH"  # original not mutated
+    assert result["context"]["persona"] != "ARCH"

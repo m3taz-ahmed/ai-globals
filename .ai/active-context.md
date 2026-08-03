@@ -1,5 +1,39 @@
 # Active Context
 
+## 2026-08-03 (19) — Research top UI/UX/Responsive Design GitHub repos
+- Surveyed widely-used, responsive UI/UX design systems on GitHub and updated `tech-stack/useful-repos.md`.
+- Added verified, high-impact repositories:
+  - `saadeghi/daisyui` — popular open-source Tailwind CSS component library, responsive by default.
+  - `shadcn-ui/ui` — copyable, accessible components.
+  - `carbon-design-system/carbon` — IBM's accessible enterprise design system.
+  - `DouyinFE/semi-design` — design-to-code system with 3000+ tokens.
+  - `facebook/astryx` — Meta's open-source, agent-ready design system.
+- Quality gates green after `tech-stack` change: `ruff`, `mypy`, `python eval/harness.py` all_pass true.
+- `graphify update .` and `ai-os memory ingest` re-run.
+
+## 2026-08-03 (18) — P0.1 Fresh-Context Boundary in runtime/kernel.py
+- Added `fresh_context` parameter to `Kernel.act`, `run_workflow`, `chat_message`, and `run_saga`.
+- `fresh_context` resets per-session budget counters by generating a new `session_id` passed to `BudgetManager`.
+- `fresh_context` deep-copies workflow/saga context and strips/re-derives `persona`/`personas`/`skill`/`skills`/`lords` to avoid carrying over auto-injected keys.
+- `fresh_context` in `chat_message` creates a new `ChatSession` with a generated `session_id` and passes it to `act` for a clean chat budget boundary.
+- Updated `runtime/budget.py` `check`/`_period_key`/`_reset_if_needed` to accept an explicit `session_id`.
+- Added 3 tests in `runtime/tests/test_kernel.py` for budget session reset, fresh chat session, and fresh workflow context.
+- Quality gates green: `ruff`, `mypy`, `pytest -q` 352 passed, `python eval/harness.py` all_pass true.
+- `graphify update .` and `ai-os memory ingest` run.
+
+## 2026-08-03 (17) — P0.2 Conditional Rules with YAML Frontmatter
+- Integrated `runtime/rule_frontmatter.py` into `runtime/skill_resolver.py`:
+  added `resolve_with_frontmatter`, `load_with_frontmatter`, and `list_active_skills`.
+- Filtered skill lists in `runtime/persona.py` using runtime context (personas, paths, stack);
+  added `_is_active_skill` helper to keep missing skill names while filtering by frontmatter when on disk.
+- Updated `aios_mcp/aios_server.py::query_rules` to accept `context` and return only active rules.
+- Added 34 tests in `runtime/tests/test_rule_frontmatter.py` covering parsing, glob/persona/stack matching,
+  `matches_context` edge cases, and `SkillResolver` frontmatter integration.
+- Normalized `matches_context` to accept `None` context and string `paths`/`stack`/`personas` values.
+- Quality gates green: `ruff`, `mypy`, `pytest -q` 349 passed, `python eval/harness.py` all_pass true.
+- Ran `graphify update .` and `ai-os memory ingest`.
+- Staged 5 files for commit; P0.1 Fresh-Context Boundary is next.
+
 ## 2026-08-03 (16) — Add CV-writer persona and skill
 - Created `skills/cv-writer/SKILL.md` for ATS-optimized, bilingual Arabic/English CVs, cover letters, LinkedIn summaries, and portfolio copy.
 - Added `CV` persona to `runtime/personas.yaml` with Arabic/English keywords and `cv-writer` lord skill.

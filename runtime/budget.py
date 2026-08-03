@@ -83,7 +83,11 @@ class BudgetManager:
         with self._lock:
             self.budgets[scope] = budget
 
-    def _period_key(self, scope: str, budget: Budget, now: datetime) -> str:
+    def _period_key(
+        self, scope: str, budget: Budget, now: datetime, session_id: str | None = None
+    ) -> str:
+        if budget.period == "session" and session_id is not None:
+            return session_id
         if budget.period == "session":
             return self.usage.get(scope, {}).get("session_id") or uuid.uuid4().hex
         if budget.period == "hourly":
@@ -96,11 +100,13 @@ class BudgetManager:
             return now.strftime("%Y-%m")
         return "session"
 
-    def _reset_if_needed(self, scope: str, budget: Budget) -> None:
+    def _reset_if_needed(
+        self, scope: str, budget: Budget, session_id: str | None = None
+    ) -> None:
         now = datetime.now(timezone.utc)
         current_pid = os.getpid()
         u = self.usage.setdefault(scope, {"tokens": 0, "cost": 0, "calls": 0})
-        current_key = self._period_key(scope, budget, now)
+        current_key = self._period_key(scope, budget, now, session_id)
 
         if budget.period == "session":
             stored_pid = u.get("process_id")
@@ -126,7 +132,7 @@ class BudgetManager:
                         "cost": 0,
                         "calls": 0,
                         "period_key": current_key,
-                        "session_id": "",
+                        "session_id": session_id or "",
                         "process_id": current_pid,
                     }
                 )
@@ -208,6 +214,7 @@ class BudgetManager:
         token_weight: float | None = None,
         input_tokens: int | None = None,
         output_tokens: int | None = None,
+        session_id: str | None = None,
     ) -> dict[str, Any]:
         """Return {'ok': bool, 'reason': str | None, 'action': str}."""
         with self._lock:
@@ -215,7 +222,7 @@ class BudgetManager:
             if not budget:
                 return {"ok": True, "reason": None, "action": "allow"}
 
-            self._reset_if_needed(scope, budget)
+            self._reset_if_needed(scope, budget, session_id)
 
             u = self.usage[scope]
             effective_tokens = self._weighted_tokens(budget, tokens, token_weight, input_tokens, output_tokens)

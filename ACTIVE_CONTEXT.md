@@ -2,8 +2,8 @@
 
 **Session type:** Stop-and-continue (PC → laptop)  
 **Repo:** `https://github.com/m3taz-ahmed/ai-globals.git` (branch `main`)  
-**Last checkpoint:** P0.4 ✅ + P0.3 ✅  
-**Next:** P0.2 (in progress) → P0.1 → graphify/tests update → UI/UX research
+**Last checkpoint:** P0.4 ✅ + P0.3 ✅ + P0.2 ✅ + P0.1 ✅  
+**Next:** UI/UX research done; ready for next milestone.
 
 ---
 
@@ -31,23 +31,31 @@ pytest memory/tests runtime/tests -q  ✅ 217 passed
 
 ---
 
-## 🚧 قيد التنفيذ (In Progress)
+## ✅ تم الانتهاء منه (Completed)
 
 ### P0.2 — Conditional Rules with YAML Frontmatter
-- `runtime/rule_frontmatter.py`: تم إنشاؤه ومراجعة lint/type. يحتوي على:
-  - `RuleFrontmatter` (paths, personas, stack, always)
-  - `parse_frontmatter(text)`
-  - `matches_context(frontmatter, context)`
-- **لم يتم الربط بعد** بـ `SkillResolver`, `PersonaDetector`, `Kernel`, أو `aios_mcp/aios_server.py`.
-- **لا توجد اختبارات بعد**.
+- `runtime/rule_frontmatter.py`: integrated into `SkillResolver`/`PersonaDetector`/`aios_mcp`.
+  - `SkillResolver`: `resolve_with_frontmatter`, `load_with_frontmatter`, `list_active_skills`.
+  - `PersonaDetector`: filters primary/lord skill lists by context.
+  - `aios_mcp/aios_server.py::query_rules`: accepts `context` and returns active rules.
+  - Tests added in `runtime/tests/test_rule_frontmatter.py` (34 tests).
+- Quality gates green: `ruff`, `mypy`, `pytest -q` 349 passed, `python eval/harness.py` all_pass true.
+- `graphify update .` and `ai-os memory ingest` run.
 
 ### P0.1 — Fresh-Context Boundary in `runtime/kernel.py`
-- لم يبدأ بعد.
-- الهدف: عزل سياق المحادثات/ال workflows لمنع تلوث الذاكرة المؤقتة بين الجلسات.
+- Implemented `fresh_context` parameter in `Kernel.act`, `run_workflow`, `chat_message`, `run_saga`.
+- Resets per-session budget via explicit `session_id` in `BudgetManager`.
+- Deep-copies and re-derives auto-injected persona/skill/lord keys in workflow/saga contexts.
+- Tests added in `runtime/tests/test_kernel.py`.
+- Quality gates green.
 
-### التحديثات المتبقية
-- تشغيل `graphify update .` و `ai-os memory ingest` بعد الانتهاء من P0.
-- البحث عن أهم ريبوهات UI/UX/Responsive Design.
+### UI/UX/Responsive Design Repo Research
+- Updated `tech-stack/useful-repos.md` with verified top repositories:
+  - `saadeghi/daisyui`, `shadcn-ui/ui`, `carbon-design-system/carbon`, `DouyinFE/semi-design`, `facebook/astryx`.
+- `graphify update .` and `ai-os memory ingest` re-run; `python eval/harness.py` all_pass true.
+
+## 🚧 قيد التنفيذ (In Progress)
+- No active in-progress task. Ready for next milestone.
 
 ---
 

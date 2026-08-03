@@ -14,6 +14,7 @@ import config
 from memory.ingest import Ingestor
 from memory.store import MemoryStore
 from runtime.kernel import Kernel
+from runtime.rule_frontmatter import matches_context, parse_frontmatter
 
 mcp = FastMCP("ai-global-os")
 
@@ -92,13 +93,21 @@ def _register_plugins() -> None:
 
 
 @mcp.tool()
-def query_rules(query: str) -> str:
-    """Query AI Global OS rules by keyword."""
+def query_rules(query: str, context: dict[str, Any] | None = None) -> str:
+    """Query AI Global OS rules by keyword, returning only active rules for the context."""
+    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
+        return json.dumps({"ok": False, "error": "Invalid query"})
+    if context is not None and not isinstance(context, dict):
+        return json.dumps({"ok": False, "error": "Invalid context"})
+    active_context = context or {}
     root = _root()
     results: list[dict[str, str]] = []
     for p in root.glob("rules/*.md"):
         content = p.read_text(encoding="utf-8")
-        if query.lower() in content.lower():
+        frontmatter, body = parse_frontmatter(content)
+        if not matches_context(frontmatter, active_context):
+            continue
+        if query.lower() in body.lower():
             results.append({"file": str(p.relative_to(root)), "match": query})
     return json.dumps(results, indent=2)
 

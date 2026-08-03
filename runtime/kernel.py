@@ -3,7 +3,10 @@
 
 from __future__ import annotations
 
+import copy
+import functools
 import json
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -39,6 +42,10 @@ class ActionSchema(BaseModel):
 
 class WorkflowContextSchema(BaseModel):
     model_config = ConfigDict(extra="allow")
+
+
+# Context keys that are auto-derived and should be recomputed for a fresh context.
+_FRESH_CONTEXT_DERIVED_KEYS = {"persona", "personas", "skill", "skills", "lords"}
 
 
 class Kernel:
@@ -148,7 +155,9 @@ class Kernel:
             return True
         return False
 
-    def _build_budget_kwargs(self, action_data: dict[str, Any]) -> dict[str, Any]:
+    def _build_budget_kwargs(
+        self, action_data: dict[str, Any], session_id: str | None = None
+    ) -> dict[str, Any]:
         budget_kwargs: dict[str, Any] = {}
         if "rollout_id" in action_data:
             budget_kwargs["rollout_id"] = action_data["rollout_id"]
@@ -157,6 +166,8 @@ class Kernel:
         if "input_tokens" in action_data and "output_tokens" in action_data:
             budget_kwargs["input_tokens"] = action_data["input_tokens"]
             budget_kwargs["output_tokens"] = action_data["output_tokens"]
+        if session_id is not None:
+            budget_kwargs["session_id"] = session_id
         return budget_kwargs
 
     def _audit_budget(
@@ -205,7 +216,11 @@ class Kernel:
 
     def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Evaluate action through policy + budget gates."""
+        fresh_context = kwargs.pop("fresh_context", False)
+        session_id = kwargs.pop("session_id", None)
         self._auto_persona(kwargs)
+        if fresh_context and session_id is None:
+            session_id = uuid.uuid4().hex
         try:
             action_data = ActionSchema(type=action_type, **kwargs).model_dump()
         except Exception as e:
@@ -223,12 +238,22 @@ class Kernel:
             action_data.get("tokens", 0),
             action_data.get("cost", 0.0),
             dry_run=dry_run,
-            **self._build_budget_kwargs(action_data),
+            **self._build_budget_kwargs(action_data, session_id=session_id),
         )
         return self._finalize_action(action_data, kwargs, decision, budget_result, dry_run)
 
-    def run_workflow(self, workflow_id: str, context: dict[str, Any]) -> dict[str, Any]:
-        context = dict(context)
+    def run_workflow(
+        self, workflow_id: str, context: dict[str, Any], fresh_context: bool = False
+    ) -> dict[str, Any]:
+        if fresh_context:
+            context = copy.deepcopy(context)
+            for key in _FRESH_CONTEXT_DERIVED_KEYS:
+                context.pop(key, None)
+        else:
+            context = dict(context)
+        session_id: str | None = None
+        if fresh_context:
+            session_id = uuid.uuid4().hex
         prompt = context.get("message") or context.get("request") or context.get("query") or workflow_id
         if "personas" not in context and "persona" not in context and isinstance(prompt, str):
             result = self.persona.detect_multiple(prompt)
@@ -241,7 +266,12 @@ class Kernel:
             valid_context = WorkflowContextSchema(**context).model_dump()
         except Exception as e:
             return {"ok": False, "error": f"Invalid workflow context: {e!s}"}
-        result = self.workflows.run(workflow_id, valid_context, act=self.act)
+        act = self.act
+        if session_id is not None:
+            act = functools.partial(self.act, session_id=session_id)
+        result = self.workflows.run(workflow_id, valid_context, act=act)
+        if session_id is not None:
+            result["session_id"] = session_id
         self.telemetry.record(
             event_type="workflow",
             action=workflow_id,
@@ -250,18 +280,38 @@ class Kernel:
         )
         return result
 
-    def chat_message(self, message: str, session_id: str | None = None) -> dict[str, Any]:
+    def chat_message(
+        self, message: str, session_id: str | None = None, fresh_context: bool = False
+    ) -> dict[str, Any]:
         """Record a chat message and evaluate via policy gates."""
-        session = ChatSession(self.project_root, session_id) if session_id else self.chat
+        if fresh_context:
+            session_id = session_id or uuid.uuid4().hex
+            session = ChatSession(self.project_root, session_id)
+        else:
+            session = ChatSession(self.project_root, session_id) if session_id else self.chat
         session.add("user", message)
-        result = self.act("ChatMessage", content=message, approved=True)
+        result = self.act("ChatMessage", content=message, approved=True, session_id=session_id, fresh_context=fresh_context)
         if result["ok"]:
             reply = f"Acknowledged: {message[:100]}"
             session.add("assistant", reply, metadata={"decision": result["decision"]})
             result["reply"] = reply
+        if session_id is not None:
+            result["session_id"] = session_id
         return result
 
-    def run_saga(self, saga_id: str, steps: list[dict[str, Any]], context: dict[str, Any]) -> dict[str, Any]:
+    def run_saga(
+        self,
+        saga_id: str,
+        steps: list[dict[str, Any]],
+        context: dict[str, Any],
+        fresh_context: bool = False,
+    ) -> dict[str, Any]:
+        if fresh_context:
+            context = copy.deepcopy(context)
+            for key in _FRESH_CONTEXT_DERIVED_KEYS:
+                context.pop(key, None)
+        else:
+            context = dict(context)
         try:
             saga = Saga(
                 id=saga_id,
@@ -270,7 +320,15 @@ class Kernel:
             )
         except Exception as e:
             return {"ok": False, "error": f"Invalid saga definition: {e!s}"}
-        result = self.saga.run(saga, context, act=self.act)
+        session_id: str | None = None
+        if fresh_context:
+            session_id = uuid.uuid4().hex
+        act = self.act
+        if session_id is not None:
+            act = functools.partial(self.act, session_id=session_id)
+        result = self.saga.run(saga, context, act=act)
+        if session_id is not None:
+            result["session_id"] = session_id
         self.telemetry.record(
             event_type="saga",
             action=saga_id,

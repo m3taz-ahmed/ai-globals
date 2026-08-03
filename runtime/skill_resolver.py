@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import config
+from runtime.rule_frontmatter import RuleFrontmatter, matches_context, parse_frontmatter
 
 
 class SkillResolver:
@@ -67,3 +69,40 @@ class SkillResolver:
                 elif path.is_dir() and (path / "SKILL.md").is_file():
                     names.add(path.name)
         return sorted(names)
+
+    def _load_skill(self, name: str) -> tuple[Path, RuleFrontmatter, str] | None:
+        """Load the first candidate skill file and parse its frontmatter."""
+        for candidate in self._candidate_paths(name):
+            if not candidate.is_file():
+                continue
+            text = candidate.read_text(encoding="utf-8")
+            frontmatter, body = parse_frontmatter(text)
+            return candidate, frontmatter, body
+        return None
+
+    def resolve_with_frontmatter(
+        self, name: str, context: dict[str, Any] | None = None
+    ) -> Path | None:
+        """Resolve a skill only if its frontmatter matches the runtime context."""
+        loaded = self._load_skill(name)
+        if loaded is None:
+            return None
+        path, frontmatter, _ = loaded
+        return path if matches_context(frontmatter, context or {}) else None
+
+    def load_with_frontmatter(
+        self, name: str, context: dict[str, Any] | None = None
+    ) -> str | None:
+        """Return a skill's body only if its frontmatter matches the context."""
+        loaded = self._load_skill(name)
+        if loaded is None:
+            return None
+        _, frontmatter, body = loaded
+        return body if matches_context(frontmatter, context or {}) else None
+
+    def list_active_skills(self, context: dict[str, Any] | None = None) -> list[str]:
+        """Return all skill names whose frontmatter matches the runtime context."""
+        active_context = context or {}
+        return sorted(
+            name for name in self.list_skills() if self.resolve_with_frontmatter(name, active_context)
+        )

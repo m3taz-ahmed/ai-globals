@@ -51,6 +51,12 @@ class PersonaDetector:
         """Primary skill name for a persona code."""
         return cast(str, self.PERSONAS.get(persona, self.PERSONAS[self.default])["skill"])
 
+    def _is_active_skill(self, name: str, context: dict[str, Any]) -> bool:
+        """Return True if the skill is active for the context or not on disk."""
+        if self.skill_resolver.resolve_with_frontmatter(name, context) is not None:
+            return True
+        return not self.skill_resolver.exists(name)
+
     def _keyword_match(self, text: str, keyword: str) -> bool:
         """Match a keyword as a whole word/phrase to avoid substring false positives."""
         pattern = r"\b" + re.escape(keyword) + r"\b"
@@ -84,6 +90,7 @@ class PersonaDetector:
         max_personas: int = 3,
         max_lords: int = 5,
         include_lords: bool = True,
+        context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Detect the top N personas and the skill set they compose.
 
@@ -103,13 +110,20 @@ class PersonaDetector:
             selected = [self.default]
 
         primary = selected[0]
+
+        skill_context = dict(context or {})
+        if "persona" not in skill_context and "personas" not in skill_context:
+            skill_context["persona"] = primary
+            skill_context["personas"] = selected
+
         primary_skills: list[str] = []
         seen_skills: set[str] = set()
         for p in selected:
             sk = self.skill_for(p)
-            if sk not in seen_skills:
-                seen_skills.add(sk)
-                primary_skills.append(sk)
+            if sk in seen_skills or not self._is_active_skill(sk, skill_context):
+                continue
+            seen_skills.add(sk)
+            primary_skills.append(sk)
 
         lord_scores: dict[str, float] = {}
         if include_lords:
@@ -121,9 +135,13 @@ class PersonaDetector:
                 if matches:
                     lord_scores[skill] = lord_scores.get(skill, 0.0) + matches
 
-        # Lords that duplicate a primary skill are promoted to primary skill list.
+        # Lords that duplicate an active primary skill are promoted to the primary list.
         ranked_lords = sorted(
-            ((lord, score) for lord, score in lord_scores.items() if lord not in seen_skills),
+            (
+                (lord, score)
+                for lord, score in lord_scores.items()
+                if lord not in seen_skills and self._is_active_skill(lord, skill_context)
+            ),
             key=lambda x: (-x[1], x[0]),
         )
         lords = [lord for lord, _ in ranked_lords[:max_lords]]
@@ -155,15 +173,17 @@ class PersonaDetector:
         self,
         personas: Iterable[str],
         lords: Iterable[str] | None = None,
+        context: dict[str, Any] | None = None,
     ) -> list[str]:
-        """Return unique, existing skill names for the given personas and lords."""
+        """Return unique, active skill names for the given personas and lords."""
+        active_context = context or {}
         names: list[str] = [self.skill_for(p) for p in personas]
         if lords:
             names.extend(lords)
         seen: set[str] = set()
         valid: list[str] = []
         for name in names:
-            if name in seen or not self.skill_resolver.exists(name):
+            if name in seen or self.skill_resolver.resolve_with_frontmatter(name, active_context) is None:
                 continue
             seen.add(name)
             valid.append(name)

@@ -95,6 +95,8 @@ def _match_personas(patterns: list[str], context: dict[str, Any]) -> bool:
     if isinstance(primary, str):
         selected.add(primary.lower())
     personas = context.get("personas")
+    if isinstance(personas, str):
+        personas = [personas]
     if isinstance(personas, list):
         for persona in personas:
             if isinstance(persona, str):
@@ -117,7 +119,7 @@ def _match_stack(patterns: list[str], stack: list[Any]) -> bool:
     return False
 
 
-def matches_context(frontmatter: RuleFrontmatter, context: dict[str, Any]) -> bool:
+def matches_context(frontmatter: RuleFrontmatter, context: dict[str, Any] | None = None) -> bool:
     """Evaluate a frontmatter against a runtime context.
 
     A rule matches if ``always`` is True, if no conditions are set, or if any
@@ -125,13 +127,21 @@ def matches_context(frontmatter: RuleFrontmatter, context: dict[str, Any]) -> bo
     """
     if frontmatter.always:
         return True
+
+    ctx = context or {}
     conditions: list[bool] = []
     if frontmatter.paths:
-        conditions.append(_match_paths(frontmatter.paths, context.get("paths", [])))
+        paths = ctx.get("paths", [])
+        if isinstance(paths, str):
+            paths = [paths]
+        conditions.append(_match_paths(frontmatter.paths, paths))
     if frontmatter.personas:
-        conditions.append(_match_personas(frontmatter.personas, context))
+        conditions.append(_match_personas(frontmatter.personas, ctx))
     if frontmatter.stack:
-        conditions.append(_match_stack(frontmatter.stack, context.get("stack", [])))
+        stack = ctx.get("stack", [])
+        if isinstance(stack, str):
+            stack = [stack]
+        conditions.append(_match_stack(frontmatter.stack, stack))
     if not conditions:
         return True
     return any(conditions)
