@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "4.21.0",
+    "version": "4.22.0",
     "description": "Machine-readable trigger->workflow/file routing map for AI Global OS.",
-    "updated": "2026-06-24"
+    "updated": "2026-08-06"
   },
   "triggers": {
     "/prompt": "workflows/00-prompt-architecting.md",
@@ -43,6 +43,12 @@
     "/page-builder": "workflows/15-page-builder-setup.md",
     "page builder": "workflows/15-page-builder-setup.md",
     "landing page": "workflows/15-page-builder-setup.md",
+    "cleanup": "workflows/16-cleanup-and-scm.md",
+    "scm": "workflows/16-cleanup-and-scm.md",
+    "data-migration": "workflows/18-data-migration.md",
+    "migration": "workflows/18-data-migration.md",
+    "incident-response": "workflows/19-incident-response.md",
+    "incident": "workflows/19-incident-response.md",
     "/execute": "workflows/02-execution.md",
     "execute": "workflows/02-execution.md"
   },

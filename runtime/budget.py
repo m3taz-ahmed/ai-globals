@@ -49,6 +49,7 @@ class BudgetManager:
         self.budgets: dict[str, Budget] = {}
         self.usage: dict[str, dict[str, Any]] = {}
         self._lock = threading.RLock()
+        self._dirty = False
         self._load()
 
     def _load(self) -> None:
@@ -62,9 +63,12 @@ class BudgetManager:
                 "global": Budget(max_tokens=1_000_000, max_cost_usd=50.0, period="daily"),
                 "session": Budget(max_tokens=100_000, max_cost_usd=5.0),
             }
+            self._dirty = True
 
     def save(self) -> None:
         with self._lock:
+            if not self._dirty:
+                return
             self.state_file.parent.mkdir(parents=True, exist_ok=True)
             payload = json.dumps(
                 {"budgets": {k: asdict(v) for k, v in self.budgets.items()}, "usage": self.usage},
@@ -75,6 +79,7 @@ class BudgetManager:
                 with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
                     f.write(payload)
                 os.replace(tmp_path, self.state_file)
+                self._dirty = False
             except Exception:
                 os.remove(tmp_path)
                 raise
@@ -82,6 +87,7 @@ class BudgetManager:
     def set_budget(self, scope: str, budget: Budget) -> None:
         with self._lock:
             self.budgets[scope] = budget
+            self._dirty = True
 
     def _period_key(
         self, scope: str, budget: Budget, now: datetime, session_id: str | None = None
@@ -122,6 +128,7 @@ class BudgetManager:
                         "period_key": current_key,
                     }
                 )
+                self._dirty = True
             else:
                 u.setdefault("period_key", current_key)
         else:
@@ -136,6 +143,7 @@ class BudgetManager:
                         "process_id": current_pid,
                     }
                 )
+                self._dirty = True
 
     def _weighted_tokens(
         self,
@@ -194,6 +202,7 @@ class BudgetManager:
             reminder = self._rollout_reminder(u["tokens"], projected_tokens, max_tokens, threshold)
             if not dry_run:
                 u.update({"tokens": projected_tokens, "cost": projected_cost, "calls": 0})
+                self._dirty = True
 
             return {
                 "ok": True,
@@ -244,10 +253,12 @@ class BudgetManager:
                 if budget.on_exceed == "warn":
                     if not dry_run:
                         u.update(projected)
+                        self._dirty = True
                     return {"ok": True, "reason": f"Budget exceeded: {exceeded}", "action": "warn"}
                 if budget.on_exceed == "fallback" and budget.fallback_model:
                     if not dry_run:
                         u.update(projected)
+                        self._dirty = True
                     return {
                         "ok": True,
                         "reason": f"Budget exceeded: {exceeded}",
@@ -269,6 +280,7 @@ class BudgetManager:
 
             if not dry_run:
                 u.update(projected)
+                self._dirty = True
 
             result: dict[str, Any] = {"ok": True, "reason": None, "action": "allow"}
             if rollout_id:

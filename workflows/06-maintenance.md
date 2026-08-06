@@ -1,5 +1,6 @@
 [WORKFLOW] 06-maintenance
 [OBJ] System Maintenance & Global Optimization.
+[TRIGGER] maintenance
 [RULES]
 1. [REQ] Trigger: User requests "Maintenance Audit" or "Global Optimization".
 2. [REQ] Pre-Sync: Reload `rules/` folder. Sync tech stack via `composer.json`.

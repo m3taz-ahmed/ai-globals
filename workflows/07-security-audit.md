@@ -1,5 +1,6 @@
 [WORKFLOW] 07-security-audit
 [OBJ] Security review and infrastructure hardening.
+[TRIGGER] security audit
 [RULES]
 1. [REQ] Dependencies: Run `composer audit`, `npm audit`. Check for outdated/GPL packages.
 2. [REQ] Code Review: Check for mass assignment (`guarded = []`), raw SQL, unescaped XSS, missing auth gates, unprotected file uploads, missing CSRF.

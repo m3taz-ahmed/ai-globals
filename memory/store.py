@@ -4,8 +4,12 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
+import threading
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,6 +41,7 @@ class MemoryStore:
         self.db_path = db_path or self.root / "brain" / "memory.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.vector = VectorMemory(self.root) if enable_vector else None
+        self._lock = threading.RLock()
         self._init_schema()
 
     def _init_schema(self) -> None:
@@ -105,10 +110,21 @@ class MemoryStore:
                 """
             )
 
-    def _conn(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    @contextmanager
+    def _conn(self) -> Iterator[sqlite3.Connection]:
+        with self._lock:
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
 
     def add(
         self,
@@ -152,12 +168,25 @@ class MemoryStore:
             self.vector.add_batch([m.id for m in memories], [m.content for m in memories])
         return memories
 
+    _MAX_FTS_TOKEN_LEN: int = 64
+
     def _fts_query(self, query: str) -> str:
-        """Sanitize a query for FTS5 MATCH by quoting each token."""
+        """Sanitize a query for FTS5 MATCH by quoting each token.
+
+        Escapes double quotes, removes FTS5 boolean operators and wildcards,
+        and caps token length to avoid injection and long queries.
+        """
         tokens = query.split()
         if not tokens:
             return '""'
-        return " ".join(f'"{token.replace(chr(34), chr(34) + chr(34))}"' for token in tokens)
+        sanitized = []
+        for token in tokens:
+            token = re.sub(r'["*]', "", token)
+            token = re.sub(r"\b(AND|OR|NOT)\b", "", token, flags=re.IGNORECASE)
+            token = token[: self._MAX_FTS_TOKEN_LEN]
+            if token:
+                sanitized.append(f'"{token}"')
+        return " ".join(sanitized) if sanitized else '""'
 
     def search(self, query: str, kind: str | None = None, limit: int = 10) -> list[Memory]:
         """Search memory using FTS5 and optional kind filter; excludes invalidated memories."""

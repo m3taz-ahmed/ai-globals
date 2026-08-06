@@ -1,5 +1,6 @@
 [WORKFLOW] 09-discovery
 [OBJ] AI Discovery Workflow for unknown tech stacks.
+[TRIGGER] tech discovery
 [RULES]
 1. [REQ] Detection: Scan manifests. If tech/version lacks a rule file, pause and trigger discovery. NO ASSUMPTIONS.
 2. [REQ] Research: Identify architectural standards, security rules, and performance native optimizations.

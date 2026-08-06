@@ -55,7 +55,7 @@ def _version() -> str:
         match = re.search(r'^version\s*=\s*"([^"\n]+)"', pyproject.read_text(encoding="utf-8"), re.MULTILINE)
         if match:
             return match.group(1)
-    return "4.21.0"
+    return "4.22.0"
 
 
 VERSION: str = _version()

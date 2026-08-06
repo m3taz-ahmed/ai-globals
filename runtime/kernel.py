@@ -10,7 +10,7 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 import config
 
@@ -223,7 +223,7 @@ class Kernel:
             session_id = uuid.uuid4().hex
         try:
             action_data = ActionSchema(type=action_type, **kwargs).model_dump()
-        except Exception as e:
+        except ValidationError as e:
             return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
 
         decision = self.policy.can(action_data["type"], **action_data)
@@ -264,7 +264,7 @@ class Kernel:
             context["lords"] = result["lords"]
         try:
             valid_context = WorkflowContextSchema(**context).model_dump()
-        except Exception as e:
+        except ValidationError as e:
             return {"ok": False, "error": f"Invalid workflow context: {e!s}"}
         act = self.act
         if session_id is not None:
@@ -318,7 +318,7 @@ class Kernel:
                 title=saga_id,
                 steps=[SagaStep(**s) for s in steps],
             )
-        except Exception as e:
+        except ValidationError as e:
             return {"ok": False, "error": f"Invalid saga definition: {e!s}"}
         session_id: str | None = None
         if fresh_context:

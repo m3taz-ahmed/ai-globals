@@ -1,5 +1,6 @@
 [WORKFLOW] 05-code-review
 [OBJ] Code Review Specialist protocol.
+[TRIGGER] code review
 [RULES]
 1. [REQ] Actionable: DO NOT just critique. Provide exact refactored code blocks that fix issues.
 2. [REQ] Scope: Review every changed line in context. Be ruthless on debt.

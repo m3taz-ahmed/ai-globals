@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11.9-slim
 
 # Create non-root user for runtime security
 RUN groupadd -r aios && useradd -r -g aios -m -d /app aios
@@ -25,6 +25,9 @@ COPY tech-stack/ ./tech-stack/
 COPY workflows/ ./workflows/
 COPY skills/ ./skills/
 RUN mkdir -p state brain graphify-out
+
+# Persist state and generated indexes outside the image.
+VOLUME ["/app/state", "/app/brain", "/app/graphify-out"]
 
 # Validate all rule files and build the knowledge graph only after every source file is present
 RUN python scripts/validate-globals.py --fix \

@@ -1,5 +1,6 @@
 [WORKFLOW] 16-cleanup-and-scm
 [OBJ] Remove temporary and scratch files, review source control, and stage only relevant changes. No commits or pushes.
+[TRIGGER] cleanup
 [TRIGGERS]
 - end of task
 - end of session

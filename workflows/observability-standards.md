@@ -1,5 +1,6 @@
 [WORKFLOW] observability-standards
 [OBJ] Observability & Monitoring Standards.
+[TRIGGER] observability-standards
 [RULES]
 1. [REQ] Logging `[OBS-01]`: JSON in production. Correct RFC levels. Context is mandatory. NO PII or secrets.
 2. [REQ] Tracing: OpenTelemetry (OTel) with `trace_id` propagation.

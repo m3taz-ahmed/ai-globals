@@ -1,5 +1,6 @@
 [FILE] cheat-sheet
 [OBJ] Slash Commands & Smart Triggers mapping.
+[TRIGGER] cheat-sheet
 [RULES]
 1. [CMD] `/plan` -> Architect feature plan (`01-planning.md`).
 2. [CMD] `/execute` -> Execute code from plan (`02-execution.md`).

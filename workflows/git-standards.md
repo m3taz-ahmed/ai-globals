@@ -1,5 +1,6 @@
 [WORKFLOW] git-standards
 [OBJ] Version Control & Git Standards.
+[TRIGGER] git-standards
 [RULES]
 1. [REQ] Commits `[GIT-01]`: `type(scope): desc`. Atomic commits.
 2. [REQ] Branches `[GIT-02]`: `main` (prod), `develop` (staging), `feature/`, `hotfix/`, `release/`.

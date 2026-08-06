@@ -1,5 +1,6 @@
 [WORKFLOW] 10-saga-reconciliation
 [OBJ] Multi-Agent State Resilience and Conflict Resolution.
+[TRIGGER] multi-agent
 [RULES]
 1. [REQ] Metadata: Every subagent carries `X-Saga-ID`, `X-Parent-Span`, `X-Agent-Persona`.
 2. [REQ] Registration: Parent registers Saga ID and defines exact boundary for each subagent.

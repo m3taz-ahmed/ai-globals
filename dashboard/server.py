@@ -7,6 +7,7 @@ import hmac
 import json
 import mimetypes
 import os
+import secrets
 import signal
 import sys
 import threading
@@ -79,6 +80,23 @@ def _client_ip(handler: DashboardHandler) -> str:
     return direct
 
 
+def _dashboard_token(root: Path) -> str | None:
+    """Return the configured dashboard token, generating one lazily if needed."""
+    env_token = os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
+    if env_token:
+        return env_token
+    if os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1":
+        return None
+    token_file = root / "state" / "dashboard.token"
+    if token_file.exists():
+        return token_file.read_text(encoding="utf-8").strip()
+    token_file.parent.mkdir(parents=True, exist_ok=True)
+    token = secrets.token_urlsafe(32)
+    token_file.write_text(token, encoding="utf-8")
+    print(f"Generated dashboard token at {token_file}")
+    return token
+
+
 class DashboardHandler(BaseHTTPRequestHandler):
     """HTTP request handler with shared kernel/memory and per-IP rate limiting."""
 
@@ -98,6 +116,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return request_origin
         return ""
 
+    _CSP: str = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self';"
+    )
+
     def _cors_headers(self) -> None:
         origin = self._origin()
         if origin:
@@ -107,6 +134,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-CSRF-Token, X-Requested-With")
 
+    def _security_headers(self) -> None:
+        self.send_header("Content-Security-Policy", self._CSP)
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+
     def _send(
         self, code: int, body: bytes, content_type: str = "text/plain", cors: bool = True
     ) -> None:
@@ -114,13 +147,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         if cors:
             self._cors_headers()
+        self._security_headers()
         self.end_headers()
         self.wfile.write(body)
 
     def _auth(self) -> bool:
-        token = os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
+        token = _dashboard_token(self.root)
         if not token:
-            return True
+            return os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1"
         header = self.headers.get("Authorization", "")
         return hmac.compare_digest(header, f"Bearer {token}")
 

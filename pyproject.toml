@@ -39,6 +39,8 @@ dev = [
     "mypy>=1.0,<2.0",
     "types-pyyaml",
     "graphifyy>=0.9.16,<0.9.17",
+    "bandit>=1.7,<2.0",
+    "pip-audit>=2.0,<3.0",
 ]
 graphify = [
     "graphifyy>=0.9.16,<0.9.17",
@@ -69,6 +71,7 @@ exclude = [
     "scratch",
     "brain",
     "state",
+    "temp",
     "__pycache__",
     ".git",
     ".github",
@@ -76,6 +79,7 @@ exclude = [
     "skills/gsap-animated-frontend",
     "tmp/**",
     "scratch/**",
+    "temp/**",
     "tests/*",
     "tests/*/*",
     "skills/*",
@@ -97,7 +101,7 @@ python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
-exclude = ["tests/", "skills/", "runtime/tests/", "memory/tests/", "dashboard/", "scripts/", "tmp/", "scratch/", "brain/", "state/", "__pycache__/", "\\.git/", "\\.github/"]
+exclude = ["tests/", "skills/", "runtime/tests/", "memory/tests/", "dashboard/", "scripts/", "tmp/", "scratch/", "temp/", "brain/", "state/", "__pycache__/", "\\.git/", "\\.github/"]
 [[tool.mypy.overrides]]
 module = ["yaml", "sentence_transformers", "turbovec", "numpy"]
 ignore_missing_imports = true

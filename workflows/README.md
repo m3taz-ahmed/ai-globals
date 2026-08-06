@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **28 execution protocol files** (15 numbered workflows + 13 standards/reference files). Each activates when the AI detects a specific task type.
+This directory contains **29 numbered execution workflows** plus reference/standards files. Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 
@@ -21,6 +21,30 @@ This directory contains **28 execution protocol files** (15 numbered workflows +
 | UI/UX/visual audit | `12-audit-ui.md` | Teardown of UI, UX, aesthetics, and visual performance |
 | Performance/caching audit | `13-audit-perf.md` | Speed, database, and caching optimization analysis |
 | Simplification review | `14-ponytail-review.md` | Delete over-engineering; replace with minimal native code |
+
+
+| Trigger / Task Type | Workflow File | When to Use |
+|---|---|---|
+| `/prompt` command | `00-prompt-architecting.md` | Refining vague requirements before writing any code |
+| Architecture / planning | `01-planning.md` | New features, system design, risk assessment |
+| Writing / modifying code | `02-execution.md` | Implementation, refactoring, iterative delivery |
+| Bugs / errors | `03-debugging.md` | Error diagnosis, root cause analysis, post-mortem |
+| Releases / deploys | `04-deployment.md` | Deployment, rollback procedures, health checks |
+| Code review / PRs | `05-code-review.md` | Quality, security, performance review |
+| System maintenance | `06-maintenance.md` | Monthly deep-scan, tech debt, rule updates |
+| Security hardening | `07-security-audit.md` | Security audit, OWASP scan, hardening protocol |
+| New project setup | `08-onboarding.md` | AI initialization, baseline audit, stack detection |
+| Tech discovery / research | `09-discovery.md` | Research and integration of bleeding-edge stacks |
+| Multi-agent execution | `10-saga-reconciliation.md` | Saga State Machine tracking for parallel agents |
+| Backend/logic/security audit | `11-audit-core.md` | Deep audit of backend, logic, and security bugs |
+| UI/UX/visual audit | `12-audit-ui.md` | Teardown of UI, UX, aesthetics, and visual performance |
+| Performance/caching audit | `13-audit-perf.md` | Speed, database, and caching optimization analysis |
+| Simplification review | `14-ponytail-review.md` | Delete over-engineering; replace with minimal native code |
+| Landing page / page builder | `15-page-builder-setup.md` | One-page landing setup and component build |
+| Cleanup & source control | `16-cleanup-and-scm.md` | Session cleanup, git staging, handoff hygiene |
+| Milestone / memory sync | `17-memory-sync.md` | State handoff and memory sync on milestones |
+| Data migration | `18-data-migration.md` | Database migrations, schema changes, transformations |
+| Incident response | `19-incident-response.md` | Production incidents, outages, hotfixes |
 
 ## Standards & Reference Files
 

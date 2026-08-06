@@ -5,6 +5,7 @@ from __future__ import annotations
 import atexit
 import json
 import os
+import queue
 import subprocess
 import threading
 import uuid
@@ -16,6 +17,8 @@ from typing import Any, cast
 _PROC_POOL: dict[tuple[str, Path], subprocess.Popen[str]] = {}
 _PROC_INIT: dict[tuple[str, Path], bool] = {}
 _PROC_LOCK = threading.Lock()
+_SEND_LOCKS: dict[tuple[str, Path], threading.Lock] = {}
+_DEFAULT_TIMEOUT = 30.0
 
 
 def _terminate_pool() -> None:
@@ -71,16 +74,41 @@ class McpClient:
             cwd=str(self.os_root),
         )
 
-    def _send(self, proc: subprocess.Popen[str], payload: dict[str, Any]) -> dict[str, Any]:
+    def _send(
+        self,
+        proc: subprocess.Popen[str],
+        payload: dict[str, Any],
+        timeout: float = _DEFAULT_TIMEOUT,
+    ) -> dict[str, Any]:
         if proc.stdin is None or proc.stdout is None:
             raise RuntimeError("Process pipes not available")
+        stdout = proc.stdout
         req = json.dumps(payload)
         proc.stdin.write(req + "\n")
         proc.stdin.flush()
-        line = proc.stdout.readline()
-        if not line:
+
+        q: queue.Queue[str | Exception] = queue.Queue()
+
+        def _read() -> None:
+            try:
+                line = stdout.readline()
+                q.put(line)
+            except Exception as exc:
+                q.put(exc)
+
+        reader = threading.Thread(target=_read, daemon=True)
+        reader.start()
+        try:
+            result = q.get(timeout=timeout)
+        except queue.Empty as exc:
+            raise TimeoutError(
+                f"MCP server '{self.server_name}' response timed out after {timeout}s"
+            ) from exc
+        if isinstance(result, Exception):
+            raise result
+        if not result:
             raise RuntimeError("MCP server closed stdout")
-        return cast(dict[str, Any], json.loads(line))
+        return cast(dict[str, Any], json.loads(result))
 
     def _ensure_process(self) -> subprocess.Popen[str]:
         with _PROC_LOCK:
@@ -100,7 +128,7 @@ class McpClient:
                         "params": {
                             "protocolVersion": "2024-11-05",
                             "capabilities": {},
-                            "clientInfo": {"name": "ai-global-os", "version": "4.21.0"},
+                            "clientInfo": {"name": "ai-global-os", "version": "4.22.0"},
                         },
                     },
                 )
@@ -127,15 +155,17 @@ class McpClient:
         try:
             proc = self._ensure_process()
             call_id = str(uuid.uuid4())
-            resp = self._send(
-                proc,
-                {
-                    "jsonrpc": "2.0",
-                    "id": call_id,
-                    "method": "tools/call",
-                    "params": {"name": tool_name, "arguments": arguments},
-                },
-            )
+            send_lock = _SEND_LOCKS.setdefault(self._key, threading.Lock())
+            with send_lock:
+                resp = self._send(
+                    proc,
+                    {
+                        "jsonrpc": "2.0",
+                        "id": call_id,
+                        "method": "tools/call",
+                        "params": {"name": tool_name, "arguments": arguments},
+                    },
+                )
         except Exception as exc:
             with _PROC_LOCK:
                 self._release_locked()
@@ -160,9 +190,13 @@ def parse_mcp_command(text: str) -> tuple[str, str, dict[str, Any]] | None:
         return None
     if "(" not in text:
         server, _, tool = text.partition(".")
+        if not server or not tool:
+            return None
         return server, tool, {}
     head, _, rest = text.partition("(")
     server, _, tool = head.partition(".")
+    if not server or not tool:
+        return None
     args_text = rest.rstrip(" )")
     if not args_text:
         return server, tool, {}

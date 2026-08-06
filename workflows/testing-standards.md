@@ -1,5 +1,6 @@
 [WORKFLOW] testing-standards
 [OBJ] Testing Standards & Quality Assurance.
+[TRIGGER] testing-standards
 [RULES]
 1. [REQ] Tools `[TEST-04]`: Pest 3+ (isolated DB), Vitest + testing-library/react (userEvent). Playwright for E2E.
 2. [PROHIBIT] Mocks: NO live API requests (mock HTTP). Mock ONLY system boundaries. NEVER mock internal classes or state/DTOs.

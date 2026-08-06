@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+command -v python >/dev/null 2>&1 || { echo "python is required" >&2; exit 1; }
+
+python_version=$(python --version 2>&1 | awk '{print $2}')
+python_major=$(echo "$python_version" | cut -d. -f1)
+python_minor=$(echo "$python_version" | cut -d. -f2)
+if [ "$python_major" -lt 3 ] || { [ "$python_major" -eq 3 ] && [ "$python_minor" -lt 10 ]; }; then
+    echo "Python 3.10+ is required (found $python_version)" >&2
+    exit 1
+fi
 
 ROOT="${AGENT_OS_ROOT:-$HOME/.ai-os}"
 REPO="$(cd "$(dirname "$0")" && pwd)"

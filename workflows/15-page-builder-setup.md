@@ -1,5 +1,6 @@
 [WORKFLOW] 15-page-builder-setup
 [OBJ] Scaffold a section-based landing/page builder in a Laravel + Filament project.
+[TRIGGER] /page-builder
 [RULES]
 1. [REQ] Confirm tech stack: Laravel, Filament, Spatie Laravel Translatable, Spatie Laravel Query Builder, MariaDB/MySQL/PostgreSQL.
 2. [CMD] Run `composer require filament/filament spatie/laravel-translatable spatie/laravel-query-builder`.

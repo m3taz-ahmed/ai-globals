@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Map a package name (as it appears in lock/manifest files) to one or more
 # tech-stack file name prefixes.  Both slash and dash forms are listed where
@@ -87,13 +90,19 @@ def _clean_version(constraint: str) -> str | None:
         return None
     # Take the first alternative if the constraint is a range.
     token = re.split(r"[|, ]", constraint)[0].strip()
-    token = token.lstrip("v^~<>= ")
     if token in ("", "*", "x"):
         return None
-    # Convert wildcard ranges like 8.x / 8.* into 8.0.
-    if token.endswith((".x", ".*")):
-        token = token[:-2] + ".0"
-    return token
+    if token.startswith(("dev-", "git+", "file:", "https:", "github:")):
+        return None
+    # Extract the first numeric semver-looking token from a prefix range.
+    m = re.search(r"\d+(?:\.\d+){0,2}", token)
+    if not m:
+        return None
+    version = m.group(0)
+    parts = version.split(".")
+    if len(parts) == 1:
+        version = f"{parts[0]}.0"
+    return version
 
 
 def _version_triple(version: str) -> tuple[int, int, int] | None:
@@ -249,7 +258,8 @@ def detect_stack(project_root: Path, os_root: Path) -> dict[str, dict[str, objec
             continue
         try:
             versions = parser(lockfile)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to parse %s: %s", lockfile, exc)
             continue
         for name, version in versions.items():
             path = _resolve_tech_stack(name, version, os_root)
@@ -266,7 +276,8 @@ def detect_stack(project_root: Path, os_root: Path) -> dict[str, dict[str, objec
             continue
         try:
             versions = parser(manifest)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Failed to parse %s: %s", manifest, exc)
             continue
         for name, version in versions.items():
             if name in detected:

@@ -1,5 +1,6 @@
 [WORKFLOW] 08-onboarding
 [OBJ] Project Onboarding & AI Architect Initialization.
+[TRIGGER] onboarding
 [RULES]
 1. [REQ] Fast Path: Read operating protocols from `.ai` root. Do not rely on assumptions. Act as Principal 10x Engineer.
 2. [REQ] Context Loading Sequence:

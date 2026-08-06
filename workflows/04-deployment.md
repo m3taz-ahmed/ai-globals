@@ -1,5 +1,6 @@
 [WORKFLOW] 04-deployment
 [OBJ] Deployment and Release protocol.
+[TRIGGER] deploy
 [RULES]
 1. [REQ] Pre-Deploy: Verify tests pass, DB migrations tested on staging, cache cleared, assets built.
 2. [REQ] Deploy: `down` -> `pull` -> `composer/npm install` -> `migrate` -> rebuild cache -> restart queues -> `up`.

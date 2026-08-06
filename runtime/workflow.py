@@ -6,7 +6,9 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from collections.abc import Callable
+import threading
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,12 +52,24 @@ class WorkflowRunner:
         self.db_path = root / "state" / "workflow.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.persona = persona_detector or PersonaDetector()
+        self._lock = threading.RLock()
         self._init_schema()
 
-    def _conn(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    @contextmanager
+    def _conn(self) -> Iterator[sqlite3.Connection]:
+        with self._lock:
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
 
     def _init_schema(self) -> None:
         with self._conn() as conn:
@@ -170,9 +184,13 @@ class WorkflowRunner:
             cmd = text.strip()
             if cmd.startswith("bash:"):
                 shell_cmd = cmd[5:].strip()
-                act_result = act("Bash", command=shell_cmd, approved=True, dry_run=True)
-                result["status"] = "allowed" if act_result["ok"] else act_result.get("decision", {}).get("decision", "denied")
-                result["evaluation"] = act_result
+                try:
+                    act_result = act("Bash", command=shell_cmd, approved=True, dry_run=True)
+                    result["status"] = "allowed" if act_result["ok"] else act_result.get("decision", {}).get("decision", "denied")
+                    result["evaluation"] = act_result
+                except Exception as exc:
+                    result["status"] = "error"
+                    result["evaluation"] = {"ok": False, "error": str(exc)}
             elif cmd.startswith("mcp:"):
                 mcp_cmd = cmd[4:].strip()
                 parsed = self._parse_mcp(mcp_cmd)
@@ -184,9 +202,13 @@ class WorkflowRunner:
                     if not client.is_configured():
                         result["status"] = "mcp_not_configured"
                     else:
-                        act_result = client.call_tool(tool, args)
-                        result["status"] = "allowed" if act_result["ok"] else "mcp_call_failed"
-                        result["evaluation"] = act_result
+                        try:
+                            act_result = client.call_tool(tool, args)
+                            result["status"] = "allowed" if act_result["ok"] else "mcp_call_failed"
+                            result["evaluation"] = act_result
+                        except Exception as exc:
+                            result["status"] = "error"
+                            result["evaluation"] = {"ok": False, "error": str(exc)}
             else:
                 result["status"] = "noop"
 

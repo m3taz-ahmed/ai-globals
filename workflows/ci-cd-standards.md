@@ -1,5 +1,6 @@
 [WORKFLOW] ci-cd-standards
 [OBJ] CI/CD Governance & Supply Chain Security.
+[TRIGGER] ci-cd-standards
 [RULES]
 1. [REQ] Branch Strategy `[GIT-03]`: `main` (prod), `develop` (staging). Merge requires ConvCommits, tests/lints pass, 1 approval.
 2. [REQ] Pipeline Governance `[GIT-04]`: Auto-deploy `develop` to Staging. Run dependency audits in CI. OIDC keyless auth (no static tokens).

@@ -38,7 +38,8 @@ class ApprovalCache:
 
     def is_approved(self, action: dict[str, Any]) -> bool:
         """Return whether this action has already been approved."""
-        return self._key(action) in self._approved
+        with self._lock:
+            return self._key(action) in self._approved
 
     def approve(self, action: dict[str, Any]) -> None:
         """Record this action as approved for the remainder of the session."""

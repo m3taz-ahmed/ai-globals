@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Global OS Dashboard</title>
   <link rel="stylesheet" href="index.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="app-container">
@@ -245,6 +245,14 @@
     </div>
 
   <script>
+    // Escape HTML to prevent XSS when rendering dynamic content.
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+
     // Navigation
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -446,7 +454,7 @@
       
       const data = await fetchJson(`/api/memory/search?q=${encodeURIComponent(q)}&kind=${encodeURIComponent(kind)}`);
       if (data.error) {
-        resContainer.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        resContainer.innerHTML = `<div class="error-msg">${escapeHtml(data.error)}</div>`;
         return;
       }
       
@@ -458,10 +466,10 @@
       resContainer.innerHTML = data.map(item => `
         <div class="memory-item">
           <div class="memory-header">
-            <span class="badge">${item.kind}</span>
-            <span class="source">${item.source}</span>
+            <span class="badge">${escapeHtml(item.kind)}</span>
+            <span class="source">${escapeHtml(item.source)}</span>
           </div>
-          <pre class="memory-content">${item.content}</pre>
+          <pre class="memory-content">${escapeHtml(item.content)}</pre>
         </div>
       `).join('');
     }
@@ -497,13 +505,13 @@
       if (data.error) {
         resContainer.innerHTML = `<div class="policy-result denied">
           <h4>Denied</h4>
-          <p>${data.error}</p>
-          <pre>${JSON.stringify(data, null, 2)}</pre>
+          <p>${escapeHtml(data.error)}</p>
+          <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>
         </div>`;
       } else {
         resContainer.innerHTML = `<div class="policy-result ${data.ok ? 'allowed' : 'denied'}">
           <h4>${data.ok ? 'Allowed' : 'Blocked/Denied'}</h4>
-          <pre>${JSON.stringify(data, null, 2)}</pre>
+          <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>
         </div>`;
       }
     }
@@ -550,9 +558,9 @@
       });
 
       if (data.error) {
-        resContainer.innerHTML = `<div class="policy-result denied"><h4>Failed</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+        resContainer.innerHTML = `<div class="policy-result denied"><h4>Failed</h4><pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre></div>`;
       } else {
-        resContainer.innerHTML = `<div class="policy-result allowed"><h4>Completed</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+        resContainer.innerHTML = `<div class="policy-result allowed"><h4>Completed</h4><pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre></div>`;
       }
     }
 
@@ -586,9 +594,9 @@
       });
 
       if (data.error) {
-        resContainer.innerHTML = `<div class="policy-result denied"><h4>Failed</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+        resContainer.innerHTML = `<div class="policy-result denied"><h4>Failed</h4><pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre></div>`;
       } else {
-        resContainer.innerHTML = `<div class="policy-result ${data.ok ? 'allowed' : 'denied'}"><h4>${data.ok ? 'Completed' : 'Compensated'}</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+        resContainer.innerHTML = `<div class="policy-result ${data.ok ? 'allowed' : 'denied'}"><h4>${data.ok ? 'Completed' : 'Compensated'}</h4><pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre></div>`;
       }
     }
 
@@ -598,7 +606,7 @@
       const msg = input.value.trim();
       if (!msg) return;
       const history = document.getElementById('chat-history');
-      history.innerHTML += `<div class="chat-msg user"><strong>You:</strong> ${msg}</div>`;
+      history.innerHTML += `<div class="chat-msg user"><strong>You:</strong> ${escapeHtml(msg)}</div>`;
       input.value = '';
       const data = await fetchJson('/api/chat', {
         method: 'POST',
@@ -606,7 +614,7 @@
         body: JSON.stringify({ message: msg })
       });
       const reply = data.reply || data.error || JSON.stringify(data);
-      history.innerHTML += `<div class="chat-msg assistant"><strong>AI OS:</strong> ${reply}</div>`;
+      history.innerHTML += `<div class="chat-msg assistant"><strong>AI OS:</strong> ${escapeHtml(reply)}</div>`;
       history.scrollTop = history.scrollHeight;
     }
 
@@ -615,7 +623,7 @@
       const container = document.getElementById('stack-results');
       const data = await fetchJson('/api/status');
       if (data.error) {
-        container.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        container.innerHTML = `<div class="error-msg">${escapeHtml(data.error)}</div>`;
         return;
       }
       const stack = data.tech_stack || {};
@@ -626,10 +634,10 @@
       container.innerHTML = Object.entries(stack).map(([name, info]) => `
         <div class="memory-item">
           <div class="memory-header">
-            <span class="badge">${name}</span>
-            <span class="source">${info.version}</span>
+            <span class="badge">${escapeHtml(name)}</span>
+            <span class="source">${escapeHtml(info.version)}</span>
           </div>
-          <div class="memory-content">${info.path}</div>
+          <div class="memory-content">${escapeHtml(info.path)}</div>
         </div>
       `).join('');
     }
@@ -641,7 +649,7 @@
       const container = document.getElementById('telemetry-results');
       const data = await fetchJson(`/api/telemetry?limit=100&type=${encodeURIComponent(type)}`);
       if (data.error) {
-        container.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        container.innerHTML = `<div class="error-msg">${escapeHtml(data.error)}</div>`;
         return;
       }
       if (data.length === 0) {
@@ -650,9 +658,9 @@
       }
       container.innerHTML = data.map(e => `
         <div class="audit-entry">
-          <div class="audit-time">${e.timestamp}</div>
-          <div class="audit-type type-${e.status === 'allowed' ? 'success' : 'info'}">${e.type}</div>
-          <pre class="audit-data">${JSON.stringify(e, null, 2)}</pre>
+          <div class="audit-time">${escapeHtml(e.timestamp)}</div>
+          <div class="audit-type type-${e.status === 'allowed' ? 'success' : 'info'}">${escapeHtml(e.type)}</div>
+          <pre class="audit-data">${escapeHtml(JSON.stringify(e, null, 2))}</pre>
         </div>
       `).join('');
 
@@ -693,7 +701,7 @@
       const container = document.getElementById('audit-logs');
       const data = await fetchJson('/api/audit');
       if (data.error) {
-        container.innerHTML = `<div class="error-msg">${data.error}</div>`;
+        container.innerHTML = `<div class="error-msg">${escapeHtml(data.error)}</div>`;
         return;
       }
       
@@ -710,9 +718,9 @@
         
         return `
         <div class="audit-entry">
-          <div class="audit-time">${log.timestamp}</div>
-          <div class="audit-type type-${typeClass}">${log.type}</div>
-          <pre class="audit-data">${JSON.stringify(log.data, null, 2)}</pre>
+          <div class="audit-time">${escapeHtml(log.timestamp)}</div>
+          <div class="audit-type type-${typeClass}">${escapeHtml(log.type)}</div>
+          <pre class="audit-data">${escapeHtml(JSON.stringify(log.data, null, 2))}</pre>
         </div>
       `}).join('');
     }

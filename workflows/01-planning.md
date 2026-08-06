@@ -1,5 +1,6 @@
 [WORKFLOW] 01-planning
 [OBJ] Feature planning and architecture.
+[TRIGGER] architecture
 [RULES]
 1. [REQ] Trigger: Starting new feature or refactor.
 2. [PROHIBIT] Spec Teasing: NO large code generation without clarifying vagueness. Stop & ask.

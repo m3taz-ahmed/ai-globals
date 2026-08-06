@@ -1,0 +1,19 @@
+# Global default
+* @ai-global-os/maintainers
+
+# Security, policy, and rules need careful review
+runtime/policy.py @ai-global-os/security
+runtime/audit.py @ai-global-os/security
+rules/ @ai-global-os/security
+
+# Core runtime changes
+runtime/kernel.py @ai-global-os/core
+runtime/budget.py @ai-global-os/core
+
+# Workflows and skills
+workflows/ @ai-global-os/docs
+skills/ @ai-global-os/docs
+
+# Memory and MCP
+memory/ @ai-global-os/storage
+aios_mcp/ @ai-global-os/storage

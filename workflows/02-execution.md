@@ -1,5 +1,6 @@
 [WORKFLOW] 02-execution
 [OBJ] Code generation and development.
+[TRIGGER] implementation
 [RULES]
 1. [REQ] Trigger: Writing/modifying code.
 2. [PROHIBIT] Monolithic Dumps: Build ONE module at a time.

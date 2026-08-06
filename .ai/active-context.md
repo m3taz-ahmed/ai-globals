@@ -1,5 +1,50 @@
 # Active Context
 
+## 2026-08-06 (23) — Implemented all 15 adopted features from repos-report
+- Implemented re-implemented patterns from the repository study (all 15):
+  - `DESIGN.md` at root (Sentry-inspired dark-first AI command-center tokens).
+  - `runtime/metrics.py` — Prometheus-compatible registry (Counter, Gauge, Histogram, Summary, Info, CollectorRegistry, Timer, exposition); preserves existing `format_metrics(k)` for dashboard.
+  - `runtime/guardian.py` + tests — guardian-angel policy SDK (ActionRequest, Decision, Guardian, invoke/ainvoke decorators, ApprovalRequiredError).
+  - `aios_mcp/adapters.py` + tests — orchestration-mcp adapter pattern (Local, Codex, Claude Code, Remote A2A backends + AdapterRegistry).
+  - `memory/graph.py` + tests — synaptic-memory deterministic SQLite schema-to-knowledge-graph extractor.
+  - `runtime/rule_compiler.py` + tests — AI-RULES markdown-to-Rule-IR compiler (frontmatter, [FILE]/[OBJ]/[RULES], kind/code/text extraction).
+  - `runtime/tracing.py` — OpenTelemetry-inspired tracing API (Span, Tracer, TracerProvider, SpanProcessor, ConsoleSpanExporter).
+  - `runtime/probity.py` + tests — coding guardrails (forbidCommandPattern, requireCommand, forbidContentPattern, enforceFilenameCasing, enforceTdd).
+  - `aios_mcp/agent.py` + tests — mcp-agent multi-server agent loop and tool discovery.
+  - `runtime/mcp_orchestrator.py` + tests — MCP step-plan orchestrator with dependency DAG, parallel/sequential execution, and rollback.
+  - `runtime/sovereign.py` + tests — Sovereign-OS capability model (Capability, CapabilityStore, AgentCapabilities).
+  - `runtime/preloop.py` + tests — preloop feedback-loop memory (Outcome, FeedbackLoop, best_action, reflect).
+  - `runtime/governance.py` + tests — agent-governance-toolkit hooks (GovernanceHooks around_action, wrap).
+  - `runtime/astryx.py` + tests — astryx AST linter (bare except, mutable defaults, eval/exec, function length, parameter count).
+- Quality gates green: `ruff check .`, `mypy runtime aios_mcp memory`, `pytest -q` (406 passed), and `python eval/harness.py` all_pass true.
+- Implemented re-implemented patterns from the repository study:
+  - `DESIGN.md` at root (Sentry-inspired dark-first AI command-center tokens).
+  - `runtime/metrics.py` — Prometheus-compatible registry (Counter, Gauge, Histogram, Summary, Info, CollectorRegistry, Timer, exposition); preserves existing `format_metrics(k)` for dashboard.
+  - `runtime/guardian.py` + tests — guardian-angel policy SDK (ActionRequest, Decision, Guardian, invoke/ainvoke decorators, ApprovalRequiredError).
+  - `aios_mcp/adapters.py` + tests — orchestration-mcp adapter pattern (Local, Codex, Claude Code, Remote A2A backends + AdapterRegistry).
+  - `memory/graph.py` + tests — synaptic-memory deterministic SQLite schema-to-knowledge-graph extractor.
+  - `runtime/rule_compiler.py` + tests — AI-RULES markdown-to-Rule-IR compiler (frontmatter, [FILE]/[OBJ]/[RULES], kind/code/text extraction).
+  - `runtime/tracing.py` — OpenTelemetry-inspired tracing API (Span, Tracer, TracerProvider, SpanProcessor, ConsoleSpanExporter).
+  - `runtime/probity.py` + tests — coding guardrails (forbidCommandPattern, requireCommand, forbidContentPattern, enforceFilenameCasing, enforceTdd).
+- All changes pass `ruff check .`, `mypy runtime aios_mcp memory`, `pytest -q` (391 passed), and `python eval/harness.py` all_pass true.
+- Remaining 7 features: mcp-agent, mcp-orchestrator, shackleai/orchestrator, Sovereign-OS, preloop, agent-governance-toolkit, astryx.
+
+## 2026-08-06 (22) — Repository study executed
+- Goal: Execute `.ai/repos-study.md` and produce `.ai/repos-report.md`.
+- Cloned 31 of 32 listed repositories into `temp/repos-study/`; `mnemopay/praetor` not found.
+- Analyzed repos via parallel subagents by category.
+- Report: 15 adopt, 11 watch, 6 skip. Top starts: guardian-angel, awesome-design-md, orchestration-mcp, ai-rules, prometheus-client, synaptic-memory.
+- Added Section 9 (Architect's opinion, feature importance map, 90-day integration plan) to the report.
+- Temp directory retained per user request.
+
+## 2026-08-06 (21) — Comprehensive project review and all three fix batches
+- Adopted ARCH/PRODUCT/QA/SRE/SEC/DEV/PERF/DOC personas for a full review of AI Global OS v4.22.0.
+- Created `.ai/review-findings.md` and `.ai/repos-study.md` (agent meta-prompt + 30+ repos to study).
+- Finished third batch: plugin AST sandbox, dashboard token auth, MCP per-key send lock, Pydantic-specific exception handling, budget `_dirty` flag, `[TRIGGER]` tags for all workflows, new `18-data-migration` and `19-incident-response` workflows, rule duplication cleanup, `.github/dependabot.yml`, `CODEOWNERS`, `security.yml`, `runtime/tests/test_security.py`, `scripts/validate-globals.py` workflow count check.
+- Updated `rules/vocabulary.md` with `[GIT-06]` and `README.md`/`workflows/README.md`/`README-AR.md` counts to 29.
+- Quality gates green: `ruff`, `mypy`, `pytest -q` 361 passed, `python eval/harness.py` all_pass true.
+- All changes staged; no commit/push.
+
 ## 2026-08-03 (20) — Research, useful-repos, skills, examples, evaluation, DESIGN.md, and dashboard refresh
 - Surveyed 50 top GitHub repositories across Programming, UI/UX, Structure Design, Responsive Design, and Databases.
 - Updated `tech-stack/useful-repos.md` with 55 verified entries (deduplicated `saadeghi/daisyui`).

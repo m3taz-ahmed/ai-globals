@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,8 @@ _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 _kernel_instance: Kernel | None = None
 _memory_instance: MemoryStore | None = None
 _current_root: Path | None = None
+_kernel_lock = threading.Lock()
+_memory_lock = threading.Lock()
 
 _MAX_RESULTS = 100
 _MAX_INPUT_LENGTH = 100_000
@@ -44,35 +47,48 @@ def reset_state() -> None:
 def _kernel() -> Kernel:
     """Return a Kernel instance, recreating if the discovered root changes."""
     global _kernel_instance, _current_root
-    discovered = _root()
-    if _kernel_instance is None or _current_root != discovered:
-        _current_root = discovered
-        _kernel_instance = Kernel(_current_root)
-    return _kernel_instance
+    with _kernel_lock:
+        discovered = _root()
+        if _kernel_instance is None or _current_root != discovered:
+            _current_root = discovered
+            _kernel_instance = Kernel(_current_root)
+        return _kernel_instance
 
 
 def _memory() -> MemoryStore:
     """Return a MemoryStore instance tied to the discovered root."""
     global _memory_instance
-    discovered = _root()
-    if _memory_instance is None or _memory_instance.root != discovered:
-        _memory_instance = MemoryStore(discovered)
-    return _memory_instance
+    with _memory_lock:
+        discovered = _root()
+        if _memory_instance is None or _memory_instance.root != discovered:
+            _memory_instance = MemoryStore(discovered)
+        return _memory_instance
 
 
 def _is_safe_name(name: str) -> bool:
-    """Reject path separators, parent-directory references, and overlong names."""
+    """Reject path separators, parent-directory references, control chars, and overlong names."""
     if not name or ".." in name or "/" in name or "\\" in name or len(name) > 128:
+        return False
+    if any(ord(c) < 32 or c == "\x7f" for c in name):
         return False
     return bool(_NAME_RE.fullmatch(name))
 
 
 def _resolve_path(root: Path, relative: Path) -> Path | None:
-    """Resolve a relative path and ensure it stays under root."""
-    target = (root / relative).resolve()
+    """Resolve a relative path and ensure it stays under root.
+
+    Rejects parent-directory references, UNC/device paths, and symlinks that
+    escape the root directory.
+    """
+    if ".." in relative.parts:
+        return None
+    if str(relative).startswith("\\\\") or str(relative).startswith("//"):
+        return None
     try:
-        target.relative_to(root.resolve())
-    except ValueError:
+        target = (root / relative).resolve(strict=False)
+        root_resolved = root.resolve()
+        target.relative_to(root_resolved)
+    except (ValueError, OSError, RuntimeError):
         return None
     return target
 

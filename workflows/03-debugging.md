@@ -1,5 +1,6 @@
 [WORKFLOW] 03-debugging
 [OBJ] Advanced debugging and RCA.
+[TRIGGER] bug
 [RULES]
 1. [REQ] Format: Demand `[Error + Code + Logs]`.
 2. [PROHIBIT] No Band-Aids: NO guessing. NO PHP `@` suppressions. NO disabling strict types. Apply permanent architectural fixes.

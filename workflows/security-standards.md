@@ -1,5 +1,6 @@
 [WORKFLOW] security-standards
 [OBJ] Security & Cyber Resilience.
+[TRIGGER] security-standards
 [RULES]
 1. [REQ] Data `[SEC-08]`: Encrypt DB PII. Private Cloud buckets with Signed URLs. NO secrets in logs.
 2. [REQ] Input `[SEC-01]`: Strict `FormRequest`. Escape HTML. Strict JSON MIME type.

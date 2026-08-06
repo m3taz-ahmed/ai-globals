@@ -36,7 +36,7 @@
 [CODE]
 [CODE-01]: Service-Repo separation. Thin controllers.
 [CODE-02]: Strict typing (`strict_types=1`). No `mixed`.
-[CODE-03]: Class <300 lines, method <30 lines.
+[CODE-03]: Class <300 lines, method <30 lines. Max 4 args per method (use DTO for 5+).
 [CODE-04]: Enums/constants over magic strings.
 [CODE-05]: SOLID & DRY.
 
@@ -55,6 +55,7 @@
 [GIT-03]: Protect `main`. Max PR ~400 lines.
 [GIT-04]: Pipeline deploy. OIDC keyless auth.
 [GIT-05]: Supply chain security (pin SHAs, SBOM, Cosign).
+[GIT-06]: No `git add .` or `git add -A`. Stage only files YOU modified with `git add <file>`. No destructive git without user approval.
 
 [API]
 [API-01]: Timeout 30s, connect 5s.

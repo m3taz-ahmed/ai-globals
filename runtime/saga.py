@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Callable
+import threading
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,12 +51,24 @@ class SagaOrchestrator:
         self.root = root
         self.db_path = root / "state" / "saga.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
         self._init_schema()
 
-    def _conn(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    @contextmanager
+    def _conn(self) -> Iterator[sqlite3.Connection]:
+        with self._lock:
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
 
     def _init_schema(self) -> None:
         with self._conn() as conn:

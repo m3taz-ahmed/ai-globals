@@ -17,7 +17,7 @@
 - No destructive action without explicit user approval.
 
 ## Context & Memory
-- Detect stack from `package.json` / `composer.json` and load matching `tech-stack/<pkg>-<ver>.md` only after reading the lockfile for the exact version. Never default to v3 Filament or v11 Laravel.
+- Detect stack from `package.json` / `composer.json` and load matching `tech-stack/<pkg>-<ver>.md` only after reading the lockfile for the exact version (`[VER-01]`).
 - If `graphify-out/graph.json` exists, use `graphify query` or `query_graph` (MCP); never raw grep.
 - Query Context7 MCP for external libraries/frameworks before implementation; use `aios_mcp/aios_server.py` for global context.
 - Run `ai-os memory ingest` when `rules/`, `tech-stack/`, or `workflows/` change; update `state/MEMORY.md` via `workflows/17-memory-sync.md` after every milestone.
@@ -32,5 +32,5 @@ No `eval` in policy code.
 
 ## Non-negotiable user policy
 - No full `php artisan test` suites. Targeted `--filter=...` only, or skip tests.
-- No `git add .` / `git add -A`. No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
+- No `git add .` / `git add -A` (`[GIT-06]`). No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
 - Delete temporary/scratch/test files immediately after use.

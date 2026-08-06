@@ -1,5 +1,6 @@
 [WORKFLOW] monthly-maintenance
 [OBJ] Monthly Maintenance Audit Protocol.
+[TRIGGER] monthly-maintenance
 [RULES]
 1. [REQ] Trigger: First week of month.
 2. [REQ] Security: `composer/npm audit` and `outdated`. Fix CVEs. Check history for secrets.

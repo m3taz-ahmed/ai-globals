@@ -494,7 +494,7 @@ ai-os run 02-execution
 
 ### v4.22.0
 
-- **19 شخصية و 54 مهارة متخصصة**، بما في ذلك الشخصيتين الجديدتين `PROPOSAL` و `CV`.
+- **19 شخصية و 73 مهارة متخصصة**، بما في ذلك الشخصيتين الجديدتين `PROPOSAL` و `CV`، و **29 سير عمل durable**.
 - **تكوين multi-persona + مهارات lord** عبر `PersonaDetector.detect_multiple` و `SkillResolver` ودمج `Kernel`/`WorkflowRunner`/`AgentPool`.
 - **تعريفات الشخصيات الخارجية** في `runtime/personas.yaml` بحيث يمكن تحديث wiring الشخصيات بدون تعديل الكود.
 - **إعادة هيكلة Clean Architecture** لنظام الشخصيات/المهارات مع حقن الاعتماديات.
@@ -503,6 +503,17 @@ ai-os run 02-execution
 
 ### أحدث الإضافات
 
+- **مراجعة شاملة للمشروع** موثقة في `.ai/review-findings.md` تحتوي على مشكلات P0–P5 و SWOT وأفكار التطوير.
+- **29 سير عمل durable** (من 27)، بما فيهما `18-data-migration` و `19-incident-response` الجديدان، مع وسوم `[TRIGGER]` و routing عبر `manifest.json`.
+- **ساندبوكس AST للبلجنات** في `runtime/plugin.py` يمنع الوحدات المحظورة والاستدعاءات الخطيرة (`eval`، `exec`، `open`، إلخ) قبل `exec_module`.
+- **تصليب Dashboard** — CSP، X-Frame-Options، X-Content-Type-Options، Referrer-Policy، تحييد XSS، SRI لـ Chart.js، وتوليد token تلقائي.
+- **تصليب MCP client** — `_SEND_LOCKS` لكل مفتاح و timeout لـ `_send` يمنعان حالات race.
+- **SQLite WAL + busy timeout + أقفال** في `memory/store.py` و `runtime/workflow.py` و `runtime/saga.py`.
+- **علامة `_dirty`** في `runtime/budget.py` لتجنب الكتابة غير الضرورية على القرص.
+- **تحقق Pydantic محدد** في `runtime/kernel.py` بدلاً من `except Exception` العريض.
+- **إخفاء البيانات الحساسة** في `runtime/audit.py` للتوكنات والمفاتيح والأسرار.
+- **`.ai/repos-study.md`** — ملف مستقل يحتوي على برومبت إنجليزي كامل وقائمة بأكثر من 30 مستودع GitHub للتقييم.
+- **DevOps / أمان** — `.github/dependabot.yml` و `CODEOWNERS` و `security.yml` (`pip-audit` + `bandit`) وإضافة `bandit`/`pip-audit` لـ `pyproject.toml`.
 - **القواعد الشرطية مع YAML frontmatter** (`runtime/rule_frontmatter.py` + `runtime/skill_resolver.py`). يمكن لملفات المهارة والقواعد الإعلان عن فلاتر `paths` و `stack` و `personas`. Runtime يحمّل فقط المهارات المطابقة للسياق الحالي، ونقطة نهاية MCP `query_rules` ترجع القواعد النشطة فقط.
 - **حدود السياق الطازج (Fresh-context boundary)** (`runtime/kernel.py` + `runtime/budget.py`). معامل `fresh_context` يعيد ضبط ميزانيات الجلسة ويُعيد اشتقاق مفاتيح الشخصية/المهارة المُحقنة تلقائياً لجلسات دردشة أو workflows نظيفة.
 - **أمر `ai-os skill` CLI** (`list`، `invoke`، `search`) بدعم من `SkillResolver`. يبحث في كل من `skills/` بجذر النظام و `.ai/skills/` بالمشروع.

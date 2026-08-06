@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
@@ -12,6 +13,8 @@ from typing import Any
 import numpy as np
 
 import config
+
+logger = logging.getLogger(__name__)
 
 SentenceTransformer: Any = None
 IdMapIndex: Any = None
@@ -95,7 +98,8 @@ class VectorMemory:
             return
         try:
             vector = self.embedder.embed(texts)
-        except RuntimeError:
+        except RuntimeError as exc:
+            logger.warning("Vector embed failed for batch: %s", exc)
             return
         u64s = np.array([_mem_id_to_uint64(mid) for mid in mem_ids], dtype=np.uint64)
         for u64, mid in zip(u64s, mem_ids, strict=True):
@@ -110,7 +114,8 @@ class VectorMemory:
             return []
         try:
             vector = self.embedder.embed([text])
-        except RuntimeError:
+        except RuntimeError as exc:
+            logger.warning("Vector embed failed for query: %s", exc)
             return []
         allowlist = None
         if ids is not None:

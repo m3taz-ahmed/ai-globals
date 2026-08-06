@@ -1,5 +1,6 @@
 [WORKFLOW] 00-prompt-architecting
 [OBJ] Prompt generation protocol.
+[TRIGGER] /prompt
 [RULES]
 1. [REQ] Trigger: User asks for a prompt, or via `/prompt`.
 2. [REQ] Extraction: Extract Task, Target Tool, Output Format.

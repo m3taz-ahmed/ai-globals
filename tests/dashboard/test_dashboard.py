@@ -20,6 +20,7 @@ def _serve(tmp_root: Path):
         "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
     )
     os.environ["AGENT_OS_ROOT"] = str(tmp_root)
+    os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
     t = threading.Thread(target=server.serve_forever, daemon=True)

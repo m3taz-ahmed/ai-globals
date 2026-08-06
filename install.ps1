@@ -2,6 +2,12 @@
 $Repo = $PSScriptRoot
 if ($Repo -eq "") { $Repo = Get-Location }
 
+$pythonVersion = & python --version 2>&1
+if ($LASTEXITCODE -ne 0) { throw "python is required" }
+if ($pythonVersion -notmatch "Python 3\.(1[0-9]|[2-9])") {
+    throw "Python 3.10+ is required (found $pythonVersion)"
+}
+
 $Root = if ($env:AGENT_OS_ROOT) { $env:AGENT_OS_ROOT } else { "$env:LOCALAPPDATA\AI-Global-OS" }
 
 if (-not (Test-Path $Root)) { New-Item -ItemType Directory -Path $Root -Force | Out-Null }
@@ -47,7 +53,10 @@ $Config = @{
 
 foreach ($Target in $Config.Keys) {
     $Source = $Config[$Target]
-    if (Test-Path $Target) { Remove-Item -Path $Target -Force -Recurse }
+    if (Test-Path $Target) {
+        $Backup = "$Target.$(Get-Date -Format yyyyMMddHHmmss).backup"
+        Rename-Item -Path $Target -NewName $Backup -Force -ErrorAction SilentlyContinue
+    }
     $Parent = Split-Path -Path $Target -Parent
     if ($Parent -and -not (Test-Path $Parent)) {
         New-Item -ItemType Directory -Path $Parent -Force | Out-Null

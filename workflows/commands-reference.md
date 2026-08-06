@@ -1,5 +1,6 @@
 [FILE] commands-reference
 [OBJ] Comprehensive Slash Commands Directory.
+[TRIGGER] commands-reference
 [RULES]
 1. [REQ] Centralized documentation for all `/{command}` shortcuts.
 2. [REQ] Covers IDE Core (`/goal`, `/schedule`, `/grill-me`).

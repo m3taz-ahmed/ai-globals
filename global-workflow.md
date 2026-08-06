@@ -14,7 +14,7 @@
 11. [CMD] Handoff: Run `workflows/17-memory-sync.md` post-milestone.
 12. [REQ] Knowledge Sync: If a novel bug is fixed or a workaround is found (e.g., framework-specific edge cases), ALWAYS document the solution as a new rule in the relevant `tech-stack/*.md` file to prevent recurrence.
 13. [REQ] Context Sync: ALWAYS read `Memory.md` at the project root to understand short-term context/history. If missing or outdated, generate/update it in CAVEMAN format before closing the session to ensure cross-agent continuity.
-14. [REQ] Git Constraint: NEVER `git commit` or `git push` (user-only). NEVER `git add .` or `git add -A`. ONLY `git add <file>` for files you modified in this session. Delete all temporary/scratch/test files immediately after use. Before handoff, run `git status`, remove unnecessary untracked files, and stage remaining changes.
+14. [REQ] Git Constraint: NEVER `git commit` or `git push` (user-only). `[GIT-06]`. NEVER `git add .` or `git add -A`. ONLY `git add <file>` for files you modified in this session. Delete all temporary/scratch/test files immediately after use. Before handoff, run `git status`, remove unnecessary untracked files, and stage remaining changes.
 15. [CMD] Runtime Gate `[OS-EXE-01]`: Before ANY action, set `AGENT_OS_ROOT` if missing. Run `ai-os check <action> --args '{"tokens":N}'` or `Kernel.act` to validate policy + budget. If `deny`/`block`, STOP and report.
 16. [CMD] Memory Sync `[OS-MEM-02]`: If `rules/`, `tech-stack/`, or `workflows/` changed, run `ai-os memory ingest` and `graphify update .`.
 17. [CMD] MCP Sync `[OS-MCP-02]`: For IDE context, use `aios_mcp/config.json` or `python aios_mcp/aios_server.py`.

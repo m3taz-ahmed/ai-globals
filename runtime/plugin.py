@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import threading
 import warnings
@@ -19,6 +20,42 @@ import config
 if TYPE_CHECKING:
     from memory.store import MemoryStore
     from runtime.kernel import Kernel
+
+
+_DENYLISTED_MODULES: set[str] = {
+    "os", "subprocess", "sys", "shutil", "socket", "requests", "urllib", "http",
+    "ftplib", "telnetlib", "smtplib", "ctypes", "mmap", "signal", "pickle", "marshal",
+}
+
+_DANGEROUS_CALLS: set[str] = {"eval", "exec", "compile", "open", "__import__", "getattr", "setattr"}
+
+
+def _is_plugin_source_safe(source: str, filename: str) -> tuple[bool, str]:
+    """Statically scan plugin source for imports and calls that break the sandbox."""
+    try:
+        tree = ast.parse(source, filename=filename)
+    except SyntaxError as exc:
+        return False, f"Syntax error: {exc}"
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            names = [alias.name for alias in node.names]
+            if isinstance(node, ast.ImportFrom) and node.module:
+                names.append(node.module)
+            for name in names:
+                root = name.split(".")[0]
+                if root in _DENYLISTED_MODULES:
+                    return False, f"Blocked import of '{name}' in {filename}"
+        elif isinstance(node, ast.Call):
+            func = node.func
+            if isinstance(func, ast.Name) and func.id in _DANGEROUS_CALLS:
+                return False, f"Blocked call to '{func.id}' in {filename}"
+            if isinstance(func, ast.Attribute) and func.attr in _DANGEROUS_CALLS:
+                return False, f"Blocked call to '.{func.attr}' in {filename}"
+        elif isinstance(node, ast.Attribute):
+            if node.attr.startswith("__") and node.attr.endswith("__") and len(node.attr) > 4:
+                return False, f"Blocked dunder attribute access '{node.attr}' in {filename}"
+    return True, ""
 
 
 class AIOSPlugin(ABC):
@@ -108,9 +145,14 @@ class PluginManager:
         return PluginGuard(cfg.get("permissions"))
 
     def _load_plugin_module(self, name: str) -> Any | None:
-        """Load the plugin module using its package path."""
+        """Load the plugin module using its package path after a static safety scan."""
         init_file = self.plugins_dir / name / "__init__.py"
         if not init_file.is_file():
+            return None
+        source = init_file.read_text(encoding="utf-8")
+        safe, reason = _is_plugin_source_safe(source, str(init_file))
+        if not safe:
+            warnings.warn(f"Plugin '{name}' blocked by sandbox: {reason}", stacklevel=2)
             return None
         spec = importlib.util.spec_from_file_location(f"plugins.{name}", init_file)
         if spec is None or spec.loader is None:

@@ -11,8 +11,8 @@
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-19%20Roles-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 Personas">
-    <img src="https://img.shields.io/badge/Skills-54%20Specialized-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="54 Skills">
-    <img src="https://img.shields.io/badge/Workflows-31%20Durable-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="31 Workflows">
+    <img src="https://img.shields.io/badge/Skills-73%20Specialized-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="73 Skills">
+    <img src="https://img.shields.io/badge/Workflows-29%20Durable-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="29 Workflows">
   </p>
 
   <p><i>A zero-compromise, version-controlled operating system that eliminates AI context drift, enforces bleeding-edge engineering standards, and governs every line of generated code.</i></p>
@@ -375,7 +375,7 @@ MUST for quality:
 
 11. Run `ruff check .`, `mypy`, `pytest -q`, and `python eval/harness.py` before declaring done.
 12. After changing `rules/`, `tech-stack/`, `workflows/`, or `skills/`, run `ai-os memory ingest` and `graphify update .`.
-13. Git: conventional commits, atomic, never `git add .` or force push, stage only files you modified.
+13. Git: conventional commits, atomic, never `git add .` (`[GIT-06]`) or force push, stage only files you modified.
 ```
 
 For **project-level** rules, use the adapter files in the table above instead.
@@ -492,7 +492,7 @@ ai-os run 02-execution
 
 ### v4.22.0
 
-- **19 personas and 54 specialized skills**, including the new `PROPOSAL` and `CV` personas.
+- **19 personas and 73 specialized skills**, including the new `PROPOSAL` and `CV` personas, and **29 durable workflows**.
 - **Multi-persona + lord skill composition** via `PersonaDetector.detect_multiple`, `SkillResolver`, and `Kernel`/`WorkflowRunner`/`AgentPool` integration.
 - **Externalized persona definitions** in `runtime/personas.yaml` so persona wiring can be updated without touching code.
 - **Clean Architecture refactor** of the persona/skill subsystem with dependency injection.
@@ -501,6 +501,17 @@ ai-os run 02-execution
 
 ### Latest additions
 
+- **Comprehensive project review** captured in `.ai/review-findings.md` with P0–P5 issues, SWOT, and development ideas.
+- **29 durable workflows** (up from 27), including new `18-data-migration` and `19-incident-response`, with `[TRIGGER]` tags and manifest-based routing.
+- **Plugin AST sandbox** in `runtime/plugin.py` blocks denylisted modules and dangerous calls (`eval`, `exec`, `open`, etc.) before `exec_module`.
+- **Dashboard hardening** — CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, XSS escaping, SRI for Chart.js, and lazy token generation.
+- **MCP client hardening** — per-key `_SEND_LOCKS` and `_send` timeout to prevent process races.
+- **SQLite WAL + busy timeout + locks** in `memory/store.py`, `runtime/workflow.py`, and `runtime/saga.py`.
+- **Budget `_dirty` flag** in `runtime/budget.py` to avoid unnecessary disk writes.
+- **Pydantic-specific validation** in `runtime/kernel.py` instead of broad `except Exception`.
+- **Audit redaction** for tokens, keys, secrets, and credentials in `runtime/audit.py`.
+- **`.ai/repos-study.md`** — standalone file with an English agent meta-prompt and 30+ curated GitHub repos to evaluate.
+- **DevOps / security** — `.github/dependabot.yml`, `CODEOWNERS`, `security.yml` (`pip-audit` + `bandit`), and `bandit`/`pip-audit` in `pyproject.toml` dev dependencies.
 - **Conditional rules with YAML frontmatter** (`runtime/rule_frontmatter.py` + `runtime/skill_resolver.py`). Skill and rule files can declare `paths`, `stack`, and `personas` filters. The runtime only loads skills that match the current context, and the MCP `query_rules` endpoint returns active rules only.
 - **Fresh-context boundary** (`runtime/kernel.py` + `runtime/budget.py`). A `fresh_context` flag resets per-session budgets and re-derives auto-injected persona/skill keys for clean chat sessions, workflows, and sagas.
 - **`ai-os skill` CLI** (`list`, `invoke`, `search`) backed by `SkillResolver`. Searches both the OS root `skills/` and the project `.ai/skills/`.

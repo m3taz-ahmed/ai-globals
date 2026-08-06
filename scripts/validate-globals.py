@@ -410,6 +410,28 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--interactive",        action="store_true", help="Prompt before each fix")
     return p.parse_args()
 
+def check_workflow_counts(global_path: str, ctx: ValidationContext) -> None:
+    """Warn if workflow/README.md counts no longer match the filesystem."""
+    wf_dir = os.path.join(global_path, "workflows")
+    if not os.path.isdir(wf_dir):
+        return
+    md_files = [f for f in os.listdir(wf_dir) if f.endswith(".md") and f != "README.md"]
+    workflow_files = []
+    for f in md_files:
+        p = os.path.join(wf_dir, f)
+        with open(p, encoding="utf-8", errors="ignore") as fh:
+            if re.search(r"^\[WORKFLOW\]", fh.read(), re.MULTILINE):
+                workflow_files.append(f)
+    readme_path = os.path.join(wf_dir, "README.md")
+    if os.path.exists(readme_path):
+        with open(readme_path, encoding="utf-8", errors="ignore") as fh:
+            readme_text = fh.read()
+        # report as warning, not error, since prose is hand-maintained
+        if str(len(workflow_files)) not in readme_text:
+            cprint(f"WARNING: workflows/README.md count may not match {len(workflow_files)} workflow files", Colors.YELLOW)
+            ctx.warning_count += 1
+
+
 def main() -> None:
     args = parse_args()
     global_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -452,6 +474,7 @@ def main() -> None:
             cprint(f"  PASS: {rel}", Colors.GREEN)
 
     check_version_consistency(global_path, ctx)
+    check_workflow_counts(global_path, ctx)
 
     if not args.dry_run and (ctx.error_count == 0 or args.fix):
         cprint("Updating integrity.manifest...", Colors.CYAN)
