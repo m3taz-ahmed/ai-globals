@@ -24,7 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "pyyaml>=6.0,<7.0",
-    "mcp>=1.0,<2.0",
+    "mcp>=2.0.0,<3.0",
     "turbovec>=0.1,<0.8",
     "numpy>=1.24,<3.0",
     "pydantic>=2.0,<3.0",
