@@ -1,0 +1,23 @@
+{
+  "read_config_from": {
+    "claude": false,
+    "windsurf": false
+  },
+  "mcpServers": {
+    "ai-global-os": {
+      "command": "python",
+      "args": [
+        "-c",
+        "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or 'D:\\\\server\\\\.ai'; subprocess.run([sys.executable,'-m','aios_mcp.aios_server'], cwd=root)"
+      ]
+    },
+    "graphify": {
+      "command": "python",
+      "args": [
+        "-c",
+        "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or 'D:\\\\server\\\\.ai'; subprocess.run([sys.executable, str(pathlib.Path(root)/'scripts'/'graphify_mcp_wrapper.py')])"
+      ]
+    }
+  },
+  "version": 1
+}
