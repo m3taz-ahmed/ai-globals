@@ -58,7 +58,7 @@ class _MetricChild:
         raise NotImplementedError  # pragma: no cover
 
 
-T = TypeVar("T", bound=_MetricChild)
+T = TypeVar("T", bound=_MetricChild, covariant=True)
 
 
 class Metric(Generic[T]):
@@ -359,6 +359,10 @@ class CollectorRegistry:
             for metric in self._collectors.values():
                 samples.extend(metric.collect())
         return samples
+
+    def names(self) -> list[str]:
+        with self._lock:
+            return sorted(self._collectors)
 
     def restricted_registry(self, names: list[str]) -> RestrictedRegistry:
         return RestrictedRegistry(self, names)

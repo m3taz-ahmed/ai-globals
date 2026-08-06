@@ -12,9 +12,16 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 import config
+from aios_mcp.agent import McpAgent
+from memory.graph import SchemaGraph
 from memory.ingest import Ingestor
 from memory.store import MemoryStore
+from runtime.astryx import AstryxLinter
+from runtime.guardian import ActionRequest
 from runtime.kernel import Kernel
+from runtime.mcp_orchestrator import McpOrchestrator, Plan, Step
+from runtime.metrics import format_metrics
+from runtime.rule_compiler import compile_rules
 from runtime.rule_frontmatter import matches_context, parse_frontmatter
 
 mcp = FastMCP("ai-global-os")
@@ -369,6 +376,104 @@ def get_agents() -> str:
     root = _root()
     path = root / "AGENTS.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+@mcp.tool()
+def get_metrics() -> str:
+    """Return Prometheus-compatible metrics for the OS."""
+    return format_metrics(_kernel())
+
+
+@mcp.tool()
+def get_os_status() -> str:
+    """Return the runtime kernel status."""
+    return json.dumps(_kernel().status(), indent=2, default=str)
+
+
+@mcp.tool()
+def lint_python(code: str, max_lines: int = 50, max_params: int = 7) -> str:
+    """Lint Python code using the Astryx AST linter."""
+    if not isinstance(code, str) or not code or len(code) > _MAX_INPUT_LENGTH:
+        return json.dumps({"ok": False, "error": "Invalid code"})
+    linter = AstryxLinter(max_lines=max_lines, max_params=max_params)
+    findings = linter.lint_text(code)
+    return json.dumps({"ok": True, "findings": [finding.__dict__ for finding in findings]}, indent=2)
+
+
+@mcp.tool()
+def build_schema_graph(db_path: str) -> str:
+    """Build a knowledge graph from a SQLite database schema."""
+    if not isinstance(db_path, str) or not db_path or len(db_path) > 1024:
+        return json.dumps({"ok": False, "error": "Invalid db_path"})
+    root = _root()
+    target = _resolve_path(root, Path(db_path))
+    if target is None or not target.exists():
+        return json.dumps({"ok": False, "error": "Database not found"})
+    graph = SchemaGraph(str(target)).build()
+    return json.dumps(
+        {"ok": True, "nodes": len(graph.nodes), "edges": len(graph.edges), "nodes_list": [n.id for n in graph.nodes]},
+        indent=2,
+    )
+
+
+@mcp.tool()
+def compile_rule_files(globs: list[str] | None = None) -> str:
+    """Compile rule/skill/workflow markdown files into Rule IR."""
+    rules = compile_rules(_root(), globs=globs)
+    return json.dumps(
+        [{"file": r.file, "obj": r.obj, "rules_count": len(r.rules)} for r in rules],
+        indent=2,
+        default=str,
+    )
+
+
+@mcp.tool()
+def run_guardian_check(tool: str, attributes: dict[str, Any] | None = None) -> str:
+    """Evaluate a tool request against guardian rules."""
+    if not _is_safe_name(tool):
+        return json.dumps({"ok": False, "error": "Invalid tool name"})
+    req = ActionRequest(tool=tool, attributes=attributes or {})
+    decision = _kernel().guardian.authorize(req)
+    return json.dumps(
+        {
+            "ok": decision.status != _kernel().guardian.config.default_decision,
+            "status": decision.status,
+            "rule": decision.rule_name,
+            "reason": decision.reason,
+        },
+        indent=2,
+    )
+
+
+@mcp.tool()
+def list_capabilities() -> str:
+    """List the active sovereign capabilities."""
+    return json.dumps(_kernel().capabilities.list(), indent=2)
+
+
+@mcp.tool()
+def run_mcp_plan(steps: list[dict[str, Any]]) -> str:
+    """Execute a multi-step plan across MCP tools."""
+    if not isinstance(steps, list) or not steps:
+        return json.dumps({"ok": False, "error": "steps must be a non-empty list"})
+    try:
+        plan = Plan(
+            id="mcp-plan",
+            steps=[Step(**s) for s in steps],
+        )
+    except Exception as exc:
+        return json.dumps({"ok": False, "error": f"Invalid plan: {exc!s}"})
+    agent = McpAgent("mcp-server")
+    orchestrator = McpOrchestrator(agent)
+
+    import asyncio
+
+    result = asyncio.run(orchestrator.execute(plan))
+    return json.dumps(
+        {step: {"status": r.status.value, "output": r.output, "error": r.error} for step, r in result.items()},
+        indent=2,
+        default=str,
+    )
 
 
 _register_plugins()

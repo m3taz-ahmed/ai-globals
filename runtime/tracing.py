@@ -186,6 +186,17 @@ def use_span(span: Span) -> Iterator[Span]:
         _CURRENT_SPAN.reset(token)
 
 
+@contextmanager
+def with_span(tracer: Tracer, name: str, kind: str = SpanKind.INTERNAL) -> Iterator[Span]:
+    """Context manager that starts, activates, and ends a span."""
+    span = tracer.start_span(name, kind=kind)
+    try:
+        with use_span(span):
+            yield span
+    finally:
+        span.end()
+
+
 def get_current_span() -> Span | None:
     return _CURRENT_SPAN.get()
 

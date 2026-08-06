@@ -21,6 +21,7 @@ desktop.ini
 __pycache__/
 *.pyc
 *.pyo
+pip/
 
 # Generated artifacts
 integrity.manifest

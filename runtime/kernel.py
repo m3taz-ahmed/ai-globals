@@ -18,14 +18,21 @@ from .approval_cache import ApprovalCache
 from .audit import AuditLogger
 from .budget import BudgetManager
 from .chat import ChatSession
+from .governance import GovernanceHooks
+from .guardian import ActionRequest, DecisionStatus, Guardian
+from .metrics import CollectorRegistry, Counter, Gauge
 from .orchestrator import AgentPool
 from .persona import PersonaDetector
 from .plugin import PluginManager
 from .policy import PolicyEngine
+from .preloop import FeedbackLoop, Outcome
+from .probity import Guardrails
 from .saga import Saga, SagaOrchestrator, SagaStep
 from .skill_resolver import SkillResolver
+from .sovereign import AgentCapabilities
 from .tech_stack import detect_stack
 from .telemetry import TelemetryCollector
+from .tracing import ConsoleSpanExporter, TracerProvider, with_span
 from .workflow import WorkflowRunner
 
 if TYPE_CHECKING:
@@ -71,6 +78,13 @@ class Kernel:
         self.pool = AgentPool(self.root)
         self.audit = AuditLogger(self.project_root)
         self.approval_cache = ApprovalCache()
+        self.guardian = self._build_guardian()
+        self.probity = self._build_probity()
+        self.capabilities = AgentCapabilities()
+        self.metrics = self._build_metrics()
+        self.tracer = self._build_tracer()
+        self.preloop = FeedbackLoop()
+        self.governance = GovernanceHooks(self.audit, self.telemetry)
         self.plugins = PluginManager(self, self.root)
 
     def _build_saga_orchestrator(self) -> SagaOrchestrator:
@@ -78,6 +92,42 @@ class Kernel:
 
     def _build_telemetry_collector(self) -> TelemetryCollector:
         return TelemetryCollector(self.project_root)
+
+    def _build_guardian(self) -> Guardian:
+        path = self.project_root / "runtime" / "policies" / "guardian.yaml"
+        if path.exists():
+            return Guardian.from_yaml(path)
+        return Guardian([])
+
+    def _build_probity(self) -> Guardrails:
+        path = self.project_root / "runtime" / "policies" / "probity.yaml"
+        if path.exists():
+            import yaml
+
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            return Guardrails(data)
+        return Guardrails()
+
+    def _build_metrics(self) -> CollectorRegistry:
+        registry = CollectorRegistry()
+        self._actions_total: Counter = Counter("aios_actions_total", "Total actions evaluated", ("action", "decision"))
+        self._workflows_total: Counter = Counter("aios_workflows_total", "Total workflows executed", ("status",))
+        self._sagas_total: Counter = Counter("aios_sagas_total", "Total sagas executed", ("status",))
+        self._guardian_denials_total: Counter = Counter("aios_guardian_denials", "Total guardian denials", ("rule",))
+        self._probity_violations_total: Counter = Counter("aios_probity_violations", "Total probity violations", ("rule",))
+        self._budget_gauge: Gauge = Gauge("aios_budget_remaining", "Remaining budget for active scopes", ("scope",))
+        registry.register(self._actions_total)
+        registry.register(self._workflows_total)
+        registry.register(self._sagas_total)
+        registry.register(self._guardian_denials_total)
+        registry.register(self._probity_violations_total)
+        registry.register(self._budget_gauge)
+        return registry
+
+    def _build_tracer(self) -> TracerProvider:
+        provider = TracerProvider()
+        provider.add_span_processor(ConsoleSpanExporter(self.project_root / "state" / "spans.jsonl"))
+        return provider
 
     def detect_persona(self, text: str) -> dict[str, Any]:
         """Detect the best persona for a user prompt."""
@@ -214,33 +264,92 @@ class Kernel:
             "args": kwargs,
         }
 
+    def _check_guardian(self, action_type: str, action_data: dict[str, Any]) -> dict[str, Any] | None:
+        """Run guardian-angel policy and return an error response if denied."""
+        try:
+            decision = self.guardian.authorize(
+                ActionRequest(tool=action_type, attributes={"action": action_data, "args": action_data})
+            )
+        except Exception:
+            return None
+        if decision.status == DecisionStatus.DENY:
+            self._guardian_denials_total.labels(rule=decision.rule_name).inc()
+            return {
+                "ok": False,
+                "error": f"Guardian denied by {decision.rule_name}",
+                "decision": {"rule": decision.rule_name, "reason": decision.reason},
+            }
+        if decision.status == DecisionStatus.REQUIRE_APPROVAL:
+            return {
+                "ok": False,
+                "error": f"Guardian requires approval for {decision.rule_name}",
+                "requires_approval": True,
+                "decision": {"rule": decision.rule_name, "reason": decision.reason},
+            }
+        return None
+
+    def _check_probity(self, action_type: str, action_data: dict[str, Any]) -> None:
+        """Run probity guardrails for write and command actions."""
+        event: dict[str, Any] = {"type": action_type, "history": []}
+        if action_type in ("write", "edit"):
+            event["path"] = str(action_data.get("path", ""))
+            event["content"] = str(action_data.get("content", ""))
+        elif action_type in ("exec", "command", "shell"):
+            event["command"] = str(action_data.get("command", ""))
+        try:
+            self.probity.check(event)
+        except Exception as exc:
+            rule = getattr(exc, "rule_name", "unknown")
+            self._probity_violations_total.labels(rule=rule).inc()
+            raise
+
     def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:
-        """Evaluate action through policy + budget gates."""
+        """Evaluate action through policy + budget + governance gates."""
         fresh_context = kwargs.pop("fresh_context", False)
         session_id = kwargs.pop("session_id", None)
-        self._auto_persona(kwargs)
-        if fresh_context and session_id is None:
-            session_id = uuid.uuid4().hex
-        try:
-            action_data = ActionSchema(type=action_type, **kwargs).model_dump()
-        except ValidationError as e:
-            return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
+        with with_span(self.tracer.get_tracer("kernel"), f"act.{action_type}"):
+            self._auto_persona(kwargs)
+            if fresh_context and session_id is None:
+                session_id = uuid.uuid4().hex
+            try:
+                action_data = ActionSchema(type=action_type, **kwargs).model_dump()
+            except ValidationError as e:
+                return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
 
-        decision = self.policy.can(action_data["type"], **action_data)
-        if decision["decision"] == "deny":
-            return self._handle_policy_denied(action_data, kwargs, decision, dry_run)
+            self._check_probity(action_type, action_data)
 
-        if decision["decision"] == "ask" and not self._resolve_approval(action_data, dry_run):
-            return self._handle_policy_ask(action_data, kwargs, decision, dry_run)
+            guard = self._check_guardian(action_type, action_data)
+            if guard:
+                return guard
 
-        budget_result = self.budget.check(
-            "session",
-            action_data.get("tokens", 0),
-            action_data.get("cost", 0.0),
-            dry_run=dry_run,
-            **self._build_budget_kwargs(action_data, session_id=session_id),
-        )
-        return self._finalize_action(action_data, kwargs, decision, budget_result, dry_run)
+            decision = self.policy.can(action_data["type"], **action_data)
+            if decision["decision"] == "deny":
+                self._actions_total.labels(action=action_type, decision="deny").inc()
+                return self._handle_policy_denied(action_data, kwargs, decision, dry_run)
+
+            if decision["decision"] == "ask" and not self._resolve_approval(action_data, dry_run):
+                self._actions_total.labels(action=action_type, decision="ask").inc()
+                return self._handle_policy_ask(action_data, kwargs, decision, dry_run)
+
+            self._actions_total.labels(action=action_type, decision="allow").inc()
+
+            budget_result = self.budget.check(
+                "session",
+                action_data.get("tokens", 0),
+                action_data.get("cost", 0.0),
+                dry_run=dry_run,
+                **self._build_budget_kwargs(action_data, session_id=session_id),
+            )
+            result = self._finalize_action(action_data, kwargs, decision, budget_result, dry_run)
+            self.preloop.record(
+                Outcome(
+                    action=action_type,
+                    ok=result.get("ok", False),
+                    reward=1.0 if result.get("ok") else 0.0,
+                    tags=[decision["decision"]],
+                )
+            )
+            return result
 
     def run_workflow(
         self, workflow_id: str, context: dict[str, Any], fresh_context: bool = False
@@ -394,6 +503,9 @@ class Kernel:
             "plugins": self.plugins.list_plugins(),
             "tech_stack": self.detect_tech_stack(),
             "agents": self.pool.list_agents(),
+            "metrics": self.metrics.names(),
+            "guardian_rules": [r.get("name", "unnamed") for r in self.guardian.rules],
+            "capabilities": self.capabilities.list(),
         }
 
 

@@ -1,33 +1,30 @@
 # Active Context
 
-## 2026-08-06 (23) — Implemented all 15 adopted features from repos-report
-- Implemented re-implemented patterns from the repository study (all 15):
-  - `DESIGN.md` at root (Sentry-inspired dark-first AI command-center tokens).
-  - `runtime/metrics.py` — Prometheus-compatible registry (Counter, Gauge, Histogram, Summary, Info, CollectorRegistry, Timer, exposition); preserves existing `format_metrics(k)` for dashboard.
-  - `runtime/guardian.py` + tests — guardian-angel policy SDK (ActionRequest, Decision, Guardian, invoke/ainvoke decorators, ApprovalRequiredError).
-  - `aios_mcp/adapters.py` + tests — orchestration-mcp adapter pattern (Local, Codex, Claude Code, Remote A2A backends + AdapterRegistry).
-  - `memory/graph.py` + tests — synaptic-memory deterministic SQLite schema-to-knowledge-graph extractor.
-  - `runtime/rule_compiler.py` + tests — AI-RULES markdown-to-Rule-IR compiler (frontmatter, [FILE]/[OBJ]/[RULES], kind/code/text extraction).
-  - `runtime/tracing.py` — OpenTelemetry-inspired tracing API (Span, Tracer, TracerProvider, SpanProcessor, ConsoleSpanExporter).
-  - `runtime/probity.py` + tests — coding guardrails (forbidCommandPattern, requireCommand, forbidContentPattern, enforceFilenameCasing, enforceTdd).
-  - `aios_mcp/agent.py` + tests — mcp-agent multi-server agent loop and tool discovery.
-  - `runtime/mcp_orchestrator.py` + tests — MCP step-plan orchestrator with dependency DAG, parallel/sequential execution, and rollback.
-  - `runtime/sovereign.py` + tests — Sovereign-OS capability model (Capability, CapabilityStore, AgentCapabilities).
-  - `runtime/preloop.py` + tests — preloop feedback-loop memory (Outcome, FeedbackLoop, best_action, reflect).
-  - `runtime/governance.py` + tests — agent-governance-toolkit hooks (GovernanceHooks around_action, wrap).
-  - `runtime/astryx.py` + tests — astryx AST linter (bare except, mutable defaults, eval/exec, function length, parameter count).
-- Quality gates green: `ruff check .`, `mypy runtime aios_mcp memory`, `pytest -q` (406 passed), and `python eval/harness.py` all_pass true.
-- Implemented re-implemented patterns from the repository study:
-  - `DESIGN.md` at root (Sentry-inspired dark-first AI command-center tokens).
-  - `runtime/metrics.py` — Prometheus-compatible registry (Counter, Gauge, Histogram, Summary, Info, CollectorRegistry, Timer, exposition); preserves existing `format_metrics(k)` for dashboard.
-  - `runtime/guardian.py` + tests — guardian-angel policy SDK (ActionRequest, Decision, Guardian, invoke/ainvoke decorators, ApprovalRequiredError).
-  - `aios_mcp/adapters.py` + tests — orchestration-mcp adapter pattern (Local, Codex, Claude Code, Remote A2A backends + AdapterRegistry).
-  - `memory/graph.py` + tests — synaptic-memory deterministic SQLite schema-to-knowledge-graph extractor.
-  - `runtime/rule_compiler.py` + tests — AI-RULES markdown-to-Rule-IR compiler (frontmatter, [FILE]/[OBJ]/[RULES], kind/code/text extraction).
-  - `runtime/tracing.py` — OpenTelemetry-inspired tracing API (Span, Tracer, TracerProvider, SpanProcessor, ConsoleSpanExporter).
-  - `runtime/probity.py` + tests — coding guardrails (forbidCommandPattern, requireCommand, forbidContentPattern, enforceFilenameCasing, enforceTdd).
-- All changes pass `ruff check .`, `mypy runtime aios_mcp memory`, `pytest -q` (391 passed), and `python eval/harness.py` all_pass true.
-- Remaining 7 features: mcp-agent, mcp-orchestrator, shackleai/orchestrator, Sovereign-OS, preloop, agent-governance-toolkit, astryx.
+## 2026-08-06 (24) — Integrated all 15 features into runtime, MCP, dashboard
+- Completed the integration follow-up:
+  - `runtime/kernel.py` now loads and uses `guardian`, `probity`, `metrics`, `tracer`, `preloop`, `governance`, and `sovereign` on every `Kernel.act()`.
+  - `aios_mcp/aios_server.py` exposes new MCP tools: `get_metrics`, `get_os_status`, `lint_python`, `build_schema_graph`, `compile_rule_files`, `run_guardian_check`, `list_capabilities`, `run_mcp_plan`.
+  - `dashboard/server.py` exposes new HTTP endpoints: `/api/guardian`, `/api/capabilities`, `/api/tracing`, `/api/lint`.
+  - Added `tests/integration/test_new_features.py` covering kernel governance modules, metrics, astryx, sovereign, preloop, and probity.
+- Quality gates green: `ruff check .`, `mypy`, `pytest -q` (412 passed), `python eval/harness.py` all_pass true, and `graphify update .`.
+
+## 2026-08-06 (25) — Hardened install.ps1 and verified first/ reinstall in isolated environment
+- Rewrote `install.ps1` to be idempotent and re-install safe:
+  - Added `-WhatIf`, `-SkipPip`, `-SkipGraphify` switches.
+  - Preserves `state/` and `brain/` across installs.
+  - Excludes `__pycache__`, `.pyc`, `.pytest_cache`, `node_modules`, `temp`, etc. from copy.
+  - Uses `--force-reinstall` on pip to update an existing install.
+  - Sets `AGENT_OS_ROOT` as a user environment variable.
+  - Backs up and re-creates config symlinks/junctions.
+  - Adds CLI self-test at end.
+- Tested first install and re-install in an isolated temp environment (separate venv, temp `AGENT_OS_ROOT`/`USERPROFILE`/`LOCALAPPDATA`). Both runs succeeded and `CLI OK` reported.
+- Cleaned up the temp test directory.
+- Completed the integration follow-up:
+  - `runtime/kernel.py` now loads and uses `guardian`, `probity`, `metrics`, `tracer`, `preloop`, `governance`, and `sovereign` on every `Kernel.act()`.
+  - `aios_mcp/aios_server.py` exposes new MCP tools: `get_metrics`, `get_os_status`, `lint_python`, `build_schema_graph`, `compile_rule_files`, `run_guardian_check`, `list_capabilities`, `run_mcp_plan`.
+  - `dashboard/server.py` exposes new HTTP endpoints: `/api/guardian`, `/api/capabilities`, `/api/tracing`, `/api/lint`.
+  - Added `tests/integration/test_new_features.py` covering kernel governance modules, metrics, astryx, sovereign, preloop, and probity.
+- Quality gates green: `ruff check .`, `mypy`, `pytest -q` (412 passed), `python eval/harness.py` all_pass true, and `graphify update .`.
 
 ## 2026-08-06 (22) — Repository study executed
 - Goal: Execute `.ai/repos-study.md` and produce `.ai/repos-report.md`.

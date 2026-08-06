@@ -19,6 +19,7 @@ from typing import Any, cast
 
 import config
 from memory.store import MemoryStore
+from runtime.astryx import AstryxLinter
 from runtime.kernel import Kernel
 from runtime.metrics import format_metrics
 from runtime.telemetry import system_metrics
@@ -195,6 +196,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_system()
         elif parsed.path == "/api/audit":
             self._send_audit()
+        elif parsed.path == "/api/guardian":
+            self._send_guardian()
+        elif parsed.path == "/api/capabilities":
+            self._send_capabilities()
+        elif parsed.path == "/api/tracing":
+            self._send_tracing()
+        elif parsed.path == "/api/lint":
+            self._send_lint()
         elif parsed.path == "/api/memory/search":
             self._send_memory_search(parsed.query)
         elif parsed.path == "/api/policy/test":
@@ -352,6 +361,37 @@ class DashboardHandler(BaseHTTPRequestHandler):
             with audit_file.open("r", encoding="utf-8") as f:
                 lines = [json.loads(line) for line in f if line.strip()]
         self._send(200, json.dumps(lines[-100:], default=str).encode("utf-8"), "application/json")
+
+    def _send_guardian(self) -> None:
+        rules = [r.get("name", "unnamed") for r in self.kernel.guardian.rules]
+        self._send(200, json.dumps({"rules": rules, "count": len(rules)}).encode("utf-8"), "application/json")
+
+    def _send_capabilities(self) -> None:
+        self._send(200, json.dumps({"capabilities": self.kernel.capabilities.list()}).encode("utf-8"), "application/json")
+
+    def _send_tracing(self) -> None:
+        trace_file = self.kernel.project_root / "state" / "spans.jsonl"
+        lines = []
+        if trace_file.exists():
+            with trace_file.open("r", encoding="utf-8") as f:
+                lines = [json.loads(line) for line in f if line.strip()]
+        self._send(200, json.dumps(lines[-100:], default=str).encode("utf-8"), "application/json")
+
+    def _send_lint(self) -> None:
+        body = self._read_json_body()
+        if body is None:
+            return
+        code = body.get("code", "")
+        if not isinstance(code, str):
+            self._send(400, b"Missing or invalid code")
+            return
+        linter = AstryxLinter(max_lines=body.get("max_lines", 50), max_params=body.get("max_params", 7))
+        findings = linter.lint_text(code)
+        self._send(
+            200,
+            json.dumps({"ok": True, "findings": [finding.__dict__ for finding in findings]}).encode("utf-8"),
+            "application/json",
+        )
 
     def _serve_file(self, path: Path) -> None:
         if not path.exists():
