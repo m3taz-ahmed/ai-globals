@@ -49,6 +49,9 @@
     "migration": "workflows/18-data-migration.md",
     "incident-response": "workflows/19-incident-response.md",
     "incident": "workflows/19-incident-response.md",
+    "/freelance": "workflows/20-freelance-pipeline.md",
+    "freelance": "workflows/20-freelance-pipeline.md",
+    "freelance-pipeline": "workflows/20-freelance-pipeline.md",
     "/execute": "workflows/02-execution.md",
     "execute": "workflows/02-execution.md"
   },

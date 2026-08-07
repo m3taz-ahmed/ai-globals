@@ -486,7 +486,89 @@ personas:
     - apply for job
     - portfolio
     - معرض أعمال
+  FREELANCE:
+    name: Freelance Marketplace Strategist
+    weight: 1.3
+    skill: freelance-platforms
+    lords:
+      - proposal-writer
+      - cv-writer
+      - api-architect
+      - security-lord
+      - docs-guard
+    keywords:
+      - freelance
+      - freelancer
+      - upwork
+      - fiverr
+      - freelancer.com
+      - mostaql
+      - khamsat
+      - nabbesh
+      - bawaba
+      - qawm
+      - موقع
+      - مواقع
+      - مواقع العمل الحر
+      - العمل الحر
+      - أعمال حرة
+      - عمل حر
+      - فريلانسر
+      - مستقل
+      - خمسات
+      - منصات
+      - بروبوزل
+      - عروض أسعار
+      - freelance platforms
+      - remote work
+      - gig
+      - gigs
+      - bids
+      - bidding
+      - proposal
+      - proposals
+      - portfolio
+      - client
+      - clients
+      - earnings
+      - connects
+      - contract
+      - milestone
+      - escrow
 lord_skills:
+  freelance-platforms:
+    - freelance
+    - freelancer
+    - upwork
+    - fiverr
+    - freelancer.com
+    - mostaql
+    - khamsat
+    - nabbesh
+    - bawaba
+    - qawm
+    - موقع
+    - مواقع
+    - مواقع العمل الحر
+    - العمل الحر
+    - أعمال حرة
+    - عمل حر
+    - فريلانسر
+    - مستقل
+    - خمسات
+    - bidding
+    - bids
+    - gig
+    - gigs
+    - عروض
+    - بروبوزل
+    - عروض أسعار
+    - proposal
+    - proposals
+    - connects
+    - contract
+    - milestone
+    - escrow
   database-lord:
   - database
   - sql

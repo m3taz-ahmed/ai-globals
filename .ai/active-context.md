@@ -1,5 +1,14 @@
 # Active Context
 
+## 2026-08-07 — Added freelance-platforms skill, FREELANCE persona, and MCP config
+- Created `skills/freelance-platforms/SKILL.md` covering global (Upwork, Fiverr, Freelancer.com) and Arabic (Mostaql, Khamsat, Nabbesh) marketplaces.
+- Added `FREELANCE` persona to `runtime/personas.yaml` with Arabic/English keywords and `freelance-platforms` as a loadable lord skill.
+- Configured MCP servers in `.devin/mcp_config.json` (disabled by default): `upwork` (npx @furkankoykiran/upwork-mcp), `freelancer` (npx freelancer-mcp-server), `fiverr` (uvx fiverr-mcp-server). Added `.devin/mcp_config.local.json` template and `.gitignore` entries.
+- Created `workflows/20-freelance-pipeline.md` and added `freelance` triggers to `manifest.json`.
+- Updated `runtime/tests/test_persona.py` to expect 20 personas (including FREELANCE).
+- Quality gates green: `ruff check .`, `mypy .`, `pytest -q` (412 passed), `python eval/harness.py` all_pass true.
+- Ran `ai-os memory ingest` and `graphify update .`.
+
 ## 2026-08-06 (24) — Integrated all 15 features into runtime, MCP, dashboard
 - Completed the integration follow-up:
   - `runtime/kernel.py` now loads and uses `guardian`, `probity`, `metrics`, `tracer`, `preloop`, `governance`, and `sovereign` on every `Kernel.act()`.

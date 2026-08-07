@@ -49,7 +49,8 @@ class TestPersonaDetector:
         d = PersonaDetector()
         assert "ARCH" in d.list_personas()
         assert "CV" in d.list_personas()
-        assert len(d.list_personas()) == 19
+        assert "FREELANCE" in d.list_personas()
+        assert len(d.list_personas()) == 20
 
     def test_unknown_default_raises(self):
         try:

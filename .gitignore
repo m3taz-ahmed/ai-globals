@@ -12,6 +12,8 @@ desktop.ini
 *~
 .env
 .env.*
+.devin/mcp_config.local.json
+.devin/config.local.json
 
 # Local State (per-project, not global)
 # MEMORY.md is tracked — it contains cross-session audit history valuable for all users
