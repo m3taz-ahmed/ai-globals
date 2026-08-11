@@ -76,6 +76,20 @@ _TECH_STACK_ALIASES: dict[str, list[str]] = {
     "redis": ["redis"],
     "node": ["nodejs"],
     "nodejs": ["nodejs"],
+    # Python
+    "python": ["python"],
+    "aios": ["aios"],
+    "pydantic": ["pydantic"],
+    "fastmcp": ["mcp"],
+    "mcp": ["mcp"],
+    "pytest": ["pytest"],
+    "ruff": ["ruff"],
+    "mypy": ["mypy"],
+    "rich": ["rich"],
+    "numpy": ["numpy"],
+    "turbovec": ["turbovec"],
+    "graphifyy": ["graphify"],
+    "sentence-transformers": ["sentence-transformers"],
 }
 
 
@@ -244,6 +258,55 @@ def _parse_composer_json(path: Path) -> dict[str, str]:
     return versions
 
 
+def _parse_pyproject_toml(path: Path) -> dict[str, str]:
+    """Parse pyproject.toml and return package names with cleaned versions."""
+    try:
+        import tomllib
+    except ImportError:
+        try:
+            import tomli as tomllib  # type: ignore[no-redef]
+        except ImportError:
+            # Fallback: regex-based extraction if no TOML parser available.
+            return _parse_pyproject_regex(path)
+
+    with path.open("rb") as f:
+        data = tomllib.load(f)
+    versions: dict[str, str] = {}
+    project = data.get("project", {})
+    for dep in project.get("dependencies", []):
+        _parse_pep508(dep, versions)
+    optional = project.get("optional-dependencies", {})
+    for group in optional.values():
+        for dep in group:
+            _parse_pep508(dep, versions)
+    return versions
+
+
+def _parse_pep508(dep: str, versions: dict[str, str]) -> None:
+    """Extract name + version from a PEP 508 dependency string."""
+    m = re.match(r"^([A-Za-z0-9_.-]+)\s*(?:\[.*\])?\s*([<>=!~]+)?\s*(\d[^;]*)?", dep.strip())
+    if not m:
+        return
+    name = m.group(1)
+    version = m.group(3)
+    if version:
+        cleaned = _clean_version(version)
+        if cleaned:
+            versions[name] = cleaned
+
+
+def _parse_pyproject_regex(path: Path) -> dict[str, str]:
+    """Fallback regex parser for pyproject.toml when tomllib/tomli unavailable."""
+    versions: dict[str, str] = {}
+    text = path.read_text(encoding="utf-8")
+    for m in re.finditer(r'^"?([A-Za-z0-9_.-]+)"?\s*[<>=!~]+\s*(\d[^;,\]"\n]+)', text, re.MULTILINE):
+        name, version = m.group(1), m.group(2).strip()
+        cleaned = _clean_version(version)
+        if cleaned:
+            versions[name] = cleaned
+    return versions
+
+
 def detect_stack(project_root: Path, os_root: Path) -> dict[str, dict[str, object]]:
     """Detect installed stack and return matched tech-stack docs info."""
     detected: dict[str, dict[str, object]] = {}
@@ -270,6 +333,7 @@ def detect_stack(project_root: Path, os_root: Path) -> dict[str, dict[str, objec
     manifests = [
         (project_root / "package.json", _parse_package_json),
         (project_root / "composer.json", _parse_composer_json),
+        (project_root / "pyproject.toml", _parse_pyproject_toml),
     ]
     for manifest, parser in manifests:
         if not manifest.exists():

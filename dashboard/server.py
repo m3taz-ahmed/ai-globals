@@ -218,6 +218,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_saga_get(parsed.path[10:])
         elif parsed.path == "/api/chat":
             self._send_chat()
+        elif parsed.path == "/api/graph":
+            self._send_graph()
+        elif parsed.path == "/api/graph/stats":
+            self._send_graph_stats()
+        elif parsed.path == "/api/events":
+            self._send_sse_events()
         elif parsed.path == "/" or parsed.path == "/index.html":
             self._serve_file(self.root / "dashboard" / "index.html")
         elif parsed.path == "/index.css":
@@ -398,6 +404,64 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send(404, b"Not found")
             return
         self._send(200, path.read_bytes(), mimetypes.guess_type(str(path))[0] or "text/plain", cors=False)
+
+    def _send_graph(self) -> None:
+        """Serve the graphify graph.json (capped to 2MB for dashboard)."""
+        graph_path = self.root / "graphify-out" / "graph.json"
+        if not graph_path.exists():
+            self._send(200, json.dumps({"ok": False, "error": "graph.json not found"}).encode("utf-8"), "application/json")
+            return
+        data = graph_path.read_bytes()
+        if len(data) > 2 * 1024 * 1024:
+            self._send(200, json.dumps({"ok": False, "error": "graph too large for dashboard; use graphify MCP"}).encode("utf-8"), "application/json")
+            return
+        self._send(200, data, "application/json", cors=True)
+
+    def _send_graph_stats(self) -> None:
+        """Return summary stats from the graphify graph."""
+        graph_path = self.root / "graphify-out" / "graph.json"
+        if not graph_path.exists():
+            self._send(200, json.dumps({"ok": False, "error": "graph.json not found"}).encode("utf-8"), "application/json")
+            return
+        try:
+            data = json.loads(graph_path.read_text(encoding="utf-8"))
+            nodes = data.get("nodes", [])
+            links = data.get("links", [])
+            communities = set()
+            for n in nodes:
+                c = n.get("community") if isinstance(n, dict) else None
+                if isinstance(c, int):
+                    communities.add(c)
+            stats = {"ok": True, "nodes": len(nodes), "edges": len(links), "communities": len(communities)}
+            self._send(200, json.dumps(stats).encode("utf-8"), "application/json", cors=True)
+        except (json.JSONDecodeError, OSError) as exc:
+            self._send(200, json.dumps({"ok": False, "error": str(exc)}).encode("utf-8"), "application/json", cors=True)
+
+    def _send_sse_events(self) -> None:
+        """Server-Sent Events stream for real-time telemetry (lightweight WebSocket alternative)."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        if _ALLOWED_ORIGINS:
+            origin = self.headers.get("Origin", "")
+            if origin in _ALLOWED_ORIGINS:
+                self.send_header("Access-Control-Allow-Origin", origin)
+        self.end_headers()
+        try:
+            for _ in range(60):  # 60s max stream
+                status = self.kernel.status()
+                payload = json.dumps({
+                    "version": status.get("version"),
+                    "budgets": status.get("budgets"),
+                    "metrics": status.get("metrics"),
+                    "timestamp": time.time(),
+                }, default=str)
+                self.wfile.write(f"data: {payload}\n\n".encode())
+                self.wfile.flush()
+                time.sleep(1)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def log_message(self, format: str, *args: object) -> None:
         return

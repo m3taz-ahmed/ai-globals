@@ -3,7 +3,7 @@ apiVersion: governance.ai-global-os/v1
 default_action: ask
 rules:
   - name: allow-reads
-    condition: "type in ['view', 'Read', 'grep', 'Glob', 'graphify query', 'graphify explain', 'graphify path']"
+    condition: "type in ['view', 'read', 'Read', 'grep', 'Glob', 'graphify query', 'graphify explain', 'graphify path', 'search', 'query', 'list', 'get', 'status', 'analyze_budget', 'get_metrics', 'get_os_status']"
     action: allow
     description: Read-only operations are always allowed.
 

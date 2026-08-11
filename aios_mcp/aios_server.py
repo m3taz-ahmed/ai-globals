@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import threading
@@ -117,21 +118,44 @@ def _register_plugins() -> None:
 
 @mcp.tool()
 def query_rules(query: str, context: dict[str, Any] | None = None) -> str:
-    """Query AI Global OS rules by keyword, returning only active rules for the context."""
+    """Query AI Global OS rules by keyword, returning only active rules for the context.
+
+    Uses FTS5 via MemoryStore when available for ranked results, with a substring
+    fallback over ``rules/*.md`` so the tool still works before memory ingestion.
+    """
     if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
         return json.dumps({"ok": False, "error": "Invalid query"})
     if context is not None and not isinstance(context, dict):
         return json.dumps({"ok": False, "error": "Invalid context"})
     active_context = context or {}
     root = _root()
-    results: list[dict[str, str]] = []
+
+    # Fast path: FTS5-ranked results from the memory store (rules are ingested as kind=semantic).
+    fts_results: list[dict[str, Any]] = []
+    try:
+        store = _memory()
+        for mem in store.search(query, kind="semantic", limit=_MAX_RESULTS):
+            if "rules" not in mem.source.replace("\\", "/"):
+                continue
+            fts_results.append(
+                {"file": mem.source, "match": query, "content": _truncate(mem.content, 200), "score": "fts"}
+            )
+    except Exception:
+        fts_results = []
+
+    # Substring fallback (also enforces context frontmatter filtering).
+    results: list[dict[str, Any]] = fts_results
+    seen_files = {r["file"] for r in results}
     for p in root.glob("rules/*.md"):
+        rel = str(p.relative_to(root))
+        if rel in seen_files:
+            continue
         content = p.read_text(encoding="utf-8")
         frontmatter, body = parse_frontmatter(content)
         if not matches_context(frontmatter, active_context):
             continue
         if query.lower() in body.lower():
-            results.append({"file": str(p.relative_to(root)), "match": query})
+            results.append({"file": rel, "match": query})
     return json.dumps(results, indent=2)
 
 
@@ -391,6 +415,81 @@ def get_os_status() -> str:
 
 
 @mcp.tool()
+def search_skills(query: str, limit: int = 20) -> str:
+    """Search available skills by keyword (matches name, description, and body)."""
+    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
+        return json.dumps({"ok": False, "error": "Invalid query"})
+    limit = max(1, min(limit, _MAX_RESULTS))
+    root = _root()
+    query_lower = query.lower()
+    results: list[dict[str, Any]] = []
+    skills_dir = root / "skills"
+    if not skills_dir.is_dir():
+        return json.dumps(results, indent=2)
+    for skill_file in sorted(skills_dir.rglob("*.md")):
+        try:
+            content = skill_file.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if query_lower in content.lower():
+            rel = str(skill_file.relative_to(root)).replace("\\", "/")
+            name = skill_file.stem
+            description = ""
+            for line in content.splitlines():
+                if line.lower().startswith("description:"):
+                    description = line.split(":", 1)[1].strip().strip('"').strip("'")
+                    break
+            results.append({"name": name, "file": rel, "description": _truncate(description, 150)})
+            if len(results) >= limit:
+                break
+    return json.dumps(results, indent=2)
+
+
+@mcp.tool()
+def get_changelog(section: str = "unreleased", limit: int = 50) -> str:
+    """Return the changelog (default: [Unreleased] section)."""
+    if section not in ("unreleased", "latest", "full"):
+        return json.dumps({"ok": False, "error": "section must be 'unreleased', 'latest', or 'full'"})
+    root = _root()
+    path = root / "CHANGELOG.md"
+    if not path.exists():
+        return json.dumps({"ok": False, "error": "CHANGELOG.md not found"})
+    content = path.read_text(encoding="utf-8")
+    if section == "full":
+        return json.dumps({"ok": True, "content": _truncate(content, 5000)}, indent=2)
+    lines = content.splitlines()
+    output: list[str] = []
+    capturing = section == "unreleased"
+    for line in lines:
+        if line.startswith("## ["):
+            if section == "unreleased" and "[Unreleased]" in line:
+                capturing = True
+                output.append(line)
+                continue
+            if section == "latest" and "[Unreleased]" not in line:
+                capturing = True
+                output.append(line)
+                continue
+            if capturing and output:
+                break
+            capturing = False
+            continue
+        if capturing:
+            output.append(line)
+    return json.dumps({"ok": True, "section": section, "content": _truncate("\n".join(output), limit * 80)}, indent=2)
+
+
+@mcp.tool()
+def get_active_context() -> str:
+    """Return the ACTIVE_CONTEXT.md handoff file content."""
+    root = _root()
+    path = root / "ACTIVE_CONTEXT.md"
+    if not path.exists():
+        return json.dumps({"ok": False, "error": "ACTIVE_CONTEXT.md not found"})
+    return json.dumps({"ok": True, "content": _truncate(path.read_text(encoding="utf-8"), 8000)}, indent=2)
+
+
+@mcp.tool()
 def lint_python(code: str, max_lines: int = 50, max_params: int = 7) -> str:
     """Lint Python code using the Astryx AST linter."""
     if not isinstance(code, str) or not code or len(code) > _MAX_INPUT_LENGTH:
@@ -465,8 +564,6 @@ def run_mcp_plan(steps: list[dict[str, Any]]) -> str:
         return json.dumps({"ok": False, "error": f"Invalid plan: {exc!s}"})
     agent = McpAgent("mcp-server")
     orchestrator = McpOrchestrator(agent)
-
-    import asyncio
 
     result = asyncio.run(orchestrator.execute(plan))
     return json.dumps(

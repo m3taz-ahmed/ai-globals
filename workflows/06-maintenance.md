@@ -7,4 +7,4 @@
 3. [REQ] Audit: Recursively audit workspace for SOLID, OWASP, N+1, PHPDoc completeness.
 4. [REQ] Optimization: Fix low-risk immediately. Propose medium-risk. Flag high-risk to user.
 5. [REQ] Gap Fill: Add missing workflows, `.editorconfig`, test coverage.
-6. [REQ] Report: Update `state/MEMORY.md` and `state/CHANGELOG.md` with findings.
+6. [REQ] Report: Update `Memory.md` and `CHANGELOG.md` with findings.

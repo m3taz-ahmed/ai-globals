@@ -8,12 +8,12 @@ license: MIT
 
 # AI Global OS — Global Bootloader
 
-- **Root:** `D:\server\.ai`
-- Set `AGENT_OS_ROOT` to this root if it is not already set. Use `PYTHONIOENCODING=utf-8` on Windows.
+- **Root:** discovered via `AGENT_OS_ROOT` env or `config.discover_root()` (no hardcoded path).
+- Set `AGENT_OS_ROOT` if not already set. Use `PYTHONIOENCODING=utf-8` on Windows.
 - This file is the canonical root pointer. All other OS files discover the root via `AGENT_OS_ROOT` or `config.discover_root()` and are loaded relative to it.
 
 ## Cold Start
-1. Read `global-roles.md`, `global-workflow.md`, and `state/MEMORY.md`.
+1. Read `global-roles.md`, `global-workflow.md`, and `Memory.md`.
 2. Detect personas with `ai-os persona detect --multi` and load the returned `skills/` before acting.
 3. If the current project has `spec.md`, read it before any action.
 
@@ -26,7 +26,7 @@ license: MIT
 - Detect stack from `package.json` / `composer.json` and load matching `tech-stack/<pkg>-<ver>.md` only after reading the lockfile for the exact version (`[VER-01]`).
 - If `graphify-out/graph.json` exists, use `graphify query` or `query_graph` (MCP); never raw grep.
 - Query Context7 MCP for external libraries/frameworks before implementation; use `aios_mcp/aios_server.py` for global context.
-- Run `ai-os memory ingest` when `rules/`, `tech-stack/`, or `workflows/` change; update `state/MEMORY.md` via `workflows/17-memory-sync.md` after every milestone.
+- Run `ai-os memory ingest` when `rules/`, `tech-stack/`, or `workflows/` change; update `Memory.md` via `workflows/17-memory-sync.md` after every milestone.
 
 ## Quality Gate
 Before declaring done, run from the root:

@@ -262,7 +262,7 @@ python dashboard/server.py 8080
 ├── README.md                     # Human front door
 ├── README-AR.md                  # Arabic front door (this file)
 ├── Memory.md                     # Short-term cross-session context
-├── state/CHANGELOG.md            # Release notes
+├── CHANGELOG.md                 # Release notes
 │
 ├── .cursor/rules/                # Cursor rule adapters
 ├── .claude/                      # Claude Code config, skills, agents

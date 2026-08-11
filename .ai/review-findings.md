@@ -113,7 +113,7 @@ Personas: ARCH, PRODUCT, QA, SRE, SEC, DEV, PERF, DOC
 - [x] `[TRIGGER]` tags added to all workflow files (using manifest mapping).
 - [x] Missing workflows: `18-data-migration.md` and `19-incident-response.md` created.
 - [x] `scripts/validate-globals.py`: workflow count check added.
-- [ ] `state/MEMORY.md`: auto-truncation not yet implemented.
+- [ ] `Memory.md`: auto-truncation not yet implemented.
 
 ### P5 — External Repository Research
 - [x] `.ai/repos-study.md` created with an agent meta-prompt and a curated list of 30+ repositories.

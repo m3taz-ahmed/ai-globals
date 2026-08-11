@@ -21,10 +21,11 @@ personas:
 2. [REQ] Two operating modes:
    - ADVISORY: strategy, research, profile/proposal drafts, pricing, client analysis. No credentials required.
    - AUTOMATION: requires an MCP server + valid OAuth token. Every write action (bid, message, profile update, contract action) requires an explicit `yes` from the user before execution.
-3. [CMD] Optional MCP servers (install, authenticate, and add to `.devin/mcp_config.json` / `.devin/mcp_config.local.json`):
-   - Upwork: `npx -y @furkankoykiran/upwork-mcp` (GraphQL). Required env: `UPWORK_CLIENT_ID`, `UPWORK_CLIENT_SECRET`. Run `npx -y @furkankoykiran/upwork-mcp auth` first if an access token is not available.
-   - Freelancer.com: `npx -y freelancer-mcp-server`. Required env: `FREELANCER_OAUTH_TOKEN` (or `FREELANCER_ACCOUNTS` as JSON for multi-account).
-   - Fiverr: `uvx fiverr-mcp-server` (Python/PyPI, no API key). Scraping-based; use only for market research, never for automated bidding or messaging because it violates Fiverr ToS.
+3. [CMD] MCP servers (configured in `.devin/mcp_config.json` + `aios_mcp/config.json` + AIOS plugins in `plugins/`):
+   - Upwork: `npx -y @furkankoykiran/upwork-mcp` (GraphQL, official API). Required env: `UPWORK_CLIENT_ID`, `UPWORK_CLIENT_SECRET`. Run `npx -y @furkankoykiran/upwork-mcp auth` first. AIOS plugin: `plugins/upwork/` exposes 8 tools (search_jobs, get_job_details, get_profile, list_contracts, get_balance, list_saved_jobs, save_job, get_proposal_stats).
+   - Freelancer.com: `npx -y freelancer-mcp-server` (official API). Required env: `FREELANCER_OAUTH_TOKEN` (or `FREELANCER_ACCOUNTS` JSON for multi-account). AIOS plugin: `plugins/freelancer/` exposes 11 tools (search_projects, get_project, my_projects, my_bids, place_bid, get_milestones, list_threads, get_messages, send_message, get_self, list_accounts).
+   - Fiverr: `uvx fiverr-mcp-server` (Python/PyPI, no API key, scraper-based). READ-ONLY: search_gigs, get_gig_details, get_seller_profile, get_gig_reviews, list_categories. [PROHIBIT] Use only for market research; never for automated bidding or messaging (violates Fiverr ToS). AIOS plugin: `plugins/fiverr/` exposes 5 read-only tools.
+   - Context7: `npx -y @upstash/context7-mcp` (library docs). Required by `mcp.mdc` rule for external library/framework code. AIOS plugin: `plugins/context7/` exposes 2 tools (resolve_library_id, get_library_docs).
 4. [REQ] Security: store tokens in environment variables or `.devin/mcp_config.local.json`, never in committed files, prompts, logs, or skill output. Rotate tokens if exposed.
 5. [REQ] Profile optimization:
    - Title: niche + specialization + measurable promise.

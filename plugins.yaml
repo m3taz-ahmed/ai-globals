@@ -1,3 +1,59 @@
 plugins:
   graphify:
     enabled: true
+  context7:
+    enabled: true
+  upwork:
+    enabled: true
+    permissions:
+      - search_jobs
+      - get_job_details
+      - get_profile
+      - list_contracts
+      - get_balance
+      - list_saved_jobs
+      - save_job
+      - get_proposal_stats
+  freelancer:
+    enabled: true
+    permissions:
+      - freelancer_search_projects
+      - freelancer_get_project
+      - freelancer_my_projects
+      - freelancer_my_bids
+      - freelancer_place_bid
+      - freelancer_get_milestones
+      - freelancer_list_threads
+      - freelancer_get_messages
+      - freelancer_send_message
+      - freelancer_get_self
+      - freelancer_list_accounts
+  fiverr:
+    enabled: true
+    permissions:
+      - fiverr_search_gigs
+      - fiverr_get_gig_details
+      - fiverr_get_seller_profile
+      - fiverr_get_gig_reviews
+      - fiverr_list_categories
+  linkedin:
+    enabled: true
+    permissions:
+      - linkedin_get_profile
+      - linkedin_create_post
+      - linkedin_share_link
+      - linkedin_share_image
+      - linkedin_delete_post
+      - linkedin_create_draft
+      - linkedin_list_drafts
+      - linkedin_get_draft
+      - linkedin_update_draft
+      - linkedin_approve_draft
+      - linkedin_delete_draft
+      - linkedin_schedule_draft
+      - linkedin_unschedule_draft
+      - linkedin_publish_draft
+      - linkedin_publish_due
+      - linkedin_list_comments
+      - linkedin_reply_comment
+      - linkedin_get_post_stats

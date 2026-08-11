@@ -198,7 +198,7 @@
 - Updated `workflows/README.md` file count and added 11-14 audit workflows.
 - Added `runtime/policies/examples/` (api-rate-limits, data-exfiltration, time-based-access) and enabled recursive policy loading.
 - Pinned `.github/workflows/ci.yml` action SHAs and documented SBOM/Cosign release step.
-- Updated `Memory.md` and `state/MEMORY.md`.
+- Updated `Memory.md`.
 - Quality gates green: ruff, mypy, pytest 249 passed, `python eval/harness.py` all_pass true, `ai-os memory ingest` added 12 memories.
 
 ## 2026-07-21 (4) — Database & Language Lord Skills

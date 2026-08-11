@@ -258,6 +258,38 @@ def cmd_stack(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_linkedin(args: argparse.Namespace) -> int:
+    """LinkedIn CLI — proxy to octopus-linkedin MCP server."""
+    from runtime.mcp_client import McpClient
+
+    client = McpClient("linkedin", _root(args))
+    if not client.is_configured():
+        console.print("[red]LinkedIn MCP server not configured. Run the installer.[/red]")
+        return 1
+
+    action = args.linkedin_action
+    tool_map = {
+        "profile": ("get_profile", {}),
+        "post": ("create_post", {"text": args.text, "visibility": args.visibility or "PUBLIC"}),
+        "draft": ("create_draft", {"text": args.text, "kind": "text"}),
+        "drafts": ("list_drafts", {"status": args.status} if args.status else {}),
+        "approve": ("approve_draft", {"draft_id": args.draft_id}),
+        "publish": ("publish_draft", {"draft_id": args.draft_id}),
+        "schedule": ("schedule_draft", {"draft_id": args.draft_id, "publish_at": args.when}),
+        "stats": ("get_post_stats", {"post_urn": args.urn}),
+        "delete": ("delete_post", {"post_urn": args.urn}),
+    }
+
+    if action not in tool_map:
+        console.print(f"[red]Unknown linkedin action: {action}[/red]")
+        return 1
+
+    tool, arguments = tool_map[action]
+    result = client.call_tool(tool, arguments)
+    print(json.dumps(result, indent=2, default=str))
+    return 0
+
+
 def cmd_mcp(args: argparse.Namespace) -> int:
     from runtime.mcp_client import McpClient
 
@@ -493,6 +525,38 @@ def main(argv: list[str] | None = None) -> int:
     p_skill_search = sp_skill.add_parser("search", help="Search skills by name keyword")
     p_skill_search.add_argument("query", help="Search keyword")
 
+    # --- linkedin ---
+    p_linkedin = sub.add_parser("linkedin", help="LinkedIn content automation")
+    sp_linkedin = p_linkedin.add_subparsers(dest="linkedin_action", required=True)
+
+    sp_linkedin.add_parser("profile", help="Get your LinkedIn profile")
+
+    p_li_post = sp_linkedin.add_parser("post", help="Publish a text post directly")
+    p_li_post.add_argument("text", help="Post text")
+    p_li_post.add_argument("--visibility", default="PUBLIC", choices=["PUBLIC", "CONNECTIONS"])
+
+    p_li_draft = sp_linkedin.add_parser("draft", help="Save a draft locally")
+    p_li_draft.add_argument("text", help="Draft text")
+
+    p_li_drafts = sp_linkedin.add_parser("drafts", help="List drafts")
+    p_li_drafts.add_argument("--status", default="", choices=["", "draft", "approved", "scheduled", "published"])
+
+    p_li_approve = sp_linkedin.add_parser("approve", help="Approve a draft")
+    p_li_approve.add_argument("draft_id", help="Draft ID")
+
+    p_li_publish = sp_linkedin.add_parser("publish", help="Publish an approved draft")
+    p_li_publish.add_argument("draft_id", help="Draft ID")
+
+    p_li_schedule = sp_linkedin.add_parser("schedule", help="Schedule an approved draft")
+    p_li_schedule.add_argument("draft_id", help="Draft ID")
+    p_li_schedule.add_argument("when", help="ISO 8601 datetime (e.g. 2026-07-02T09:00:00Z)")
+
+    p_li_stats = sp_linkedin.add_parser("stats", help="Get post stats (likes, comments)")
+    p_li_stats.add_argument("urn", help="Post URN")
+
+    p_li_delete = sp_linkedin.add_parser("delete", help="Delete a post")
+    p_li_delete.add_argument("urn", help="Post URN")
+
     args = parser.parse_args(argv)
     if not args.command:
         parser.print_help()
@@ -516,6 +580,7 @@ def main(argv: list[str] | None = None) -> int:
         "agent": cmd_agent,
         "persona": cmd_persona,
         "skill": cmd_skill,
+        "linkedin": cmd_linkedin,
         "sync": cmd_sync,
         "graphify": cmd_graphify,
         "version": cmd_version,

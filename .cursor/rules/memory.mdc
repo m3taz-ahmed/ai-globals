@@ -7,7 +7,7 @@ alwaysApply: true
 [FILE] memory.mdc
 [OBJ] Persistent state and cross-session continuity.
 [RULES]
-1. [REQ] Read `state/MEMORY.md` at session start.
+1. [REQ] Read `Memory.md` at session start.
 2. [REQ] Check `{project_root}/.ai/active-context.md` for project state.
 3. [REQ] Run `workflows/17-memory-sync.md` after every milestone.
 4. [REQ] Document novel fixes/workarounds in `tech-stack/*.md` to prevent recurrence.

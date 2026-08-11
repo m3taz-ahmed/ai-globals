@@ -84,7 +84,12 @@ class LocalAdapter(AgentAdapter):
 
 
 class CodexAdapter(AgentAdapter):
-    """Adapter for OpenAI Codex CLI."""
+    """Adapter for OpenAI Codex CLI.
+
+    STUB: Does not invoke the real `codex` CLI yet. Returns a synthetic
+    "completed" session with the task echoed back. Implement by spawning
+    `codex exec <task>` and parsing stdout/stderr. See ticket #TBD.
+    """
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(Backend.CODEX, config)
@@ -100,14 +105,19 @@ class CodexAdapter(AgentAdapter):
         return session
 
     async def poll(self, session: Session) -> Session:
-        # Placeholder: real implementation would invoke `codex` CLI and parse output.
+        # STUB: real implementation would invoke `codex` CLI and parse output.
         session.status = "completed"
         self._store_artifact(session, "result", {"backend": "codex", "task": session.artifacts.get("task", "")})
         return session
 
 
 class ClaudeCodeAdapter(AgentAdapter):
-    """Adapter for Anthropic Claude Code."""
+    """Adapter for Anthropic Claude Code.
+
+    STUB: Does not invoke the real `claude` CLI yet. Returns a synthetic
+    "completed" session. Implement by spawning `claude --print <task>` and
+    parsing stdout. See ticket #TBD.
+    """
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(Backend.CLAUDE_CODE, config)
@@ -123,13 +133,19 @@ class ClaudeCodeAdapter(AgentAdapter):
         return session
 
     async def poll(self, session: Session) -> Session:
+        # STUB: real implementation would invoke `claude` CLI and parse output.
         session.status = "completed"
         self._store_artifact(session, "result", {"backend": "claude_code", "task": session.artifacts.get("task", "")})
         return session
 
 
 class RemoteA2AAdapter(AgentAdapter):
-    """Adapter for remote A2A agent servers."""
+    """Adapter for remote A2A (Agent-to-Agent) servers.
+
+    STUB: Does not make real HTTP/gRPC calls yet. Returns a synthetic
+    "completed" session. Implement by POSTing the task to the configured
+    A2A endpoint and polling for completion. See ticket #TBD.
+    """
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(Backend.REMOTE_A2A, config)
@@ -145,6 +161,7 @@ class RemoteA2AAdapter(AgentAdapter):
         return session
 
     async def poll(self, session: Session) -> Session:
+        # STUB: real implementation would poll the remote A2A endpoint.
         session.status = "completed"
         self._store_artifact(session, "result", {"backend": "remote_a2a", "task": session.artifacts.get("task", "")})
         return session

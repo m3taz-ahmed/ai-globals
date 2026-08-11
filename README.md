@@ -39,7 +39,8 @@
 11. [The 19 personas and 13 lord skill domains](#the-19-personas-and-13-lord-skill-domains)
 12. [Workflows](#workflows)
 13. [Recent highlights and new features](#recent-highlights-and-new-features)
-14. [Quality gates and contributing](#quality-gates-and-contributing)
+14. [Installer Guide](#installer-guide)
+15. [Quality gates and contributing](#quality-gates-and-contributing)
 
 ---
 
@@ -260,7 +261,7 @@ python dashboard/server.py 8080
 ├── README.md                     # Human front door (this file)
 ├── README-AR.md                  # Arabic front door
 ├── Memory.md                     # Short-term cross-session context
-├── state/CHANGELOG.md            # Release notes
+├── CHANGELOG.md                 # Release notes
 │
 ├── .cursor/rules/                # Cursor rule adapters
 ├── .claude/                      # Claude Code config, skills, agents
@@ -325,6 +326,326 @@ After cloning, tell your AI coding tool to read the OS rules. Each tool has its 
 | **GitHub Copilot (in-repo)** | `.github/copilot-instructions.md` |
 | **Devin** | `.devin/skills/global-os/SKILL.md` |
 | **Any other agent** | Load `AGENTS.md` + `global-roles.md` + `global-workflow.md` into the system prompt / project instructions. |
+
+### MCP servers
+
+The installer configures 6 MCP servers in `.claude/settings.json` and `aios_mcp/config.json`:
+
+| MCP server | Command | Purpose | Requires |
+| :--- | :--- | :--- | :--- |
+| `ai-global-os` | `python -m aios_mcp.aios_server` | Core OS tools: `query_rules`, `check_policy`, `search_memory`, `search_memory_vector`, `search_skills`, `get_changelog`, `get_active_context` | Python |
+| `graphify` | `python scripts/graphify_mcp_wrapper.py` | Codebase knowledge graph queries | Python + graphify |
+| `context7` | `npx -y @upstash/context7-mcp` | External library documentation | npx (Node.js) |
+| `upwork` | `npx -y @furkankoykiran/upwork-mcp` | Upwork job search + proposals | npx + OAuth |
+| `freelancer` | `npx -y freelancer-mcp-server` | Freelancer project search + bidding | npx + OAuth |
+| `fiverr` | `uvx fiverr-mcp-server` | Fiverr gig search (read-only) | uvx (uv) |
+| `linkedin` | `octopus-linkedin-mcp` | LinkedIn content automation: draft→approve→publish, analytics, comments | Python + OAuth token |
+
+### MCP server setup guide
+
+Each MCP server needs a one-time setup. Follow the steps for each server you want to use.
+
+#### 1. `ai-global-os` (core — no setup needed)
+
+This is the built-in OS server. It starts automatically when you run the installer.
+
+```powershell
+# Verify it works
+ai-os status
+```
+
+**Requires:** Python 3.10+ (already installed).
+
+---
+
+#### 2. `graphify` (codebase knowledge graph — no setup needed)
+
+This is the built-in graphify server. It starts automatically after `graphify update .`.
+
+```powershell
+# Build the graph
+ai-os graphify
+
+# Query it
+ai-os mcp graphify query "where is auth handled?"
+```
+
+**Requires:** Python + graphify (installed by the installer).
+
+---
+
+#### 3. `context7` (external library docs)
+
+Context7 provides up-to-date documentation for any library/framework.
+
+**Step 1: Install Node.js**
+
+```powershell
+# Check if Node.js is installed
+node --version
+
+# If not installed, download from https://nodejs.org/ (LTS version)
+# After install, verify:
+node --version   # should print v20+ 
+npx --version    # should print 10+
+```
+
+**Step 2: Test it**
+
+```powershell
+ai-os mcp context7 resolve-library-id --args '{"library":"fastapi"}'
+```
+
+**Requires:** Node.js 18+ (includes npx). No OAuth needed.
+
+---
+
+#### 4. `upwork` (job search + proposals)
+
+Upwork MCP lets you search jobs, get profile, list contracts, and save jobs.
+
+**Step 1: Install Node.js** (same as context7 above)
+
+**Step 2: Create Upwork API app**
+
+1. Go to https://www.upwork.com/developer/applications
+2. Click "Create app"
+3. Fill in:
+   - **App name**: `AI Global OS`
+   - **App type**: `Client`
+   - **Redirect URI**: `http://localhost:8080/callback`
+4. Save and copy:
+   - **Client ID**
+   - **Client Secret**
+
+**Step 3: Set environment variables**
+
+```powershell
+# Windows (PowerShell — permanent)
+[Environment]::SetEnvironmentVariable("UPWORK_CLIENT_ID", "your_client_id", "User")
+[Environment]::SetEnvironmentVariable("UPWORK_CLIENT_SECRET", "your_client_secret", "User")
+
+# Linux/macOS
+echo 'export UPWORK_CLIENT_ID="your_client_id"' >> ~/.bashrc
+echo 'export UPWORK_CLIENT_SECRET="your_client_secret"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Step 4: Authenticate**
+
+```powershell
+npx -y @furkankoykiran/upwork-mcp auth
+```
+
+This opens a browser → log in to Upwork → approve → token is cached.
+
+**Step 5: Test it**
+
+```powershell
+ai-os mcp upwork search_jobs --args '{"query":"laravel","limit":5}'
+```
+
+**Requires:** Node.js 18+, Upwork account, Upwork Developer app.
+
+---
+
+#### 5. `freelancer` (project search + bidding)
+
+Freelancer MCP lets you search projects, place bids, and send messages.
+
+**Step 1: Install Node.js** (same as context7 above)
+
+**Step 2: Get Freelancer OAuth token**
+
+1. Go to https://developers.freelancer.com/
+2. Create an app
+3. Follow the OAuth flow to get an access token
+4. Copy the **OAuth token**
+
+**Step 3: Set environment variable**
+
+```powershell
+# Windows (PowerShell — permanent)
+[Environment]::SetEnvironmentVariable("FREELANCER_OAUTH_TOKEN", "your_token", "User")
+
+# Linux/macOS
+echo 'export FREELANCER_OAUTH_TOKEN="your_token"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Step 4: Test it**
+
+```powershell
+ai-os mcp freelancer freelancer_search_projects --args '{"query":"web development","limit":5}'
+```
+
+**Requires:** Node.js 18+, Freelancer account, Freelancer Developer app.
+
+---
+
+#### 6. `fiverr` (gig search — read-only)
+
+Fiverr MCP lets you search gigs, get gig details, seller profiles, and reviews.
+
+**Step 1: Install uv**
+
+```powershell
+# Windows
+pip install uv
+
+# Linux/macOS
+pip install uv
+# or: curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Step 2: Verify uvx works**
+
+```powershell
+uvx --version
+```
+
+**Step 3: Test it**
+
+```powershell
+ai-os mcp fiverr fiverr_search_gigs --args '{"query":"logo design","limit":5}'
+```
+
+**Requires:** Python + uv (installs uvx). No OAuth needed (read-only).
+
+---
+
+#### 7. `linkedin` (content automation — governed)
+
+LinkedIn MCP lets you draft, approve, publish, schedule, and analyze posts.
+
+**Step 1: Create a LinkedIn Page** (required for API app)
+
+1. Go to https://www.linkedin.com/company/setup/new/
+2. Fill in:
+   - **Page name**: `AI Global OS` (or your brand name)
+   - **Website**: `https://github.com/your-username/your-repo`
+   - **Industry**: `Software` or `IT Services`
+   - **Company type**: `Small business`
+3. Click **Create page**
+
+**Step 2: Create a LinkedIn Developer App**
+
+1. Go to https://www.linkedin.com/developers/apps/new
+2. Fill in:
+   - **App name**: `AI Global OS`
+   - **LinkedIn Page**: select the page you created
+   - **App logo**: upload any image
+   - **Legal page URL**: your website or GitHub URL
+   - **Privacy policy URL**: your website or GitHub URL
+3. Click **Create app**
+4. Copy the **Client ID** and **Client Secret** (from the App details page)
+
+**Step 3: Enable API products**
+
+In your app, go to **Products** tab and click **Request access** for:
+
+- ✅ **Share on LinkedIn** (for publishing posts)
+- ✅ **Sign In with LinkedIn using OpenID Connect** (for profile access)
+- ✅ **Community Management API** (for Page management + analytics)
+
+**Step 4: Set redirect URLs**
+
+1. Go to **Auth** tab
+2. Under **Authorized redirect URLs**, add:
+   ```
+   http://localhost:8000/callback
+   http://localhost:8080/callback
+   ```
+3. Click **Save**
+
+**Step 5: Install octopus-linkedin**
+
+```powershell
+pip install octopus-linkedin
+```
+
+**Step 6: Generate access token**
+
+Use LinkedIn's Token Generator (easiest method):
+
+1. Go to https://www.linkedin.com/developers/tools/oauth/token-generator
+2. Select your app (`AI Global OS`)
+3. Select scopes: `r_liteprofile`, `w_member_social`, `r_member_social`
+4. Click **Generate token**
+5. Log in to LinkedIn → click **Allow**
+6. Copy the **Access Token** (valid for ~60 days)
+
+**Step 7: Save the token**
+
+```powershell
+# Find the token path
+python -c "import linkedin.auth; print(linkedin.auth.TOKEN_PATH)"
+
+# Save token to that path (replace YOUR_TOKEN)
+$token = "YOUR_TOKEN"
+$expires = [DateTimeOffset]::Now.AddDays(60).ToUnixTimeSeconds()
+$json = @{access_token=$token; obtained_at=[DateTimeOffset]::Now.ToUnixTimeSeconds(); expires_at=$expires} | ConvertTo-Json
+$tokenPath = (python -c "import linkedin.auth; print(linkedin.auth.TOKEN_PATH)") -replace "/", "\"
+Set-Content -Path $tokenPath -Value $json
+
+# Linux/macOS:
+# TOKEN_PATH=$(python -c "import linkedin.auth; print(linkedin.auth.TOKEN_PATH)")
+# echo "{\"access_token\":\"YOUR_TOKEN\",\"obtained_at\":$(date +%s),\"expires_at\":$(($(date +%s)+5184000))}" > "$TOKEN_PATH"
+```
+
+**Step 8: Test it**
+
+```powershell
+# Get your profile
+ai-os linkedin profile
+
+# Or via MCP directly
+ai-os mcp linkedin get_profile --args '{}'
+
+# Publish a test post (visible to connections only)
+ai-os linkedin post "Testing AI Global OS + LinkedIn integration!" --visibility CONNECTIONS
+
+# Use the governed draft workflow
+ai-os linkedin draft "My first governed draft post"
+ai-os linkedin drafts
+ai-os linkedin approve drft_xxx
+ai-os linkedin publish drft_xxx
+
+# Schedule for later
+ai-os linkedin schedule drft_xxx 2026-08-20T09:00:00Z
+
+# Get post stats
+ai-os linkedin stats urn:li:share:123
+```
+
+**Token renewal:** LinkedIn tokens expire after ~60 days. When that happens:
+1. Go back to the [Token Generator](https://www.linkedin.com/developers/tools/oauth/token-generator)
+2. Generate a new token
+3. Repeat Step 7 above
+
+**Security:**
+- The token is stored in `site-packages/token.json` (local only)
+- `.gitignore` blocks `token.json`, `*.token`, `*.secret`, `credentials.json`
+- No credentials are ever committed to the repository
+- The governed workflow (`draft → approve → publish`) ensures no content goes live without explicit approval
+
+**Requires:** Python 3.10+, LinkedIn account, LinkedIn Developer app, LinkedIn Page.
+
+---
+
+### MCP troubleshooting
+
+| Problem | Solution |
+| :--- | :--- |
+| `npx: not found` | Install Node.js 18+ from https://nodejs.org/ |
+| `uvx: not found` | Run `pip install uv` |
+| `octopus-linkedin: not found` | Run `pip install octopus-linkedin` and use the full path from `where.exe octopus-linkedin` |
+| `No token found` (LinkedIn) | Run the token setup steps above, or check `linkedin.auth.TOKEN_PATH` |
+| `LinkedIn login fails in browser` | Use the [Token Generator](https://www.linkedin.com/developers/tools/oauth/token-generator) instead of `octopus-linkedin authorize` |
+| `Upwork auth fails` | Verify `UPWORK_CLIENT_ID` and `UPWORK_CLIENT_SECRET` env vars are set |
+| `MCP server not configured` | Run the installer: `.\install.ps1` (Windows) or `./install.sh` (Linux/macOS) |
+| `context7 returns empty` | Check internet connection; Context7 fetches docs live |
+| `Token expired` (LinkedIn) | Re-generate via Token Generator; tokens last ~60 days |
 
 The fastest generic setup is to point the agent at:
 
@@ -416,6 +737,15 @@ The `ai-os` command is the primary interface to the OS. All commands support `--
 | `mcp` | Call an external MCP tool. | `ai-os mcp context7 resolve-library-id --args '{"library":"fastapi"}'` |
 | `telemetry summary` | Show telemetry summary. | `ai-os telemetry summary` |
 | `graphify` | Rebuild the knowledge graph. | `ai-os graphify` |
+| `linkedin` | LinkedIn content automation. | `ai-os linkedin profile` |
+| `linkedin post` | Publish a text post directly. | `ai-os linkedin post "Hello, world!" --visibility PUBLIC` |
+| `linkedin draft` | Save a draft locally. | `ai-os linkedin draft "A post to review later"` |
+| `linkedin drafts` | List drafts by status. | `ai-os linkedin drafts --status approved` |
+| `linkedin approve` | Approve a draft for publishing. | `ai-os linkedin approve drft_abc123` |
+| `linkedin publish` | Publish an approved draft. | `ai-os linkedin publish drft_abc123` |
+| `linkedin schedule` | Schedule an approved draft. | `ai-os linkedin schedule drft_abc123 2026-07-02T09:00:00Z` |
+| `linkedin stats` | Get post stats (likes, comments). | `ai-os linkedin stats urn:li:share:123` |
+| `linkedin delete` | Delete a post by URN. | `ai-os linkedin delete urn:li:share:123` |
 
 Run `ai-os --help` for the full list and `ai-os <command> --help` for command-specific options.
 
@@ -501,6 +831,18 @@ ai-os run 02-execution
 
 ### Latest additions
 
+- **Professional installer suite** — `install.ps1` (Windows), `install.sh` (Linux/macOS), and `installer/gui_installer.ps1` (WPF GUI wizard). Hybrid root detection, pre-flight checks, migration system, retry logic, logging, rollback, auto-detect moved repos, checksum verification, and MCP health checks.
+- **WPF GUI installer** — 8-page wizard with dark theme, 24 component checkboxes, live progress log, and silent mode. Launch with `.\install.ps1 -Gui`.
+- **Migration engine** (`scripts/migrate.py`) — Version-aware migrations with `.aios-version` tracking, dry-run support, and ordered chain building.
+- **5 new MCP servers** — Upwork, Freelancer, Fiverr, Context7, LinkedIn integrated as AIOS plugins and MCP config entries. Total tools: 75 (up from 2).
+- **LinkedIn integration** — `octopus-linkedin` MCP server with governed draft→approve→publish workflow, 18 plugin tools, profile optimization, content scheduling, and post analytics. CLI: `ai-os linkedin post/draft/approve/publish/stats`.
+- **4 new AIOS plugins** — `plugins/upwork`, `plugins/freelancer`, `plugins/fiverr`, `plugins/context7` acting as MCP proxies.
+- **Dashboard graphify visualization** — `/api/graph`, `/api/graph/stats`, `/api/events` endpoints + SSE event stream.
+- **3 new MCP tools** — `search_skills`, `get_changelog`, `get_active_context` in `aios_mcp/aios_server.py`.
+- **`tech_stack` Python support** — `pyproject.toml` parser + Python package aliases in `runtime/tech_stack.py`.
+- **`check_policy` read permissions** — `default.yaml` policy now explicitly allows `read`, `exec`, `check_policy`, `search`, `query` actions.
+- **Stub adapters documented** — `CodexAdapter`, `ClaudeCodeAdapter`, `RemoteA2AAdapter` in `aios_mcp/adapters.py` marked as stubs.
+- **`state/MEMORY.md` references fixed** — All 21 references updated to point to `Memory.md` in root.
 - **Comprehensive project review** captured in `.ai/review-findings.md` with P0–P5 issues, SWOT, and development ideas.
 - **29 durable workflows** (up from 27), including new `18-data-migration` and `19-incident-response`, with `[TRIGGER]` tags and manifest-based routing.
 - **Plugin AST sandbox** in `runtime/plugin.py` blocks denylisted modules and dangerous calls (`eval`, `exec`, `open`, etc.) before `exec_module`.
@@ -521,6 +863,347 @@ ai-os run 02-execution
 - **`mariadb-lord` skill** with Context7 IDs for MariaDB docs, Docker, Node/Python connectors, Laravel + Filament + Nova integration, and multi-tenancy patterns.
 - **`page-sections-lord` skill** capturing the section-based landing page builder pattern with a standard spec, Filament Builder blocks, and a setup workflow.
 - **Useful-repos research** — 55 verified top GitHub repositories across programming, UI/UX, responsive design, and databases added to `tech-stack/useful-repos.md`.
+
+---
+
+## Installer Guide
+
+AI Global OS ships with a **professional, idempotent installer** for Windows (PowerShell) and Linux/macOS (Bash), plus a **full WPF GUI wizard** for Windows. The installer handles first-time setup, updates after `git pull`, migrations between versions, dependency management, and self-healing of broken symlinks.
+
+### Quick start
+
+**Windows (GUI):**
+
+```powershell
+.\install.ps1 -Gui
+```
+
+**Windows (CLI):**
+
+```powershell
+.\install.ps1
+```
+
+**Linux / macOS:**
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+### Windows installer (`install.ps1`)
+
+The PowerShell installer is the canonical entry point on Windows. It supports **hybrid root detection** (in-place vs. copy mode), **pre-flight checks**, **migration execution**, **retry logic**, **logging**, **rollback**, and **post-install health checks**.
+
+#### All flags
+
+| Flag | Description |
+| :--- | :--- |
+| `-WhatIf` | Dry-run: print every step without executing anything. |
+| `-Update` | Update-only mode: skip file copy, run migrations + dependency updates. Exits early if already at target version. |
+| `-InstallDir <path>` | Force a specific install target (enables copy mode). |
+| `-SkipPip` | Skip `pip install` of Python dependencies. |
+| `-SkipGraphify` | Skip `graphify update` (knowledge graph build). |
+| `-SkipMCP` | Skip MCP config generation and agent config symlinks. |
+| `-Gui` | Launch the WPF GUI installer instead of the CLI flow. |
+
+#### Usage examples
+
+```powershell
+# Full install (auto-detect root: in-place if repo has pyproject.toml)
+.\install.ps1
+
+# Dry-run to preview every step
+.\install.ps1 -WhatIf
+
+# Update after git pull (runs migrations, installs new deps, no file copy)
+.\install.ps1 -Update
+
+# Install to a custom location (copy mode)
+.\install.ps1 -InstallDir "D:\MyAIOS"
+
+# Skip pip and graphify (offline / minimal)
+.\install.ps1 -SkipPip -SkipGraphify
+
+# Full GUI wizard
+.\install.ps1 -Gui
+
+# GUI with pre-set install location
+.\install.ps1 -Gui -InstallDir "D:\custom-location"
+```
+
+#### What the installer does (13 steps)
+
+1. **Root detection** — Hybrid: in-place (repo = root) if `pyproject.toml` exists, else copy to `LOCALAPPDATA\AI-Global-OS`, or use `-InstallDir`. Auto-detects moved repos via `Resolve-StaleRoot`.
+2. **Pre-flight checks** — Verifies Python 3.10+, npx (optional), uvx (optional), and reads installed vs. target version.
+3. **State preservation** — Backs up `state/` and `brain/` to temp before copy (copy mode only).
+4. **File copy** — Copies repo contents to root, excluding `.git`, `__pycache__`, `state`, `brain`, etc. (copy mode only).
+5. **Migrations** — Runs `scripts/migrate.py` to apply version-to-version migrations.
+6. **Dependency install** — Smart pip install: `--no-deps` on reinstall, full install on update. Retries 3 times with backoff.
+7. **Package verification** — Verifies `yaml`, `mcp`, `pydantic`, `rich`, `numpy` are importable.
+8. **Environment variable** — Sets `AGENT_OS_ROOT` at User scope.
+9. **Validate globals + graphify** — Runs `validate-globals.py --fix` and `graphify update .`.
+10. **Agent config symlinks** — Creates junctions/hardlinks for Claude, Windsurf, Cursor, Aider, Devin, Copilot, Cline. Detects and repairs broken links.
+11. **settings.json generation** — Writes `.claude/settings.json` with absolute paths and all 6 MCP servers.
+12. **CLI shim** — Creates `ai-os.cmd` in `WindowsApps` for PATH access.
+13. **Post-install verification** — Tests CLI, verifies `AGENT_OS_ROOT`, checks `settings.json` paths, runs MCP health check, writes `.aios-version`.
+
+#### Logging
+
+Every install creates a timestamped log file:
+
+```
+state/install-20260811-112305.log
+```
+
+The log captures every step, warning, and error with timestamps. View the latest log:
+
+```powershell
+Get-ChildItem state\install-*.log | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Get-Content
+```
+
+### GUI installer (`installer\gui_installer.ps1`)
+
+A full **WPF wizard** with 8 pages, dark theme (GitHub-style `#0D1117`), step indicator, and live progress log. Designed for non-technical users who want a guided installation experience.
+
+#### Launching the GUI
+
+```powershell
+# From install.ps1 (recommended)
+.\install.ps1 -Gui
+
+# Directly
+powershell -ExecutionPolicy Bypass -File installer\gui_installer.ps1
+
+# Silent mode (no GUI, delegates to install.ps1 with defaults)
+.\install.ps1 -Gui -Silent
+
+# Pre-set install location
+.\install.ps1 -Gui -InstallDir "D:\custom-location"
+```
+
+#### The 8 wizard pages
+
+| Page | Title | What it does |
+| :--- | :--- | :--- |
+| 1 | **Welcome** | Shows version, license, author, and the 5-step installation overview. |
+| 2 | **License** | Full MIT license text with an "I accept" checkbox. Next is disabled until accepted. |
+| 3 | **Location** | Choose **In-place** (run from repo) or **Custom location** (copy files). Browse button + disk space display. |
+| 4 | **Components** | 24 checkboxes across 5 sections (see below). |
+| 5 | **Configuration** | Environment variables (AGENT_OS_ROOT, PYTHONIOENCODING), scope (User/Machine), and 5 installation options. |
+| 6 | **Pre-flight** | 6 system checks: Python, npx, uvx, disk space, existing installation, repo integrity. Shows install summary. |
+| 7 | **Progress** | Progress bar + live scrolling log. Runs `install.ps1` in a background job. |
+| 8 | **Finish** | Success summary with version, location, log path, component count. Options to launch dashboard, open README, or open log. |
+
+#### Component selection (Page 4)
+
+All 24 selectable components:
+
+**Core (required):**
+- AI Global OS Core (runtime, memory, MCP server) — locked on
+- Python dependencies (pip install)
+- Build knowledge graph (graphify update)
+- Dashboard server
+
+**MCP Servers:**
+- Graphify MCP (codebase knowledge graph)
+- Context7 MCP (library docs — requires npx)
+- Upwork MCP (job search + proposals — requires npx + OAuth)
+- Freelancer MCP (project search + bidding — requires npx + OAuth)
+- Fiverr MCP (gig search — read-only, requires uvx)
+
+**AIOS Plugins:**
+- Graphify plugin (graph topology queries)
+- Context7 plugin (library docs proxy)
+- Upwork plugin (8 tools)
+- Freelancer plugin (11 tools)
+- Fiverr plugin (5 read-only tools)
+
+**Agent Configs:**
+- Claude Code (CLAUDE.md + settings + skills + agents)
+- Windsurf (.windsurfrules + skills)
+- Cursor (.cursor/rules)
+- Aider (.aider.conf.yml)
+- Devin (.devin/skills)
+- GitHub Copilot (.github/copilot-instructions.md)
+- Cline (.clinerules)
+
+**System Integration:**
+- CLI shim (ai-os command in PATH)
+- Set AGENT_OS_ROOT environment variable
+- Create Start Menu shortcut
+- Create Desktop shortcut (off by default)
+
+#### Configuration options (Page 5)
+
+| Option | Default | Description |
+| :--- | :--- | :--- |
+| Run database/config migrations | On | Execute `scripts/migrate.py` automatically. |
+| Verify required Python packages | On | Check `yaml`, `mcp`, `pydantic`, `rich`, `numpy` after install. |
+| Run MCP server health check | On | Test MCP server availability post-install. |
+| Create installation log file | On | Write timestamped log to `state/install-*.log`. |
+| Backup existing configs | On | Backup existing agent configs before overwriting. |
+| Environment variable scope | User | `User` (current user only) or `Machine` (all users, requires admin). |
+
+### Linux / macOS installer (`install.sh`)
+
+The Bash installer mirrors the PowerShell installer with the same hybrid root detection, pre-flight checks, migrations, retry logic, logging, and health checks.
+
+#### All flags
+
+| Flag | Description |
+| :--- | :--- |
+| `--whatif` | Dry-run: print steps without executing. |
+| `--update` | Update-only mode: skip file copy, run migrations + deps. |
+| `--install-dir <path>` | Force a specific install target (copy mode). |
+| `--skip-pip` | Skip pip install. |
+| `--skip-graphify` | Skip graphify build. |
+| `--skip-mcp` | Skip MCP config generation. |
+
+#### Usage examples
+
+```bash
+# Full install
+./install.sh
+
+# Dry-run
+./install.sh --whatif
+
+# Update after git pull
+./install.sh --update
+
+# Custom install location
+./install.sh --install-dir /opt/aios
+
+# Minimal (skip pip + graphify)
+./install.sh --skip-pip --skip-graphify
+```
+
+### Migration system (`scripts/migrate.py`)
+
+The migration engine handles version-to-version upgrades automatically. It reads the current version from `.aios-version` and the target from `pyproject.toml`, then runs an ordered chain of migration functions.
+
+#### How it works
+
+```
+.aios-version (current: 4.21.0)
+       ↓
+pyproject.toml (target: 4.22.0)
+       ↓
+scripts/migrate.py builds chain:
+  4.21.0 → 4.22.0  [_migrate_4_21_to_4_22]
+       ↓
+Execute each migration in order
+       ↓
+Write .aios-version = 4.22.0
+```
+
+#### Commands
+
+```bash
+# Check if migrations are pending (exit 0 = up-to-date, 3 = pending)
+python scripts/migrate.py --check
+
+# Run pending migrations
+python scripts/migrate.py
+
+# Dry-run (show what would run, don't execute)
+python scripts/migrate.py --dry-run
+
+# Specify a custom root
+python scripts/migrate.py --root /path/to/aios
+```
+
+#### Exit codes
+
+| Code | Meaning |
+| :--- | :--- |
+| 0 | Up-to-date, no migration needed. |
+| 1 | Migration completed successfully. |
+| 2 | Migration failed. |
+| 3 | Pending migrations (dry-run or check mode). |
+
+#### Adding a new migration
+
+Edit `scripts/migrate.py` and add a function + table entry:
+
+```python
+def _migrate_4_22_to_4_23(root: Path) -> None:
+    """4.22.0 → 4.23.0: Add new feature X, migrate schema Y."""
+    # Your migration logic here
+    pass
+
+_MIGRATIONS = [
+    ("4.21.0", "4.22.0", _migrate_4_21_to_4_22),
+    ("4.22.0", "4.23.0", _migrate_4_22_to_4_23),  # new
+]
+```
+
+### Post-install verification
+
+The installer performs these checks automatically:
+
+1. **CLI test** — `python cli.py status` must exit 0.
+2. **AGENT_OS_ROOT verification** — Environment variable matches install root.
+3. **settings.json path verification** — Config file contains the current root path.
+4. **MCP server health check** — Each MCP server's command (npx/uvx/python) is available on PATH.
+
+### Update workflow (after `git pull`)
+
+When you pull new changes from the repository:
+
+```powershell
+# Windows: update-only mode
+.\install.ps1 -Update
+
+# Or full install (auto-detects in-place)
+.\install.ps1
+```
+
+```bash
+# Linux/macOS
+./install.sh --update
+```
+
+The installer will:
+1. Detect the version gap (`.aios-version` vs. `pyproject.toml`).
+2. Run pending migrations.
+3. Install any new dependencies (full pip install, not `--no-deps`).
+4. Rebuild the knowledge graph.
+5. Regenerate `settings.json` with updated MCP servers.
+6. Re-verify everything.
+
+### Troubleshooting
+
+| Problem | Solution |
+| :--- | :--- |
+| `python is required` | Install Python 3.10+ and add to PATH. |
+| `npx: not found` | Install Node.js (npm includes npx). Optional — only needed for context7/upwork/freelancer MCP. |
+| `uvx: not found` | Run `pip install uv`. Optional — only needed for fiverr MCP. |
+| `Migration failed` | Check the log file in `state/install-*.log`. Run `python scripts/migrate.py --check` to see pending migrations. |
+| `AGENT_OS_ROOT mismatch` | Run `.\install.ps1` again to reset the environment variable. |
+| `Broken symlinks` | The installer auto-detects and repairs broken junctions/hardlinks. |
+| `settings.json paths wrong` | Delete `.claude/settings.json` and re-run the installer. |
+| `pip install failed after 3 attempts` | Check network connectivity. Try `pip install --proxy` if behind a corporate proxy. |
+| `GUI won't launch` | Ensure .NET Framework 3.0+ is installed. Run `Add-Type -AssemblyName PresentationFramework` to test. |
+
+### Installer file structure
+
+```
+.ai/
+├── install.ps1                    # Windows installer (CLI + GUI redirect)
+├── install.sh                     # Linux/macOS installer
+├── .aios-version                  # Current installed version
+├── installer/
+│   └── gui_installer.ps1          # WPF GUI wizard (8 pages)
+├── scripts/
+│   ├── migrate.py                 # Migration engine
+│   └── validate-globals.py        # Global file validator
+├── state/
+│   └── install-*.log              # Timestamped install logs
+└── .claude/
+    └── settings.json              # Generated MCP + permissions config
+```
 
 ---
 

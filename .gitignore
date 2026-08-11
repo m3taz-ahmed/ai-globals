@@ -15,6 +15,16 @@ desktop.ini
 .devin/mcp_config.local.json
 .devin/config.local.json
 
+# Secrets & tokens — NEVER commit these
+token.json
+*.token
+*_token.json
+credentials.json
+*.secret
+linkedin_token.json
+.linkedin-mcp/
+.octopus-linkedin/
+
 # Local State (per-project, not global)
 # MEMORY.md is tracked — it contains cross-session audit history valuable for all users
 

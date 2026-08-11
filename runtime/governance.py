@@ -48,7 +48,7 @@ class GovernanceHooks:
         """Wrap a function with governance hooks."""
 
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            with self.around_action(action, *args, **kwargs):
+            with self.around_action(action, **kwargs):
                 return fn(*args, **kwargs)
 
         return wrapper

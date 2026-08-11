@@ -8,6 +8,6 @@
    - Layer 1: `anti-patterns.md`
    - Layer 2: On-demand (e.g. `security-standards.md`)
    - Layer 3: Task workflow + Detected Tech-Stack
-3. [REQ] First Time Setup: Create `state/MEMORY.md`. Verify `.gitignore`. Run Tech-Stack Scan.
+3. [REQ] First Time Setup: Create `Memory.md`. Verify `.gitignore`. Run Tech-Stack Scan.
 4. [REQ] Baseline Audit: Check architecture, security (`guarded=[]`), `composer audit`, test coverage, tech debt.
 5. [REQ] Handoff Summary: Output Detected Stack, Rules Loaded, Red Flags, Recommended First Action.

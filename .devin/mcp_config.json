@@ -17,17 +17,29 @@
     "upwork": {
       "command": "npx",
       "args": ["-y", "@furkankoykiran/upwork-mcp"],
-      "disabled": true
+      "env": {
+        "UPWORK_CLIENT_ID": "${UPWORK_CLIENT_ID}",
+        "UPWORK_CLIENT_SECRET": "${UPWORK_CLIENT_SECRET}"
+      }
     },
     "freelancer": {
       "command": "npx",
       "args": ["-y", "freelancer-mcp-server"],
-      "disabled": true
+      "env": {
+        "FREELANCER_OAUTH_TOKEN": "${FREELANCER_OAUTH_TOKEN}"
+      }
     },
     "fiverr": {
       "command": "uvx",
-      "args": ["fiverr-mcp-server"],
-      "disabled": true
+      "args": ["fiverr-mcp-server"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "linkedin": {
+      "command": "octopus-linkedin-mcp",
+      "args": []
     }
   }
 }
