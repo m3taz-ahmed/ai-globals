@@ -54,7 +54,7 @@ jobs:
           output-file: sbom.spdx.json
           artifact-name: ai-global-os-sbom
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ai-global-os-sbom
           path: sbom.spdx.json
@@ -77,7 +77,7 @@ jobs:
           cosign sign-blob --yes sbom.spdx.json --output-certificate sbom.pem \
             --output-signature sbom.sig
       - name: Upload signature
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ai-global-os-sbom-signature
           path: |
