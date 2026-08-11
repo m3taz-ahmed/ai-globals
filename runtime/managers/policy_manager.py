@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+"""Policy, guardian, and approval management for the kernel."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, ClassVar
+
+from runtime.approval_cache import ApprovalCache
+from runtime.audit import AuditLogger
+from runtime.budget import BudgetManager
+from runtime.enums import ActionResultStatus, Decision
+from runtime.guardian import ActionRequest, DecisionStatus, Guardian
+from runtime.metrics import Counter
+from runtime.policy import PolicyEngine
+from runtime.preloop import FeedbackLoop, Outcome
+from runtime.probity import Guardrails
+
+
+class PolicyManager:
+    """Encapsulates policy evaluation, guardian checks, approval caching, and probity."""
+
+    def __init__(
+        self,
+        root: Path,
+        project_root: Path,
+        audit: AuditLogger,
+        budget: BudgetManager,
+        approval_cache: ApprovalCache,
+        preloop: FeedbackLoop,
+        actions_total: Counter,
+        guardian_denials_total: Counter,
+        probity_violations_total: Counter,
+    ) -> None:
+        self.root = root
+        self.project_root = project_root
+        self.audit = audit
+        self.budget = budget
+        self.approval_cache = approval_cache
+        self.preloop = preloop
+        self._actions_total = actions_total
+        self._guardian_denials_total = guardian_denials_total
+        self._probity_violations_total = probity_violations_total
+        self.policy = PolicyEngine(root, project_root)
+        self.guardian = self._build_guardian()
+        self.probity = self._build_probity()
+
+    def _build_guardian(self) -> Guardian:
+        path = self.project_root / "runtime" / "policies" / "guardian.yaml"
+        if path.exists():
+            return Guardian.from_yaml(path)
+        return Guardian([])
+
+    def _build_probity(self) -> Guardrails:
+        path = self.project_root / "runtime" / "policies" / "probity.yaml"
+        if path.exists():
+            import yaml
+
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            return Guardrails(data)
+        return Guardrails()
+
+    # Actions that are inherently safe (read-only) and skip the guardian gate.
+    _READ_ONLY_ACTIONS: ClassVar[set[str]] = {
+        "Read", "read", "view", "grep", "Glob", "search", "query", "list",
+        "get", "status", "ChatMessage", "graphify",
+    }
+
+    def check_guardian(
+        self, action_type: str, action_data: dict[str, Any], guardian: Guardian | None = None
+    ) -> dict[str, Any] | None:
+        """Run guardian-angel policy and return an error response if denied.
+
+        Read-only actions (Read, query, ChatMessage, etc.) skip the guardian
+        gate entirely. Write/exec/bash actions are always evaluated.
+        """
+        # Skip guardian for inherently safe read-only actions
+        if action_type in self._READ_ONLY_ACTIONS:
+            return None
+        g = guardian if guardian is not None else self.guardian
+        try:
+            decision = g.authorize(
+                ActionRequest(tool=action_type, attributes={"action": action_data, "args": action_data})
+            )
+        except Exception:
+            return None
+        if decision.status == DecisionStatus.DENY:
+            self._guardian_denials_total.labels(rule=decision.rule_name).inc()
+            return {
+                "ok": False,
+                "error": f"Guardian denied by {decision.rule_name}",
+                "decision": {"rule": decision.rule_name, "reason": decision.reason},
+            }
+        if decision.status == DecisionStatus.REQUIRE_APPROVAL:
+            return {
+                "ok": False,
+                "error": f"Guardian requires approval for {decision.rule_name}",
+                "requires_approval": True,
+                "decision": {"rule": decision.rule_name, "reason": decision.reason},
+            }
+        return None
+
+    def check_probity(
+        self, action_type: str, action_data: dict[str, Any], probity: Guardrails | None = None
+    ) -> None:
+        """Run probity guardrails for write and command actions."""
+        event: dict[str, Any] = {"type": action_type, "history": []}
+        if action_type in ("write", "edit"):
+            event["path"] = str(action_data.get("path", ""))
+            event["content"] = str(action_data.get("content", ""))
+        elif action_type in ("exec", "command", "shell"):
+            event["command"] = str(action_data.get("command", ""))
+        try:
+            p = probity if probity is not None else self.probity
+            p.check(event)
+        except Exception as exc:
+            rule = getattr(exc, "rule_name", "unknown")
+            self._probity_violations_total.labels(rule=rule).inc()
+            raise
+
+    def resolve_approval(self, action_data: dict[str, Any], dry_run: bool) -> bool:
+        if action_data.get("approved"):
+            self._cache_approval(action_data, dry_run)
+            return True
+        if self.approval_cache.is_approved(action_data):
+            action_data["approved"] = True
+            return True
+        return False
+
+    def _cache_approval(self, action_data: dict[str, Any], dry_run: bool) -> None:
+        if not dry_run:
+            self.approval_cache.approve(action_data)
+
+    def handle_policy_denied(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        dry_run: bool,
+        telemetry: Any,
+    ) -> dict[str, Any]:
+        if not dry_run:
+            self.audit.log("policy.denied", {"action": action_data["type"], "args": kwargs, "decision": decision})
+        telemetry.record(
+            event_type="action",
+            action=action_data["type"],
+            status="policy_denied",
+            tokens=action_data.get("tokens", 0),
+            cost=action_data.get("cost", 0.0),
+            metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
+        )
+        return {"ok": False, "error": f"Policy denied by {decision['rule']}", "decision": decision}
+
+    def handle_policy_ask(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        dry_run: bool,
+        telemetry: Any,
+    ) -> dict[str, Any]:
+        if not dry_run:
+            self.audit.log("policy.asked", {"action": action_data["type"], "args": kwargs, "decision": decision})
+        telemetry.record(
+            event_type="action",
+            action=action_data["type"],
+            status=Decision.ASK.value,
+            tokens=action_data.get("tokens", 0),
+            cost=action_data.get("cost", 0.0),
+            metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
+        )
+        return {
+            "ok": False,
+            "error": "Action requires explicit approval (approved=True)",
+            "requires_approval": True,
+            "decision": decision,
+        }
+
+    def build_budget_kwargs(
+        self, action_data: dict[str, Any], session_id: str | None = None
+    ) -> dict[str, Any]:
+        budget_kwargs: dict[str, Any] = {}
+        if "rollout_id" in action_data:
+            budget_kwargs["rollout_id"] = action_data["rollout_id"]
+        if "token_weight" in action_data:
+            budget_kwargs["token_weight"] = action_data["token_weight"]
+        if "input_tokens" in action_data and "output_tokens" in action_data:
+            budget_kwargs["input_tokens"] = action_data["input_tokens"]
+            budget_kwargs["output_tokens"] = action_data["output_tokens"]
+        if session_id is not None:
+            budget_kwargs["session_id"] = session_id
+        return budget_kwargs
+
+    def audit_budget(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        budget_result: dict[str, Any],
+        dry_run: bool,
+    ) -> None:
+        if dry_run:
+            return
+        self.budget.save()
+        if not budget_result["ok"]:
+            self.audit.log("budget.blocked", {"action": action_data["type"], "args": kwargs, "budget": budget_result})
+        else:
+            self.audit.log(
+                "action.allowed",
+                {"action": action_data["type"], "args": kwargs, "decision": decision, "budget": budget_result},
+            )
+
+    def finalize_action(
+        self,
+        action_data: dict[str, Any],
+        kwargs: dict[str, Any],
+        decision: dict[str, Any],
+        budget_result: dict[str, Any],
+        dry_run: bool,
+        telemetry: Any,
+    ) -> dict[str, Any]:
+        self.audit_budget(action_data, kwargs, decision, budget_result, dry_run)
+        ok = budget_result["ok"]
+        telemetry.record(
+            event_type="action",
+            action=action_data["type"],
+            status=ActionResultStatus.ALLOWED.value if ok else ActionResultStatus.BUDGET_BLOCKED.value,
+            tokens=action_data.get("tokens", 0),
+            cost=action_data.get("cost", 0.0),
+            metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
+        )
+        if not ok:
+            return {"ok": False, "error": budget_result["reason"], "budget": budget_result}
+        return {
+            "ok": True,
+            "decision": decision,
+            "budget": budget_result,
+            "action": action_data["type"],
+            "args": kwargs,
+        }
+
+    def record_preloop(self, action_type: str, result: dict[str, Any], decision: dict[str, Any]) -> None:
+        self.preloop.record(
+            Outcome(
+                action=action_type,
+                ok=result.get("ok", False),
+                reward=1.0 if result.get("ok") else 0.0,
+                tags=[decision["decision"]],
+            )
+        )

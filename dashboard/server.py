@@ -38,6 +38,8 @@ _rate_limit = int(os.environ.get("AGENT_OS_DASHBOARD_RATE_LIMIT", "120"))
 _rate_window = float(os.environ.get("AGENT_OS_DASHBOARD_RATE_WINDOW", "60"))
 _rate_state: dict[str, tuple[int, float]] = {}
 _rate_lock = threading.Lock()
+# Max number of tracked IPs; oldest entries evicted when exceeded.
+_rate_max_entries = int(os.environ.get("AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES", "10000"))
 
 
 def _kernel_instance() -> Kernel:
@@ -69,6 +71,14 @@ def _check_rate_limit(client_ip: str) -> bool:
             count, window_start = 0, now
         count += 1
         _rate_state[client_ip] = (count, window_start)
+        # Evict stale entries to prevent unbounded growth.
+        if len(_rate_state) > _rate_max_entries:
+            stale = [
+                ip for ip, (_, ws) in _rate_state.items()
+                if now - ws > _rate_window
+            ]
+            for ip in stale:
+                del _rate_state[ip]
         return count <= _rate_limit
 
 

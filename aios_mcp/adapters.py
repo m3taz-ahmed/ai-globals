@@ -7,6 +7,12 @@ with swappable execution backends (local, codex, claude_code, remote_a2a, etc.).
 
 from __future__ import annotations
 
+import asyncio
+import json
+import shutil
+import ssl
+import urllib.error
+import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -83,88 +89,224 @@ class LocalAdapter(AgentAdapter):
         return session
 
 
-class CodexAdapter(AgentAdapter):
+class _CliAdapterBase(AgentAdapter):
+    """Base for CLI-spawning adapters (codex, claude_code).
+
+    Subclasses define ``_binary`` and ``_build_args``. Launch spawns the
+    process via ``asyncio.create_subprocess_exec``; poll awaits completion
+    with a configurable timeout and captures stdout/stderr.
+    """
+
+    _binary: str = ""
+    _timeout: float = 300.0
+
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
+        super().__init__(self._backend(), config)
+
+    @abstractmethod
+    def _backend(self) -> Backend:
+        """Return the Backend enum for this adapter."""
+
+    @abstractmethod
+    def _build_args(self, task: str, profile: str | None) -> list[str]:
+        """Build CLI argument list for the task."""
+
+    async def launch(self, task: str, profile: str | None = None) -> Session:
+        if not shutil.which(self._binary):
+            raise AdapterError(
+                f"Binary {self._binary!r} not found on PATH for backend {self.backend.value!r}"
+            )
+        session = Session(
+            session_id=f"{self.backend.value}-{len(self._sessions) + 1}",
+            backend=self.backend,
+            profile=profile or "default",
+        )
+        session.status = "running"
+        self._sessions[session.session_id] = session
+        self._store_artifact(session, "task", task)
+        args = self._build_args(task, profile)
+        self._store_artifact(session, "command", [self._binary, *args])
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                self._binary,
+                *args,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except OSError as exc:
+            session.status = "failed"
+            self._store_artifact(session, "error", str(exc))
+            raise AdapterError(f"Failed to spawn {self._binary}: {exc}") from exc
+        self._store_artifact(session, "_pid", proc.pid)
+        self._store_artifact(session, "_proc", proc)
+        return session
+
+    async def poll(self, session: Session) -> Session:
+        proc: asyncio.subprocess.Process = session.artifacts.get("_proc")  # type: ignore[assignment]
+        if proc is None:
+            session.status = "failed"
+            self._store_artifact(session, "error", "No process handle")
+            return session
+        try:
+            stdout_b, stderr_b = await asyncio.wait_for(
+                proc.communicate(), timeout=self._timeout
+            )
+        except asyncio.TimeoutError:
+            proc.kill()
+            session.status = "timeout"
+            self._store_artifact(session, "error", f"Timed out after {self._timeout}s")
+            return session
+        stdout = stdout_b.decode("utf-8", errors="replace") if stdout_b else ""
+        stderr = stderr_b.decode("utf-8", errors="replace") if stderr_b else ""
+        self._store_artifact(session, "stdout", stdout)
+        self._store_artifact(session, "stderr", stderr)
+        self._store_artifact(session, "returncode", proc.returncode)
+        session.status = "completed" if proc.returncode == 0 else "failed"
+        self._store_artifact(
+            session,
+            "result",
+            {
+                "backend": self.backend.value,
+                "task": session.artifacts.get("task", ""),
+                "stdout": stdout,
+                "returncode": proc.returncode,
+            },
+        )
+        session.artifacts.pop("_proc", None)
+        return session
+
+
+class CodexAdapter(_CliAdapterBase):
     """Adapter for OpenAI Codex CLI.
 
-    STUB: Does not invoke the real `codex` CLI yet. Returns a synthetic
-    "completed" session with the task echoed back. Implement by spawning
-    `codex exec <task>` and parsing stdout/stderr. See ticket #TBD.
+    Spawns ``codex exec <task>`` and captures stdout/stderr. Requires the
+    ``codex`` binary on PATH. Timeout configurable via ``config["timeout"]``.
     """
 
+    _binary = "codex"
+
     def __init__(self, config: dict[str, Any] | None = None) -> None:
-        super().__init__(Backend.CODEX, config)
+        cfg = config or {}
+        self._timeout = float(cfg.get("timeout", self._timeout))
+        super().__init__(cfg)
 
-    async def launch(self, task: str, profile: str | None = None) -> Session:
-        session = Session(
-            session_id=f"codex-{len(self._sessions) + 1}",
-            backend=self.backend,
-            profile=profile or "default",
-        )
-        self._sessions[session.session_id] = session
-        self._store_artifact(session, "task", task)
-        return session
+    def _backend(self) -> Backend:
+        return Backend.CODEX
 
-    async def poll(self, session: Session) -> Session:
-        # STUB: real implementation would invoke `codex` CLI and parse output.
-        session.status = "completed"
-        self._store_artifact(session, "result", {"backend": "codex", "task": session.artifacts.get("task", "")})
-        return session
+    def _build_args(self, task: str, profile: str | None) -> list[str]:
+        args = ["exec", task]
+        if profile and profile != "default":
+            args.extend(["--profile", profile])
+        return args
 
 
-class ClaudeCodeAdapter(AgentAdapter):
-    """Adapter for Anthropic Claude Code.
+class ClaudeCodeAdapter(_CliAdapterBase):
+    """Adapter for Anthropic Claude Code CLI.
 
-    STUB: Does not invoke the real `claude` CLI yet. Returns a synthetic
-    "completed" session. Implement by spawning `claude --print <task>` and
-    parsing stdout. See ticket #TBD.
+    Spawns ``claude --print <task>`` and captures stdout/stderr. Requires
+    the ``claude`` binary on PATH. Timeout configurable via ``config["timeout"]``.
     """
 
+    _binary = "claude"
+
     def __init__(self, config: dict[str, Any] | None = None) -> None:
-        super().__init__(Backend.CLAUDE_CODE, config)
+        cfg = config or {}
+        self._timeout = float(cfg.get("timeout", self._timeout))
+        super().__init__(cfg)
 
-    async def launch(self, task: str, profile: str | None = None) -> Session:
-        session = Session(
-            session_id=f"claude-{len(self._sessions) + 1}",
-            backend=self.backend,
-            profile=profile or "default",
-        )
-        self._sessions[session.session_id] = session
-        self._store_artifact(session, "task", task)
-        return session
+    def _backend(self) -> Backend:
+        return Backend.CLAUDE_CODE
 
-    async def poll(self, session: Session) -> Session:
-        # STUB: real implementation would invoke `claude` CLI and parse output.
-        session.status = "completed"
-        self._store_artifact(session, "result", {"backend": "claude_code", "task": session.artifacts.get("task", "")})
-        return session
+    def _build_args(self, task: str, profile: str | None) -> list[str]:
+        args = ["--print", task]
+        if profile and profile != "default":
+            args.extend(["--profile", profile])
+        return args
 
 
 class RemoteA2AAdapter(AgentAdapter):
     """Adapter for remote A2A (Agent-to-Agent) servers.
 
-    STUB: Does not make real HTTP/gRPC calls yet. Returns a synthetic
-    "completed" session. Implement by POSTing the task to the configured
-    A2A endpoint and polling for completion. See ticket #TBD.
+    POSTs the task to the configured A2A endpoint (``config["endpoint"]``)
+    and polls for completion. Uses stdlib ``urllib`` to avoid extra deps.
+    Timeout configurable via ``config["timeout"]`` (default 300s).
     """
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(Backend.REMOTE_A2A, config)
+        self._endpoint = str(self.config.get("endpoint", "")).rstrip("/")
+        self._poll_interval = float(self.config.get("poll_interval", 2.0))
+        self._timeout = float(self.config.get("timeout", 300.0))
+        self._verify_ssl = bool(self.config.get("verify_ssl", True))
+        if not self._endpoint:
+            raise AdapterError("RemoteA2AAdapter requires config['endpoint']")
+        # Validate endpoint URL scheme
+        if not self._endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1")):
+            raise AdapterError(
+                "RemoteA2AAdapter endpoint must use HTTPS (or localhost for dev). "
+                f"Got: {self._endpoint}"
+            )
+
+    def _create_ssl_context(self) -> ssl.SSLContext | None:
+        """Create SSL context for secure connections."""
+        if not self._verify_ssl:
+            return None
+        ctx = ssl.create_default_context()
+        return ctx
 
     async def launch(self, task: str, profile: str | None = None) -> Session:
+        payload = json.dumps({"task": task, "profile": profile or "default"}).encode("utf-8")
+        req = urllib.request.Request(
+            f"{self._endpoint}/tasks",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        ssl_ctx = self._create_ssl_context()
+        loop = asyncio.get_event_loop()
+        try:
+            response = await loop.run_in_executor(
+                None, lambda: urllib.request.urlopen(req, context=ssl_ctx)  # nosec B310 - validated HTTPS endpoint
+            )
+            body = json.loads(response.read().decode("utf-8"))
+        except urllib.error.URLError as exc:
+            raise AdapterError(f"A2A launch failed: {exc}") from exc
         session = Session(
-            session_id=f"a2a-{len(self._sessions) + 1}",
+            session_id=body.get("session_id", f"a2a-{len(self._sessions) + 1}"),
             backend=self.backend,
             profile=profile or "default",
         )
+        session.status = "running"
         self._sessions[session.session_id] = session
         self._store_artifact(session, "task", task)
+        self._store_artifact(session, "remote_session_id", body.get("session_id"))
         return session
 
     async def poll(self, session: Session) -> Session:
-        # STUB: real implementation would poll the remote A2A endpoint.
-        session.status = "completed"
-        self._store_artifact(session, "result", {"backend": "remote_a2a", "task": session.artifacts.get("task", "")})
-        return session
+        remote_id = session.artifacts.get("remote_session_id", session.session_id)
+        url = f"{self._endpoint}/tasks/{remote_id}"
+        loop = asyncio.get_event_loop()
+        deadline = asyncio.get_event_loop().time() + self._timeout
+        while True:
+            try:
+                response = await loop.run_in_executor(
+                    None, urllib.request.urlopen, urllib.request.Request(url)
+                )
+                body = json.loads(response.read().decode("utf-8"))
+            except urllib.error.URLError as exc:
+                session.status = "failed"
+                self._store_artifact(session, "error", str(exc))
+                return session
+            status = body.get("status", "running")
+            if status in ("completed", "failed", "timeout"):
+                session.status = status
+                self._store_artifact(session, "result", body.get("result", {}))
+                return session
+            if asyncio.get_event_loop().time() > deadline:
+                session.status = "timeout"
+                self._store_artifact(session, "error", "Polling timed out")
+                return session
+            await asyncio.sleep(self._poll_interval)
 
 
 class AdapterRegistry:
@@ -200,5 +342,5 @@ def default_registry() -> AdapterRegistry:
     registry.register(Backend.LOCAL, LocalAdapter())
     registry.register(Backend.CODEX, CodexAdapter())
     registry.register(Backend.CLAUDE_CODE, ClaudeCodeAdapter())
-    registry.register(Backend.REMOTE_A2A, RemoteA2AAdapter())
+    # RemoteA2A requires endpoint config; register only if provided.
     return registry

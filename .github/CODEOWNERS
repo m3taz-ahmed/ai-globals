@@ -1,19 +1,24 @@
-# Global default
-* @ai-global-os/maintainers
+# CODEOWNERS for AI Global OS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Security, policy, and rules need careful review
-runtime/policy.py @ai-global-os/security
-runtime/audit.py @ai-global-os/security
-rules/ @ai-global-os/security
+# Default owner for all files
+* @m3taz-ahmed
 
-# Core runtime changes
-runtime/kernel.py @ai-global-os/core
-runtime/budget.py @ai-global-os/core
+# Runtime kernel and managers
+/runtime/kernel.py          @m3taz-ahmed
+/runtime/managers/          @m3taz-ahmed
 
-# Workflows and skills
-workflows/ @ai-global-os/docs
-skills/ @ai-global-os/docs
+# Security-critical files
+/runtime/crypto.py          @m3taz-ahmed
+/runtime/guardian.py        @m3taz-ahmed
+/runtime/policy.py          @m3taz-ahmed
+/memory/store.py            @m3taz-ahmed
 
-# Memory and MCP
-memory/ @ai-global-os/storage
-aios_mcp/ @ai-global-os/storage
+# CI/CD and Docker
+/.github/workflows/         @m3taz-ahmed
+/Dockerfile                 @m3taz-ahmed
+/.dockerignore              @m3taz-ahmed
+
+# Configuration
+/pyproject.toml             @m3taz-ahmed
+/config.py                  @m3taz-ahmed

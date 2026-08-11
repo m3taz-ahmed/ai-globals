@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "4.22.0",
+    "version": "4.22.1",
     "description": "Machine-readable trigger->workflow/file routing map for AI Global OS.",
     "updated": "2026-08-06"
   },

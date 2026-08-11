@@ -4,7 +4,7 @@
   <p><strong>Stop letting AI write spaghetti code. Turn it into your Principal Architect.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-4.22.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.22.0">
+    <img src="https://img.shields.io/badge/Version-4.22.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 4.22.1">
     <img src="https://img.shields.io/badge/Status-Self--Healing-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="Status: Self-Healing">
     <img src="https://img.shields.io/badge/Architecture-Sovereign-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="Architecture: Sovereign">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -327,9 +327,11 @@ After cloning, tell your AI coding tool to read the OS rules. Each tool has its 
 | **Devin** | `.devin/skills/global-os/SKILL.md` |
 | **Any other agent** | Load `AGENTS.md` + `global-roles.md` + `global-workflow.md` into the system prompt / project instructions. |
 
+> **See [`docs/BOOTLOADER.md`](docs/BOOTLOADER.md)** for the full boot sequence diagram and how the global bootloader works.
+
 ### MCP servers
 
-The installer configures 6 MCP servers in `.claude/settings.json` and `aios_mcp/config.json`:
+The installer configures 7 MCP servers in `.claude/settings.json` and `.devin/mcp_config.json`:
 
 | MCP server | Command | Purpose | Requires |
 | :--- | :--- | :--- | :--- |
@@ -518,6 +520,8 @@ ai-os mcp fiverr fiverr_search_gigs --args '{"query":"logo design","limit":5}'
 
 LinkedIn MCP lets you draft, approve, publish, schedule, and analyze posts.
 
+> **Important:** Each user creates their **own** LinkedIn Developer App. This is required by LinkedIn's API policy — the app is a container for API permissions, and the access token is tied to your personal LinkedIn account. You cannot share one app across users (each user generates their own token via their own app).
+
 **Step 1: Create a LinkedIn Page** (required for API app)
 
 1. Go to https://www.linkedin.com/company/setup/new/
@@ -664,7 +668,7 @@ These three files give the agent the identity, rules, and execution protocol. Th
 If your IDE has a **global / user-level rules** or **system instructions** field (Cursor *User Rules*, Windsurf *Global Rules*, Claude *Project Instructions*, etc.), paste the block below. It teaches every AI session how to boot from AI Global OS.
 
 ```text
-You are an AI Global OS agent. The OS root is discovered from the `AGENT_OS_ROOT` environment variable or the install directory (`D:/.ai`, `~/.ai`, etc.).
+You are an AI Global OS agent. The OS root is discovered from the `AGENT_OS_ROOT` environment variable or the install directory (no hardcoded path — the installer sets it automatically).
 
 MUST on every session:
 
@@ -694,7 +698,7 @@ MUST for execution:
 
 MUST for quality:
 
-11. Run `ruff check .`, `mypy`, `pytest -q`, and `python eval/harness.py` before declaring done.
+11. Run `ruff check .`, `mypy`, `ai-os test --full` (or `pytest -q`), and `python eval/harness.py` before declaring done.
 12. After changing `rules/`, `tech-stack/`, `workflows/`, or `skills/`, run `ai-os memory ingest` and `graphify update .`.
 13. Git: conventional commits, atomic, never `git add .` (`[GIT-06]`) or force push, stage only files you modified.
 ```
@@ -732,6 +736,7 @@ The `ai-os` command is the primary interface to the OS. All commands support `--
 | `agent list` | List active agents. | `ai-os agent list` |
 | `chat` | Persistent chat REPL or one-shot message. | `ai-os chat "hello"` |
 | `ci` | Run the built-in CI quality gates. | `ai-os ci` |
+| `test` | Run tests (fast tier ~10s, or `--full` for all tests with coverage ~20s). | `ai-os test` or `ai-os test --full` |
 | `stack detect` | Detect the tech stack of the current project. | `ai-os stack detect` |
 | `stack show` | Show loaded tech-stack docs. | `ai-os stack show` |
 | `mcp` | Call an external MCP tool. | `ai-os mcp context7 resolve-library-id --args '{"library":"fastapi"}'` |

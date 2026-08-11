@@ -54,7 +54,9 @@ class BudgetManager:
 
     def _load(self) -> None:
         if self.state_file.exists():
-            data = json.loads(self.state_file.read_text(encoding="utf-8"))
+            from runtime.crypto import decrypt_file
+
+            data = json.loads(decrypt_file(self.state_file))
             self.usage = data.get("usage", {})
             for k, v in data.get("budgets", {}).items():
                 self.budgets[k] = Budget(**v)
@@ -74,10 +76,13 @@ class BudgetManager:
                 {"budgets": {k: asdict(v) for k, v in self.budgets.items()}, "usage": self.usage},
                 indent=2,
             )
+            from runtime.crypto import encrypt_bytes
+
+            encrypted = encrypt_bytes(payload.encode("utf-8"))
             tmp_fd, tmp_path = tempfile.mkstemp(dir=self.state_file.parent, suffix=".json.tmp")
             try:
-                with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
-                    f.write(payload)
+                with os.fdopen(tmp_fd, "wb") as f:
+                    f.write(encrypted)
                 os.replace(tmp_path, self.state_file)
                 self._dirty = False
             except Exception:

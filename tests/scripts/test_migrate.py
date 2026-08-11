@@ -136,13 +136,13 @@ def test_migrate_build_chain_finds_path():
     assert chain[0][0] == "4.21.0"
     assert chain[0][1] == "4.22.0"
 
-    # 4.22 → 4.23 should find one migration
+    # 4.22 → 4.23 should find two migrations (4.22→4.22.1→4.23)
     chain = mod._build_chain("4.22.0", "4.23.0")
-    assert len(chain) == 1
-
-    # 4.21 → 4.23 should find two migrations
-    chain = mod._build_chain("4.21.0", "4.23.0")
     assert len(chain) == 2
+
+    # 4.21 → 4.23 should find three migrations
+    chain = mod._build_chain("4.21.0", "4.23.0")
+    assert len(chain) == 3
 
 
 def test_migrate_build_chain_no_path():

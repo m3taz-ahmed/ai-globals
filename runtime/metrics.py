@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
 
@@ -254,9 +255,13 @@ class Histogram(Metric[_HistogramChild]):
 
 
 class _SummaryChild(_MetricChild):
+    # Max number of observations kept for quantile calculation.
+    # Older values are evicted automatically by the deque.
+    _MAX_WINDOW = 10000
+
     def __init__(self, quantiles: tuple[float, ...] = (0.5, 0.9, 0.99)) -> None:
         self._quantiles = quantiles
-        self._values: list[float] = []
+        self._values: deque[float] = deque(maxlen=self._MAX_WINDOW)
         self._sum = 0.0
         self._count = 0.0
         self._lock = threading.Lock()

@@ -7,10 +7,22 @@ from tables, columns, and foreign keys without calling an embedding model.
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+# SQLite identifiers (table/index/column names) must match this pattern.
+# Prevents SQL injection via PRAGMA statements which don't accept parameters.
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _validate_identifier(name: str, kind: str = "table") -> str:
+    """Validate a SQLite identifier against a strict pattern to prevent injection."""
+    if not name or not _IDENTIFIER_RE.fullmatch(name):
+        raise ValueError(f"Invalid {kind} identifier: {name!r}")
+    return name
 
 
 @dataclass
@@ -76,17 +88,20 @@ class SchemaGraph:
             tables = [row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")]
 
             for table in tables:
+                _validate_identifier(table, "table")
                 table_node = Node(id=f"table:{table}", kind="table", label=table, properties={})
                 graph.add_node(table_node)
 
-                columns = conn.execute(f"PRAGMA table_info({table})").fetchall()
+                columns = conn.execute(f"PRAGMA table_info({_validate_identifier(table)})").fetchall()
                 for col in columns:
-                    col_id = f"column:{table}.{col['name']}"
+                    col_name = col["name"]
+                    _validate_identifier(col_name, "column")
+                    col_id = f"column:{table}.{col_name}"
                     graph.add_node(
                         Node(
                             id=col_id,
                             kind="column",
-                            label=col["name"],
+                            label=col_name,
                             properties={
                                 "table": table,
                                 "type": col["type"],
@@ -97,7 +112,7 @@ class SchemaGraph:
                     )
                     graph.add_edge(Edge(source=table_node.id, target=col_id, kind="has_column"))
 
-                fks = conn.execute(f"PRAGMA foreign_key_list({table})").fetchall()
+                fks = conn.execute(f"PRAGMA foreign_key_list({_validate_identifier(table)})").fetchall()
                 for fk in fks:
                     target_id = f"column:{fk['table']}.{fk['to']}"
                     source_id = f"column:{table}.{fk['from']}"
@@ -112,9 +127,12 @@ class SchemaGraph:
 
             # Index edges
             for table in tables:
-                indexes = conn.execute(f"PRAGMA index_list({table})").fetchall()
+                _validate_identifier(table, "table")
+                indexes = conn.execute(f"PRAGMA index_list({_validate_identifier(table)})").fetchall()
                 for idx in indexes:
-                    idx_info = conn.execute(f"PRAGMA index_info({idx['name']})").fetchall()
+                    idx_name = idx["name"]
+                    _validate_identifier(idx_name, "index")
+                    idx_info = conn.execute(f"PRAGMA index_info({_validate_identifier(idx_name)})").fetchall()
                     for info in idx_info:
                         col_id = f"column:{table}.{info['name']}"
                         graph.add_edge(
@@ -122,7 +140,7 @@ class SchemaGraph:
                                 source=f"table:{table}",
                                 target=col_id,
                                 kind="has_index",
-                                properties={"index": idx["name"]},
+                                properties={"index": idx_name},
                             )
                         )
 

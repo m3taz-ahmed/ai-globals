@@ -15,8 +15,8 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
@@ -31,8 +31,8 @@ jobs:
       - name: Run bandit
         run: |
           python -m pip install bandit
-          bandit -r runtime memory aios_mcp dashboard -f json -o bandit-report.json || true
-      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+          bandit -r runtime memory aios_mcp dashboard -c .bandit -f json -o bandit-report.json
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-report

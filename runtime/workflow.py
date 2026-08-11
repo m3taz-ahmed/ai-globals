@@ -5,17 +5,16 @@ from __future__ import annotations
 
 import json
 import re
-import sqlite3
-import threading
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
+from .enums import ActionResultStatus, StepType
 from .mcp_client import McpClient, parse_mcp_command
 from .persona import PersonaDetector
+from .repository import BaseRepository
 
 
 @dataclass
@@ -37,8 +36,21 @@ class Workflow:
         return cls(id=path.stem, path=path, title=title or path.stem, rules=content.splitlines())
 
 
-class WorkflowRunner:
+class WorkflowRunner(BaseRepository):
     """Loads and runs markdown workflows with durable SQLite state."""
+
+    _schema_sql: ClassVar[list[str]] = [
+        """
+        CREATE TABLE IF NOT EXISTS workflow_state (
+            id TEXT PRIMARY KEY,
+            workflow_id TEXT NOT NULL,
+            context TEXT NOT NULL,
+            steps TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    ]
 
     def __init__(
         self,
@@ -49,42 +61,8 @@ class WorkflowRunner:
         self.root = root
         self.os_root = os_root or root
         self.dir = root / "workflows"
-        self.db_path = root / "state" / "workflow.db"
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.persona = persona_detector or PersonaDetector()
-        self._lock = threading.RLock()
-        self._init_schema()
-
-    @contextmanager
-    def _conn(self) -> Iterator[sqlite3.Connection]:
-        with self._lock:
-            conn = sqlite3.connect(self.db_path, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA busy_timeout=5000")
-            try:
-                yield conn
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                raise
-            finally:
-                conn.close()
-
-    def _init_schema(self) -> None:
-        with self._conn() as conn:
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS workflow_state (
-                    id TEXT PRIMARY KEY,
-                    workflow_id TEXT NOT NULL,
-                    context TEXT NOT NULL,
-                    steps TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
-                )
-                """
-            )
+        super().__init__(root / "state" / "workflow.db")
 
     def list_workflows(self) -> list[str]:
         return [p.stem for p in self.dir.glob("*.md")]
@@ -160,7 +138,7 @@ class WorkflowRunner:
         for line in wf.rules:
             m = re.match(r"\d+\.\s*\[(REQ|CMD|PROHIBIT)\]\s*(.+)", line)
             if m:
-                steps.append({"type": m.group(1), "text": m.group(2)})
+                steps.append({"type": StepType(m.group(1)), "text": m.group(2)})
         return steps
 
     def _execute_step(
@@ -171,46 +149,54 @@ class WorkflowRunner:
     ) -> dict[str, Any]:
         step_type = step["type"]
         text = step["text"]
-        result: dict[str, Any] = {"type": step_type, "text": text, "status": "ok"}
+        result: dict[str, Any] = {"type": step_type, "text": text, "status": ActionResultStatus.OK.value}
 
-        if step_type == "PROHIBIT":
-            result["status"] = "prohibited"
+        if step_type == StepType.PROHIBIT:
+            result["status"] = ActionResultStatus.PROHIBITED.value
             return result
 
-        if step_type == "REQ":
+        if step_type == StepType.REQ:
             return result
 
-        if step_type == "CMD" and act:
+        if step_type == StepType.CMD and act:
             cmd = text.strip()
             if cmd.startswith("bash:"):
                 shell_cmd = cmd[5:].strip()
                 try:
                     act_result = act("Bash", command=shell_cmd, approved=True, dry_run=True)
-                    result["status"] = "allowed" if act_result["ok"] else act_result.get("decision", {}).get("decision", "denied")
+                    result["status"] = (
+                        ActionResultStatus.ALLOWED.value
+                        if act_result["ok"]
+                        else act_result.get("decision", {}).get("decision", ActionResultStatus.DENIED.value)
+                    )
                     result["evaluation"] = act_result
                 except Exception as exc:
-                    result["status"] = "error"
+                    result["status"] = ActionResultStatus.ERROR.value
                     result["evaluation"] = {"ok": False, "error": str(exc)}
             elif cmd.startswith("mcp:"):
                 mcp_cmd = cmd[4:].strip()
                 parsed = self._parse_mcp(mcp_cmd)
                 if parsed is None:
-                    result["status"] = "mcp_parse_error"
+                    result["status"] = ActionResultStatus.MCP_PARSE_ERROR.value
                 else:
                     server, tool, args = parsed
                     client = McpClient(server, self.os_root)
                     if not client.is_configured():
-                        result["status"] = "mcp_not_configured"
+                        result["status"] = ActionResultStatus.MCP_NOT_CONFIGURED.value
                     else:
                         try:
                             act_result = client.call_tool(tool, args)
-                            result["status"] = "allowed" if act_result["ok"] else "mcp_call_failed"
+                            result["status"] = (
+                                ActionResultStatus.ALLOWED.value
+                                if act_result["ok"]
+                                else ActionResultStatus.MCP_CALL_FAILED.value
+                            )
                             result["evaluation"] = act_result
                         except Exception as exc:
-                            result["status"] = "error"
+                            result["status"] = ActionResultStatus.ERROR.value
                             result["evaluation"] = {"ok": False, "error": str(exc)}
             else:
-                result["status"] = "noop"
+                result["status"] = ActionResultStatus.NOOP.value
 
         return result
 

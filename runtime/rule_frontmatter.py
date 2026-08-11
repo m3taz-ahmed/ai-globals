@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath
@@ -42,6 +43,7 @@ def _as_str_list(value: Any) -> list[str] | None:
     return [str(value)]
 
 
+@functools.lru_cache(maxsize=256)
 def parse_frontmatter(text: str) -> tuple[RuleFrontmatter, str]:
     """Parse YAML frontmatter from the top of a markdown file.
 
