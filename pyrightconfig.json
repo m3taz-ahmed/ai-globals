@@ -1,0 +1,19 @@
+{
+  "exclude": [
+    "temp",
+    "graphify-out",
+    ".ruff_cache",
+    ".mypy_cache",
+    ".pytest_cache",
+    "__pycache__",
+    "aios.egg-info",
+    ".ai",
+    ".agents",
+    ".claude",
+    ".clinerules",
+    ".cursor",
+    ".devin",
+    ".github",
+    ".windsurf"
+  ]
+}
