@@ -192,6 +192,15 @@ def _install_intercept_pipe():
 
 
 if __name__ == "__main__":
+    # Load centralized .env secrets before launching graphify
+    _root = os.environ.get("AGENT_OS_ROOT", str(Path(__file__).resolve().parent.parent))
+    sys.path.insert(0, os.path.join(_root, "scripts"))
+    try:
+        from mcp_secrets_loader import load_env
+        load_env()
+    except ImportError:
+        pass
+
     _install_intercept_pipe()
 
     # Now start graphify — it will read from the intercepted fd 0

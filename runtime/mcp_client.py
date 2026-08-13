@@ -26,6 +26,35 @@ _PROC_INIT: dict[tuple[str, Path], bool] = {}
 _PROC_LOCK = threading.Lock()
 _SEND_LOCKS: dict[tuple[str, Path], threading.Lock] = {}
 _DEFAULT_TIMEOUT = 30.0
+_SECRETS_LOADED = False
+
+
+def _load_secrets_once() -> None:
+    """Load ``.env`` from the OS root into ``os.environ`` (once per process)."""
+    global _SECRETS_LOADED
+    if _SECRETS_LOADED:
+        return
+    _SECRETS_LOADED = True
+    env_file = Path(os.environ.get("AGENT_OS_ROOT", "")) / ".env"
+    if not env_file.is_file():
+        # Fallback: parent of runtime/ directory
+        env_file = Path(__file__).resolve().parent.parent / ".env"
+    if not env_file.is_file():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[7:]
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1]
+        if not key or value.startswith("your_"):
+            continue
+        os.environ.setdefault(key, value)
 
 
 def _user_script_dirs() -> list[str]:
@@ -104,6 +133,8 @@ class McpClient:
             raise RuntimeError(f"MCP server '{self.server_name}' not configured")
         cmd = self.config["command"]
         args = self.config.get("args", [])
+        # Load centralized .env secrets so external MCP servers inherit them
+        _load_secrets_once()
         env = {"AGENT_OS_ROOT": str(self.os_root), **os.environ}
         # Augment PATH with per-user Python script dirs so entry-point MCP
         # servers (e.g. installed via ``pip install --user``) resolve without
@@ -257,6 +288,7 @@ class McpClient:
             return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
         cmd = self.config["command"]
         args = self.config.get("args", [])
+        _load_secrets_once()
         env = {"AGENT_OS_ROOT": str(self.os_root), **os.environ}
         try:
             proc = await asyncio.create_subprocess_exec(

@@ -25,6 +25,13 @@ def main() -> None:
     root = discover_root()
     os.environ["AGENT_OS_ROOT"] = root
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    # Load centralized .env secrets before launching the MCP server
+    sys.path.insert(0, os.path.join(root, "scripts"))
+    try:
+        from mcp_secrets_loader import load_env
+        load_env()
+    except ImportError:
+        pass
     subprocess.run([sys.executable, "-m", "aios_mcp.aios_server"], cwd=root)
 
 

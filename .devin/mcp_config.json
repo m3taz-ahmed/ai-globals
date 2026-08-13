@@ -9,31 +9,24 @@
       "args": ["scripts/graphify_mcp_wrapper.py"]
     },
     "upwork": {
-      "command": "npx",
-      "args": ["-y", "@furkankoykiran/upwork-mcp@1.2.2"],
-      "env": {
-        "UPWORK_CLIENT_ID": "${UPWORK_CLIENT_ID}",
-        "UPWORK_CLIENT_SECRET": "${UPWORK_CLIENT_SECRET}"
-      }
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"]
     },
     "freelancer": {
-      "command": "npx",
-      "args": ["-y", "freelancer-mcp-server@2.0.0"],
-      "env": {
-        "FREELANCER_OAUTH_TOKEN": "${FREELANCER_OAUTH_TOKEN}"
-      }
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "freelancer-mcp-server@2.0.0"]
     },
     "fiverr": {
-      "command": "uvx",
-      "args": ["fiverr-mcp-server"]
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "uvx", "fiverr-mcp-server"]
     },
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@3.1.0"]
     },
     "linkedin": {
-      "command": "octopus-linkedin-mcp",
-      "args": []
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"]
     }
   }
 }

@@ -41,6 +41,7 @@
 13. [Recent highlights and new features](#recent-highlights-and-new-features)
 14. [Installer Guide](#installer-guide)
 15. [Quality gates and contributing](#quality-gates-and-contributing)
+16. [Centralized MCP secrets (.env)](#centralized-mcp-secrets-env)
 
 ---
 
@@ -290,10 +291,15 @@ python dashboard/server.py 8080
 ├── install.ps1 / install.sh      # OS installer
 ├── plugins.yaml                  # Plugin manifest
 ├── pyproject.toml                # Package metadata
+├── .env                          # MCP secrets (git-ignored, never committed)
+├── .env.example                  # MCP secrets template (safe to commit)
 └── scripts/                      # Self-healing operations
     ├── validate-globals.py       # Integrity validator
     ├── sync-agent-configs.py     # Sync configs across tools
-    └── graphify_mcp_wrapper.py   # Graphify MCP bridge
+    ├── graphify_mcp_wrapper.py   # Graphify MCP bridge
+    ├── aios_mcp_wrapper.py       # AIOS MCP server wrapper
+    ├── mcp_secrets_loader.py     # Centralized .env secrets loader
+    └── mcp_env_wrapper.py        # Generic env-loading MCP wrapper
 ```
 
 ---
@@ -420,18 +426,16 @@ Upwork MCP lets you search jobs, get profile, list contracts, and save jobs.
    - **Client ID**
    - **Client Secret**
 
-**Step 3: Set environment variables**
+**Step 3: Add credentials to `.env`**
 
-```powershell
-# Windows (PowerShell — permanent)
-[Environment]::SetEnvironmentVariable("UPWORK_CLIENT_ID", "your_client_id", "User")
-[Environment]::SetEnvironmentVariable("UPWORK_CLIENT_SECRET", "your_client_secret", "User")
+Edit `D:\.ai\.env` (copy from `.env.example` if it doesn't exist):
 
-# Linux/macOS
-echo 'export UPWORK_CLIENT_ID="your_client_id"' >> ~/.bashrc
-echo 'export UPWORK_CLIENT_SECRET="your_client_secret"' >> ~/.bashrc
-source ~/.bashrc
+```env
+UPWORK_CLIENT_ID=your_client_id
+UPWORK_CLIENT_SECRET=your_client_secret
 ```
+
+> **Why `.env`?** All MCP secrets are centralized in one git-ignored file. See [Centralized MCP secrets](#centralized-mcp-secrets-env) for details.
 
 **Step 4: Authenticate**
 
@@ -464,16 +468,15 @@ Freelancer MCP lets you search projects, place bids, and send messages.
 3. Follow the OAuth flow to get an access token
 4. Copy the **OAuth token**
 
-**Step 3: Set environment variable**
+**Step 3: Add token to `.env`**
 
-```powershell
-# Windows (PowerShell — permanent)
-[Environment]::SetEnvironmentVariable("FREELANCER_OAUTH_TOKEN", "your_token", "User")
+Edit `D:\.ai\.env` (copy from `.env.example` if it doesn't exist):
 
-# Linux/macOS
-echo 'export FREELANCER_OAUTH_TOKEN="your_token"' >> ~/.bashrc
-source ~/.bashrc
+```env
+FREELANCER_OAUTH_TOKEN=your_token
 ```
+
+> **Why `.env`?** All MCP secrets are centralized in one git-ignored file. See [Centralized MCP secrets](#centralized-mcp-secrets-env) for details.
 
 **Step 4: Test it**
 
@@ -581,6 +584,14 @@ Use LinkedIn's Token Generator (easiest method):
 
 **Step 7: Save the token**
 
+Add the token to `.env` (copy from `.env.example` if it doesn't exist):
+
+```env
+LINKEDIN_ACCESS_TOKEN=your_token_here
+```
+
+Alternatively, save the token to the octopus-linkedin cache path:
+
 ```powershell
 # Find the token path
 python -c "import linkedin.auth; print(linkedin.auth.TOKEN_PATH)"
@@ -596,6 +607,8 @@ Set-Content -Path $tokenPath -Value $json
 # TOKEN_PATH=$(python -c "import linkedin.auth; print(linkedin.auth.TOKEN_PATH)")
 # echo "{\"access_token\":\"YOUR_TOKEN\",\"obtained_at\":$(date +%s),\"expires_at\":$(($(date +%s)+5184000))}" > "$TOKEN_PATH"
 ```
+
+> **Why `.env`?** All MCP secrets are centralized in one git-ignored file. See [Centralized MCP secrets](#centralized-mcp-secrets-env) for details.
 
 **Step 8: Test it**
 
@@ -650,6 +663,99 @@ ai-os linkedin stats urn:li:share:123
 | `MCP server not configured` | Run the installer: `.\install.ps1` (Windows) or `./install.sh` (Linux/macOS) |
 | `context7 returns empty` | Check internet connection; Context7 fetches docs live |
 | `Token expired` (LinkedIn) | Re-generate via Token Generator; tokens last ~60 days |
+
+### Centralized MCP secrets (`.env`)
+
+All MCP server credentials are managed in a **single `.env` file** at the OS root. This keeps secrets out of the repository (`.env` is git-ignored) while making them available to every MCP server and plugin transparently.
+
+#### How it works
+
+```
+D:\.ai\
+├── .env                  ← Your real secrets (git-ignored, NEVER committed)
+├── .env.example          ← Template with placeholder values (committed)
+├── scripts/
+│   ├── mcp_secrets_loader.py    ← Loads .env into os.environ at startup
+│   └── mcp_env_wrapper.py       ← Generic wrapper: loads .env then execs MCP command
+└── .devin/mcp_config.json       ← MCP config (uses wrapper for secret-dependent servers)
+```
+
+When an MCP server starts, the wrapper reads `.env`, injects all variables into the environment, then launches the real MCP command. Placeholder values (starting with `your_` and ending with `_here`) are skipped automatically.
+
+#### Setup
+
+1. **Copy the template:**
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+2. **Edit `.env`** and fill in your real credentials:
+   ```env
+   # LinkedIn
+   LINKEDIN_ACCESS_TOKEN=your_real_token_here
+
+   # Upwork
+   UPWORK_CLIENT_ID=your_real_client_id
+   UPWORK_CLIENT_SECRET=your_real_client_secret
+
+   # Freelancer
+   FREELANCER_OAUTH_TOKEN=your_real_oauth_token
+   ```
+
+3. **Verify secrets are loaded:**
+   ```powershell
+   python scripts/mcp_secrets_loader.py --check
+   ```
+   Output:
+   ```
+   [mcp-secrets] Loaded from: D:\.ai\.env
+   [mcp-secrets] Injected 3 var(s): LINKEDIN_ACCESS_TOKEN, UPWORK_CLIENT_ID, UPWORK_CLIENT_SECRET
+   [mcp-secrets] All required vars present.
+   ```
+
+#### Security
+
+- `.env` is in `.gitignore` (line 13) — it will **never** be committed
+- `.env.example` uses placeholder values only — safe to commit
+- The loader skips any value matching the `your_*_here` placeholder pattern
+- `runtime/mcp_client.py` also loads `.env` before spawning any MCP server process
+- All AIOS plugins (`plugins/linkedin`, `plugins/upwork`, `plugins/freelancer`) inherit the loaded environment automatically
+
+#### Required secrets per server
+
+| MCP server | Required env vars | How to get them |
+| :--- | :--- | :--- |
+| `linkedin` | `LINKEDIN_ACCESS_TOKEN` | [LinkedIn Token Generator](https://www.linkedin.com/developers/tools/oauth/token-generator) |
+| `upwork` | `UPWORK_CLIENT_ID`, `UPWORK_CLIENT_SECRET` | [Upwork Developer Apps](https://www.upwork.com/developer/applications) |
+| `freelancer` | `FREELANCER_OAUTH_TOKEN` | [Freelancer API Settings](https://www.freelancer.com/settings/api) |
+| `fiverr` | *(none)* | No secrets needed — only requires `uvx` installed |
+| `context7` | *(none)* | No secrets needed |
+| `ai-global-os` | *(none)* | No secrets needed |
+| `graphify` | *(none)* | No secrets needed |
+
+#### Global MCP config (works in any workspace)
+
+By default, MCP servers are only available when you open the `D:\.ai` project itself. To make all 7 MCP servers available in **any** project — regardless of which IDE you use (Devin, VSCode, Cursor, Antigravity) — run:
+
+```bash
+ai-os mcp sync
+```
+
+This writes a global `mcp_config.json` with **absolute paths** to:
+- **Windows:** `%APPDATA%\devin\mcp_config.json`
+- **Linux/macOS:** `~/.config/devin/mcp_config.json`
+
+The installer runs this automatically. After syncing, MCP servers work from any workspace — no per-project setup needed.
+
+```bash
+# Preview the config without writing
+ai-os mcp sync --check
+
+# Re-sync after adding new MCP servers or changing the OS root
+ai-os mcp sync
+```
+
+---
 
 The fastest generic setup is to point the agent at:
 

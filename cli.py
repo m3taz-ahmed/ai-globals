@@ -291,6 +291,19 @@ def cmd_linkedin(args: argparse.Namespace) -> int:
 
 
 def cmd_mcp(args: argparse.Namespace) -> int:
+    if args.server == "sync":
+        import subprocess
+        root = _root(args)
+        cmd = [sys.executable, str(root / "scripts" / "mcp_global_sync.py")]
+        if args.check:
+            cmd.append("--check")
+        return subprocess.call(cmd, cwd=str(root))
+
+    if not args.server or not args.tool:
+        console.print("[red]Usage: ai-os mcp <server> <tool> [--args '...'][/red]")
+        console.print("[cyan]       ai-os mcp sync [--check][/cyan]")
+        return 1
+
     from runtime.mcp_client import McpClient
 
     client = McpClient(args.server, _root(args))
@@ -560,10 +573,11 @@ def main(argv: list[str] | None = None) -> int:
     p_stack = sub.add_parser("stack", help="Tech-stack detection")
     p_stack.add_argument("subcommand", choices=["detect", "show"])
 
-    p_mcp = sub.add_parser("mcp", help="Call an external MCP tool")
-    p_mcp.add_argument("server")
-    p_mcp.add_argument("tool")
+    p_mcp = sub.add_parser("mcp", help="Call an external MCP tool or sync global config")
+    p_mcp.add_argument("server", nargs="?", help="MCP server name (or 'sync' to write global config)")
+    p_mcp.add_argument("tool", nargs="?", help="Tool name to call")
     p_mcp.add_argument("--args", default="", help="JSON tool arguments")
+    p_mcp.add_argument("--check", action="store_true", help="Dry-run: print config without writing (sync only)")
 
     p_chat = sub.add_parser("chat", help="Persistent chat REPL")
     p_chat.add_argument("message", nargs="?", default=None, help="Single message (omit for REPL)")

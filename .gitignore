@@ -12,6 +12,7 @@ desktop.ini
 *~
 .env
 .env.*
+!.env.example
 .devin/mcp_config.local.json
 .devin/config.local.json
 

@@ -700,10 +700,10 @@ if (-not $SkipMCP) {
     "ai-global-os": { "command": "python", "args": ["scripts/aios_mcp_wrapper.py"] },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
     "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
-    "upwork": { "command": "npx", "args": ["-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
-    "freelancer": { "command": "npx", "args": ["-y", "freelancer-mcp-server@2.0.0"] },
-    "fiverr": { "command": "uvx", "args": ["fiverr-mcp-server"] },
-    "linkedin": { "command": "octopus-linkedin-mcp", "args": [] }
+    "upwork": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
+    "freelancer": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "freelancer-mcp-server@2.0.0"] },
+    "fiverr": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "uvx", "fiverr-mcp-server"] },
+    "linkedin": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"] }
   },
   "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context"] }
 }
@@ -726,6 +726,20 @@ if (-not $WhatIf) {
     Set-Content -Path $Shim -Value $ShimContent -Force
 }
 Write-Ok "CLI shim: $Shim"
+
+# ---------------------------------------------------------------------------
+# 11b. Global MCP config sync (IDE-agnostic)
+# ---------------------------------------------------------------------------
+
+Write-Step "Global MCP config sync"
+if (-not $WhatIf) {
+    $syncOutput = & python (Join-Path $Root "scripts\mcp_global_sync.py") 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "Global MCP config synced to %APPDATA%\devin\mcp_config.json"
+    } else {
+        Write-Warn "MCP global sync failed:`n$syncOutput"
+    }
+}
 
 # ---------------------------------------------------------------------------
 # 12. Post-install verification
