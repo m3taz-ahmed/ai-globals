@@ -91,13 +91,16 @@ The core OS is **pure Python**. Node.js is only needed if you extend the dashboa
 
 2. **Install the OS**:
    ```powershell
-   # Windows
+   # Windows — GUI wizard (recommended for first-time users)
+   .\install.ps1 -Gui
+
+   # Windows — CLI
    .\install.ps1
 
    # macOS / Linux
    bash install.sh
    ```
-   The installer copies the repo to your OS root, installs the `aios` package with `[dev,graphify]` extras, builds the integrity manifest, and creates the `ai-os` CLI shim.
+   The installer copies the repo to your OS root, installs the `aios` package with `[dev,graphify]` extras, builds the integrity manifest, creates the `ai-os` CLI shim, and sets up `.env` for MCP credentials. See the [Installer Guide](#installer-guide) for the full 8-page GUI wizard walkthrough.
 
 3. **Install Python dependencies** inside the cloned folder (only needed if you skipped the installer):
    ```bash
@@ -1043,7 +1046,7 @@ The PowerShell installer is the canonical entry point on Windows. It supports **
 .\install.ps1 -Gui -InstallDir "D:\custom-location"
 ```
 
-#### What the installer does (13 steps)
+#### What the installer does (14 steps)
 
 1. **Root detection** — Hybrid: in-place (repo = root) if `pyproject.toml` exists, else copy to `LOCALAPPDATA\AI-Global-OS`, or use `-InstallDir`. Auto-detects moved repos via `Resolve-StaleRoot`.
 2. **Pre-flight checks** — Verifies Python 3.10+, npx (optional), uvx (optional), and reads installed vs. target version.
@@ -1055,9 +1058,10 @@ The PowerShell installer is the canonical entry point on Windows. It supports **
 8. **Environment variable** — Sets `AGENT_OS_ROOT` at User scope.
 9. **Validate globals + graphify** — Runs `validate-globals.py --fix` and `graphify update .`.
 10. **Agent config symlinks** — Creates junctions/hardlinks for Claude, Windsurf, Cursor, Aider, Devin, Copilot, Cline. Detects and repairs broken links.
-11. **settings.json generation** — Writes `.claude/settings.json` with absolute paths and all 6 MCP servers.
+11. **settings.json generation** — Writes `.claude/settings.json` with absolute paths and all 7 MCP servers (including LinkedIn).
 12. **CLI shim** — Creates `ai-os.cmd` in `WindowsApps` for PATH access.
-13. **Post-install verification** — Tests CLI, verifies `AGENT_OS_ROOT`, checks `settings.json` paths, runs MCP health check, writes `.aios-version`.
+13. **Global MCP config sync** — Runs `scripts/mcp_global_sync.py` to write IDE-agnostic MCP config to `%APPDATA%\devin\mcp_config.json`.
+14. **Post-install verification** — Tests CLI, verifies `AGENT_OS_ROOT`, checks `settings.json` paths, runs MCP health check, writes `.aios-version`.
 
 #### Logging
 
@@ -1075,7 +1079,9 @@ Get-ChildItem state\install-*.log | Sort-Object LastWriteTime -Descending | Sele
 
 ### GUI installer (`installer\gui_installer.ps1`)
 
-A full **WPF wizard** with 8 pages, dark theme (GitHub-style `#0D1117`), step indicator, and live progress log. Designed for non-technical users who want a guided installation experience.
+A full **WPF wizard** with 8 pages, dark theme (GitHub-style `#0D1117`), step indicator, live progress log, `.env` secrets management, and scrollable content on every page. Designed for non-technical users who want a guided installation experience.
+
+> **Version is read dynamically** from `pyproject.toml` — no hardcoded version in the wizard. When you bump the version, the GUI updates automatically.
 
 #### Launching the GUI
 
@@ -1083,32 +1089,197 @@ A full **WPF wizard** with 8 pages, dark theme (GitHub-style `#0D1117`), step in
 # From install.ps1 (recommended)
 .\install.ps1 -Gui
 
-# Directly
+# Directly from the installer folder
+cd installer
+.\gui_installer.ps1
+
+# Or with full path
 powershell -ExecutionPolicy Bypass -File installer\gui_installer.ps1
 
 # Silent mode (no GUI, delegates to install.ps1 with defaults)
-.\install.ps1 -Gui -Silent
+.\installer\gui_installer.ps1 -Silent
 
 # Pre-set install location
-.\install.ps1 -Gui -InstallDir "D:\custom-location"
+.\installer\gui_installer.ps1 -InstallDir "D:\custom-location"
+
+# Skip specific steps
+.\installer\gui_installer.ps1 -SkipPip -SkipGraphify -SkipMCP
 ```
+
+#### All GUI flags
+
+| Flag | Description |
+| :--- | :--- |
+| `-Silent` | Skip the GUI entirely; delegate to `install.ps1` with defaults. |
+| `-InstallDir <path>` | Pre-set the install location (enables copy mode). |
+| `-SkipPip` | Skip Python dependency installation. |
+| `-SkipGraphify` | Skip knowledge graph build. |
+| `-SkipMCP` | Skip MCP server configuration. |
 
 #### The 8 wizard pages
 
 | Page | Title | What it does |
 | :--- | :--- | :--- |
-| 1 | **Welcome** | Shows version, license, author, and the 5-step installation overview. |
-| 2 | **License** | Full MIT license text with an "I accept" checkbox. Next is disabled until accepted. |
+| 1 | **Welcome** | Shows version (dynamic from `pyproject.toml`), license, author, and the 6-step installation overview. |
+| 2 | **License** | Full MIT license text in a scrollable box with an "I accept" checkbox. Next is disabled until accepted. |
 | 3 | **Location** | Choose **In-place** (run from repo) or **Custom location** (copy files). Browse button + disk space display. |
-| 4 | **Components** | 24 checkboxes across 5 sections (see below). |
-| 5 | **Configuration** | Environment variables (AGENT_OS_ROOT, PYTHONIOENCODING), scope (User/Machine), and 5 installation options. |
-| 6 | **Pre-flight** | 6 system checks: Python, npx, uvx, disk space, existing installation, repo integrity. Shows install summary. |
-| 7 | **Progress** | Progress bar + live scrolling log. Runs `install.ps1` in a background job. |
-| 8 | **Finish** | Success summary with version, location, log path, component count. Options to launch dashboard, open README, or open log. |
+| 4 | **Components** | 27 checkboxes across 5 sections (see below). Scrollable. |
+| 5 | **Configuration** | Environment variables (AGENT_OS_ROOT, PYTHONIOENCODING), scope (User/Machine), and 5 installation options. Scrollable. |
+| 6 | **Pre-flight** | 7 system checks: Python, npx, uvx, disk space, existing installation, repo integrity, **.env secrets**. Shows install summary. Scrollable. |
+| 7 | **Progress** | Progress bar + live scrolling log. Runs `install.ps1` in a background job. Creates `.env` from `.env.example` if missing. |
+| 8 | **Finish** | Success summary with version, location, log path, component count. **.env warning** if secret-requiring MCP servers were selected. Options to launch dashboard, open README, open log, or **open `.env` to fill credentials**. |
+
+#### Visual preview (ASCII)
+
+**Page 1 — Welcome:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  AI Global OS Installer                                       _ □ ✕     │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Welcome to AI Global OS                                                │
+│  Sovereign AI engineering control plane - installer wizard              │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ Version: 4.22.1                                                  │  │
+│  │ License: MIT                                                     │  │
+│  │ Author: Moataz                                                   │  │
+│  │                                                                  │  │
+│  │ This wizard will:                                                │  │
+│  │   1. Install AI Global OS core + dependencies                    │  │
+│  │   2. Configure MCP servers (graphify, context7, upwork,          │  │
+│  │      freelancer, fiverr, LinkedIn)                               │  │
+│  │   3. Set up .env secrets file (from .env.example template)       │  │
+│  │   4. Set up agent configs (Claude, Windsurf, Cursor, Aider,      │  │
+│  │      Devin, Copilot, Cline)                                      │  │
+│  │   5. Build knowledge graph (graphify)                            │  │
+│  │   6. Sync global MCP config + create CLI shim + env vars         │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│  Click Next to continue.                                                │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│ 1.Welcome > 2.License > 3.Location > 4.Components > 5.Config > ...      │
+│                                              [ Back ]  [ Next ]  [Cancel]│
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Page 4 — Component Selection (scrollable):**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Component Selection                                                    │
+│  Choose which components to install                                     │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ ▼ Core (required)                                                │  │
+│  │  ☑ AI Global OS Core (runtime, memory, MCP server)  [locked]    │  │
+│  │  ☑ Python dependencies (pip install)                            │  │
+│  │  ☑ Build knowledge graph (graphify update)                      │  │
+│  │  ☑ Dashboard server                                             │  │
+│  │                                                                  │  │
+│  │ ▼ MCP Servers                                                    │  │
+│  │  ☑ Graphify MCP (codebase knowledge graph)                     │  │
+│  │  ☑ Context7 MCP (library docs - requires npx)                  │  │
+│  │  ☑ Upwork MCP (job search + proposals - requires npx + .env)   │  │
+│  │  ☑ Freelancer MCP (project search + bidding - npx + .env)      │  │
+│  │  ☑ Fiverr MCP (gig search - read-only, requires uvx, no secrets)│  │
+│  │  ☑ LinkedIn MCP (content automation - requires Python + .env)  │  │
+│  │                                                                  │  │
+│  │ ▼ AIOS Plugins                                                   │  │
+│  │  ☑ Graphify plugin (graph topology queries)                    │  │
+│  │  ☑ Context7 plugin (library docs proxy)                        │  │
+│  │  ☑ Upwork plugin (8 tools)                                     │  │
+│  │  ☑ Freelancer plugin (11 tools)                                │  │
+│  │  ☑ Fiverr plugin (5 read-only tools)                           │  │
+│  │  ☑ LinkedIn plugin (18 tools - draft/approve/publish)          │  │
+│  │                                                                  │  │
+│  │ ▼ Agent Configs                                                  │  │
+│  │  ☑ Claude Code, Windsurf, Cursor, Aider, Devin,                │  │
+│  │    Copilot, Cline                                               │  │
+│  │                                                                  │  │
+│  │ ▼ System Integration                                             │  │
+│  │  ☑ CLI shim, AGENT_OS_ROOT, Start Menu shortcut                │  │
+│  │  ☐ Create Desktop shortcut                                      │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Page 6 — Pre-flight Check (scrollable):**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Pre-flight Check                                                       │
+│  Verifying system requirements before installation                      │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ System Checks                                                    │  │
+│  │  [OK]   Python: Python 3.12.0                                   │  │
+│  │  [OK]   npx: available                                          │  │
+│  │  [WARN] uvx: not found (fiverr MCP will be unavailable)         │  │
+│  │  [OK]   Disk space: 245,832 MB free                             │  │
+│  │  [OK]   Existing installation: v4.22.0 (will be updated)        │  │
+│  │  [OK]   Repository: valid (pyproject.toml found)                │  │
+│  │  [WARN] .env missing - will be created from .env.example        │  │
+│  │                                                                  │  │
+│  │ Installation Summary                                             │  │
+│  │  Location: D:\server\.ai                                        │  │
+│  │  Components selected: 22                                         │  │
+│  │  Target version: 4.22.1                                         │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│  All checks passed. Click Install to begin.                             │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Page 7 — Installation Progress:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Installing...                                                          │
+│  Please wait while AI Global OS is being installed                      │
+│  ████████████████████████████░░░░░░░░░░░░░░░░░░░░░░  60%               │
+│  Installing... (step 6 / 10)                                            │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ === AI Global OS Installation ===                               │  │
+│  │ Root: D:\server\.ai                                             │  │
+│  │ [.env] Created .env from .env.example template                  │  │
+│  │ [OK] Python 3.12.0 found                                        │  │
+│  │ [OK] Pip install: aios[dev,graphify]                            │  │
+│  │ [OK] Migrations: 4.22.0 -> 4.22.1                               │  │
+│  │ [OK] Graphify: knowledge graph built                            │  │
+│  │ [OK] MCP config: 6 servers configured                           │  │
+│  │ ...                                                              │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Page 8 — Finish (with .env warning):**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Installation Complete!                                                 │
+│  AI Global OS has been successfully installed                           │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ Version: 4.22.1                                                 │  │
+│  │ Location: D:\server\.ai                                        │  │
+│  │ Log: state/install-20260813-140302.log                          │  │
+│  │ Components installed: 22                                        │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │ ⚠ Action required: edit .env file                               │  │
+│  │   Edit: D:\server\.ai\.env                                     │  │
+│  │   Fill in UPWORK_CLIENT_ID, UPWORK_CLIENT_SECRET,               │  │
+│  │   FREELANCER_OAUTH_TOKEN, and/or LINKEDIN_ACCESS_TOKEN.         │  │
+│  │   MCP servers will not work until credentials are set.          │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│  What would you like to do next?                                        │
+│  ☐ Launch dashboard server                                             │
+│  ☐ Open README                                                         │
+│  ☐ Open installation log                                               │
+│  ☑ Open .env file to fill in MCP credentials                           │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 #### Component selection (Page 4)
 
-All 24 selectable components:
+All 27 selectable components:
 
 **Core (required):**
 - AI Global OS Core (runtime, memory, MCP server) — locked on
@@ -1119,9 +1290,10 @@ All 24 selectable components:
 **MCP Servers:**
 - Graphify MCP (codebase knowledge graph)
 - Context7 MCP (library docs — requires npx)
-- Upwork MCP (job search + proposals — requires npx + OAuth)
-- Freelancer MCP (project search + bidding — requires npx + OAuth)
-- Fiverr MCP (gig search — read-only, requires uvx)
+- Upwork MCP (job search + proposals — requires npx + `.env` secrets)
+- Freelancer MCP (project search + bidding — requires npx + `.env` secrets)
+- Fiverr MCP (gig search — read-only, requires uvx, no secrets needed)
+- LinkedIn MCP (content automation — requires Python + `.env` secrets)
 
 **AIOS Plugins:**
 - Graphify plugin (graph topology queries)
@@ -1129,6 +1301,7 @@ All 24 selectable components:
 - Upwork plugin (8 tools)
 - Freelancer plugin (11 tools)
 - Fiverr plugin (5 read-only tools)
+- LinkedIn plugin (18 tools — draft/approve/publish)
 
 **Agent Configs:**
 - Claude Code (CLAUDE.md + settings + skills + agents)
@@ -1155,6 +1328,14 @@ All 24 selectable components:
 | Create installation log file | On | Write timestamped log to `state/install-*.log`. |
 | Backup existing configs | On | Backup existing agent configs before overwriting. |
 | Environment variable scope | User | `User` (current user only) or `Machine` (all users, requires admin). |
+
+#### `.env` secrets management
+
+The GUI installer integrates with the centralized `.env` secrets system:
+
+1. **Pre-flight check (Page 6):** If you select Upwork, Freelancer, or LinkedIn MCP, the wizard checks whether `.env` exists and whether it still contains placeholder values (`your_*_here`).
+2. **Auto-create during install (Page 7):** If `.env` doesn't exist but `.env.example` does, the installer copies it automatically and logs the action.
+3. **Finish reminder (Page 8):** If secret-requiring MCP servers were selected, a yellow warning box appears with the exact `.env` path and the variable names to fill. A checkbox to open `.env` in Notepad is pre-checked.
 
 ### Linux / macOS installer (`install.sh`)
 
@@ -1297,6 +1478,8 @@ The installer will:
 | `settings.json paths wrong` | Delete `.claude/settings.json` and re-run the installer. |
 | `pip install failed after 3 attempts` | Check network connectivity. Try `pip install --proxy` if behind a corporate proxy. |
 | `GUI won't launch` | Ensure .NET Framework 3.0+ is installed. Run `Add-Type -AssemblyName PresentationFramework` to test. |
+| `MCP servers fail with auth error` | Edit `.env` in the OS root and fill in real credentials. See [Centralized MCP secrets](#centralized-mcp-secrets-env). |
+| `.env file missing` | The GUI installer auto-creates it from `.env.example`. For CLI installs: `Copy-Item .env.example .env` (Windows) or `cp .env.example .env` (Linux/macOS). |
 
 ### Installer file structure
 
@@ -1305,11 +1488,16 @@ The installer will:
 ├── install.ps1                    # Windows installer (CLI + GUI redirect)
 ├── install.sh                     # Linux/macOS installer
 ├── .aios-version                  # Current installed version
+├── .env.example                   # MCP secrets template (copy to .env)
+├── .env                           # MCP secrets (git-ignored, user-filled)
 ├── installer/
-│   └── gui_installer.ps1          # WPF GUI wizard (8 pages)
+│   └── gui_installer.ps1          # WPF GUI wizard (8 pages, dark theme)
 ├── scripts/
 │   ├── migrate.py                 # Migration engine
-│   └── validate-globals.py        # Global file validator
+│   ├── validate-globals.py        # Global file validator
+│   ├── mcp_env_wrapper.py         # .env loader for MCP server processes
+│   ├── mcp_secrets_loader.py      # Centralized secrets loader (+ --check)
+│   └── mcp_global_sync.py         # IDE-agnostic global MCP config sync
 ├── state/
 │   └── install-*.log              # Timestamped install logs
 └── .claude/

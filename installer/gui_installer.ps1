@@ -733,8 +733,9 @@ function Start-Installation {
     $NextBtn.IsEnabled = $false
     $BackBtn.IsEnabled = $false
 
-    # Determine install root
-    $installRoot = if ($Window.FindName("RadioInPlace").IsChecked) { $Repo } else { $Window.FindName("CustomPath").Text }
+    # Determine install root (use $script: scope so finish-page click handler can access it)
+    $script:installRoot = if ($Window.FindName("RadioInPlace").IsChecked) { $Repo } else { $Window.FindName("CustomPath").Text }
+    $installRoot = $script:installRoot
     $copyMode = -not $Window.FindName("RadioInPlace").IsChecked
 
     # Build install arguments
@@ -815,7 +816,8 @@ function Start-Installation {
     $Window.FindName("FinishLocation").Text = "Location: $installRoot"
 
     $logFile = Join-Path $installRoot "state\install-*.log"
-    $latestLog = Get-ChildItem $logFile -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $script:latestLog = Get-ChildItem $logFile -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $latestLog = $script:latestLog
     if ($latestLog) {
         $Window.FindName("FinishLog").Text = "Log: $($latestLog.FullName)"
     }
@@ -841,16 +843,16 @@ function Start-Installation {
     # Handle finish page actions
     $NextBtn.Add_Click({
         if ($Window.FindName("FinishLaunchDashboard").IsChecked) {
-            Start-Process python -ArgumentList "dashboard/server.py" -WorkingDirectory $installRoot
+            Start-Process python -ArgumentList "dashboard/server.py" -WorkingDirectory $script:installRoot
         }
         if ($Window.FindName("FinishOpenReadme").IsChecked) {
-            Start-Process notepad -ArgumentList (Join-Path $installRoot "README.md")
+            Start-Process notepad -ArgumentList (Join-Path $script:installRoot "README.md")
         }
-        if ($Window.FindName("FinishOpenLog").IsChecked -and $latestLog) {
-            Start-Process notepad -ArgumentList $latestLog.FullName
+        if ($Window.FindName("FinishOpenLog").IsChecked -and $script:latestLog) {
+            Start-Process notepad -ArgumentList $script:latestLog.FullName
         }
         if ($Window.FindName("FinishOpenEnv").IsChecked) {
-            $envPath = Join-Path $installRoot ".env"
+            $envPath = Join-Path $script:installRoot ".env"
             if (Test-Path $envPath) {
                 Start-Process notepad -ArgumentList $envPath
             }
