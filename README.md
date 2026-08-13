@@ -286,7 +286,7 @@ python dashboard/server.py 8080
 ├── memory/                       # Memory service
 ├── aios_mcp/                     # MCP server
 ├── dashboard/                    # Web dashboard
-├── cli.py                        # CLI entry point
+├── aios_cli.py                   # CLI entry point
 ├── config.py                     # Root discovery
 ├── install.ps1 / install.sh      # OS installer
 ├── plugins.yaml                  # Plugin manifest
@@ -1254,7 +1254,7 @@ _MIGRATIONS = [
 
 The installer performs these checks automatically:
 
-1. **CLI test** — `python cli.py status` must exit 0.
+1. **CLI test** — `python aios_cli.py status` must exit 0.
 2. **AGENT_OS_ROOT verification** — Environment variable matches install root.
 3. **settings.json path verification** — Config file contains the current root path.
 4. **MCP server health check** — Each MCP server's command (npx/uvx/python) is available on PATH.

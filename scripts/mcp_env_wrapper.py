@@ -86,9 +86,20 @@ def main() -> int:
         if resolved:
             cmd = resolved
 
-    # exec the real MCP server, replacing this process
-    os.execvpe(cmd, [cmd, *args], os.environ)
-    return 0  # unreachable
+    # Launch the real MCP server.
+    # On POSIX, os.execvpe replaces this process (no extra layer).
+    # On Windows, os.execvpe does NOT reliably inherit the parent's
+    # stdin/stdout pipe handles when the MCP client talks over stdio,
+    # which silently breaks the JSON-RPC stream (server starts, reads
+    # nothing, exits 1). Fall back to subprocess with inherited handles.
+    if os.name == "posix":
+        os.execvpe(cmd, [cmd, *args], os.environ)
+        return 0  # unreachable
+
+    import subprocess
+
+    proc = subprocess.run([cmd, *args], env=os.environ)
+    return proc.returncode
 
 
 if __name__ == "__main__":

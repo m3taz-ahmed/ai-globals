@@ -26,7 +26,7 @@ class EvalHarness:
     def run(self) -> dict[str, Any]:
         results = {}
         results["ruff"] = self._run("ruff", ["python", "-m", "ruff", "check", "."])
-        results["mypy"] = self._run("mypy", ["python", "-m", "mypy", "runtime", "memory", "aios_mcp", "cli.py", "config.py", "dashboard/server.py"])
+        results["mypy"] = self._run("mypy", ["python", "-m", "mypy", "runtime", "memory", "aios_mcp", "aios_cli.py", "config.py", "dashboard/server.py"])
         results["pytest"] = self._run("pytest", ["python", "-m", "pytest", "-q"])
         results["validate-globals"] = self._run("validate-globals", ["python", "scripts/validate-globals.py", "--fix"])
 

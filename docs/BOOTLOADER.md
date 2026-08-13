@@ -108,4 +108,4 @@ The installer symlinks agent configs from the OS root to common locations:
 | `Memory.md` | Cross-session memory |
 | `config.py` | Root discovery + configuration |
 | `runtime/kernel.py` | Runtime gate (policy + budget + guardian) |
-| `cli.py` | CLI entry point (`ai-os` command) |
+| `aios_cli.py` | CLI entry point (`ai-os` command) |

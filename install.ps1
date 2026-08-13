@@ -720,7 +720,7 @@ if (-not $SkipMCP) {
 
 $ShimDir = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
 $Shim = Join-Path $ShimDir "ai-os.cmd"
-$ShimContent = "@echo off`nset AGENT_OS_ROOT=$Root`nset PYTHONIOENCODING=utf-8`npython `"$Root\cli.py`" %*"
+$ShimContent = "@echo off`nset AGENT_OS_ROOT=$Root`nset PYTHONIOENCODING=utf-8`npython `"$Root\aios_cli.py`" %*"
 if (-not $WhatIf) {
     New-Directory $ShimDir
     Set-Content -Path $Shim -Value $ShimContent -Force
@@ -748,7 +748,7 @@ if (-not $WhatIf) {
 Write-Step "Post-install verification"
 if (-not $WhatIf) {
     # CLI test
-    $testOutput = & python (Join-Path $Root "cli.py") status 2>&1
+    $testOutput = & python (Join-Path $Root "aios_cli.py") status 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Warn "CLI status check failed:`n$testOutput"
     } else {

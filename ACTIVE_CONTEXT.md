@@ -73,7 +73,7 @@ bandit                ✅ 0 issues
 ## 📁 ملفات تم تعديلها / إنشاؤها في هذه الجلسة
 
 ### تم تعديلها (Modified)
-- `cli.py`
+- `aios_cli.py` (renamed from `cli.py` to avoid collision with octopus-linkedin's `cli` module)
 - `memory/store.py`
 - `runtime/budget.py`
 - `runtime/kernel.py`

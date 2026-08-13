@@ -286,7 +286,7 @@ python dashboard/server.py 8080
 ├── memory/                       # Memory service
 ├── aios_mcp/                     # MCP server
 ├── dashboard/                    # Web dashboard
-├── cli.py                        # CLI entry point
+├── aios_cli.py                   # CLI entry point
 ├── config.py                     # Root discovery
 ├── install.ps1 / install.sh      # OS installer
 ├── plugins.yaml                  # Plugin manifest

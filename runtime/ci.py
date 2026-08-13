@@ -34,7 +34,7 @@ class CIPipeline:
 
         checks: list[tuple[str, list[str]]] = [
             ("ruff", [sys.executable, "-m", "ruff", "check", "."]),
-            ("mypy", [sys.executable, "-m", "mypy", "runtime", "memory", "aios_mcp", "cli.py", "config.py", "dashboard/server.py"]),
+            ("mypy", [sys.executable, "-m", "mypy", "runtime", "memory", "aios_mcp", "aios_cli.py", "config.py", "dashboard/server.py"]),
         ]
         if not skip_pytest:
             checks.append(("pytest", [sys.executable, "-m", "pytest", "-q"]))

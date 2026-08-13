@@ -1,4 +1,4 @@
-"""Comprehensive tests for cli.py."""
+"""Comprehensive tests for aios_cli.py."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cli import main
+from aios_cli import main
 
 
 # ---------------------------------------------------------------------------

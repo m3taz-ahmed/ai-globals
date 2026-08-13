@@ -53,10 +53,10 @@ vector = [
 ]
 
 [project.scripts]
-ai-os = "cli:main"
+ai-os = "aios_cli:main"
 
 [tool.setuptools]
-py-modules = ["cli", "config"]
+py-modules = ["aios_cli", "config"]
 
 [tool.setuptools.packages.find]
 where = ["."]

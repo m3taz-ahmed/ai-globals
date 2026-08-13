@@ -95,3 +95,15 @@
 - **`pyproject.toml`**: version bumped to 4.22.1.
 - **`CHANGELOG.md`**: حدّث بالكامل بكل تغييرات P0-P2 + installer fixes.
 - **Gate**: ruff ✅, mypy ✅ (58 files), pytest ✅ (599 passed, 89.06% cov), bandit ✅ (0 issues).
+
+## v4.22.1 — MCP Windows Fix + ai-os CLI Collision (SRE + DEVOPS)
+
+### المشكلة
+- **linkedin MCP (وكل wrapper-based MCP) مكسور على Windows**: `scripts/mcp_env_wrapper.py` كان يستخدم `os.execvpe()` لتشغيل الـ MCP server. على Windows، `os.execvpe` لا يورّث stdin/stdout pipe handles صح لما الـ MCP client يتكلم over stdio → السيرفر يقرأ nothing ويخرج exit 1 بصمت. ده كسر upwork/freelancer/fiverr/linkedin.
+- **`ai-os` CLI مُخترَق**: حزمة `octopus-linkedin` لها `cli.py` top-level في user site-packages. حزمة `aios` entry point كان `ai-os = "cli:main"` → `import cli` يحلّ لـ octopus-linkedin بدل aios (collision). نتيجة: `ai-os persona detect` وكل أوامر `ai-os` كانت تشتغل كأنها `octopus-linkedin`.
+
+### الإصلاحات
+- **`scripts/mcp_env_wrapper.py`**: على Windows استُبدل `os.execvpe` بـ `subprocess.run` (inherited handles). POSIX فضّل `execvpe` (أكفأ). ده أصلح كل MCP servers دفعة واحدة.
+- **إعادة تسمية `cli.py` → `aios_cli.py`** (إصلاح دائم للـ collision): تحديث `pyproject.toml` (`ai-os = "aios_cli:main"`, `py-modules`), `tests/test_cli.py`, `install.ps1`/`install.sh` (shim + verification), `runtime/ci.py` + `eval/harness.py` (mypy targets), docs (README, README-AR, BOOTLOADER, MAINTENANCE_PROMPT, ACTIVE_CONTEXT). `pip install -e .` لإعادة توليد editable finder MAPPING + `ai-os.exe`.
+- **التحقق**: linkedin MCP رجع 28 أداة + `get_profile` رجع بيانات Moataz Ahmed. `ai-os status`/`persona detect --multi` شغّال. ruff ✅, mypy ✅, `tests/test_cli.py` 23 passed.
+- **ملاحظة**: `ai-os.exe` في `C:\Users\int190\AppData\Roaming\Python\Python314\Scripts` (user Scripts، ليس على PATH) — الـ WindowsApps shim `ai-os.cmd` هو اللي على PATH. لو الـ shim قديم بيشاور لـ `cli.py`، شغّل `install.ps1` لتحديثه لـ `aios_cli.py`.

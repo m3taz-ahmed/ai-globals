@@ -508,7 +508,7 @@ cat > "$BIN_DIR/ai-os" <<EOF
 #!/usr/bin/env bash
 export AGENT_OS_ROOT="$ROOT"
 export PYTHONIOENCODING=utf-8
-python "$ROOT/cli.py" "\$@"
+python "$ROOT/aios_cli.py" "\$@"
 EOF
 chmod +x "$BIN_DIR/ai-os"
 ok "CLI shim: $BIN_DIR/ai-os"
@@ -519,7 +519,7 @@ ok "CLI shim: $BIN_DIR/ai-os"
 
 step "Post-install verification"
 if ! $WHATIF; then
-    if python "$ROOT/cli.py" status >/dev/null 2>&1; then
+    if python "$ROOT/aios_cli.py" status >/dev/null 2>&1; then
         ok "CLI: ai-os status works"
     else
         warn "CLI status check failed"
