@@ -6,7 +6,9 @@ import atexit
 import json
 import os
 import queue
+import shutil
 import subprocess
+import sysconfig
 import threading
 import uuid
 from pathlib import Path
@@ -19,6 +21,40 @@ _PROC_INIT: dict[tuple[str, Path], bool] = {}
 _PROC_LOCK = threading.Lock()
 _SEND_LOCKS: dict[tuple[str, Path], threading.Lock] = {}
 _DEFAULT_TIMEOUT = 30.0
+
+
+def _user_script_dirs() -> list[str]:
+    """Return Python user-base script/bin directories not already on PATH.
+
+    When a package is installed via ``pip install --user`` (the default on
+    systems without a writable global site-packages), its console-script
+    entry points land in a per-user Scripts/bin directory that is frequently
+    missing from ``PATH``. We discover those directories via ``sysconfig``
+    so MCP servers shipped as Python entry points resolve portably — no
+    hardcoded per-machine paths in ``config.json``.
+    """
+    scheme = "nt_user" if os.name == "nt" else "posix_user"
+    candidates: list[str] = []
+    scripts = sysconfig.get_path("scripts", scheme)
+    if scripts:
+        candidates.append(scripts)
+    # On Windows the per-user Scripts dir is the canonical one; on POSIX the
+    # bin dir may live under the userbase too.
+    userbase = sysconfig.get_config_var("userbase")
+    if userbase:
+        for child in ("Scripts", "bin"):
+            d = str(Path(userbase) / child)
+            if d not in candidates and Path(d).is_dir():
+                candidates.append(d)
+    existing = {str(Path(p).resolve()) for p in os.environ.get("PATH", "").split(os.pathsep) if p}
+    return [d for d in candidates if str(Path(d).resolve()) not in existing]
+
+
+def _user_site_dirs() -> list[str]:
+    """Return Python user site-packages directories for PYTHONPATH augmentation."""
+    scheme = "nt_user" if os.name == "nt" else "posix_user"
+    site = sysconfig.get_path("purelib", scheme)
+    return [site] if site else []
 
 
 def _terminate_pool() -> None:
@@ -64,6 +100,26 @@ class McpClient:
         cmd = self.config["command"]
         args = self.config.get("args", [])
         env = {"AGENT_OS_ROOT": str(self.os_root), **os.environ}
+        # Augment PATH with per-user Python script dirs so entry-point MCP
+        # servers (e.g. installed via ``pip install --user``) resolve without
+        # hardcoding machine-specific paths in config.json.
+        extra_path = _user_script_dirs()
+        if extra_path:
+            env["PATH"] = os.pathsep.join([*extra_path, env.get("PATH", "")])
+        # Some Python MCP servers expose their entry point as a top-level
+        # module (e.g. ``server.py``) that is only importable from the user
+        # site-packages. Add it to PYTHONPATH so ``python -c`` wrappers work.
+        extra_site = _user_site_dirs()
+        if extra_site:
+            existing = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = os.pathsep.join([*extra_site, existing]) if existing else os.pathsep.join(extra_site)
+        # On Windows, CreateProcess uses the *parent* process PATH for
+        # executable lookup, not the env we pass to the child. Resolve the
+        # command to an absolute path via shutil.which against the augmented
+        # PATH so user-installed entry points are found portably.
+        resolved = shutil.which(cmd, path=env.get("PATH"))
+        if resolved:
+            cmd = resolved
         return subprocess.Popen(
             [cmd, *args],
             stdin=subprocess.PIPE,

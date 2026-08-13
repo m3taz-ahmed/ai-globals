@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import ast
+import functools
 import importlib.util
 import threading
 import warnings
@@ -98,6 +99,7 @@ class PluginGuard:
         return action not in self.denied and (not self.allowed or action in self.allowed)
 
     def wrap(self, fn: Callable[..., Any], plugin_name: str) -> Callable[..., Any]:
+        @functools.wraps(fn)
         def guarded(*args: Any, **kwargs: Any) -> Any:
             action = kwargs.get("action") or (args[0] if args else "unknown")
             if not self.is_allowed(str(action)):
