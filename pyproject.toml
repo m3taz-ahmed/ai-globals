@@ -43,12 +43,12 @@ dev = [
     "mypy>=1.0,<2.0",
     "types-pyyaml",
     "types-psutil",
-    "graphifyy>=0.9.16,<0.9.17",
+    "graphifyy>=0.9.39,<0.9.40",
     "bandit>=1.7,<2.0",
     "pip-audit>=2.0,<3.0",
 ]
 graphify = [
-    "graphifyy>=0.9.16,<0.9.17",
+    "graphifyy>=0.9.39,<0.9.40",
 ]
 vector = [
     "sentence-transformers>=2.0,<3.0",
