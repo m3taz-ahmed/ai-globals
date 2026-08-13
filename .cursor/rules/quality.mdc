@@ -15,7 +15,12 @@ alwaysApply: true
 6. [REQ] `[TEST-01]` Mandatory coverage.
 7. [REQ] `[TEST-02]` AAA pattern. One behavior per test.
 8. [REQ] `[TEST-03]` Factories/seeders. No hardcoded IDs/dates.
-9. [REQ] `[TEST-04]` Pest 3+ (backend), Vitest+RTL (frontend).
+9. [REQ] `[TEST-04]` Pest 3+ (backend), Vitest+RTL (frontend), pytest (Python), go test (Go).
 10. [REQ] `[TEST-06]` 80% logic, 90% API, 70% total coverage.
-11. [PROHIBIT] No inline imports (`await import()`). No downgrade deps for type errors.
-12. [PROHIBIT] No `TODO`/`FIXME` without ticket tag.
+11. [REQ] `[TEST-07]` Two-tier testing: FAST (targeted, ~5s, during iteration) + FULL (complete suite + coverage, before done). See `workflows/testing-tiers.md`.
+12. [REQ] `[TEST-08]` Per-stack commands: PHP `artisan test --filter=` / `artisan test`; JS `vitest run <file>` / `vitest run --coverage`; Python `pytest <file> --no-cov` / `pytest --cov`; Go `go test <pkg> -short` / `go test ./... -cover`.
+13. [REQ] `[TEST-09]` If no test framework exists, write the first test for touched code before done.
+14. [REQ] `[TEST-10]` Mark slow tests (E2E, integration, model-loading) with framework skip mechanism. Fast tier stays under 5s.
+15. [PROHIBIT] No inline imports (`await import()`). No downgrade deps for type errors.
+16. [PROHIBIT] No `TODO`/`FIXME` without ticket tag.
+17. [PROHIBIT] No full test suite on every change (use FAST tier). No skipping FULL tier before done.

@@ -493,10 +493,10 @@ def cmd_test(args: argparse.Namespace) -> int:
     """Run pytest with configurable speed tiers.
 
     Tiers:
-      ai-os test           → fast (default): skip slow/mcp/dashboard/vector, no coverage, ~10s
-      ai-os test --full    → full: all tests + coverage, ~20s
+      ai-os test           → fast (default): skip slow/mcp/dashboard/vector, no coverage, ~12s
+      ai-os test --full    → full: all tests + coverage, ~35s
       ai-os test --verbose → verbose output
-      ai-os test --xdist   → parallel execution
+      ai-os test --xdist   → parallel execution (faster on Linux/macOS, slower on Windows)
     """
     import subprocess
     import sys
@@ -504,22 +504,27 @@ def cmd_test(args: argparse.Namespace) -> int:
     if args.full:
         pytest_args = [
             sys.executable, "-m", "pytest",
-            "-q",
+            "--tb=short", "-p", "no:warnings",
+            "--cov=runtime", "--cov=memory", "--cov=aios_mcp",
+            "--cov-report=term-missing",
+            "--cov-fail-under=80",
         ]
-        console.print("[cyan]Running FULL test suite with coverage...[/]")
+        console.print("[cyan]Running FULL test suite (all tests + coverage)...[/]")
     else:
         # Default / --fast: skip slow tests, no coverage
         pytest_args = [
             sys.executable, "-m", "pytest",
             "-m", "not slow and not mcp and not dashboard and not vector",
-            "--no-cov", "-q",
+            "--no-cov", "--tb=short", "-p", "no:warnings",
         ]
-        console.print("[cyan]Running FAST tests (unit only, no model/server loading)...[/]")
+        console.print("[cyan]Running FAST tests (unit only, no slow/coverage)...[/]")
 
     if args.verbose:
         pytest_args.append("-v")
-    if args.xdist and args.workers:
-        pytest_args.extend(["-n", str(args.workers)])
+    if hasattr(args, "xdist") and args.xdist:
+        import os
+        workers = max(2, min(os.cpu_count() or 4, 8))
+        pytest_args.extend(["-n", str(workers)])
 
     result = subprocess.run(pytest_args, cwd=str(_root(args)))
     return result.returncode
@@ -602,11 +607,10 @@ def main(argv: list[str] | None = None) -> int:
     p_ci = sub.add_parser("ci", help="Run CI quality gates")
     p_ci.add_argument("--skip-pytest", action="store_true", help="Skip pytest to save time")
 
-    p_test = sub.add_parser("test", help="Run tests (default: fast tier ~10s, --full: all tests with coverage ~20s)")
-    p_test.add_argument("--full", action="store_true", help="Full tier: all tests with coverage")
+    p_test = sub.add_parser("test", help="Run tests (fast tier ~12s, --full: all tests with coverage ~35s)")
+    p_test.add_argument("--full", action="store_true", help="Full tier: all tests + coverage")
     p_test.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    p_test.add_argument("--xdist", action="store_true", help="Run in parallel with pytest-xdist")
-    p_test.add_argument("--workers", type=int, default=4, help="Number of parallel workers (default: 4)")
+    p_test.add_argument("--xdist", action="store_true", help="Parallel execution (faster on Linux/macOS)")
 
     p_agent = sub.add_parser("agent", help="Sub-agent orchestration")
     p_agent.add_argument("subcommand", choices=["spawn", "delegate", "list", "sync"])

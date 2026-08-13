@@ -1,5 +1,36 @@
 # Changelog
 
+## [5.0.0] — 2026-08-13
+
+### Added — 18 new features (competitive analysis driven)
+- **Append-only audit log** (`runtime/audit.py`): SHA-256 hash-chained, tamper-evident audit trail with sensitive key redaction.
+- **AST validation** (`runtime/ast_validator.py`): plan/diff validation before and after code modifications.
+- **Agent benchmark/eval engine** (`eval/agent_benchmark.py`): persona performance benchmarking with multi-metric scoring.
+- **OWASP Agentic Top 10 compliance** (`runtime/agentic_security.py` + `runtime/policies/agentic-owasp.yaml`): 10 security controls for agentic systems.
+- **MCP security scanning** (`runtime/mcp_security.py`): static analysis scanner for MCP servers and skills (secrets, dangerous imports, eval/exec).
+- **Skills marketplace** (`runtime/skills_marketplace.py`): community skill registry with security scanning before install.
+- **AI code review engine** (`runtime/review_engine.py`): multi-dimensional review with confidence scoring (security, quality, performance, maintainability).
+- **Git-backed memory** (`memory/git_memory.py`): versioned memory store with git branches per persona.
+- **Code compression** (`runtime/code_compressor.py`): AST-based compression (~70% token reduction) for Python + regex-based for other languages.
+- **OpenTelemetry exporter** (`runtime/otel_exporter.py`): OTLP/JSON trace exporter with fallback file.
+- **Parallel agents** (`runtime/worktree_pool.py`): git worktree-based parallel agent execution pool.
+- **Spec-driven development** (`runtime/spec_engine.py`): 4-phase workflow (Specify → Plan → Tasks → Implement) with validation gates.
+- **Dynamic evolving personas** (`runtime/dynamic_persona.py`): 3-layer evolution (Core/Accumulation/Deep) with experience tracking.
+- **Issue tracker integration** (`runtime/issue_tracker.py`): Linear/Jira/Notion unified client.
+- **Agent Command Center** (`runtime/command_center.py`): fleet management dashboard with Kanban board.
+- **AI slop detection** (`runtime/ai_slop_detector.py`): detects AI-generated code quality issues (stubs, redundant conversions, verbose comments).
+- **Voice interface** (`runtime/voice_interface.py`): cross-platform STT/TTS (Windows SAPI, macOS say, Linux espeak/festival).
+- **ACP protocol** (`runtime/acp_protocol.py`): Agent Communication Protocol message broker for inter-agent communication.
+- **Spec-driven workflow** (`workflows/21-spec-driven.md`): workflow for spec-driven development.
+
+### Changed
+- Version bumped to 5.0.0 across `pyproject.toml`, `manifest.json`, `config.py`, `.aios-version`, `README.md`, `README-AR.md`.
+- `pyproject.toml`: added `eval*` to setuptools packages.find.
+- `aios_mcp/config.json`: standardized ai-global-os and graphify to use wrapper scripts (consistent with .devin/.claude configs).
+- `global-roles.md`: added FREELANCE persona (#20) to match `personas.yaml`.
+- 551 new tests added (total: 1121 passing).
+- ruff clean across entire codebase.
+
 ## [Unreleased]
 
 ### Added
@@ -17,7 +48,7 @@
 - **Supply-chain CI** (`.github/workflows/supply-chain.yml`): OIDC keyless, SBOM (syft), Cosign, TruffleHog secret scanning, dependency-review.
 - **Release workflow** (`.github/workflows/release.yml`): PyPI (OIDC), Docker (GHCR), SBOM, Cosign, GitHub Release.
 - **CODEOWNERS** (`.github/CODEOWNERS`) and **branch protection** config (`.github/branch-protection.json`).
-- **Docs-guard CI check** in `validate.yml`: verifies `API.md`, `LICENSE`, `CODEOWNERS` exist.
+- **Docs-guard CI check** in `validate.yml`: verifies `aios_mcp/API.md`, `LICENSE`, `CODEOWNERS` exist.
 - **Async MCP client** (`runtime/mcp_client.py`): `async_call_tool` method using `asyncio.subprocess`.
 - **Lazy loading**: `PluginManager` is now a lazy property; `parse_frontmatter` uses `@lru_cache`; `detect_tech_stack` is cached per kernel instance.
 - **Migration 4.22.0 → 4.22.1** in `scripts/migrate.py`: runs schema migrations, verifies encryption compatibility, creates new directories.

@@ -20,4 +20,9 @@
 17. [CMD] MCP Sync `[OS-MCP-02]`: For IDE context, use `aios_mcp/config.json` or `python aios_mcp/aios_server.py`.
 18. [CMD] Dashboard `[OS-DASH-01]`: For local dashboard, use `python dashboard/server.py 8080`. Use `AGENT_OS_DASHBOARD_TOKEN` for auth.
 19. [CMD] Validation Gate `[OS-VAL-01]`: Before handoff, run `python eval/harness.py` and ensure `all_pass: true`. Fix all `ruff`/`mypy`/`pytest`/`validate-globals` failures first.
+20. [CMD] Project Testing `[OS-TEST-01]`: For ANY project under AI Global OS, follow two-tier testing `[TEST-07]`:
+    - FAST tier (during iteration): run ONLY targeted tests for touched code (~5s). See `workflows/testing-tiers.md` for per-stack commands.
+    - FULL tier (before declaring done): run the project's complete test suite + coverage. Must pass green.
+    - NEVER run the full suite on every change. NEVER skip the full suite before done.
+    - If no test framework exists, write the first test for touched code before done `[TEST-09]`.
 20. [CMD] Cleanup Gate `[OS-CLEAN-01]`: Before handoff, run `workflows/16-cleanup-and-scm.md` to remove temporary files and stage only relevant changes.

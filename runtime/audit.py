@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Audit logging for AI Global OS."""
+"""Append-only audit logging with hash chaining for AI Global OS.
+
+Each log entry is cryptographically chained to the previous one via SHA-256,
+producing a tamper-evident trail. Any modification or deletion of a past
+entry breaks the chain and is detectable via ``verify_chain()``.
+"""
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import threading
@@ -12,9 +18,16 @@ from typing import Any
 
 _SENSITIVE_KEYS = re.compile(r"(token|key|secret|password|credential|auth|api[_-]?key)", re.IGNORECASE)
 
+_GENESIS_HASH = "0" * 64
+
 
 class AuditLogger:
-    """Append-only audit log for policy, budget, and workflow events."""
+    """Append-only, hash-chained audit log for policy, budget, and workflow events.
+
+    Every entry stores ``prev_hash`` (the hash of the preceding entry) and
+    ``hash`` (SHA-256 of its own canonical JSON excluding the ``hash`` field).
+    The first entry's ``prev_hash`` is the genesis hash (64 zeros).
+    """
 
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -32,11 +45,80 @@ class AuditLogger:
             return "[REDACTED]"
         return value
 
+    def _last_hash(self) -> str:
+        """Return the hash of the last entry in the log, or genesis if empty."""
+        if not self.log_file.exists():
+            return _GENESIS_HASH
+        last_line: str | None = None
+        with self.log_file.open("r", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if stripped:
+                    last_line = stripped
+        if last_line is None:
+            return _GENESIS_HASH
+        try:
+            entry = json.loads(last_line)
+            return str(entry.get("hash", _GENESIS_HASH))
+        except (json.JSONDecodeError, KeyError):
+            return _GENESIS_HASH
+
+    @staticmethod
+    def _compute_hash(entry: dict[str, Any]) -> str:
+        """Compute SHA-256 hash of an entry excluding the ``hash`` field."""
+        payload = {k: v for k, v in entry.items() if k != "hash"}
+        canonical = json.dumps(payload, sort_keys=True, default=str)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
     def log(self, event_type: str, details: dict[str, Any]) -> None:
-        entry = {
-            "ts": datetime.now(timezone.utc).isoformat(),
-            "type": event_type,
-            "details": self._redact(details),
+        """Append a new hash-chained entry to the audit log."""
+        with self._lock:
+            prev_hash = self._last_hash()
+            entry: dict[str, Any] = {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "type": event_type,
+                "details": self._redact(details),
+                "prev_hash": prev_hash,
+            }
+            entry["hash"] = self._compute_hash(entry)
+            with self.log_file.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, default=str) + "\n")
+
+    def verify_chain(self) -> dict[str, Any]:
+        """Verify the integrity of the hash chain.
+
+        Returns a dict with ``valid`` (bool), ``entries_checked`` (int),
+        and ``broken_at`` (int | None, the 0-based index of the first
+        broken link, or ``None`` if the chain is intact).
+        """
+        if not self.log_file.exists():
+            return {"valid": True, "entries_checked": 0, "broken_at": None}
+        expected_prev = _GENESIS_HASH
+        idx = 0
+        broken_at: int | None = None
+        with self.log_file.open("r", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    broken_at = broken_at if broken_at is not None else idx
+                    break
+                # Check prev_hash linkage
+                if entry.get("prev_hash") != expected_prev:
+                    broken_at = broken_at if broken_at is not None else idx
+                    break
+                # Recompute and verify hash
+                recomputed = self._compute_hash(entry)
+                if recomputed != entry.get("hash"):
+                    broken_at = broken_at if broken_at is not None else idx
+                    break
+                expected_prev = str(entry.get("hash", ""))
+                idx += 1
+        return {
+            "valid": broken_at is None,
+            "entries_checked": idx,
+            "broken_at": broken_at,
         }
-        with self._lock, self.log_file.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(entry, default=str) + "\n")

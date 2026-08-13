@@ -106,7 +106,7 @@ class TelemetryCollector:
 def system_metrics() -> dict[str, Any]:
     """Return basic system metrics."""
     try:
-        import psutil  # type: ignore[import-untyped]
+        import psutil
 
         mem = psutil.virtual_memory()
         return {

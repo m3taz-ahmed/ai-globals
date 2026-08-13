@@ -1,0 +1,75 @@
+name: agentic-owasp
+apiVersion: governance.ai-global-os/v1
+default_action: ask
+description: >
+  OWASP Agentic Top 10 (2026) compliance policy. Enforces controls for
+  prompt injection, sensitive data, supply chain, excessive agency,
+  insecure output, tool misuse, untrusted content, memory poisoning,
+  rogue agents, and human oversight.
+
+rules:
+  # A01 — Prompt Injection: block known injection patterns in commands
+  - name: block-prompt-injection
+    condition: "'ignore previous' in command or 'disregard above' in command or 'forget all rules' in command or 'act as if no restrictions' in command"
+    action: deny
+    description: A01 — Block known prompt injection patterns.
+
+  # A02 — Sensitive Information Disclosure: block commands that expose secrets
+  - name: block-secret-exposure
+    condition: "'api_key=' in command or 'password=' in command or 'secret=' in command or 'token=' in command"
+    action: deny
+    description: A02 — Block commands that expose secrets in plaintext.
+
+  # A04 — Excessive Agency: block auto-destructive actions
+  - name: block-auto-destructive
+    condition: "'auto delete' in command or 'auto commit' in command or 'auto push' in command or 'auto deploy' in command or 'force push' in command"
+    action: deny
+    description: A04 — Block automated destructive actions without approval.
+
+  # A05 — Insecure Output Handling: block eval/exec of agent output
+  - name: block-eval-exec
+    condition: "'eval(' in command or 'exec(' in command or 'os.system(' in command"
+    action: deny
+    description: A05 — Block eval/exec of potentially untrusted agent output.
+
+  # A06 — Tool Misuse: require approval for network operations
+  - name: require-approval-network
+    condition: "type in ['curl', 'wget', 'http', 'fetch'] or 'curl' in command or 'wget' in command"
+    action: ask
+    description: A06 — Network operations require approval.
+
+  # A07 — Untrusted Content Consumption: require approval for external content
+  - name: require-approval-external-content
+    condition: "type in ['import_url', 'fetch_url', 'download']"
+    action: ask
+    description: A07 — Consuming external content requires approval.
+
+  # A08 — Memory Poisoning: block direct memory writes without approval
+  - name: require-approval-memory-write
+    condition: "type in ['add_memory', 'ingest_memory', 'invalidate_memory']"
+    action: ask
+    description: A08 — Memory modifications require approval.
+
+  # A09 — Rogue Agent: block unauthorized agent spawning
+  - name: require-approval-agent-spawn
+    condition: "type in ['spawn_agent', 'delegate']"
+    action: ask
+    description: A09 — Spawning or delegating to agents requires approval.
+
+  # A10 — Human Oversight: require approval for all writes and deploys
+  - name: require-oversight-writes
+    condition: "type in ['edit', 'write', 'apply', 'deploy', 'release']"
+    action: ask
+    description: A10 — All write/deploy operations require human oversight.
+
+  # A10 — Human Oversight: block git writes
+  - name: block-git-writes-owasp
+    condition: "'git commit' in command or 'git push' in command"
+    action: deny
+    description: A10 — Git commits and pushes require explicit user approval.
+
+  # A03 — Supply Chain: require approval for package installation
+  - name: require-approval-package-install
+    condition: "'pip install' in command or 'npm install' in command or 'yarn add' in command or 'cargo add' in command"
+    action: ask
+    description: A03 — Package installation requires approval to prevent supply chain attacks.

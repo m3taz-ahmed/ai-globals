@@ -28,7 +28,7 @@ def init_sentry() -> bool:
     if not dsn:
         return False
     try:
-        import sentry_sdk  # type: ignore[import-not-found]
+        import sentry_sdk
 
         sentry_sdk.init(
             dsn=dsn,

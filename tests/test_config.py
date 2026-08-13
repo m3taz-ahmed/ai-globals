@@ -103,7 +103,7 @@ class TestVersion:
     def test_version_defaults_when_no_pyproject(self, tmp_path: Path) -> None:
         with mock.patch.object(config_mod, "__file__", str(tmp_path / "config.py")):
             result = config_mod._version()
-            assert result == "4.22.1"
+            assert result == "5.0.0"
 
 
 class TestResolveEnvDir:

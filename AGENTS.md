@@ -27,15 +27,23 @@ license: MIT
 - Run `ai-os memory ingest` when `rules/`, `tech-stack/`, or `workflows/` change; update `Memory.md` via `workflows/17-memory-sync.md` after every milestone.
 
 ## Quality Gate
-Before declaring done, run from the root:
+Before declaring done, run from the OS root:
 - `ruff check .`
 - `mypy`
-- `ai-os test --full` (or `pytest -q` — full suite with coverage, ~20s)
+- `ai-os test --full` (full suite with coverage, ~35s)
 - `python eval/harness.py`
-For quick iteration during development: `ai-os test` (fast tier, ~10s, no coverage).
+For quick iteration during development: `ai-os test` (fast tier, ~12s, no coverage, skips slow/mcp/dashboard/vector).
 No `eval` in policy code.
 
+## Project Testing Protocol (ANY project under AI Global OS)
+Every project — Laravel, React, Python, Go, Node — follows two-tier testing `[TEST-07]`:
+- **FAST tier** (during iteration): run ONLY targeted tests for the code you touched. ~5s max. See `workflows/testing-tiers.md` for per-stack commands.
+- **FULL tier** (before declaring done): run the project's complete test suite + coverage. Must pass green.
+- Never run the full suite on every change. Never skip the full suite before done.
+- If the project has no test framework, write the first test for the touched code before declaring done `[TEST-09]`.
+
 ## Non-negotiable user policy
-- No full `php artisan test` suites. Targeted `--filter=...` only, or skip tests.
+- No full test suites during iteration — use FAST tier (targeted `--filter=...` / `<file>` only).
+- FULL test suite is mandatory before declaring done — no exceptions.
 - No `git add .` / `git add -A` (`[GIT-06]`). No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
 - Delete temporary/scratch/test files immediately after use.

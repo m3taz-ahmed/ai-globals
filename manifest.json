@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "4.22.1",
+    "version": "5.0.0",
     "description": "Machine-readable trigger->workflow/file routing map for AI Global OS.",
-    "updated": "2026-08-06"
+    "updated": "2026-08-07"
   },
   "triggers": {
     "/prompt": "workflows/00-prompt-architecting.md",
@@ -53,12 +53,35 @@
     "freelance": "workflows/20-freelance-pipeline.md",
     "freelance-pipeline": "workflows/20-freelance-pipeline.md",
     "/execute": "workflows/02-execution.md",
-    "execute": "workflows/02-execution.md"
+    "execute": "workflows/02-execution.md",
+    "spec-driven": "workflows/21-spec-driven.md",
+    "spec": "workflows/21-spec-driven.md"
+  },
+  "features": {
+    "audit_log": "runtime/audit.py",
+    "ast_validator": "runtime/ast_validator.py",
+    "agent_benchmark": "eval/agent_benchmark.py",
+    "agentic_security": "runtime/agentic_security.py",
+    "mcp_security": "runtime/mcp_security.py",
+    "skills_marketplace": "runtime/skills_marketplace.py",
+    "review_engine": "runtime/review_engine.py",
+    "git_memory": "memory/git_memory.py",
+    "code_compressor": "runtime/code_compressor.py",
+    "otel_exporter": "runtime/otel_exporter.py",
+    "worktree_pool": "runtime/worktree_pool.py",
+    "spec_engine": "runtime/spec_engine.py",
+    "dynamic_persona": "runtime/dynamic_persona.py",
+    "issue_tracker": "runtime/issue_tracker.py",
+    "command_center": "runtime/command_center.py",
+    "ai_slop_detector": "runtime/ai_slop_detector.py",
+    "voice_interface": "runtime/voice_interface.py",
+    "acp_protocol": "runtime/acp_protocol.py"
   },
   "standards": {
     "git": "workflows/git-standards.md",
     "ci-cd": "workflows/ci-cd-standards.md",
     "testing": "workflows/testing-standards.md",
+    "testing-tiers": "workflows/testing-tiers.md",
     "security": "workflows/security-standards.md",
     "performance": "workflows/performance-standards.md",
     "observability": "workflows/observability-standards.md",

@@ -9,6 +9,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+pytestmark = pytest.mark.slow
+
 # Set up isolated root BEFORE importing the server module
 os.environ["AGENT_OS_ROOT"] = tempfile.mkdtemp(prefix="aios_mcp_test_")
 ROOT = Path(os.environ["AGENT_OS_ROOT"])

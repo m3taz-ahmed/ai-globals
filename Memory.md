@@ -91,7 +91,7 @@
 - **`scripts/migrate.py`**: أضيف `_migrate_4_22_to_4_22_1` — يشغل `runtime/migrations.py` schema migrations، يتحقق من encryption compatibility، ينشئ dirs جديدة.
 - **`install.sh` / `install.ps1`**: النسخ الاحتياطي الآن في `state/.backups/` (دائم) بدلاً من `/tmp/` أو `$env:TEMP`. تنظيف تلقائي (يحتفظ بـ 3).
 - **`install.sh` / `install.ps1`**: أضيف `cryptography` لقائمة التحقق من packages.
-- **`cli.py` doctor**: أضيف فحوصات: managers module, mcp tools module, crypto, migrations, observability, LICENSE, CODEOWNERS, API.md, installed version, encryption key, pip packages.
+- **`cli.py` doctor**: أضيف فحوصات: managers module, mcp tools module, crypto, migrations, observability, LICENSE, CODEOWNERS, `aios_mcp/API.md`, installed version, encryption key, pip packages.
 - **`pyproject.toml`**: version bumped to 4.22.1.
 - **`CHANGELOG.md`**: حدّث بالكامل بكل تغييرات P0-P2 + installer fixes.
 - **Gate**: ruff ✅, mypy ✅ (58 files), pytest ✅ (599 passed, 89.06% cov), bandit ✅ (0 issues).

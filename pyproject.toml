@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aios"
-version = "4.22.1"
+version = "5.0.0"
 description = "AI Global OS — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -38,9 +38,11 @@ dev = [
     "pytest-cov>=4.0,<7.0",
     "pytest-asyncio>=0.23,<2.0",
     "pytest-timeout>=2.0,<3.0",
+    "pytest-xdist>=3.0,<4.0",
     "ruff>=0.6,<1.0",
     "mypy>=1.0,<2.0",
     "types-pyyaml",
+    "types-psutil",
     "graphifyy>=0.9.16,<0.9.17",
     "bandit>=1.7,<2.0",
     "pip-audit>=2.0,<3.0",
@@ -60,7 +62,7 @@ py-modules = ["aios_cli", "config"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["runtime*", "memory*", "aios_mcp*", "plugins*"]
+include = ["runtime*", "memory*", "aios_mcp*", "plugins*", "eval*"]
 exclude = ["runtime.tests*", "memory.tests*", "tests*"]
 
 [tool.setuptools.package-data]
@@ -106,14 +108,14 @@ warn_return_any = true
 warn_unused_ignores = true
 exclude = ["tests/", "skills/", "runtime/tests/", "memory/tests/", "dashboard/", "scripts/", "tmp/", "scratch/", "temp/", "brain/", "state/", "__pycache__/", "\\.git/", "\\.github/"]
 [[tool.mypy.overrides]]
-module = ["yaml", "sentence_transformers", "turbovec", "numpy"]
+module = ["yaml", "sentence_transformers", "turbovec", "numpy", "psutil", "sentry_sdk"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["runtime/tests", "memory/tests", "tests"]
 python_files = "test_*.py"
 pythonpath = ["."]
-addopts = "-ra --cov=runtime --cov=memory --cov=aios_mcp --cov-report=term-missing --cov-fail-under=80"
+addopts = "-ra -q"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests requiring external services",

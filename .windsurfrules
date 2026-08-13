@@ -26,11 +26,20 @@
 Before declaring done, run from the root:
 - `ruff check .`
 - `mypy`
-- `pytest -q`
+- `ai-os test --full` (full suite with coverage, ~35s)
 - `python eval/harness.py`
+For quick iteration: `ai-os test` (fast tier, ~12s, no coverage).
 No `eval` in policy code.
 
+## Project Testing Protocol (ANY project under AI Global OS)
+Two-tier testing `[TEST-07]` — see `workflows/testing-tiers.md` for per-stack commands:
+- FAST (during iteration): targeted tests only for touched code. ~5s max.
+- FULL (before done): complete suite + coverage. Must pass.
+- No full suite on every change. No skipping full suite before done.
+- If no test framework exists, write the first test before done `[TEST-09]`.
+
 ## Non-negotiable user policy
-- No full `php artisan test` suites. Targeted `--filter=...` only, or skip tests.
+- No full test suites during iteration — use FAST tier (targeted `--filter=...` / `<file>` only).
+- FULL test suite is mandatory before declaring done — no exceptions.
 - No `git add .` / `git add -A` (`[GIT-06]`). No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
 - Delete temporary/scratch/test files immediately after use.

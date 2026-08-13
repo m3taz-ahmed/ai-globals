@@ -27,7 +27,11 @@ class EvalHarness:
         results = {}
         results["ruff"] = self._run("ruff", ["python", "-m", "ruff", "check", "."])
         results["mypy"] = self._run("mypy", ["python", "-m", "mypy", "runtime", "memory", "aios_mcp", "aios_cli.py", "config.py", "dashboard/server.py"])
-        results["pytest"] = self._run("pytest", ["python", "-m", "pytest", "-q"])
+        results["pytest"] = self._run("pytest", [
+            "python", "-m", "pytest", "-q",
+            "--cov=runtime", "--cov=memory", "--cov=aios_mcp",
+            "--cov-report=term-missing", "--cov-fail-under=80",
+        ])
         results["validate-globals"] = self._run("validate-globals", ["python", "scripts/validate-globals.py", "--fix"])
 
         all_pass = all(v["returncode"] == 0 for v in results.values())

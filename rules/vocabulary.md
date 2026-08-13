@@ -44,10 +44,13 @@
 [TEST-01]: Mandatory coverage.
 [TEST-02]: AAA pattern. One behavior per test.
 [TEST-03]: Factories/Seeders. No hardcoded IDs/Dates.
-[TEST-04]: Pest 3+ (backend), Vitest+RTL (frontend).
+[TEST-04]: Pest 3+ (backend), Vitest+RTL (frontend), pytest (Python), go test (Go).
 [TEST-05]: Playwright POM. Mocks for external APIs.
 [TEST-06]: 80% logic, 90% APIs, 70% total coverage.
-[TEST-07]: No full `php artisan test` suites. Targeted, fastest execution only in extreme necessity.
+[TEST-07]: Two-tier testing: FAST (targeted, ~5s, during iteration) + FULL (complete suite + coverage, before done). See `workflows/testing-tiers.md`.
+[TEST-08]: Per-stack commands: PHP `artisan test --filter=` / `artisan test`; JS `vitest run <file>` / `vitest run --coverage`; Python `pytest <file> --no-cov` / `pytest --cov`; Go `go test <pkg> -short` / `go test ./... -cover`.
+[TEST-09]: If no test framework exists in the project, write the first test for touched code before declaring done.
+[TEST-10]: Mark slow tests (E2E, integration, model-loading, server-startup) with framework skip/group mechanism. Fast tier stays under 5s.
 
 [GIT]
 [GIT-01]: Conventional atomic commits.
