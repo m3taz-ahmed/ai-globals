@@ -1,579 +1,91 @@
 #!/usr/bin/env python3
-"""AI Global OS MCP server using FastMCP."""
+"""AI Global OS MCP server using FastMCP.
+
+This is a thin entry point that creates the FastMCP instance and delegates
+tool registration to the modules in ``aios_mcp.tools``.
+"""
 
 from __future__ import annotations
 
-import asyncio
-import json
-import re
-import threading
-from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-import config
-from aios_mcp.agent import McpAgent
-from memory.graph import SchemaGraph
-from memory.ingest import Ingestor
-from memory.store import MemoryStore
-from runtime.astryx import AstryxLinter
-from runtime.guardian import ActionRequest
-from runtime.kernel import Kernel
-from runtime.mcp_orchestrator import McpOrchestrator, Plan, Step
-from runtime.metrics import format_metrics
-from runtime.rule_compiler import compile_rules
-from runtime.rule_frontmatter import matches_context, parse_frontmatter
+from aios_mcp.tools import (
+    register_context_tools,
+    register_memory_tools,
+    register_policy_tools,
+    register_workflow_tools,
+)
+from aios_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-exported for tests
 
 mcp = FastMCP("ai-global-os")
-
-_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
-
-_kernel_instance: Kernel | None = None
-_memory_instance: MemoryStore | None = None
-_current_root: Path | None = None
-_kernel_lock = threading.Lock()
-_memory_lock = threading.Lock()
-
-_MAX_RESULTS = 100
-_MAX_INPUT_LENGTH = 100_000
-
-
-def _root() -> Path:
-    """Discover root each call to react to env changes."""
-    return config.discover_root()
-
-
-def reset_state() -> None:
-    """Reset cached kernel and memory instances. Useful for tests and env changes."""
-    global _kernel_instance, _memory_instance, _current_root
-    _kernel_instance = None
-    _memory_instance = None
-    _current_root = None
-
-
-def _kernel() -> Kernel:
-    """Return a Kernel instance, recreating if the discovered root changes."""
-    global _kernel_instance, _current_root
-    with _kernel_lock:
-        discovered = _root()
-        if _kernel_instance is None or _current_root != discovered:
-            _current_root = discovered
-            _kernel_instance = Kernel(_current_root)
-        return _kernel_instance
-
-
-def _memory() -> MemoryStore:
-    """Return a MemoryStore instance tied to the discovered root."""
-    global _memory_instance
-    with _memory_lock:
-        discovered = _root()
-        if _memory_instance is None or _memory_instance.root != discovered:
-            _memory_instance = MemoryStore(discovered)
-        return _memory_instance
-
-
-def _is_safe_name(name: str) -> bool:
-    """Reject path separators, parent-directory references, control chars, and overlong names."""
-    if not name or ".." in name or "/" in name or "\\" in name or len(name) > 128:
-        return False
-    if any(ord(c) < 32 or c == "\x7f" for c in name):
-        return False
-    return bool(_NAME_RE.fullmatch(name))
-
-
-def _resolve_path(root: Path, relative: Path) -> Path | None:
-    """Resolve a relative path and ensure it stays under root.
-
-    Rejects parent-directory references, UNC/device paths, and symlinks that
-    escape the root directory.
-    """
-    if ".." in relative.parts:
-        return None
-    if str(relative).startswith("\\\\") or str(relative).startswith("//"):
-        return None
-    try:
-        target = (root / relative).resolve(strict=False)
-        root_resolved = root.resolve()
-        target.relative_to(root_resolved)
-    except (ValueError, OSError, RuntimeError):
-        return None
-    return target
-
-
-def _truncate(content: str, limit: int = 500) -> str:
-    return content if len(content) <= limit else content[:limit] + "..."
 
 
 def _register_plugins() -> None:
     """Load enabled plugins and register their MCP tools/resources."""
-    kernel = _kernel()
-    memory = _memory()
-    kernel.load_plugins(memory)
-    for tool in kernel.plugins.get_tools():
+    k = kernel()
+    from aios_mcp.tools.common import memory
+
+    k.load_plugins(memory())
+    for tool in k.plugins.get_tools():
         mcp.add_tool(tool)
-    for resource in kernel.plugins.get_resources():
+    for resource in k.plugins.get_resources():
         mcp.add_resource(resource)
 
 
-@mcp.tool()
-def query_rules(query: str, context: dict[str, Any] | None = None) -> str:
-    """Query AI Global OS rules by keyword, returning only active rules for the context.
-
-    Uses FTS5 via MemoryStore when available for ranked results, with a substring
-    fallback over ``rules/*.md`` so the tool still works before memory ingestion.
-    """
-    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
-        return json.dumps({"ok": False, "error": "Invalid query"})
-    if context is not None and not isinstance(context, dict):
-        return json.dumps({"ok": False, "error": "Invalid context"})
-    active_context = context or {}
-    root = _root()
-
-    # Fast path: FTS5-ranked results from the memory store (rules are ingested as kind=semantic).
-    fts_results: list[dict[str, Any]] = []
-    try:
-        store = _memory()
-        for mem in store.search(query, kind="semantic", limit=_MAX_RESULTS):
-            if "rules" not in mem.source.replace("\\", "/"):
-                continue
-            fts_results.append(
-                {"file": mem.source, "match": query, "content": _truncate(mem.content, 200), "score": "fts"}
-            )
-    except Exception:
-        fts_results = []
-
-    # Substring fallback (also enforces context frontmatter filtering).
-    results: list[dict[str, Any]] = fts_results
-    seen_files = {r["file"] for r in results}
-    for p in root.glob("rules/*.md"):
-        rel = str(p.relative_to(root))
-        if rel in seen_files:
-            continue
-        content = p.read_text(encoding="utf-8")
-        frontmatter, body = parse_frontmatter(content)
-        if not matches_context(frontmatter, active_context):
-            continue
-        if query.lower() in body.lower():
-            results.append({"file": rel, "match": query})
-    return json.dumps(results, indent=2)
-
-
-@mcp.tool()
-def run_workflow(id: str, context: dict[str, Any] | None = None) -> str:
-    """Run a workflow by ID with optional context."""
-    result = _kernel().run_workflow(id, context or {})
-    return json.dumps(result, indent=2, default=str)
-
-
-@mcp.tool()
-def check_policy(action: str, args: dict[str, Any] | None = None) -> str:
-    """Check if an action is allowed by policy and budget."""
-    result = _kernel().act(action, **(args or {}))
-    return json.dumps(result, indent=2, default=str)
-
-
-@mcp.tool()
-def analyze_budget() -> str:
-    """Analyze current token and cost consumption across all budgets and scopes."""
-    kernel = _kernel()
-    return json.dumps(
-        {
-            "usage": kernel.budget.usage,
-            "budgets": {k: v.__dict__ for k, v in kernel.budget.budgets.items()}
-        },
-        indent=2,
-        default=str
-    )
-
-
-@mcp.tool()
-def search_memory(query: str, kind: str | None = None, limit: int = 20) -> str:
-    """Search memory store by keyword and optional kind."""
-    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
-        return json.dumps({"ok": False, "error": "Invalid query"})
-    if kind is not None and not _is_safe_name(kind):
-        return json.dumps({"ok": False, "error": "Invalid kind"})
-    limit = max(1, min(limit, _MAX_RESULTS))
-    results = _memory().search(query, kind, limit=limit)
-    return json.dumps(
-        [{"id": r.id, "kind": r.kind, "source": r.source, "content": _truncate(r.content)} for r in results],
-        indent=2,
-    )
-
-
-@mcp.tool()
-def search_memory_vector(query: str, k: int = 5, kind: str | None = None) -> str:
-    """Search memory by vector similarity (requires sentence-transformers + turbovec)."""
-    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
-        return json.dumps({"ok": False, "error": "Invalid query"})
-    if kind is not None and not _is_safe_name(kind):
-        return json.dumps({"ok": False, "error": "Invalid kind"})
-    k = max(1, min(k, _MAX_RESULTS))
-    results = _memory().search_vector(query, k=k, kind=kind)
-    return json.dumps(results, indent=2)
-
-
-@mcp.tool()
-def query_context(query: str, k: int = 5, kind: str | None = None) -> str:
-    """Hybrid FTS + vector search across rules, tech-stack, workflows, and skills."""
-    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
-        return json.dumps({"ok": False, "error": "Invalid query"})
-    if kind is not None and not _is_safe_name(kind):
-        return json.dumps({"ok": False, "error": "Invalid kind"})
-    k = max(1, min(k, _MAX_RESULTS))
-    store = _memory()
-    fts_results = store.search(query, kind=kind, limit=k)
-    vector_results = store.search_vector(query, k=k, kind=kind)
-
-    seen: set[str] = set()
-    items: list[dict[str, Any]] = []
-
-    for mem in fts_results:
-        seen.add(mem.id)
-        items.append(
-            {
-                "id": mem.id,
-                "kind": mem.kind,
-                "source": mem.source,
-                "content": _truncate(mem.content),
-                "fts": True,
-                "score": None,
-            }
-        )
-
-    for vr in vector_results:
-        mem_id = vr["id"]
-        if mem_id in seen:
-            for item in items:
-                if item["id"] == mem_id:
-                    item["score"] = vr["score"]
-                    item["vector"] = True
-            continue
-        record = store.get(mem_id)
-        if record is None:
-            continue
-        items.append(
-            {
-                "id": record.id,
-                "kind": record.kind,
-                "source": record.source,
-                "content": _truncate(record.content),
-                "fts": False,
-                "score": vr["score"],
-                "vector": True,
-            }
-        )
-
-    return json.dumps(items, indent=2)
-
-
-@mcp.tool()
-def ingest_memory() -> str:
-    """Ingest rules, tech-stack, workflows, skills, and AGENTS.md into memory."""
-    ingestor = Ingestor(_memory(), _root())
-    ids = ingestor.ingest_all()
-    return json.dumps({"ingested": len(ids)}, indent=2)
-
-
-@mcp.tool()
-def get_related_memories(mem_id: str, relation: str | None = None) -> str:
-    """Get memories related to the given memory ID."""
-    if not isinstance(mem_id, str) or not mem_id or len(mem_id) > 128:
-        return json.dumps({"ok": False, "error": "Invalid mem_id"})
-    if relation is not None and not _is_safe_name(relation):
-        return json.dumps({"ok": False, "error": "Invalid relation"})
-    results = _memory().related(mem_id, relation)
-    return json.dumps(
-        [{"id": m.id, "kind": m.kind, "relation": r, "content": _truncate(m.content)} for m, r in results],
-        indent=2,
-    )
-
-
-@mcp.tool()
-def add_memory(kind: str, content: str, source: str) -> str:
-    """Add a new memory to the store."""
-    if kind not in ["factual", "semantic", "episodic"]:
-        return json.dumps({"ok": False, "error": "Invalid kind. Must be factual, semantic, or episodic."})
-    if not isinstance(content, str) or not content or len(content) > _MAX_INPUT_LENGTH:
-        return json.dumps({"ok": False, "error": "Invalid content"})
-    if not isinstance(source, str) or not source or len(source) > 1024:
-        return json.dumps({"ok": False, "error": "Invalid source"})
-    mem = _memory().add(kind, content, source=source)
-    return json.dumps({"ok": True, "id": mem.id})
-
-
-@mcp.tool()
-def invalidate_memory(id: str) -> str:
-    """Invalidate (deprecate) a memory by ID."""
-    if not isinstance(id, str) or not id or len(id) > 128:
-        return json.dumps({"ok": False, "error": "Invalid id"})
-    store = _memory()
-    if store.get(id) is None:
-        return json.dumps({"ok": False, "error": "Memory not found"})
-    store.invalidate(id)
-    return json.dumps({"ok": True, "id": id})
-
-
-@mcp.tool()
-def get_tech_stack(pkg: str, ver: str) -> str:
-    """Get the tech-stack file for a package version."""
-    if not _is_safe_name(pkg) or not _is_safe_name(ver):
-        return json.dumps({"ok": False, "error": "Invalid package or version name"})
-    root = _root()
-    path = _resolve_path(root, Path("tech-stack") / f"{pkg}-{ver}.md")
-    if path is None:
-        return json.dumps({"ok": False, "error": "Invalid path"})
-    if not path.exists():
-        return json.dumps({"exists": False, "path": str(path.relative_to(root))})
-    return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
-
-
-@mcp.tool()
-def list_rules() -> str:
-    """List available rule files."""
-    root = _root()
-    results = [{"id": p.stem, "file": str(p.relative_to(root))} for p in sorted(root.glob("rules/*.md"))]
-    return json.dumps(results, indent=2)
-
-
-@mcp.tool()
-def get_rule(id: str) -> str:
-    """Get a rule file by its stem (id)."""
-    if not _is_safe_name(id):
-        return json.dumps({"ok": False, "error": "Invalid rule id"})
-    root = _root()
-    path = _resolve_path(root, Path("rules") / f"{id}.md")
-    if path is None:
-        return json.dumps({"ok": False, "error": "Invalid path"})
-    if not path.exists():
-        return json.dumps({"exists": False, "path": str(path.relative_to(root))})
-    return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
-
-
-@mcp.tool()
-def list_workflows() -> str:
-    """List available workflow files."""
-    root = _root()
-    results = [{"id": p.stem, "file": str(p.relative_to(root))} for p in sorted(root.glob("workflows/*.md"))]
-    return json.dumps(results, indent=2)
-
-
-@mcp.tool()
-def get_workflow(id: str) -> str:
-    """Get a workflow file by its stem (id)."""
-    if not _is_safe_name(id):
-        return json.dumps({"ok": False, "error": "Invalid workflow id"})
-    root = _root()
-    path = _resolve_path(root, Path("workflows") / f"{id}.md")
-    if path is None:
-        return json.dumps({"ok": False, "error": "Invalid path"})
-    if not path.exists():
-        return json.dumps({"exists": False, "path": str(path.relative_to(root))})
-    return json.dumps({"exists": True, "path": str(path.relative_to(root)), "content": path.read_text(encoding="utf-8")})
-
-
-@mcp.resource("rules://{id}")
-def get_rule_resource(id: str) -> str:
-    if not _is_safe_name(id):
-        return ""
-    root = _root()
-    path = _resolve_path(root, Path("rules") / f"{id}.md")
-    if path is None or not path.exists():
-        return ""
-    return path.read_text(encoding="utf-8")
-
-
-@mcp.resource("workflows://{id}")
-def get_workflow_resource(id: str) -> str:
-    if not _is_safe_name(id):
-        return ""
-    root = _root()
-    path = _resolve_path(root, Path("workflows") / f"{id}.md")
-    if path is None or not path.exists():
-        return ""
-    return path.read_text(encoding="utf-8")
-
-
-@mcp.resource("os://AGENTS")
-def get_agents() -> str:
-    root = _root()
-    path = root / "AGENTS.md"
-    return path.read_text(encoding="utf-8") if path.exists() else ""
-
-
-@mcp.tool()
-def get_metrics() -> str:
-    """Return Prometheus-compatible metrics for the OS."""
-    return format_metrics(_kernel())
-
-
-@mcp.tool()
-def get_os_status() -> str:
-    """Return the runtime kernel status."""
-    return json.dumps(_kernel().status(), indent=2, default=str)
-
-
-@mcp.tool()
-def search_skills(query: str, limit: int = 20) -> str:
-    """Search available skills by keyword (matches name, description, and body)."""
-    if not isinstance(query, str) or not query or len(query) > _MAX_INPUT_LENGTH:
-        return json.dumps({"ok": False, "error": "Invalid query"})
-    limit = max(1, min(limit, _MAX_RESULTS))
-    root = _root()
-    query_lower = query.lower()
-    results: list[dict[str, Any]] = []
-    skills_dir = root / "skills"
-    if not skills_dir.is_dir():
-        return json.dumps(results, indent=2)
-    for skill_file in sorted(skills_dir.rglob("*.md")):
-        try:
-            content = skill_file.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        if query_lower in content.lower():
-            rel = str(skill_file.relative_to(root)).replace("\\", "/")
-            name = skill_file.stem
-            description = ""
-            for line in content.splitlines():
-                if line.lower().startswith("description:"):
-                    description = line.split(":", 1)[1].strip().strip('"').strip("'")
-                    break
-            results.append({"name": name, "file": rel, "description": _truncate(description, 150)})
-            if len(results) >= limit:
-                break
-    return json.dumps(results, indent=2)
-
-
-@mcp.tool()
-def get_changelog(section: str = "unreleased", limit: int = 50) -> str:
-    """Return the changelog (default: [Unreleased] section)."""
-    if section not in ("unreleased", "latest", "full"):
-        return json.dumps({"ok": False, "error": "section must be 'unreleased', 'latest', or 'full'"})
-    root = _root()
-    path = root / "CHANGELOG.md"
-    if not path.exists():
-        return json.dumps({"ok": False, "error": "CHANGELOG.md not found"})
-    content = path.read_text(encoding="utf-8")
-    if section == "full":
-        return json.dumps({"ok": True, "content": _truncate(content, 5000)}, indent=2)
-    lines = content.splitlines()
-    output: list[str] = []
-    capturing = section == "unreleased"
-    for line in lines:
-        if line.startswith("## ["):
-            if section == "unreleased" and "[Unreleased]" in line:
-                capturing = True
-                output.append(line)
-                continue
-            if section == "latest" and "[Unreleased]" not in line:
-                capturing = True
-                output.append(line)
-                continue
-            if capturing and output:
-                break
-            capturing = False
-            continue
-        if capturing:
-            output.append(line)
-    return json.dumps({"ok": True, "section": section, "content": _truncate("\n".join(output), limit * 80)}, indent=2)
-
-
-@mcp.tool()
-def get_active_context() -> str:
-    """Return the ACTIVE_CONTEXT.md handoff file content."""
-    root = _root()
-    path = root / "ACTIVE_CONTEXT.md"
-    if not path.exists():
-        return json.dumps({"ok": False, "error": "ACTIVE_CONTEXT.md not found"})
-    return json.dumps({"ok": True, "content": _truncate(path.read_text(encoding="utf-8"), 8000)}, indent=2)
-
-
-@mcp.tool()
-def lint_python(code: str, max_lines: int = 50, max_params: int = 7) -> str:
-    """Lint Python code using the Astryx AST linter."""
-    if not isinstance(code, str) or not code or len(code) > _MAX_INPUT_LENGTH:
-        return json.dumps({"ok": False, "error": "Invalid code"})
-    linter = AstryxLinter(max_lines=max_lines, max_params=max_params)
-    findings = linter.lint_text(code)
-    return json.dumps({"ok": True, "findings": [finding.__dict__ for finding in findings]}, indent=2)
-
-
-@mcp.tool()
-def build_schema_graph(db_path: str) -> str:
-    """Build a knowledge graph from a SQLite database schema."""
-    if not isinstance(db_path, str) or not db_path or len(db_path) > 1024:
-        return json.dumps({"ok": False, "error": "Invalid db_path"})
-    root = _root()
-    target = _resolve_path(root, Path(db_path))
-    if target is None or not target.exists():
-        return json.dumps({"ok": False, "error": "Database not found"})
-    graph = SchemaGraph(str(target)).build()
-    return json.dumps(
-        {"ok": True, "nodes": len(graph.nodes), "edges": len(graph.edges), "nodes_list": [n.id for n in graph.nodes]},
-        indent=2,
-    )
-
-
-@mcp.tool()
-def compile_rule_files(globs: list[str] | None = None) -> str:
-    """Compile rule/skill/workflow markdown files into Rule IR."""
-    rules = compile_rules(_root(), globs=globs)
-    return json.dumps(
-        [{"file": r.file, "obj": r.obj, "rules_count": len(r.rules)} for r in rules],
-        indent=2,
-        default=str,
-    )
-
-
-@mcp.tool()
-def run_guardian_check(tool: str, attributes: dict[str, Any] | None = None) -> str:
-    """Evaluate a tool request against guardian rules."""
-    if not _is_safe_name(tool):
-        return json.dumps({"ok": False, "error": "Invalid tool name"})
-    req = ActionRequest(tool=tool, attributes=attributes or {})
-    decision = _kernel().guardian.authorize(req)
-    return json.dumps(
-        {
-            "ok": decision.status != _kernel().guardian.config.default_decision,
-            "status": decision.status,
-            "rule": decision.rule_name,
-            "reason": decision.reason,
-        },
-        indent=2,
-    )
-
-
-@mcp.tool()
-def list_capabilities() -> str:
-    """List the active sovereign capabilities."""
-    return json.dumps(_kernel().capabilities.list(), indent=2)
-
-
-@mcp.tool()
-def run_mcp_plan(steps: list[dict[str, Any]]) -> str:
-    """Execute a multi-step plan across MCP tools."""
-    if not isinstance(steps, list) or not steps:
-        return json.dumps({"ok": False, "error": "steps must be a non-empty list"})
-    try:
-        plan = Plan(
-            id="mcp-plan",
-            steps=[Step(**s) for s in steps],
-        )
-    except Exception as exc:
-        return json.dumps({"ok": False, "error": f"Invalid plan: {exc!s}"})
-    agent = McpAgent("mcp-server")
-    orchestrator = McpOrchestrator(agent)
-
-    result = asyncio.run(orchestrator.execute(plan))
-    return json.dumps(
-        {step: {"status": r.status.value, "output": r.output, "error": r.error} for step, r in result.items()},
-        indent=2,
-        default=str,
-    )
-
+# Register all tool modules
+register_memory_tools(mcp)
+register_workflow_tools(mcp)
+register_policy_tools(mcp)
+register_context_tools(mcp)
 
 _register_plugins()
+
+# Backward-compatible aliases for tests that import directly from aios_server.
+# These reference the functions registered on the mcp instance.
+# The tool functions are closures inside the register_* functions, so we
+# expose them via the tool manager for backward compatibility.
+_tool_manager = mcp._tool_manager
+
+
+def _get_tool_fn(name: str) -> Any:
+    """Get a registered tool function by name."""
+    tool = _tool_manager.get_tool(name)
+    return tool.fn if tool else None
+
+
+# Resource functions are also closures; expose them for direct-call tests.
+def get_rule_resource(id: str) -> str:
+    fn = _get_tool_fn("get_rule_resource")
+    if fn:
+        return str(fn(id))
+    # Fallback: look in resource registry
+    from pathlib import Path
+
+    from aios_mcp.tools.common import is_safe_name, resolve_path, root
+
+    if not is_safe_name(id):
+        return ""
+    r = root()
+    path = resolve_path(r, Path("rules") / f"{id}.md")
+    if path is None or not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8")
+
+
+def get_workflow_resource(id: str) -> str:
+    from pathlib import Path
+
+    from aios_mcp.tools.common import is_safe_name, resolve_path, root
+
+    if not is_safe_name(id):
+        return ""
+    r = root()
+    path = resolve_path(r, Path("workflows") / f"{id}.md")
+    if path is None or not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":

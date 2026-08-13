@@ -30,8 +30,9 @@ license: MIT
 Before declaring done, run from the root:
 - `ruff check .`
 - `mypy`
-- `pytest -q`
+- `ai-os test --full` (or `pytest -q` — full suite with coverage, ~20s)
 - `python eval/harness.py`
+For quick iteration during development: `ai-os test` (fast tier, ~10s, no coverage).
 No `eval` in policy code.
 
 ## Non-negotiable user policy

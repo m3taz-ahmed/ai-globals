@@ -1,7 +1,12 @@
-"""Synchronous MCP client for calling external MCP servers via stdio."""
+"""MCP client for calling external MCP servers via stdio.
+
+Provides both synchronous (threading-based) and asynchronous (asyncio) interfaces.
+The async interface uses asyncio.subprocess for non-blocking I/O.
+"""
 
 from __future__ import annotations
 
+import asyncio
 import atexit
 import json
 import os
@@ -169,7 +174,14 @@ class McpClient:
     def _ensure_process(self) -> subprocess.Popen[str]:
         with _PROC_LOCK:
             proc = _PROC_POOL.get(self._key)
-            if proc is None or proc.poll() is not None:
+            if proc is not None and proc.poll() is not None:
+                # Reap the dead process to prevent zombie accumulation.
+                try:
+                    proc.wait(timeout=1)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                proc = None
+            if proc is None:
                 proc = self._spawn()
                 _PROC_POOL[self._key] = proc
                 _PROC_INIT[self._key] = False
@@ -184,7 +196,7 @@ class McpClient:
                         "params": {
                             "protocolVersion": "2024-11-05",
                             "capabilities": {},
-                            "clientInfo": {"name": "ai-global-os", "version": "4.22.0"},
+                            "clientInfo": {"name": "ai-global-os", "version": "4.22.1"},
                         },
                     },
                 )
@@ -234,6 +246,82 @@ class McpClient:
         """Release the cached process for this server/root."""
         with _PROC_LOCK:
             self._release_locked()
+
+    async def async_call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Async version of call_tool using asyncio.subprocess.
+
+        Spawns a fresh process per call (no pooling) for isolation.
+        Suitable for async contexts where blocking I/O is undesirable.
+        """
+        if not self.config:
+            return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
+        cmd = self.config["command"]
+        args = self.config.get("args", [])
+        env = {"AGENT_OS_ROOT": str(self.os_root), **os.environ}
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                cmd,
+                *args,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+                cwd=str(self.os_root),
+            )
+        except Exception as exc:
+            return {"ok": False, "error": f"Failed to spawn MCP server: {exc}"}
+
+        try:
+            # Initialize
+            init_id = str(uuid.uuid4())
+            init_req = json.dumps({
+                "jsonrpc": "2.0",
+                "id": init_id,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "ai-global-os", "version": "4.22.1"},
+                },
+            }) + "\n"
+            assert proc.stdin is not None
+            proc.stdin.write(init_req.encode())
+            await proc.stdin.drain()
+            assert proc.stdout is not None
+            init_line = await asyncio.wait_for(proc.stdout.readline(), timeout=_DEFAULT_TIMEOUT)
+            if not init_line:
+                return {"ok": False, "error": "MCP server closed stdout during init"}
+            init_resp = json.loads(init_line.decode())
+            if "error" in init_resp:
+                return {"ok": False, "error": init_resp["error"]}
+
+            # Call tool
+            call_id = str(uuid.uuid4())
+            call_req = json.dumps({
+                "jsonrpc": "2.0",
+                "id": call_id,
+                "method": "tools/call",
+                "params": {"name": tool_name, "arguments": arguments},
+            }) + "\n"
+            proc.stdin.write(call_req.encode())
+            await proc.stdin.drain()
+            resp_line = await asyncio.wait_for(proc.stdout.readline(), timeout=_DEFAULT_TIMEOUT)
+            if not resp_line:
+                return {"ok": False, "error": "MCP server closed stdout"}
+            resp = json.loads(resp_line.decode())
+        except asyncio.TimeoutError:
+            return {"ok": False, "error": f"MCP server '{self.server_name}' timed out"}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+        finally:
+            proc.terminate()
+            try:
+                await asyncio.wait_for(proc.wait(), timeout=2)
+            except asyncio.TimeoutError:
+                proc.kill()
+        if "error" in resp:
+            return {"ok": False, "error": resp["error"]}
+        return {"ok": True, "result": resp.get("result")}
 
     def is_configured(self) -> bool:
         return bool(self.config)

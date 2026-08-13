@@ -416,15 +416,18 @@ New-Directory $Root
 
 $StateBackup = $null
 $BrainBackup = $null
+$BackupDir = Join-Path $Root "state\.backups"
 if ($CopyMode -and (Test-Path (Join-Path $Root "state"))) {
-    $StateBackup = Join-Path $env:TEMP "aios-state-$(Get-Date -Format yyyyMMddHHmmss)"
+    if (-not (Test-Path $BackupDir)) { New-Directory $BackupDir }
+    $StateBackup = Join-Path $BackupDir "state-$(Get-Date -Format yyyyMMddHHmmss)"
     Write-Step "Preserving existing state to $StateBackup"
     if (-not $WhatIf) {
         Copy-Item -Path (Join-Path $Root "state") -Destination $StateBackup -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 if ($CopyMode -and (Test-Path (Join-Path $Root "brain"))) {
-    $BrainBackup = Join-Path $env:TEMP "aios-brain-$(Get-Date -Format yyyyMMddHHmmss)"
+    if (-not (Test-Path $BackupDir)) { New-Directory $BackupDir }
+    $BrainBackup = Join-Path $BackupDir "brain-$(Get-Date -Format yyyyMMddHHmmss)"
     Write-Step "Preserving existing brain to $BrainBackup"
     if (-not $WhatIf) {
         Copy-Item -Path (Join-Path $Root "brain") -Destination $BrainBackup -Recurse -Force -ErrorAction SilentlyContinue
@@ -533,7 +536,7 @@ if (-not $SkipPip) {
 
     # Verify required packages
     Write-Step "Verifying required packages"
-    $RequiredPackages = @("yaml", "mcp", "pydantic", "rich", "numpy")
+    $RequiredPackages = @("yaml", "mcp", "pydantic", "rich", "numpy", "cryptography")
     foreach ($pkg in $RequiredPackages) {
         $check = & python -c "import $pkg; print('ok')" 2>&1
         if ($LASTEXITCODE -ne 0) {
@@ -694,11 +697,11 @@ if (-not $SkipMCP) {
     "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:Invoke-WebRequest -Method Post","bash:Invoke-WebRequest -Method Delete","bash:node -e","bash:python -c"]
   },
   "mcpServers": {
-    "ai-global-os": { "command": "python", "args": ["-c", "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or '$($EscapedRoot)'; os.environ['AGENT_OS_ROOT']=root; os.environ.setdefault('PYTHONIOENCODING','utf-8'); subprocess.run([sys.executable,'-m','aios_mcp.aios_server'], cwd=root)"] },
-    "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp"] },
-    "graphify": { "command": "python", "args": ["-c", "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or '$($EscapedRoot)'; os.environ['AGENT_OS_ROOT']=root; os.environ.setdefault('PYTHONIOENCODING','utf-8'); subprocess.run([sys.executable, str(pathlib.Path(root)/'scripts'/'graphify_mcp_wrapper.py')])"] },
-    "upwork": { "command": "npx", "args": ["-y", "@furkankoykiran/upwork-mcp"] },
-    "freelancer": { "command": "npx", "args": ["-y", "freelancer-mcp-server"] },
+    "ai-global-os": { "command": "python", "args": ["scripts/aios_mcp_wrapper.py"] },
+    "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
+    "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
+    "upwork": { "command": "npx", "args": ["-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
+    "freelancer": { "command": "npx", "args": ["-y", "freelancer-mcp-server@2.0.0"] },
     "fiverr": { "command": "uvx", "args": ["fiverr-mcp-server"] },
     "linkedin": { "command": "octopus-linkedin-mcp", "args": [] }
   },
@@ -771,6 +774,24 @@ if (-not $WhatIf) {
     Set-Content -Path (Join-Path $Root ".aios-version") -Value $TargetVersion -Force
 }
 Write-Ok "Version: $TargetVersion"
+
+# ---------------------------------------------------------------------------
+# 14. Cleanup old backups (keep last 3)
+# ---------------------------------------------------------------------------
+
+if (Test-Path $BackupDir) {
+    Write-Step "Cleaning old backups (keeping last 3)"
+    if (-not $WhatIf) {
+        $stateBackups = Get-ChildItem -Path $BackupDir -Filter "state-*" -Directory | Sort-Object LastWriteTime -Descending
+        if ($stateBackups.Count -gt 3) {
+            $stateBackups | Select-Object -Skip 3 | ForEach-Object { Remove-IfExists $_.FullName }
+        }
+        $brainBackups = Get-ChildItem -Path $BackupDir -Filter "brain-*" -Directory | Sort-Object LastWriteTime -Descending
+        if ($brainBackups.Count -gt 3) {
+            $brainBackups | Select-Object -Skip 3 | ForEach-Object { Remove-IfExists $_.FullName }
+        }
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Done

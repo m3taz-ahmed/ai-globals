@@ -4,7 +4,7 @@
   <p><strong>توقف عن السماح للذكاء الاصطناعي بكتابة كود فوضوي. حوّله إلى مهندسك الرئيسي.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-4.22.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.22.0">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-4.22.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 4.22.1">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%AD%D8%A7%D9%84%D8%A9-%D8%AA%D8%B5%D8%AD%D9%8A%D8%AD_%D8%B0%D8%A7%D8%AA%D9%8A-00C896?style=for-the-badge&logo=dependabot&logoColor=white&labelColor=1a1a2e" alt="الحالة: تصحيح ذاتي">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D9%85%D8%B9%D9%85%D8%A7%D8%B1%D9%8A%D8%A9-%D8%B3%D9%8A%D8%A7%D8%AF%D9%8A%D8%A9-F59E0B?style=for-the-badge&logo=moleculer&logoColor=white&labelColor=1a1a2e" alt="المعمارية: سيادية">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
@@ -492,7 +492,7 @@ ai-os run 02-execution
 
 ## أبرز المستجدات والميزات الجديدة
 
-### v4.22.0
+### v4.22.1
 
 - **19 شخصية و 73 مهارة متخصصة**، بما في ذلك الشخصيتين الجديدتين `PROPOSAL` و `CV`، و **29 سير عمل durable**.
 - **تكوين multi-persona + مهارات lord** عبر `PersonaDetector.detect_multiple` و `SkillResolver` ودمج `Kernel`/`WorkflowRunner`/`AgentPool`.

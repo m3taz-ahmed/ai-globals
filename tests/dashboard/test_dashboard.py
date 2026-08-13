@@ -36,7 +36,7 @@ def test_dashboard_status():
         with urlopen(f"http://127.0.0.1:{port}/api/status") as resp:
             body = resp.read().decode()
             data = json.loads(body)
-            assert data["version"] == "4.22.0"
+            assert data["version"] == "4.22.1"
     finally:
         server.shutdown()
 
@@ -49,7 +49,7 @@ def test_dashboard_health():
         with urlopen(f"http://127.0.0.1:{port}/api/health") as resp:
             data = json.loads(resp.read().decode())
             assert data["ok"] is True
-            assert data["version"] == "4.22.0"
+            assert data["version"] == "4.22.1"
     finally:
         server.shutdown()
 

@@ -9,8 +9,6 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    env:
-      PYTEST_ADDOPTS: "--no-cov"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -22,7 +20,25 @@ jobs:
         run: python -m ruff check .
       - name: Type check
         run: python -m mypy runtime memory aios_mcp cli.py config.py dashboard/server.py
-      - name: Test
-        run: python -m pytest -q
+      - name: Test with coverage
+        run: python -m pytest -q --cov-fail-under=80
       - name: Validate globals
         run: python scripts/validate-globals.py
+      - name: Docs guard — API.md exists
+        run: |
+          if [ ! -f aios_mcp/API.md ]; then
+            echo "::error::aios_mcp/API.md is missing"
+            exit 1
+          fi
+      - name: Docs guard — LICENSE exists
+        run: |
+          if [ ! -f LICENSE ]; then
+            echo "::error::LICENSE is missing"
+            exit 1
+          fi
+      - name: Docs guard — CODEOWNERS exists
+        run: |
+          if [ ! -f .github/CODEOWNERS ]; then
+            echo "::error::.github/CODEOWNERS is missing"
+            exit 1
+          fi

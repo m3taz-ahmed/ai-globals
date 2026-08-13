@@ -64,6 +64,17 @@ def _normalize_bm25_score(score: float | None, min_s: float, max_s: float) -> fl
 class HybridSearcher:
     """Combine FTS5 keyword search, vector semantic search, and entity boosting."""
 
+    # Whitelist of allowed FTS5 score/order expressions to prevent SQL injection
+    # via dynamic column interpolation. Only these exact strings are permitted.
+    _ALLOWED_SCORE_COLS: frozenset[str] = frozenset({
+        "bm25(memories_fts)",
+        "rank",
+    })
+    _ALLOWED_ORDER_COLS: frozenset[str] = frozenset({
+        "bm25(memories_fts)",
+        "rank",
+    })
+
     def __init__(self, memory_store: MemoryStore) -> None:
         self.memory_store = memory_store
 
@@ -155,6 +166,12 @@ class HybridSearcher:
         score_col: str,
         order_col: str,
     ) -> list[sqlite3.Row]:
+        # Defense-in-depth: validate score_col/order_col against whitelist
+        # to prevent SQL injection via dynamic column interpolation.
+        if score_col not in self._ALLOWED_SCORE_COLS:
+            raise ValueError(f"Disallowed score column: {score_col!r}")
+        if order_col not in self._ALLOWED_ORDER_COLS:
+            raise ValueError(f"Disallowed order column: {order_col!r}")
         conditions = ["memories_fts MATCH ?", "(m.valid_to IS NULL OR m.valid_to > ?)"]
         params: list[Any] = [q_fts, now]
         if kind:

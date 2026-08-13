@@ -4,14 +4,14 @@
 from __future__ import annotations
 
 import json
-import sqlite3
-import threading
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
+
+from .enums import ActionResultStatus, SagaStatus
+from .repository import BaseRepository
 
 
 @dataclass
@@ -44,47 +44,26 @@ class Saga:
     boundary: dict[str, Any] = field(default_factory=dict)
 
 
-class SagaOrchestrator:
+class SagaOrchestrator(BaseRepository):
     """Durable saga orchestrator with execute and compensate semantics."""
+
+    _schema_sql: ClassVar[list[str]] = [
+        """
+        CREATE TABLE IF NOT EXISTS saga_state (
+            id TEXT PRIMARY KEY,
+            saga_id TEXT NOT NULL,
+            context TEXT NOT NULL,
+            steps TEXT NOT NULL,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    ]
 
     def __init__(self, root: Path) -> None:
         self.root = root
-        self.db_path = root / "state" / "saga.db"
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.RLock()
-        self._init_schema()
-
-    @contextmanager
-    def _conn(self) -> Iterator[sqlite3.Connection]:
-        with self._lock:
-            conn = sqlite3.connect(self.db_path, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA busy_timeout=5000")
-            try:
-                yield conn
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                raise
-            finally:
-                conn.close()
-
-    def _init_schema(self) -> None:
-        with self._conn() as conn:
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS saga_state (
-                    id TEXT PRIMARY KEY,
-                    saga_id TEXT NOT NULL,
-                    context TEXT NOT NULL,
-                    steps TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
-                )
-                """
-            )
+        super().__init__(root / "state" / "saga.db")
 
     def run(
         self,
@@ -111,17 +90,17 @@ class SagaOrchestrator:
                 step_index = completed_step["step"]
                 comp = self._compensate_step(saga_id, step_index, saga.steps[step_index], context, act)
                 compensations.append({"step": step_index, **comp})
-            self._finish_saga(saga_id, "compensated")
+            self._finish_saga(saga_id, SagaStatus.COMPENSATED.value)
             return {
                 "ok": False,
                 "saga_id": saga_id,
-                "status": "compensated",
+                "status": SagaStatus.COMPENSATED.value,
                 "failed": failed_result,
                 "compensations": compensations,
             }
 
-        self._finish_saga(saga_id, "completed")
-        return {"ok": True, "saga_id": saga_id, "status": "completed", "steps": completed}
+        self._finish_saga(saga_id, SagaStatus.COMPLETED.value)
+        return {"ok": True, "saga_id": saga_id, "status": SagaStatus.COMPLETED.value, "steps": completed}
 
     def _start_saga(self, saga: Saga, context: dict[str, Any]) -> str:
         saga_id = f"{saga.id}-{datetime.now(timezone.utc).isoformat()}"
@@ -130,7 +109,7 @@ class SagaOrchestrator:
         with self._conn() as conn:
             conn.execute(
                 "INSERT INTO saga_state (id, saga_id, context, steps, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (saga_id, saga.id, json.dumps(context), steps_json, "running", now, now),
+                (saga_id, saga.id, json.dumps(context), steps_json, SagaStatus.RUNNING.value, now, now),
             )
         return saga_id
 
@@ -164,7 +143,7 @@ class SagaOrchestrator:
             result = act(step.action, **merged)
         except Exception as exc:
             result = {"ok": False, "error": f"Exception: {exc!s}"}
-        result.setdefault("status", "allowed" if result.get("ok") else "denied")
+        result.setdefault("status", ActionResultStatus.ALLOWED.value if result.get("ok") else ActionResultStatus.DENIED.value)
         return result
 
     def _compensate_step(
@@ -184,7 +163,7 @@ class SagaOrchestrator:
             result = act(comp_action, **comp_args)
         except Exception as exc:
             result = {"ok": False, "error": f"Compensation exception: {exc!s}"}
-        result.setdefault("status", "compensated" if result.get("ok") else "compensation_failed")
+        result.setdefault("status", SagaStatus.COMPENSATED.value if result.get("ok") else "compensation_failed")
         return result
 
     def get_saga(self, saga_id: str) -> dict[str, Any] | None:

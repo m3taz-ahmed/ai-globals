@@ -2,32 +2,43 @@
 
 **Session type:** Stop-and-continue (PC → laptop)  
 **Repo:** `https://github.com/m3taz-ahmed/ai-globals.git` (branch `main`)  
-**Last checkpoint:** P0.4 ✅ + P0.3 ✅ + P0.2 ✅ + P0.1 ✅  
-**Next:** UI/UX research done; ready for next milestone.
+**Last checkpoint:** P0–P2 audit refactor complete (all 30 tasks ✅)  
+**Next:** Ready for commit + push (pending user approval).
 
 ---
 
 ## ✅ تم الانتهاء منه (Completed)
 
-### P0.4 — Approval Caching + Rollout Budget
+### v4.22.0 Audit Refactor — All 30 Tasks Complete
+
+**P0 (6 tasks):** SQL injection fix, LICENSE, hardcoded paths, stub adapters, test files, gate verification.  
+**P1 (15 tasks):** Repository layer, kernel split, MCP server split, enums, at-rest encryption, memory leaks, pytest config, Dockerfile multi-stage, CI supply-chain, bandit fixes, release workflow, branch protection, README sync, version pinning, gate verification.  
+**P2 (9 tasks):** Lazy loading, async MCP client, schema migrations, legal docs, observability, E2E tests, docs guard, feature docs, final gate.
+
+**Final Gate Status:**
+```
+ruff check .          ✅ All checks passed
+mypy                  ✅ 58 files, no issues
+pytest -q             ✅ 599 passed, 89.06% coverage
+bandit                ✅ 0 issues
+```
+
+### Key New Files
+- `runtime/crypto.py` — At-rest encryption (Fernet)
+- `runtime/migrations.py` — Schema versioning + backup
+- `runtime/observability.py` — Sentry + Prometheus
+- `runtime/managers/` — PolicyManager, WorkflowManager, AgentManager, ChatManager
+- `aios_mcp/tools/` — memory_tools, workflow_tools, policy_tools, context_tools, common
+- `docs/FEATURES.md`, `docs/PRIVACY_POLICY.md`, `docs/TERMS_OF_USE.md`, `docs/AI_DISCLAIMER.md`
+- `aios_mcp/API.md` — MCP API reference
+- `.github/CODEOWNERS`, `.github/branch-protection.json`
+- `.github/workflows/supply-chain.yml`, `.github/workflows/release.yml`
+- `NOTICE` file
+
+### Previous Work (P0.1–P0.4)
 - `runtime/approval_cache.py`: كاش جديد للموافقات بناءً على مفتاح SHA-256.
 - `runtime/budget.py`: إضافة `rollout_max_tokens`, `rollout_reminder_threshold`, `token_weight_input/output`, و `threading.RLock` لأمان الترابط.
-- `runtime/kernel.py`: ربط كاش الموافقات وفحوصات الميزانية.
-- `runtime/schemas.py`: إضافة حقول الميزانية.
-- `runtime/tests/test_budget.py`, `runtime/tests/test_kernel.py`: تحديث الاختبارات.
-
-### P0.3 — Hybrid Memory Scoring
 - `memory/hybrid.py`: محرك بحث هجين يجمع `FTS5` + vector similarity + entity boosting.
-- `memory/store.py`: طريقة `search_hybrid(...)` مع fallback إلى `search` عند غيوب الفهرس المتجه.
-- `cli.py`: أمر `query` يستخدم `search_hybrid` مع `--explain`.
-- `memory/tests/test_hybrid.py`: اختبارات تغطي الفرز والكيانات والـ fallback.
-
-**الفحوصات تمر:**
-```
-ruff check .        ✅
-mypy memory runtime ✅
-pytest memory/tests runtime/tests -q  ✅ 217 passed
-```
 
 ---
 

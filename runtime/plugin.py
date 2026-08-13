@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 _DENYLISTED_MODULES: set[str] = {
     "os", "subprocess", "sys", "shutil", "socket", "requests", "urllib", "http",
     "ftplib", "telnetlib", "smtplib", "ctypes", "mmap", "signal", "pickle", "marshal",
+    "importlib", "types", "builtins", "code", "codeop", "runpy", "webbrowser",
+    "multiprocessing", "concurrent",
 }
 
 _DANGEROUS_CALLS: set[str] = {"eval", "exec", "compile", "open", "__import__", "getattr", "setattr"}
@@ -56,6 +58,10 @@ def _is_plugin_source_safe(source: str, filename: str) -> tuple[bool, str]:
         elif isinstance(node, ast.Attribute):
             if node.attr.startswith("__") and node.attr.endswith("__") and len(node.attr) > 4:
                 return False, f"Blocked dunder attribute access '{node.attr}' in {filename}"
+        elif isinstance(node, ast.Subscript):
+            # Block __builtins__['eval'] style bypasses
+            if isinstance(node.value, ast.Name) and node.value.id == "__builtins__":
+                return False, f"Blocked __builtins__ subscript in {filename}"
     return True, ""
 
 

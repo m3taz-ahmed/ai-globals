@@ -402,7 +402,46 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "tech-stack directory": (os_root / "tech-stack").exists(),
         "state directory": (project_root / "state").exists(),
         "brain directory": (project_root / "brain").exists(),
+        "managers module": (os_root / "runtime" / "managers").is_dir(),
+        "mcp tools module": (os_root / "aios_mcp" / "tools").is_dir(),
+        "crypto module": (os_root / "runtime" / "crypto.py").exists(),
+        "migrations module": (os_root / "runtime" / "migrations.py").exists(),
+        "observability module": (os_root / "runtime" / "observability.py").exists(),
+        "LICENSE": (os_root / "LICENSE").exists(),
+        "CODEOWNERS": (os_root / ".github" / "CODEOWNERS").exists(),
+        "API.md": (os_root / "aios_mcp" / "API.md").exists(),
     }
+
+    # Version check
+    version_file = os_root / ".aios-version"
+    if version_file.exists():
+        installed_ver = version_file.read_text(encoding="utf-8").strip()
+        checks[f"installed version ({installed_ver})"] = True
+    else:
+        checks["installed version"] = False
+
+    # Encryption check
+    try:
+        import os as _os
+
+        if _os.environ.get("AIOS_ENCRYPTION_KEY"):
+            checks["encryption key set"] = True
+            from runtime.crypto import _get_fernet
+
+            checks["encryption fernet valid"] = _get_fernet() is not None
+        else:
+            checks["encryption key set"] = False
+    except Exception:
+        checks["encryption key set"] = False
+
+    # Python deps check
+    for pkg in ("yaml", "mcp", "pydantic", "rich", "cryptography"):
+        try:
+            __import__(pkg)
+            checks[f"pip: {pkg}"] = True
+        except ImportError:
+            checks[f"pip: {pkg}"] = False
+
     try:
         from memory.vector import VectorMemory
 
@@ -418,6 +457,42 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         table.add_row(name, "ok" if ok else "missing")
     console.print(table)
     return 0 if all(checks.values()) else 1
+
+
+def cmd_test(args: argparse.Namespace) -> int:
+    """Run pytest with configurable speed tiers.
+
+    Tiers:
+      ai-os test           → fast (default): skip slow/mcp/dashboard/vector, no coverage, ~10s
+      ai-os test --full    → full: all tests + coverage, ~20s
+      ai-os test --verbose → verbose output
+      ai-os test --xdist   → parallel execution
+    """
+    import subprocess
+    import sys
+
+    if args.full:
+        pytest_args = [
+            sys.executable, "-m", "pytest",
+            "-q",
+        ]
+        console.print("[cyan]Running FULL test suite with coverage...[/]")
+    else:
+        # Default / --fast: skip slow tests, no coverage
+        pytest_args = [
+            sys.executable, "-m", "pytest",
+            "-m", "not slow and not mcp and not dashboard and not vector",
+            "--no-cov", "-q",
+        ]
+        console.print("[cyan]Running FAST tests (unit only, no model/server loading)...[/]")
+
+    if args.verbose:
+        pytest_args.append("-v")
+    if args.xdist and args.workers:
+        pytest_args.extend(["-n", str(args.workers)])
+
+    result = subprocess.run(pytest_args, cwd=str(_root(args)))
+    return result.returncode
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -495,6 +570,12 @@ def main(argv: list[str] | None = None) -> int:
 
     p_ci = sub.add_parser("ci", help="Run CI quality gates")
     p_ci.add_argument("--skip-pytest", action="store_true", help="Skip pytest to save time")
+
+    p_test = sub.add_parser("test", help="Run tests (default: fast tier ~10s, --full: all tests with coverage ~20s)")
+    p_test.add_argument("--full", action="store_true", help="Full tier: all tests with coverage")
+    p_test.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    p_test.add_argument("--xdist", action="store_true", help="Run in parallel with pytest-xdist")
+    p_test.add_argument("--workers", type=int, default=4, help="Number of parallel workers (default: 4)")
 
     p_agent = sub.add_parser("agent", help="Sub-agent orchestration")
     p_agent.add_argument("subcommand", choices=["spawn", "delegate", "list", "sync"])
@@ -577,6 +658,7 @@ def main(argv: list[str] | None = None) -> int:
         "mcp": cmd_mcp,
         "chat": cmd_chat,
         "ci": cmd_ci,
+        "test": cmd_test,
         "agent": cmd_agent,
         "persona": cmd_persona,
         "skill": cmd_skill,

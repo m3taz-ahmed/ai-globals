@@ -2,21 +2,15 @@
   "mcpServers": {
     "ai-global-os": {
       "command": "python",
-      "args": [
-        "-c",
-        "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT'); root=root if (root and pathlib.Path(root).is_dir()) else (str(pathlib.Path.cwd()) if pathlib.Path.cwd().joinpath('config.py').exists() else 'D:/.ai'); os.environ['AGENT_OS_ROOT']=root; os.environ.setdefault('PYTHONIOENCODING','utf-8'); subprocess.run([sys.executable,'-m','aios_mcp.aios_server'], cwd=root)"
-      ]
+      "args": ["scripts/aios_mcp_wrapper.py"]
     },
     "graphify": {
       "command": "python",
-      "args": [
-        "-c",
-        "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT'); root=root if (root and pathlib.Path(root).is_dir()) else (str(pathlib.Path.cwd()) if pathlib.Path.cwd().joinpath('config.py').exists() else 'D:/.ai'); os.environ['AGENT_OS_ROOT']=root; os.environ.setdefault('PYTHONIOENCODING','utf-8'); subprocess.run([sys.executable, str(pathlib.Path(root)/'scripts'/'graphify_mcp_wrapper.py')])"
-      ]
+      "args": ["scripts/graphify_mcp_wrapper.py"]
     },
     "upwork": {
       "command": "npx",
-      "args": ["-y", "@furkankoykiran/upwork-mcp"],
+      "args": ["-y", "@furkankoykiran/upwork-mcp@1.2.2"],
       "env": {
         "UPWORK_CLIENT_ID": "${UPWORK_CLIENT_ID}",
         "UPWORK_CLIENT_SECRET": "${UPWORK_CLIENT_SECRET}"
@@ -24,7 +18,7 @@
     },
     "freelancer": {
       "command": "npx",
-      "args": ["-y", "freelancer-mcp-server"],
+      "args": ["-y", "freelancer-mcp-server@2.0.0"],
       "env": {
         "FREELANCER_OAUTH_TOKEN": "${FREELANCER_OAUTH_TOKEN}"
       }
@@ -35,7 +29,7 @@
     },
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
+      "args": ["-y", "@upstash/context7-mcp@3.1.0"]
     },
     "linkedin": {
       "command": "octopus-linkedin-mcp",

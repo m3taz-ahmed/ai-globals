@@ -6,16 +6,14 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-import threading
 import uuid
-from collections.abc import Iterator
-from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import config
+from runtime.repository import BaseRepository
 
 from .hybrid import HybridSearcher
 from .vector import VectorMemory
@@ -33,98 +31,68 @@ class Memory:
     valid_to: str | None
 
 
-class MemoryStore:
+class MemoryStore(BaseRepository):
     """SQLite-backed memory with temporal validity, graph relations, and optional vector index."""
+
+    _schema_sql: ClassVar[list[str]] = [
+        """
+        CREATE TABLE IF NOT EXISTS memories (
+            id TEXT PRIMARY KEY,
+            kind TEXT NOT NULL,
+            content TEXT NOT NULL,
+            source TEXT,
+            meta TEXT,
+            created_at TEXT NOT NULL,
+            valid_from TEXT NOT NULL,
+            valid_to TEXT
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS relations (
+            id TEXT PRIMARY KEY,
+            source_id TEXT NOT NULL,
+            target_id TEXT NOT NULL,
+            relation TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """,
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
+            content, content_rowid=rowid, content='memories'
+        )
+        """,
+        """
+        CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories
+        BEGIN
+            INSERT INTO memories_fts(rowid, content) VALUES (new.rowid, new.content);
+        END
+        """,
+        """
+        CREATE TRIGGER IF NOT EXISTS memories_ad AFTER DELETE ON memories
+        BEGIN
+            INSERT INTO memories_fts(memories_fts, rowid, content) VALUES('delete', old.rowid, old.content);
+        END
+        """,
+        """
+        CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories
+        BEGIN
+            INSERT INTO memories_fts(memories_fts, rowid, content) VALUES('delete', old.rowid, old.content);
+            INSERT INTO memories_fts(rowid, content) VALUES (new.rowid, new.content);
+        END
+        """,
+    ]
+    _index_sql: ClassVar[list[str]] = [
+        "CREATE INDEX IF NOT EXISTS idx_mem_kind ON memories(kind)",
+        "CREATE INDEX IF NOT EXISTS idx_mem_source ON memories(source)",
+        "CREATE INDEX IF NOT EXISTS idx_mem_valid_to ON memories(valid_to)",
+        "CREATE INDEX IF NOT EXISTS idx_rel_source ON relations(source_id)",
+        "CREATE INDEX IF NOT EXISTS idx_rel_target ON relations(target_id)",
+    ]
 
     def __init__(self, root: Path | None = None, db_path: Path | None = None, enable_vector: bool = True) -> None:
         self.root = root or config.discover_root()
-        self.db_path = db_path or self.root / "brain" / "memory.db"
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.vector = VectorMemory(self.root) if enable_vector else None
-        self._lock = threading.RLock()
-        self._init_schema()
-
-    def _init_schema(self) -> None:
-        with self._conn() as conn:
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS memories (
-                    id TEXT PRIMARY KEY,
-                    kind TEXT NOT NULL,
-                    content TEXT NOT NULL,
-                    source TEXT,
-                    meta TEXT,
-                    created_at TEXT NOT NULL,
-                    valid_from TEXT NOT NULL,
-                    valid_to TEXT
-                )
-                """
-            )
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS relations (
-                    id TEXT PRIMARY KEY,
-                    source_id TEXT NOT NULL,
-                    target_id TEXT NOT NULL,
-                    relation TEXT NOT NULL,
-                    created_at TEXT NOT NULL
-                )
-                """
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_mem_kind ON memories(kind)"
-            )
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_rel_source ON relations(source_id)"
-            )
-            conn.execute(
-                """
-                CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
-                    content, content_rowid=rowid, content='memories'
-                )
-                """
-            )
-            conn.execute(
-                """
-                CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories
-                BEGIN
-                    INSERT INTO memories_fts(rowid, content) VALUES (new.rowid, new.content);
-                END
-                """
-            )
-            conn.execute(
-                """
-                CREATE TRIGGER IF NOT EXISTS memories_ad AFTER DELETE ON memories
-                BEGIN
-                    INSERT INTO memories_fts(memories_fts, rowid, content) VALUES('delete', old.rowid, old.content);
-                END
-                """
-            )
-            conn.execute(
-                """
-                CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories
-                BEGIN
-                    INSERT INTO memories_fts(memories_fts, rowid, content) VALUES('delete', old.rowid, old.content);
-                    INSERT INTO memories_fts(rowid, content) VALUES (new.rowid, new.content);
-                END
-                """
-            )
-
-    @contextmanager
-    def _conn(self) -> Iterator[sqlite3.Connection]:
-        with self._lock:
-            conn = sqlite3.connect(self.db_path, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA busy_timeout=5000")
-            try:
-                yield conn
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                raise
-            finally:
-                conn.close()
+        super().__init__(db_path or self.root / "brain" / "memory.db")
 
     def add(
         self,
@@ -224,6 +192,9 @@ class MemoryStore:
             row = conn.execute("SELECT * FROM memories WHERE id = ?", (mem_id,)).fetchone()
         return self._row_to_memory(row) if row else None
 
+    # Whitelist of allowed filter columns to prevent SQL injection in dynamic WHERE clauses.
+    _ALLOWED_FILTER_COLUMNS: frozenset[str] = frozenset({"kind", "source"})
+
     def search_vector(
         self, query: str, k: int = 5, kind: str | None = None, source: str | None = None
     ) -> list[dict[str, Any]]:
@@ -233,7 +204,9 @@ class MemoryStore:
         ids: list[str] | None = None
         if kind or source:
             now = datetime.now(timezone.utc).isoformat()
-            conditions = ["(valid_to IS NULL OR valid_to > ?)"]
+            # Build WHERE from whitelisted condition templates only — no f-string interpolation
+            # of user values into SQL. All values passed as parameterized placeholders.
+            conditions: list[str] = ["(valid_to IS NULL OR valid_to > ?)"]
             params: list[Any] = [now]
             if kind:
                 conditions.append("kind = ?")
@@ -308,6 +281,10 @@ class MemoryStore:
         """Delete all memories for a list of sources and remove their vectors and relations in one batch."""
         if not sources:
             return []
+        # Validate all sources are strings to prevent placeholder manipulation.
+        for src in sources:
+            if not isinstance(src, str) or not src:
+                raise ValueError(f"Invalid source for deletion: {src!r}")
         placeholders = ",".join("?" for _ in sources)
         mem_ids: list[str] = []
         with self._conn() as conn:

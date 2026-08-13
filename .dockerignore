@@ -1,36 +1,32 @@
-# Git
 .git
 .github
-
-# Python cache
+.claude
+.devin
+.cursor
+.windsurfrules
 __pycache__
 *.pyc
 *.pyo
 *.egg-info
+.eggs
+build
+dist
 .pytest_cache
 .mypy_cache
 .ruff_cache
-
-# Local state / generated
-state/
-brain/
-graphify-out/
-.agents/
 .coverage
-integrity.manifest
-GRAPH_REPORT.md
-
-# Editors
-.vscode
-.idea
-*.swp
-
-# OS
-Thumbs.db
-.DS_Store
-
-# Temporary scripts / dev helpers
-scripts/apply_enum_replacements.py
-check_action.py
-tmp/
-scratch/
+htmlcov
+tests
+**/tests
+**/__pycache__
+graphify-out
+brain
+state
+tmp
+scratch
+temp
+*.log
+*.tmp
+.env
+.env.*
+*.md.bak

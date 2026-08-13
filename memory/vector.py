@@ -40,12 +40,25 @@ def _mem_id_to_uint64(mem_id: str) -> int:
 
 
 class Embedder:
-    """Local embedder with optional sentence-transformers."""
+    """Local embedder with optional sentence-transformers.
+
+    Uses a module-level singleton to avoid re-loading the SentenceTransformer
+    model on every instantiation (saves ~3s per test).
+    """
+
+    _singleton: Any = None
+    _singleton_model_name: str | None = None
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
         self.model: Any = None
         if SentenceTransformer is not None:
-            self.model = SentenceTransformer(model_name)
+            # Reuse the singleton if the model name matches
+            if Embedder._singleton is not None and Embedder._singleton_model_name == model_name:
+                self.model = Embedder._singleton
+            else:
+                self.model = SentenceTransformer(model_name)
+                Embedder._singleton = self.model
+                Embedder._singleton_model_name = model_name
         self.dim = 384
 
     def embed(self, texts: Sequence[str]) -> np.ndarray[Any, np.dtype[Any]]:
@@ -55,6 +68,12 @@ class Embedder:
 
     def is_available(self) -> bool:
         return self.model is not None
+
+    @classmethod
+    def _reset_singleton(cls) -> None:
+        """Reset the model singleton. Useful for tests."""
+        cls._singleton = None
+        cls._singleton_model_name = None
 
 
 class VectorMemory:

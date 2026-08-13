@@ -269,15 +269,18 @@ mkdir -p "$ROOT"
 
 STATE_BACKUP=""
 BRAIN_BACKUP=""
+BACKUP_DIR="$ROOT/state/.backups"
 if $COPY_MODE && [[ -d "$ROOT/state" ]]; then
-    STATE_BACKUP="/tmp/aios-state-$(date +%Y%m%d%H%M%S)"
+    mkdir -p "$BACKUP_DIR" 2>/dev/null
+    STATE_BACKUP="$BACKUP_DIR/state-$(date +%Y%m%d%H%M%S)"
     step "Preserving existing state to $STATE_BACKUP"
     if ! $WHATIF; then
         cp -R "$ROOT/state" "$STATE_BACKUP"
     fi
 fi
 if $COPY_MODE && [[ -d "$ROOT/brain" ]]; then
-    BRAIN_BACKUP="/tmp/aios-brain-$(date +%Y%m%d%H%M%S)"
+    mkdir -p "$BACKUP_DIR" 2>/dev/null
+    BRAIN_BACKUP="$BACKUP_DIR/brain-$(date +%Y%m%d%H%M%S)"
     step "Preserving existing brain to $BRAIN_BACKUP"
     if ! $WHATIF; then
         cp -R "$ROOT/brain" "$BRAIN_BACKUP"
@@ -366,7 +369,7 @@ if ! $SKIP_PIP; then
 
     # Verify required packages
     step "Verifying required packages"
-    for pkg in yaml mcp pydantic rich numpy; do
+    for pkg in yaml mcp pydantic rich numpy cryptography; do
         if ! python -c "import $pkg" 2>/dev/null; then
             warn "Missing package: $pkg - attempting install"
             if ! $WHATIF; then
@@ -393,7 +396,12 @@ if ! $WHATIF; then
     fi
     if [[ -n "$PROFILE" ]]; then
         # Remove old AGENT_OS_ROOT lines and add new one
-        sed -i '/^export AGENT_OS_ROOT=/d' "$PROFILE" 2>/dev/null || true
+        # Use portable sed: create backup on macOS (BSD sed requires -i with suffix)
+        if [[ "$(uname)" == "Darwin" ]]; then
+            sed -i.bak '/^export AGENT_OS_ROOT=/d' "$PROFILE" 2>/dev/null && rm -f "${PROFILE}.bak"
+        else
+            sed -i '/^export AGENT_OS_ROOT=/d' "$PROFILE" 2>/dev/null
+        fi
         echo "export AGENT_OS_ROOT=\"$ROOT\"" >> "$PROFILE"
         ok "AGENT_OS_ROOT set to $ROOT (in $PROFILE)"
     fi
@@ -476,11 +484,11 @@ if ! $SKIP_MCP; then
     "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:node -e","bash:python -c"]
   },
   "mcpServers": {
-    "ai-global-os": { "command": "python", "args": ["-c", "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or '$ROOT'; os.environ['AGENT_OS_ROOT']=root; os.environ.setdefault('PYTHONIOENCODING','utf-8'); subprocess.run([sys.executable,'-m','aios_mcp.aios_server'], cwd=root)"] },
-    "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp"] },
-    "graphify": { "command": "python", "args": ["-c", "import os,sys,subprocess,pathlib; root=os.environ.get('AGENT_OS_ROOT') or '$ROOT'; os.environ['AGENT_OS_ROOT']=root; os.environ.setdefault('PYTHONIOENCODING','utf-8'); subprocess.run([sys.executable, str(pathlib.Path(root)/'scripts'/'graphify_mcp_wrapper.py')])"] },
-    "upwork": { "command": "npx", "args": ["-y", "@furkankoykiran/upwork-mcp"] },
-    "freelancer": { "command": "npx", "args": ["-y", "freelancer-mcp-server"] },
+    "ai-global-os": { "command": "python", "args": ["scripts/aios_mcp_wrapper.py"] },
+    "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
+    "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
+    "upwork": { "command": "npx", "args": ["-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
+    "freelancer": { "command": "npx", "args": ["-y", "freelancer-mcp-server@2.0.0"] },
     "fiverr": { "command": "uvx", "args": ["fiverr-mcp-server"] },
     "linkedin": { "command": "octopus-linkedin-mcp", "args": [] }
   },
@@ -541,6 +549,18 @@ if ! $WHATIF; then
     echo "$TARGET_VERSION" > "$ROOT/.aios-version"
 fi
 ok "Version: $TARGET_VERSION"
+
+# ---------------------------------------------------------------------------
+# 14. Cleanup old backups (keep last 3)
+# ---------------------------------------------------------------------------
+
+if [[ -d "$BACKUP_DIR" ]]; then
+    step "Cleaning old backups (keeping last 3)"
+    if ! $WHATIF; then
+        ls -1dt "$BACKUP_DIR"/state-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
+        ls -1dt "$BACKUP_DIR"/brain-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
+    fi
+fi
 
 # ---------------------------------------------------------------------------
 # Done
