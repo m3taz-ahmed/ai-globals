@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -462,6 +463,22 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         checks["vector index"] = vector.is_available()
     except Exception:
         checks["vector index"] = False
+
+    # Global MCP config check (must be synced so MCPs work in any workspace)
+    try:
+        if os.name == "nt":
+            g_dir = Path(os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming"))) / "devin"
+        else:
+            g_dir = Path.home() / ".config" / "devin"
+        g_cfg = g_dir / "mcp_config.json"
+        if g_cfg.exists():
+            g_data = json.loads(g_cfg.read_text(encoding="utf-8"))
+            g_count = len(g_data.get("mcpServers", {}))
+            checks[f"global mcp config ({g_count} servers)"] = g_count > 0
+        else:
+            checks["global mcp config"] = False
+    except Exception:
+        checks["global mcp config"] = False
 
     table = Table(title="AI Global OS Doctor")
     table.add_column("Check", style="cyan")

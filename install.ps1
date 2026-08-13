@@ -739,6 +739,29 @@ if (-not $WhatIf) {
     } else {
         Write-Warn "MCP global sync failed:`n$syncOutput"
     }
+
+    # Verify the global config actually persisted (Devin CLI migrations can
+    # reset it to {"mcpServers": {}} on startup). Re-sync once if empty.
+    $globalCfg = Join-Path $env:APPDATA "devin\mcp_config.json"
+    if (Test-Path $globalCfg) {
+        try {
+            $cfgData = Get-Content $globalCfg -Raw | ConvertFrom-Json
+            $serverCount = @($cfgData.mcpServers.PSObject.Properties).Count
+            if ($serverCount -eq 0) {
+                Write-Warn "Global MCP config is empty after sync — re-writing (Devin may have reset it)"
+                & python (Join-Path $Root "scripts\mcp_global_sync.py") 2>&1 | ForEach-Object { Write-Host $_ }
+                $cfgData = Get-Content $globalCfg -Raw | ConvertFrom-Json
+                $serverCount = @($cfgData.mcpServers.PSObject.Properties).Count
+            }
+            if ($serverCount -gt 0) {
+                Write-Ok "Global MCP config verified: $serverCount servers (works from any workspace)"
+            } else {
+                Write-Warn "Global MCP config still empty after re-sync — run 'ai-os mcp sync' manually"
+            }
+        } catch {
+            Write-Warn "Could not verify global MCP config: $_"
+        }
+    }
 }
 
 # ---------------------------------------------------------------------------

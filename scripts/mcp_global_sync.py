@@ -20,6 +20,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 
 def discover_root() -> Path:
@@ -37,9 +38,8 @@ def global_config_dir() -> Path:
     return Path.home() / ".config" / "devin"
 
 
-def build_global_config(root: Path) -> dict:
+def build_global_config(root: Path) -> dict[str, Any]:
     """Build MCP config with absolute paths rooted at the OS root."""
-    scripts = str(root / "scripts")
     py = sys.executable or "python"
 
     def abs_script(name: str) -> str:
@@ -98,12 +98,32 @@ def main() -> int:
     # Back up existing config if it has content
     if target.exists() and target.stat().st_size > 0:
         backup = target.with_suffix(".json.bak")
+        # Windows: rename fails if destination exists — replace stale backup.
+        if backup.exists():
+            backup.unlink(missing_ok=True)
         target.rename(backup)
         print(f"[mcp-global-sync] Backed up existing config to {backup}")
 
     target.write_text(json.dumps(config, indent=2), encoding="utf-8")
     print(f"[mcp-global-sync] Written global MCP config ({len(config['mcpServers'])} servers)")
     print("[mcp-global-sync] All paths are absolute — works from any workspace.")
+
+    # Verify what we wrote survives on disk (catches external reset / race).
+    try:
+        written = json.loads(target.read_text(encoding="utf-8"))
+        seen = len(written.get("mcpServers", {}))
+        if seen != len(config["mcpServers"]):
+            print(
+                f"[mcp-global-sync] WARN: verification mismatch — wrote "
+                f"{len(config['mcpServers'])} but read back {seen}. "
+                "Another process may have reset the file. Re-run: ai-os mcp sync",
+                file=sys.stderr,
+            )
+            return 2
+        print(f"[mcp-global-sync] Verified: {seen} servers persisted to {target}")
+    except (OSError, ValueError) as exc:
+        print(f"[mcp-global-sync] WARN: could not verify written file: {exc}", file=sys.stderr)
+        return 2
     return 0
 
 
