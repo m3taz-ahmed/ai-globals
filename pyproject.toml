@@ -44,7 +44,7 @@ dev = [
     "types-pyyaml",
     "types-psutil",
     "graphifyy>=0.9.16,<0.9.17",
-    "bandit>=1.7,<2.0",
+    "bandit>=1.9.4,<2.0",
     "pip-audit>=2.0,<3.0",
 ]
 graphify = [
