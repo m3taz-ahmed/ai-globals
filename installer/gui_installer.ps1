@@ -4,11 +4,13 @@
 # Features:
 #   - 8-page wizard: Welcome, License, Location, Components, Config, Pre-flight, Progress, Finish
 #   - Component selection: core, plugins, MCP servers, agent configs, CLI, shortcuts
+#   - .env secrets setup (auto-copy .env.example, pre-flight check, finish-page reminder)
 #   - Live progress bar + scrolling log
-#   - Pre-flight checks (Python, npx, uvx, disk space)
+#   - Pre-flight checks (Python, npx, uvx, disk space, .env secrets)
 #   - Post-install verification + health check
 #   - Rollback on failure
 #   - Install log saved to state/
+#   - Version read dynamically from pyproject.toml (no hardcoded version)
 #
 # Usage:
 #   .\gui_installer.ps1                # Launch GUI
@@ -28,6 +30,21 @@ $Repo = $PSScriptRoot
 if ($Repo -eq "") { $Repo = (Get-Location).Path }
 # The GUI installer lives in installer/ subfolder, so repo is parent
 $Repo = Split-Path $Repo -Parent
+
+# ---------------------------------------------------------------------------
+# Read version dynamically from pyproject.toml
+# ---------------------------------------------------------------------------
+function Get-TargetVersion {
+    param([string]$Path)
+    $pyproject = Join-Path $Path "pyproject.toml"
+    if (-not (Test-Path $pyproject)) { return "0.0.0" }
+    $content = Get-Content $pyproject -Raw
+    if ($content -match 'version\s*=\s*"([^"]+)"') {
+        return $matches[1]
+    }
+    return "0.0.0"
+}
+$TargetVersion = Get-TargetVersion $Repo
 
 # ---------------------------------------------------------------------------
 # Silent mode: delegate to install.ps1
@@ -132,59 +149,67 @@ Add-Type -AssemblyName System.Windows.Forms
         <!-- Main content area -->
         <Grid Grid.Row="0" Margin="30,20,30,10">
             <!-- Page 1: Welcome -->
-            <StackPanel x:Name="PageWelcome" Visibility="Visible">
-                <TextBlock Style="{StaticResource PageTitle}" Text="Welcome to AI Global OS"/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="Sovereign AI engineering control plane - installer wizard"/>
-                <Border Background="#161B22" CornerRadius="8" Padding="20" Margin="0,10,0,10">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource BodyText}" Text="Version: 4.22.0" FontWeight="Bold"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="License: MIT"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="Author: Moataz"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text=""/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="This wizard will:"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="  1. Install AI Global OS core + dependencies"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="  2. Configure MCP servers (graphify, context7, upwork, freelancer, fiverr)"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="  3. Set up agent configs (Claude, Windsurf, Cursor, Aider, Devin)"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="  4. Build knowledge graph (graphify)"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="  5. Create CLI shim + environment variables"/>
-                    </StackPanel>
-                </Border>
-                <TextBlock Style="{StaticResource BodyText}" Text="Click Next to continue." Margin="0,15,0,0"/>
-            </StackPanel>
+            <ScrollViewer x:Name="PageWelcome" Visibility="Visible" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Welcome to AI Global OS"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Sovereign AI engineering control plane - installer wizard"/>
+                    <Border Background="#161B22" CornerRadius="8" Padding="20" Margin="0,10,0,10">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource BodyText}" Text="Version: $TargetVersion" FontWeight="Bold"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="License: MIT"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="Author: Moataz"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text=""/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="This wizard will:"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="  1. Install AI Global OS core + dependencies"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="  2. Configure MCP servers (graphify, context7, upwork, freelancer, fiverr, LinkedIn)"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="  3. Set up .env secrets file (from .env.example template)"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="  4. Set up agent configs (Claude, Windsurf, Cursor, Aider, Devin, Copilot, Cline)"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="  5. Build knowledge graph (graphify)"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="  6. Sync global MCP config + create CLI shim + environment variables"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Style="{StaticResource BodyText}" Text="Click Next to continue." Margin="0,15,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
 
             <!-- Page 2: License -->
-            <StackPanel x:Name="PageLicense" Visibility="Collapsed">
-                <TextBlock Style="{StaticResource PageTitle}" Text="License Agreement"/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="Please read and accept the MIT license to continue"/>
-                <Border Background="#161B22" CornerRadius="4" Padding="15" Margin="0,0,0,15" Height="280">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <TextBlock x:Name="LicenseText" Style="{StaticResource BodyText}" FontSize="11" Text=""/>
-                    </ScrollViewer>
-                </Border>
-                <CheckBox x:Name="AcceptLicense" Style="{StaticResource CheckboxStyle}" Content="I accept the terms of the MIT license" IsChecked="False"/>
-            </StackPanel>
+            <ScrollViewer x:Name="PageLicense" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="License Agreement"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Please read and accept the MIT license to continue"/>
+                    <Border Background="#161B22" CornerRadius="4" Padding="15" Margin="0,0,0,15" Height="280">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="LicenseText" Style="{StaticResource BodyText}" FontSize="11" Text=""/>
+                        </ScrollViewer>
+                    </Border>
+                    <CheckBox x:Name="AcceptLicense" Style="{StaticResource CheckboxStyle}" Content="I accept the terms of the MIT license" IsChecked="False"/>
+                </StackPanel>
+            </ScrollViewer>
 
             <!-- Page 3: Install Location -->
-            <StackPanel x:Name="PageLocation" Visibility="Collapsed">
-                <TextBlock Style="{StaticResource PageTitle}" Text="Installation Location"/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="Choose where to install AI Global OS"/>
-                <RadioButton x:Name="RadioInPlace" Style="{StaticResource RadioStyle}" GroupName="Location" Content="In-place (use current repo location)" IsChecked="True" Margin="0,0,0,5"/>
-                <TextBlock Style="{StaticResource BodyText}" Text="The OS will run directly from the repository. Recommended for developers." Margin="20,0,0,10" Foreground="#8B949E"/>
-                <RadioButton x:Name="RadioCustom" Style="{StaticResource RadioStyle}" GroupName="Location" Content="Custom location (copy files)" IsChecked="False" Margin="0,0,0,5"/>
-                <StackPanel Orientation="Horizontal" Margin="20,0,0,10">
-                    <TextBox x:Name="CustomPath" Width="450" Height="30" Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D" VerticalContentAlignment="Center" Padding="8,0" Text="$env:LOCALAPPDATA\AI-Global-OS" IsEnabled="False"/>
-                    <Button x:Name="BrowseBtn" Style="{StaticResource NavButton}" Content="Browse..." Margin="10,0,0,0" IsEnabled="False"/>
+            <ScrollViewer x:Name="PageLocation" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Installation Location"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Choose where to install AI Global OS"/>
+                    <RadioButton x:Name="RadioInPlace" Style="{StaticResource RadioStyle}" GroupName="Location" Content="In-place (use current repo location)" IsChecked="True" Margin="0,0,0,5"/>
+                    <TextBlock Style="{StaticResource BodyText}" Text="The OS will run directly from the repository. Recommended for developers." Margin="20,0,0,10" Foreground="#8B949E"/>
+                    <RadioButton x:Name="RadioCustom" Style="{StaticResource RadioStyle}" GroupName="Location" Content="Custom location (copy files)" IsChecked="False" Margin="0,0,0,5"/>
+                    <StackPanel Orientation="Horizontal" Margin="20,0,0,10">
+                        <TextBox x:Name="CustomPath" Width="450" Height="30" Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D" VerticalContentAlignment="Center" Padding="8,0" Text="$env:LOCALAPPDATA\AI-Global-OS" IsEnabled="False"/>
+                        <Button x:Name="BrowseBtn" Style="{StaticResource NavButton}" Content="Browse..." Margin="10,0,0,0" IsEnabled="False"/>
+                    </StackPanel>
+                    <TextBlock x:Name="DiskSpaceInfo" Style="{StaticResource BodyText}" Text="Disk space: checking..." Margin="0,10,0,0" Foreground="#8B949E"/>
+                    <TextBlock x:Name="RepoPathInfo" Style="{StaticResource BodyText}" Text="" Margin="0,5,0,0" Foreground="#8B949E"/>
                 </StackPanel>
-                <TextBlock x:Name="DiskSpaceInfo" Style="{StaticResource BodyText}" Text="Disk space: checking..." Margin="0,10,0,0" Foreground="#8B949E"/>
-                <TextBlock x:Name="RepoPathInfo" Style="{StaticResource BodyText}" Text="" Margin="0,5,0,0" Foreground="#8B949E"/>
-            </StackPanel>
+            </ScrollViewer>
 
             <!-- Page 4: Component Selection -->
-            <StackPanel x:Name="PageComponents" Visibility="Collapsed">
-                <TextBlock Style="{StaticResource PageTitle}" Text="Component Selection"/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="Choose which components to install"/>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Height="380">
-                    <StackPanel>
+            <ScrollViewer x:Name="PageComponents" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Component Selection"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Choose which components to install"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="380">
+                        <StackPanel>
                         <TextBlock Style="{StaticResource BodyText}" Text="Core (required)" FontWeight="Bold" Foreground="#58A6FF" Margin="0,0,0,5"/>
                         <CheckBox x:Name="CompCore" Style="{StaticResource CheckboxStyle}" Content="AI Global OS Core (runtime, memory, MCP server)" IsChecked="True" IsEnabled="False"/>
                         <CheckBox x:Name="CompPip" Style="{StaticResource CheckboxStyle}" Content="Python dependencies (pip install)" IsChecked="True"/>
@@ -194,10 +219,10 @@ Add-Type -AssemblyName System.Windows.Forms
                         <TextBlock Style="{StaticResource BodyText}" Text="MCP Servers" FontWeight="Bold" Foreground="#58A6FF" Margin="0,15,0,5"/>
                         <CheckBox x:Name="CompMCPGraphify" Style="{StaticResource CheckboxStyle}" Content="Graphify MCP (codebase knowledge graph)" IsChecked="True"/>
                         <CheckBox x:Name="CompMCPContext7" Style="{StaticResource CheckboxStyle}" Content="Context7 MCP (library docs - requires npx)" IsChecked="True"/>
-                        <CheckBox x:Name="CompMCPUpwork" Style="{StaticResource CheckboxStyle}" Content="Upwork MCP (job search + proposals - requires npx + OAuth)" IsChecked="True"/>
-                        <CheckBox x:Name="CompMCPFreelancer" Style="{StaticResource CheckboxStyle}" Content="Freelancer MCP (project search + bidding - requires npx + OAuth)" IsChecked="True"/>
-                        <CheckBox x:Name="CompMCPFiverr" Style="{StaticResource CheckboxStyle}" Content="Fiverr MCP (gig search - read-only, requires uvx)" IsChecked="True"/>
-                        <CheckBox x:Name="CompMCPLinkedIn" Style="{StaticResource CheckboxStyle}" Content="LinkedIn MCP (content automation - requires Python + OAuth)" IsChecked="True"/>
+                        <CheckBox x:Name="CompMCPUpwork" Style="{StaticResource CheckboxStyle}" Content="Upwork MCP (job search + proposals - requires npx + .env secrets)" IsChecked="True"/>
+                        <CheckBox x:Name="CompMCPFreelancer" Style="{StaticResource CheckboxStyle}" Content="Freelancer MCP (project search + bidding - requires npx + .env secrets)" IsChecked="True"/>
+                        <CheckBox x:Name="CompMCPFiverr" Style="{StaticResource CheckboxStyle}" Content="Fiverr MCP (gig search - read-only, requires uvx, no secrets needed)" IsChecked="True"/>
+                        <CheckBox x:Name="CompMCPLinkedIn" Style="{StaticResource CheckboxStyle}" Content="LinkedIn MCP (content automation - requires Python + .env secrets)" IsChecked="True"/>
 
                         <TextBlock Style="{StaticResource BodyText}" Text="AIOS Plugins" FontWeight="Bold" Foreground="#58A6FF" Margin="0,15,0,5"/>
                         <CheckBox x:Name="CompPluginGraphify" Style="{StaticResource CheckboxStyle}" Content="Graphify plugin (graph topology queries)" IsChecked="True"/>
@@ -221,16 +246,18 @@ Add-Type -AssemblyName System.Windows.Forms
                         <CheckBox x:Name="CompEnvVar" Style="{StaticResource CheckboxStyle}" Content="Set AGENT_OS_ROOT environment variable" IsChecked="True"/>
                         <CheckBox x:Name="CompStartMenu" Style="{StaticResource CheckboxStyle}" Content="Create Start Menu shortcut" IsChecked="True"/>
                         <CheckBox x:Name="CompDesktop" Style="{StaticResource CheckboxStyle}" Content="Create Desktop shortcut" IsChecked="False"/>
-                    </StackPanel>
-                </ScrollViewer>
-            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </StackPanel>
+            </ScrollViewer>
 
             <!-- Page 5: Configuration -->
-            <StackPanel x:Name="PageConfig" Visibility="Collapsed">
-                <TextBlock Style="{StaticResource PageTitle}" Text="Configuration"/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="Review and adjust installation settings"/>
-                <Border Background="#161B22" CornerRadius="4" Padding="15" Margin="0,0,0,15">
-                    <StackPanel>
+            <ScrollViewer x:Name="PageConfig" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Configuration"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Review and adjust installation settings"/>
+                    <Border Background="#161B22" CornerRadius="4" Padding="15" Margin="0,0,0,15">
+                        <StackPanel>
                         <TextBlock Style="{StaticResource BodyText}" Text="Environment Variables" FontWeight="Bold" Foreground="#58A6FF" Margin="0,0,0,8"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <TextBlock Style="{StaticResource BodyText}" Text="AGENT_OS_ROOT:" Width="150"/>
@@ -254,60 +281,77 @@ Add-Type -AssemblyName System.Windows.Forms
                         <CheckBox x:Name="ConfigHealthCheck" Style="{StaticResource CheckboxStyle}" Content="Run MCP server health check after install" IsChecked="True"/>
                         <CheckBox x:Name="ConfigCreateLog" Style="{StaticResource CheckboxStyle}" Content="Create installation log file (state/install-*.log)" IsChecked="True"/>
                         <CheckBox x:Name="ConfigBackupExisting" Style="{StaticResource CheckboxStyle}" Content="Backup existing configs before overwriting" IsChecked="True"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
 
             <!-- Page 6: Pre-flight Summary -->
-            <StackPanel x:Name="PagePreFlight" Visibility="Collapsed">
-                <TextBlock Style="{StaticResource PageTitle}" Text="Pre-flight Check"/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="Verifying system requirements before installation"/>
-                <Border Background="#161B22" CornerRadius="4" Padding="15" Margin="0,0,0,15" Height="350">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource BodyText}" Text="System Checks" FontWeight="Bold" Foreground="#58A6FF" Margin="0,0,0,10"/>
-                        <TextBlock x:Name="CheckPython" Style="{StaticResource BodyText}" Text="[ ] Python 3.10+ ... checking"/>
-                        <TextBlock x:Name="CheckNpx" Style="{StaticResource BodyText}" Text="[ ] npx (npm) ... checking"/>
-                        <TextBlock x:Name="CheckUvx" Style="{StaticResource BodyText}" Text="[ ] uvx (uv) ... checking"/>
-                        <TextBlock x:Name="CheckDisk" Style="{StaticResource BodyText}" Text="[ ] Disk space ... checking"/>
-                        <TextBlock x:Name="CheckExisting" Style="{StaticResource BodyText}" Text="[ ] Existing installation ... checking"/>
-                        <TextBlock x:Name="CheckRepo" Style="{StaticResource BodyText}" Text="[ ] Repository integrity ... checking"/>
+            <ScrollViewer x:Name="PagePreFlight" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Pre-flight Check"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Verifying system requirements before installation"/>
+                    <Border Background="#161B22" CornerRadius="4" Padding="15" Margin="0,0,0,15" MaxHeight="350">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource BodyText}" Text="System Checks" FontWeight="Bold" Foreground="#58A6FF" Margin="0,0,0,10"/>
+                                <TextBlock x:Name="CheckPython" Style="{StaticResource BodyText}" Text="[ ] Python 3.10+ ... checking"/>
+                                <TextBlock x:Name="CheckNpx" Style="{StaticResource BodyText}" Text="[ ] npx (npm) ... checking"/>
+                                <TextBlock x:Name="CheckUvx" Style="{StaticResource BodyText}" Text="[ ] uvx (uv) ... checking"/>
+                                <TextBlock x:Name="CheckDisk" Style="{StaticResource BodyText}" Text="[ ] Disk space ... checking"/>
+                                <TextBlock x:Name="CheckExisting" Style="{StaticResource BodyText}" Text="[ ] Existing installation ... checking"/>
+                                <TextBlock x:Name="CheckRepo" Style="{StaticResource BodyText}" Text="[ ] Repository integrity ... checking"/>
+                                <TextBlock x:Name="CheckEnv" Style="{StaticResource BodyText}" Text="[ ] .env secrets file ... checking"/>
 
-                        <TextBlock Style="{StaticResource BodyText}" Text="" Margin="0,10,0,0"/>
-                        <TextBlock Style="{StaticResource BodyText}" Text="Installation Summary" FontWeight="Bold" Foreground="#58A6FF" Margin="0,10,0,8"/>
-                        <TextBlock x:Name="SummaryLocation" Style="{StaticResource BodyText}" Text=""/>
-                        <TextBlock x:Name="SummaryComponents" Style="{StaticResource BodyText}" Text=""/>
-                        <TextBlock x:Name="SummaryVersion" Style="{StaticResource BodyText}" Text=""/>
-                    </StackPanel>
-                </Border>
-                <TextBlock x:Name="PreFlightStatus" Style="{StaticResource BodyText}" Text="Click Install to begin." Margin="0,10,0,0"/>
-            </StackPanel>
+                                <TextBlock Style="{StaticResource BodyText}" Text="" Margin="0,10,0,0"/>
+                                <TextBlock Style="{StaticResource BodyText}" Text="Installation Summary" FontWeight="Bold" Foreground="#58A6FF" Margin="0,10,0,8"/>
+                                <TextBlock x:Name="SummaryLocation" Style="{StaticResource BodyText}" Text=""/>
+                                <TextBlock x:Name="SummaryComponents" Style="{StaticResource BodyText}" Text=""/>
+                                <TextBlock x:Name="SummaryVersion" Style="{StaticResource BodyText}" Text=""/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                    <TextBlock x:Name="PreFlightStatus" Style="{StaticResource BodyText}" Text="Click Install to begin." Margin="0,10,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
 
             <!-- Page 7: Installation Progress -->
-            <StackPanel x:Name="PageProgress" Visibility="Collapsed">
-                <TextBlock Style="{StaticResource PageTitle}" Text="Installing..."/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="Please wait while AI Global OS is being installed"/>
-                <ProgressBar x:Name="Progressbar" Height="25" Minimum="0" Maximum="100" Value="0" Margin="0,0,0,10" Foreground="#1F6FEB"/>
-                <TextBlock x:Name="ProgressLabel" Style="{StaticResource BodyText}" Text="Preparing..." Margin="0,0,0,10"/>
-                <TextBox x:Name="LogBox" Style="{StaticResource LogBox}" Height="320" Text=""/>
-            </StackPanel>
+            <ScrollViewer x:Name="PageProgress" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Installing..."/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Please wait while AI Global OS is being installed"/>
+                    <ProgressBar x:Name="Progressbar" Height="25" Minimum="0" Maximum="100" Value="0" Margin="0,0,0,10" Foreground="#1F6FEB"/>
+                    <TextBlock x:Name="ProgressLabel" Style="{StaticResource BodyText}" Text="Preparing..." Margin="0,0,0,10"/>
+                    <TextBox x:Name="LogBox" Style="{StaticResource LogBox}" Height="320" Text=""/>
+                </StackPanel>
+            </ScrollViewer>
 
             <!-- Page 8: Finish -->
-            <StackPanel x:Name="PageFinish" Visibility="Collapsed">
-                <TextBlock x:Name="FinishTitle" Style="{StaticResource PageTitle}" Text="Installation Complete!"/>
-                <TextBlock Style="{StaticResource PageSubtitle}" Text="AI Global OS has been successfully installed"/>
-                <Border Background="#161B22" CornerRadius="8" Padding="20" Margin="0,10,0,15">
-                    <StackPanel>
-                        <TextBlock x:Name="FinishVersion" Style="{StaticResource BodyText}" Text="" FontWeight="Bold"/>
-                        <TextBlock x:Name="FinishLocation" Style="{StaticResource BodyText}" Text=""/>
-                        <TextBlock x:Name="FinishLog" Style="{StaticResource BodyText}" Text=""/>
-                        <TextBlock x:Name="FinishComponents" Style="{StaticResource BodyText}" Text=""/>
-                    </StackPanel>
-                </Border>
-                <TextBlock Style="{StaticResource BodyText}" Text="What would you like to do next?" Margin="0,10,0,10"/>
-                <CheckBox x:Name="FinishLaunchDashboard" Style="{StaticResource CheckboxStyle}" Content="Launch dashboard server" IsChecked="False"/>
-                <CheckBox x:Name="FinishOpenReadme" Style="{StaticResource CheckboxStyle}" Content="Open README" IsChecked="False"/>
-                <CheckBox x:Name="FinishOpenLog" Style="{StaticResource CheckboxStyle}" Content="Open installation log" IsChecked="False"/>
-            </StackPanel>
+            <ScrollViewer x:Name="PageFinish" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock x:Name="FinishTitle" Style="{StaticResource PageTitle}" Text="Installation Complete!"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="AI Global OS has been successfully installed"/>
+                    <Border Background="#161B22" CornerRadius="8" Padding="20" Margin="0,10,0,15">
+                        <StackPanel>
+                            <TextBlock x:Name="FinishVersion" Style="{StaticResource BodyText}" Text="" FontWeight="Bold"/>
+                            <TextBlock x:Name="FinishLocation" Style="{StaticResource BodyText}" Text=""/>
+                            <TextBlock x:Name="FinishLog" Style="{StaticResource BodyText}" Text=""/>
+                            <TextBlock x:Name="FinishComponents" Style="{StaticResource BodyText}" Text=""/>
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="FinishEnvWarning" Background="#1C1208" CornerRadius="8" Padding="15" Margin="0,0,0,15" BorderBrush="#D29922" BorderThickness="1" Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource BodyText}" Text="Action required: edit .env file" FontWeight="Bold" Foreground="#D29922"/>
+                            <TextBlock x:Name="FinishEnvText" Style="{StaticResource BodyText}" Text="" Foreground="#D29922"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Style="{StaticResource BodyText}" Text="What would you like to do next?" Margin="0,10,0,10"/>
+                    <CheckBox x:Name="FinishLaunchDashboard" Style="{StaticResource CheckboxStyle}" Content="Launch dashboard server" IsChecked="False"/>
+                    <CheckBox x:Name="FinishOpenReadme" Style="{StaticResource CheckboxStyle}" Content="Open README" IsChecked="False"/>
+                    <CheckBox x:Name="FinishOpenLog" Style="{StaticResource CheckboxStyle}" Content="Open installation log" IsChecked="False"/>
+                    <CheckBox x:Name="FinishOpenEnv" Style="{StaticResource CheckboxStyle}" Content="Open .env file to fill in MCP credentials" IsChecked="False"/>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
 
         <!-- Navigation bar -->
@@ -618,6 +662,33 @@ function Run-PreFlightChecks {
         $checks["CheckRepo"] = $true
     }
 
+    # .env secrets file check (only if MCP servers needing secrets are selected)
+    $needsSecrets = ($Window.FindName("CompMCPUpwork").IsChecked -or $Window.FindName("CompMCPFreelancer").IsChecked -or $Window.FindName("CompMCPLinkedIn").IsChecked)
+    $envFile = Join-Path $path ".env"
+    $envExample = Join-Path $path ".env.example"
+    if ($needsSecrets) {
+        if (Test-Path $envFile) {
+            # Check if .env still has placeholder values
+            $envContent = Get-Content $envFile -Raw
+            if ($envContent -match "your_.*_here") {
+                $Window.FindName("CheckEnv").Text = "[WARN] .env exists but has placeholder values - edit it with real credentials"
+                $Window.FindName("CheckEnv").Foreground = "#D29922"
+            } else {
+                $Window.FindName("CheckEnv").Text = "[OK] .env file present with credentials"
+                $Window.FindName("CheckEnv").Foreground = "#7EE787"
+            }
+        } elseif (Test-Path $envExample) {
+            $Window.FindName("CheckEnv").Text = "[WARN] .env missing - will be created from .env.example (edit it after install)"
+            $Window.FindName("CheckEnv").Foreground = "#D29922"
+        } else {
+            $Window.FindName("CheckEnv").Text = "[WARN] .env and .env.example both missing - MCP servers needing secrets will fail"
+            $Window.FindName("CheckEnv").Foreground = "#D29922"
+        }
+    } else {
+        $Window.FindName("CheckEnv").Text = "[OK] .env: not needed (no secret-requiring MCP servers selected)"
+        $Window.FindName("CheckEnv").Foreground = "#7EE787"
+    }
+
     # Update summary
     $installPath = if ($Window.FindName("RadioInPlace").IsChecked) { $Repo } else { $Window.FindName("CustomPath").Text }
     $Window.FindName("SummaryLocation").Text = "Location: $installPath"
@@ -628,7 +699,7 @@ function Run-PreFlightChecks {
         if ($Window.FindName($c).IsChecked) { $compCount++ }
     }
     $Window.FindName("SummaryComponents").Text = "Components selected: $compCount"
-    $Window.FindName("SummaryVersion").Text = "Target version: 4.22.0"
+    $Window.FindName("SummaryVersion").Text = "Target version: $TargetVersion"
 
     # Overall status
     $failed = ($checks["CheckPython"] -eq $false -or $checks["CheckDisk"] -eq $false -or $checks["CheckRepo"] -eq $false)
@@ -648,14 +719,14 @@ function Log-Message {
     $logBox = $Window.FindName("LogBox")
     $logBox.AppendText("$Message`n")
     $logBox.ScrollToEnd()
-    [System.Windows.Threading.Dispatcher]::CurrentDispatcher.Invoke([Action]{}, "Background", "Render")
+    [System.Windows.Threading.Dispatcher]::CurrentDispatcher.Invoke([Action]{}, [System.Windows.Threading.DispatcherPriority]::Background)
 }
 
 function Update-Progress {
     param([int]$Percent, [string]$Label)
     $Window.FindName("Progressbar").Value = $Percent
     $Window.FindName("ProgressLabel").Text = $Label
-    [System.Windows.Threading.Dispatcher]::CurrentDispatcher.Invoke([Action]{}, "Background", "Render")
+    [System.Windows.Threading.Dispatcher]::CurrentDispatcher.Invoke([Action]{}, [System.Windows.Threading.DispatcherPriority]::Background)
 }
 
 function Start-Installation {
@@ -684,6 +755,22 @@ function Start-Installation {
     Log-Message "Root: $installRoot"
     Log-Message "Copy mode: $copyMode"
     Log-Message "Arguments: $($installArgs -join ' ')"
+    Log-Message ""
+
+    # --- .env setup: copy .env.example to .env if it doesn't exist ---
+    $envExample = Join-Path $installRoot ".env.example"
+    $envFile = Join-Path $installRoot ".env"
+    if (Test-Path $envExample) {
+        if (-not (Test-Path $envFile)) {
+            Copy-Item $envExample $envFile -Force
+            Log-Message "[.env] Created .env from .env.example template"
+            Log-Message "[.env] NOTE: Edit .env to fill in your MCP credentials (Upwork, Freelancer, LinkedIn)"
+        } else {
+            Log-Message "[.env] .env already exists - skipped copy"
+        }
+    } else {
+        Log-Message "[.env] .env.example not found - skipped .env setup"
+    }
     Log-Message ""
 
     # Run installation in a background job
@@ -724,7 +811,7 @@ function Start-Installation {
     Show-Page 7
 
     # Populate finish page
-    $Window.FindName("FinishVersion").Text = "Version: 4.22.0"
+    $Window.FindName("FinishVersion").Text = "Version: $TargetVersion"
     $Window.FindName("FinishLocation").Text = "Location: $installRoot"
 
     $logFile = Join-Path $installRoot "state\install-*.log"
@@ -740,6 +827,15 @@ function Start-Installation {
     }
     $Window.FindName("FinishComponents").Text = "Components installed: $compCount"
 
+    # Show .env warning if secret-requiring MCP servers were selected
+    $needsSecrets = ($Window.FindName("CompMCPUpwork").IsChecked -or $Window.FindName("CompMCPFreelancer").IsChecked -or $Window.FindName("CompMCPLinkedIn").IsChecked)
+    if ($needsSecrets) {
+        $envPath = Join-Path $installRoot ".env"
+        $Window.FindName("FinishEnvWarning").Visibility = "Visible"
+        $Window.FindName("FinishEnvText").Text = "Edit: $envPath`nFill in UPWORK_CLIENT_ID, UPWORK_CLIENT_SECRET, FREELANCER_OAUTH_TOKEN, and/or LINKEDIN_ACCESS_TOKEN.`nMCP servers will not work until credentials are set."
+        $Window.FindName("FinishOpenEnv").IsChecked = $true
+    }
+
     $NextBtn.IsEnabled = $true
 
     # Handle finish page actions
@@ -752,6 +848,12 @@ function Start-Installation {
         }
         if ($Window.FindName("FinishOpenLog").IsChecked -and $latestLog) {
             Start-Process notepad -ArgumentList $latestLog.FullName
+        }
+        if ($Window.FindName("FinishOpenEnv").IsChecked) {
+            $envPath = Join-Path $installRoot ".env"
+            if (Test-Path $envPath) {
+                Start-Process notepad -ArgumentList $envPath
+            }
         }
         $Window.Close()
     })
