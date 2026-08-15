@@ -26,6 +26,10 @@ def git_project(tmp_path: Path) -> Path:
     # Ensure we're on main or master
     result = subprocess.run(["git", "branch", "--show-current"], cwd=str(project), capture_output=True, text=True)
     branch = result.stdout.strip()
+    # Force a non-main branch to exercise the rename logic (line 30)
+    if branch == "main":
+        subprocess.run(["git", "branch", "-m", "master"], cwd=str(project), capture_output=True)
+        branch = "master"
     if branch != "main":
         subprocess.run(["git", "branch", "-m", "main"], cwd=str(project), capture_output=True)
     return project
@@ -186,3 +190,81 @@ class TestWorktreePool:
         # Merge all
         for agent_id in ["agent-arch", "agent-dev", "agent-qa"]:
             assert pool.merge(agent_id) is True
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error paths."""
+
+    def test_git_command_failure(self, git_project: Path) -> None:
+        """Line 73: _git raises RuntimeError on command failure with check=True."""
+        from unittest.mock import MagicMock, patch
+
+        pool = WorktreePool(git_project)
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stderr = "error: something went wrong"
+        with patch("runtime.worktree_pool.subprocess.run", return_value=mock_result):
+            with pytest.raises(RuntimeError, match="failed"):
+                pool._git("status")
+
+    def test_create_path_already_exists(self, git_project: Path) -> None:
+        """Line 93: create raises ValueError when worktree path already exists."""
+        pool = WorktreePool(git_project)
+        # Pre-create the worktree directory
+        wt_path = git_project.parent / ".ai-worktrees" / "agent-1"
+        wt_path.mkdir(parents=True, exist_ok=True)
+        with pytest.raises(ValueError, match="path already exists"):
+            pool.create("agent-1")
+
+    def test_merge_conflict(self, git_project: Path) -> None:
+        """Lines 143-146: merge conflict aborts and returns False."""
+        pool = WorktreePool(git_project)
+        # Create both worktrees from the same base commit
+        wt1 = pool.create("agent-1")
+        wt2 = pool.create("agent-2")
+        # Make conflicting changes to the same file
+        (wt1.path / "conflict.txt").write_text("version A\n", encoding="utf-8")
+        subprocess.run(["git", "add", "conflict.txt"], cwd=str(wt1.path), capture_output=True)
+        subprocess.run(["git", "commit", "-m", "Change A"], cwd=str(wt1.path), capture_output=True)
+        (wt2.path / "conflict.txt").write_text("version B\n", encoding="utf-8")
+        subprocess.run(["git", "add", "conflict.txt"], cwd=str(wt2.path), capture_output=True)
+        subprocess.run(["git", "commit", "-m", "Change B"], cwd=str(wt2.path), capture_output=True)
+        # Merge first worktree (succeeds)
+        assert pool.merge("agent-1") is True
+        # Merge second worktree — conflicts on conflict.txt
+        result = pool.merge("agent-2")
+        assert result is False
+
+    def test_merge_runtime_error_returns_false(self, git_project: Path) -> None:
+        """Lines 145-146: merge catches RuntimeError and returns False."""
+        from unittest.mock import patch
+
+        pool = WorktreePool(git_project)
+        pool.create("agent-1")
+        with patch.object(WorktreePool, "_git", side_effect=RuntimeError("git error")):
+            result = pool.merge("agent-1")
+        assert result is False
+
+    def test_cleanup_git_error(self, git_project: Path) -> None:
+        """Lines 173-174: cleanup catches RuntimeError from git commands."""
+        from unittest.mock import patch
+
+        pool = WorktreePool(git_project)
+        pool.create("agent-1")
+        # Mock _git to raise RuntimeError during cleanup
+        with patch.object(WorktreePool, "_git", side_effect=RuntimeError("git error")):
+            result = pool.cleanup("agent-1")
+        assert result is True  # cleanup still succeeds (error is caught)
+
+    def test_main_block(self, git_project: Path) -> None:
+        """Lines 231-234: __main__ block."""
+        import runpy
+        import sys
+
+        script = str(Path(__file__).resolve().parent.parent / "worktree_pool.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(git_project)]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        finally:
+            sys.argv = old_argv

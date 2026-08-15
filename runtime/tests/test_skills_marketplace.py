@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from runtime.skills_marketplace import (
     InstallResult,
@@ -228,3 +229,193 @@ class TestSkillsMarketplace:
         mp = SkillsMarketplace(root)
         result = mp.publish(tmp_path / "nonexistent")
         assert result["success"] is False
+
+    # --- _load_installed error handling ---
+
+    def test_load_installed_invalid_json(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root)
+        mp.installed_db.write_text("not valid json{{{", encoding="utf-8")
+        assert mp._load_installed() == {}
+
+    # --- _download ---
+
+    def test_download(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root)
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"downloaded content"
+        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            content = mp._download("https://example.com/skill.md")
+            assert content == "downloaded content"
+
+    # --- install_from_path with invalid manifest ---
+
+    def test_install_from_path_invalid_manifest(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        skill_dir = tmp_path / "source" / "bad-manifest-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Safe skill\n", encoding="utf-8")
+        (skill_dir / "manifest.json").write_text("not valid json", encoding="utf-8")
+        mp = SkillsMarketplace(root)
+        result = mp.install_from_path(skill_dir)
+        assert result.success is True
+        assert result.skill_name == "bad-manifest-skill"
+
+    # --- install_from_path with non-scanned files (subdirs, non-allowed extensions) ---
+
+    def test_install_from_path_with_subdir_and_binary(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        skill_dir = tmp_path / "source" / "mixed-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Safe\n", encoding="utf-8")
+        (skill_dir / "manifest.json").write_text(json.dumps({
+            "name": "mixed-skill", "version": "1.0", "description": "d",
+        }), encoding="utf-8")
+        sub = skill_dir / "subdir"
+        sub.mkdir()
+        (sub / "nested.md").write_text("# nested\n", encoding="utf-8")
+        (skill_dir / "data.bin").write_bytes(b"\x00\x01\x02")
+        mp = SkillsMarketplace(root)
+        result = mp.install_from_path(skill_dir)
+        assert result.success is True
+
+    # --- install from URL ---
+
+    def test_install_from_url_success(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root)
+        with patch.object(mp, "_download", return_value="# Downloaded skill\n\nSafe content.\n"):
+            result = mp.install("https://example.com/skills/my-skill")
+            assert result.success is True
+            assert result.skill_name == "downloaded_skill"
+
+    def test_install_from_url_download_fail(self, tmp_path: Path) -> None:
+        import urllib.error
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root)
+        with patch.object(mp, "_download", side_effect=urllib.error.URLError("fail")):
+            result = mp.install("https://example.com/skills/bad-skill")
+            assert result.success is False
+            assert "Download failed" in result.error
+
+    def test_install_local_path(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        skill_path = self._make_skill(tmp_path / "source")
+        mp = SkillsMarketplace(root)
+        result = mp.install(str(skill_path))
+        assert result.success is True
+
+    # --- verify with subdirs and non-allowed extensions ---
+
+    def test_verify_with_subdir_and_binary(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        skill_dir = tmp_path / "source" / "mixed-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Safe\n", encoding="utf-8")
+        (skill_dir / "manifest.json").write_text(json.dumps({
+            "name": "mixed-skill", "version": "1.0", "description": "d",
+        }), encoding="utf-8")
+        sub = skill_dir / "subdir"
+        sub.mkdir()
+        (sub / "nested.md").write_text("# nested\n", encoding="utf-8")
+        (skill_dir / "data.bin").write_bytes(b"\x00\x01\x02")
+        mp = SkillsMarketplace(root)
+        mp.install_from_path(skill_dir)
+        result = mp.verify("mixed-skill")
+        assert "passed" in result
+
+    # --- search with registry ---
+
+    def test_search_with_registry_success(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root, registry_url="https://registry.example.com")
+        search_results = [{"name": "code-review", "version": "1.0"}]
+        with patch.object(mp, "_download", return_value=json.dumps(search_results)):
+            results = mp.search("code review")
+            assert len(results) == 1
+            assert results[0]["name"] == "code-review"
+
+    def test_search_with_registry_error(self, tmp_path: Path) -> None:
+        import urllib.error
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root, registry_url="https://registry.example.com")
+        with patch.object(mp, "_download", side_effect=urllib.error.URLError("fail")):
+            assert mp.search("test") == []
+
+    def test_search_with_registry_invalid_json(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root, registry_url="https://registry.example.com")
+        with patch.object(mp, "_download", return_value="not json"):
+            assert mp.search("test") == []
+
+    def test_search_with_registry_non_list(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        mp = SkillsMarketplace(root, registry_url="https://registry.example.com")
+        with patch.object(mp, "_download", return_value=json.dumps({"not": "a list"})):
+            assert mp.search("test") == []
+
+    # --- publish edge cases ---
+
+    def test_publish_no_skill_md(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+        mp = SkillsMarketplace(root)
+        result = mp.publish(empty_dir)
+        assert result["success"] is False
+        assert "SKILL.md" in result["error"]
+
+    def test_publish_with_subdir_and_binary(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        skill_dir = tmp_path / "source" / "mixed-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Safe\n", encoding="utf-8")
+        sub = skill_dir / "subdir"
+        sub.mkdir()
+        (sub / "nested.md").write_text("# nested\n", encoding="utf-8")
+        (skill_dir / "data.bin").write_bytes(b"\x00\x01\x02")
+        mp = SkillsMarketplace(root)
+        result = mp.publish(skill_dir)
+        assert result["success"] is True
+
+    def test_publish_with_registry(self, tmp_path: Path) -> None:
+        root = tmp_path / "ai-root"
+        root.mkdir()
+        skill_path = self._make_skill(tmp_path / "source")
+        mp = SkillsMarketplace(root, registry_url="https://registry.example.com")
+        result = mp.publish(skill_path)
+        assert result["success"] is True
+        assert result["security"] == "passed"
+
+    # --- __main__ block ---
+
+    def test_main_block(self, tmp_path: Path, capsys) -> None:
+        import sys as _sys
+        source = Path(__file__).resolve().parent.parent / "skills_marketplace.py"
+        code = source.read_text(encoding="utf-8")
+        ns = {"__name__": "__main__", "__file__": str(source)}
+        old_argv = _sys.argv
+        _sys.argv = ["skills_marketplace.py"]
+        try:
+            exec(compile(code, str(source), "exec"), ns)
+        finally:
+            _sys.argv = old_argv
+        out = capsys.readouterr().out
+        assert out.strip() == "[]"

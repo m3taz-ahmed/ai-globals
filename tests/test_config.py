@@ -124,3 +124,23 @@ class TestResolveEnvDir:
         monkeypatch.setenv("TEST_VAR", "/nonexistent/xyz")
         with pytest.raises(ValueError, match="TEST_VAR"):
             config_mod._resolve_env_dir("TEST_VAR", Path("/fallback"))
+
+
+class TestDiscoverProjectRootCwdFallback:
+    """Test line 39: the cwd fallback in discover_project_root."""
+
+    def test_cwd_without_active_context_falls_back_to_root(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Line 39: when cwd has no .ai/active-context.md, falls back to discover_root()."""
+        monkeypatch.delenv("AGENT_PROJECT_ROOT", raising=False)
+        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        # Use a temp dir that has no .ai/active-context.md
+        import tempfile
+        tmp = Path(tempfile.mkdtemp(prefix="aios_cfg_test_"))
+        monkeypatch.chdir(tmp)
+        result = config_mod.discover_project_root()
+        # Should fall back to discover_root() which is the config.py parent
+        assert result == Path(config_mod.__file__).resolve().parent
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)

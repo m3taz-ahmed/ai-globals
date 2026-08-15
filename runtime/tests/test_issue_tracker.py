@@ -649,3 +649,216 @@ class TestFactoryAndBase:
 
     def test_supported_trackers_constant(self) -> None:
         assert SUPPORTED_TRACKERS == ("linear", "jira", "notion")
+
+
+# ---------------------------------------------------------------------------
+# LinearClient — optional parameter branches
+# ---------------------------------------------------------------------------
+
+class TestLinearClientOptionalParams:
+    def _cfg(self, api_key: str = "lin-key") -> IssueTrackerConfig:
+        return IssueTrackerConfig(
+            tracker_type="linear", project_id="proj-1", api_key_env="LINEAR_API_KEY", api_key=api_key
+        )
+
+    def test_create_issue_with_assignee(self) -> None:
+        """Line 307: create_issue sets assigneeId when assignee is provided."""
+        with _fake_urlopen(_LINEAR_CREATE):
+            issue = LinearClient(self._cfg()).create_issue(title="New", assignee="user-1")
+        assert issue.id == "LIN-2"
+
+    def test_update_issue_with_description(self) -> None:
+        """Line 340: update_issue sets description in input_fields."""
+        with _fake_urlopen(_LINEAR_UPDATE):
+            issue = LinearClient(self._cfg()).update_issue("LIN-1", description="new desc")
+        assert issue.id == "LIN-1"
+
+    def test_update_issue_with_assignee(self) -> None:
+        """Line 342: update_issue sets assigneeId in input_fields."""
+        with _fake_urlopen(_LINEAR_UPDATE):
+            issue = LinearClient(self._cfg()).update_issue("LIN-1", assignee="user-2")
+        assert issue.id == "LIN-1"
+
+    def test_update_issue_no_issue_returned(self) -> None:
+        """Line 357: update_issue raises when no issue returned."""
+        with _fake_urlopen({"data": {"issueUpdate": {"issue": None}}}), pytest.raises(IssueTrackerError, match="update_issue failed"):
+            LinearClient(self._cfg()).update_issue("LIN-1", title="x")
+
+    def test_close_issue_no_issue_returned(self) -> None:
+        """Line 374: close_issue raises when no issue returned."""
+        with _fake_urlopen({"data": {"issueUpdate": {"issue": None}}}), pytest.raises(IssueTrackerError, match="close_issue failed"):
+            LinearClient(self._cfg()).close_issue("LIN-1")
+
+
+# ---------------------------------------------------------------------------
+# JiraClient — optional parameter branches
+# ---------------------------------------------------------------------------
+
+class TestJiraClientOptionalParams:
+    def _cfg(self, api_key: str = "jira-key") -> IssueTrackerConfig:
+        return IssueTrackerConfig(
+            tracker_type="jira",
+            project_id="PROJ",
+            api_key_env="JIRA_API_KEY",
+            api_key=api_key,
+            base_url="https://test.atlassian.net",
+        )
+
+    def test_create_issue_with_labels_and_assignee(self) -> None:
+        """Lines 456, 458: create_issue sets labels and assignee."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[_JIRA_CREATE, _JIRA_GET],
+        ):
+            issue = JiraClient(self._cfg()).create_issue(
+                title="New", labels=["bug", "urgent"], assignee="user-abc"
+            )
+        assert issue.id == "JIRA-1"
+
+    def test_update_issue_with_description(self) -> None:
+        """Line 482: update_issue sets description."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _JIRA_GET],
+        ):
+            issue = JiraClient(self._cfg()).update_issue("JIRA-1", description="new desc")
+        assert issue.id == "JIRA-1"
+
+    def test_update_issue_with_priority(self) -> None:
+        """Line 484: update_issue sets priority."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _JIRA_GET],
+        ):
+            issue = JiraClient(self._cfg()).update_issue("JIRA-1", priority="High")
+        assert issue.id == "JIRA-1"
+
+    def test_update_issue_with_assignee(self) -> None:
+        """Line 486: update_issue sets assignee."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _JIRA_GET],
+        ):
+            issue = JiraClient(self._cfg()).update_issue("JIRA-1", assignee="user-xyz")
+        assert issue.id == "JIRA-1"
+
+    def test_update_issue_with_labels(self) -> None:
+        """Line 488: update_issue sets labels."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _JIRA_GET],
+        ):
+            issue = JiraClient(self._cfg()).update_issue("JIRA-1", labels=["bug", "ui"])
+        assert issue.id == "JIRA-1"
+
+
+# ---------------------------------------------------------------------------
+# NotionClient — optional parameter branches and _prop edge cases
+# ---------------------------------------------------------------------------
+
+class TestNotionClientOptionalParams:
+    def _cfg(self, api_key: str = "ntn-key") -> IssueTrackerConfig:
+        return IssueTrackerConfig(
+            tracker_type="notion",
+            project_id="db-1",
+            api_key_env="NOTION_API_KEY",
+            api_key=api_key,
+        )
+
+    def test_prop_unknown_type_returns_empty(self) -> None:
+        """Line 552: _prop returns '' for unknown property type."""
+        props = {"Custom": {"type": "checkbox", "checkbox": True}}
+        assert NotionClient._prop(props, "Custom") == ""
+
+    def test_create_issue_with_labels_and_assignee(self) -> None:
+        """Lines 601, 603: create_issue sets Labels and Assignee properties."""
+        with _fake_urlopen(_NOTION_CREATE):
+            issue = NotionClient(self._cfg()).create_issue(
+                title="New", labels=["bug", "ui"], assignee="person-123"
+            )
+        assert issue.id == "ntn-page-2"
+
+    def test_update_issue_with_description(self) -> None:
+        """Line 627: update_issue sets Description property."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _NOTION_GET],
+        ):
+            issue = NotionClient(self._cfg()).update_issue("ntn-page-1", description="new desc")
+        assert issue.id == "ntn-page-1"
+
+    def test_update_issue_with_priority(self) -> None:
+        """Line 629: update_issue sets Priority property."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _NOTION_GET],
+        ):
+            issue = NotionClient(self._cfg()).update_issue("ntn-page-1", priority="High")
+        assert issue.id == "ntn-page-1"
+
+    def test_update_issue_with_status(self) -> None:
+        """Line 631: update_issue sets Status property."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _NOTION_GET],
+        ):
+            issue = NotionClient(self._cfg()).update_issue("ntn-page-1", status="Done")
+        assert issue.id == "ntn-page-1"
+
+    def test_update_issue_with_assignee(self) -> None:
+        """Line 633: update_issue sets Assignee property."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _NOTION_GET],
+        ):
+            issue = NotionClient(self._cfg()).update_issue("ntn-page-1", assignee="person-456")
+        assert issue.id == "ntn-page-1"
+
+    def test_update_issue_with_labels(self) -> None:
+        """Line 635: update_issue sets Labels property."""
+        with patch(
+            "runtime.issue_tracker._http_request",
+            side_effect=[{}, _NOTION_GET],
+        ):
+            issue = NotionClient(self._cfg()).update_issue("ntn-page-1", labels=["bug", "ui"])
+        assert issue.id == "ntn-page-1"
+
+
+# ---------------------------------------------------------------------------
+# IssueTrackerManager — edge cases
+# ---------------------------------------------------------------------------
+
+class TestIssueTrackerManagerEdgeCases:
+    def test_add_tracker_unknown_type_raises(self) -> None:
+        """Line 680: add_tracker raises ValueError for unknown tracker type."""
+        mgr = IssueTrackerManager()
+        cfg = IssueTrackerConfig(
+            tracker_type="linear", project_id="p", api_key_env="X", api_key="k"
+        )
+        cfg.tracker_type = "unknown"
+        with pytest.raises(ValueError, match="No client registered"):
+            mgr.add_tracker(cfg)
+
+    def test_links_property(self) -> None:
+        """Line 752: links property returns a copy of the links dict."""
+        mgr = IssueTrackerManager()
+        mgr.link_issue_to_workflow("ISS-1", "wf-a")
+        mgr.link_issue_to_workflow("ISS-2", "wf-b")
+        links = mgr.links
+        assert links == {"ISS-1": "wf-a", "ISS-2": "wf-b"}
+        # Verify it's a copy
+        links["ISS-3"] = "wf-c"
+        assert mgr.get_workflow_for_issue("ISS-3") is None
+
+
+# ---------------------------------------------------------------------------
+# _utc_now_iso helper
+# ---------------------------------------------------------------------------
+
+class TestUtcNowIso:
+    def test_utc_now_iso_returns_string(self) -> None:
+        """Line 770: _utc_now_iso returns an ISO 8601 string."""
+        from runtime.issue_tracker import _utc_now_iso
+        result = _utc_now_iso()
+        assert isinstance(result, str)
+        assert "T" in result

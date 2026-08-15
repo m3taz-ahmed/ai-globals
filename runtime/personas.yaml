@@ -55,6 +55,7 @@ personas:
     - frontend-frameworks-lord
     - gsap-animated-frontend
     - page-sections-lord
+    - flutter-design
     keywords:
     - ui
     - ux
@@ -213,6 +214,8 @@ personas:
     skill: mobile-game-producer
     lords:
     - game-architect
+    - flutter-architect
+    - flutter-developer
     keywords:
     - mobile game
     - mobile app
@@ -229,6 +232,14 @@ personas:
     - push notification
     - offline sync
     - mobile
+    - dart
+    - riverpod
+    - bloc
+    - material 3
+    - go_router
+    - widget
+    - pubspec
+    - pub.dev
   DATA:
     name: Data Engineer & DBA
     weight: 1.2
@@ -831,5 +842,67 @@ lord_skills:
   - apply for job
   - portfolio
   - معرض أعمال
+  flutter-architect:
+  - flutter
+  - dart
+  - flutter app
+  - flutter design
+  - flutter develop
+  - flutter development
+  - flutter ui
+  - material 3
+  - riverpod
+  - bloc
+  - cubit
+  - go_router
+  - gorouter
+  - freezed
+  - drift
+  - widget
+  - pubspec
+  - pub.dev
+  - تطبيق flutter
+  - تطبيقات flutter
+  - تصميم flutter
+  - تطوير flutter
+  - ديزاين flutter
+  - ديفلوب flutter
+  flutter-design:
+  - flutter design
+  - flutter ui
+  - flutter theme
+  - flutter animation
+  - material 3
+  - colorscheme
+  - themedata
+  - flutter responsive
+  - flutter adaptive
+  - flutter accessibility
+  - figma to flutter
+  - design system flutter
+  - dark mode flutter
+  - flutter rtl
+  - تصميم flutter
+  - ديزاين flutter
+  - واجهات flutter
+  flutter-developer:
+  - flutter develop
+  - flutter development
+  - flutter state
+  - flutter architecture
+  - flutter testing
+  - flutter ci cd
+  - flutter performance
+  - flutter networking
+  - flutter persistence
+  - riverpod
+  - bloc
+  - drift
+  - dio
+  - flutter offline
+  - platform channel
+  - تطوير flutter
+  - ديفلوب flutter
+  - برمجة flutter
 default: ARCH
 persona_lord_bonus: 0.5

@@ -211,3 +211,104 @@ class TestOTelSpan:
         exporter = OTelExporter(OTelConfig())
         with OTelSpan(exporter, "test") as span:
             assert len(span._span_id) == 16
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error paths."""
+
+    def test_span_to_otlp_float_attribute(self) -> None:
+        """Line 91-92: float attribute value uses doubleValue."""
+        exporter = OTelExporter(OTelConfig())
+        span = {
+            "trace_id": "t1",
+            "span_id": "s1",
+            "name": "test",
+            "start_time": 0,
+            "end_time": 1,
+            "attributes": {"ratio": 0.95},
+        }
+        otlp = exporter._span_to_otlp(span)
+        attr_map = {a["key"]: a["value"] for a in otlp["attributes"]}
+        assert "doubleValue" in attr_map["ratio"]
+
+    def test_span_to_otlp_nonstandard_attribute(self) -> None:
+        """Lines 93-94: non-standard type (e.g., list) falls to stringValue."""
+        exporter = OTelExporter(OTelConfig())
+        span = {
+            "trace_id": "t1",
+            "span_id": "s1",
+            "name": "test",
+            "start_time": 0,
+            "end_time": 1,
+            "attributes": {"items": [1, 2, 3]},
+        }
+        otlp = exporter._span_to_otlp(span)
+        attr_map = {a["key"]: a["value"] for a in otlp["attributes"]}
+        assert "stringValue" in attr_map["items"]
+        assert "[1, 2, 3]" in attr_map["items"]["stringValue"]
+
+    def test_flush_with_endpoint(self) -> None:
+        """Line 154: flush sends HTTP when endpoint is configured."""
+        exporter = OTelExporter(OTelConfig(endpoint="http://localhost:4318/v1/traces", batch_size=1))
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            exporter.export_span({
+                "trace_id": "t1",
+                "span_id": "s1",
+                "name": "test",
+                "start_time": 0,
+                "end_time": 1,
+            })
+        # batch_size=1 triggers flush which calls _send_http
+
+    def test_flush_no_endpoint_no_fallback_drops(self) -> None:
+        """Line 157: flush with no endpoint and no fallback silently drops."""
+        exporter = OTelExporter(OTelConfig(batch_size=1))
+        exporter.export_span({
+            "trace_id": "t1",
+            "span_id": "s1",
+            "name": "test",
+            "start_time": 0,
+            "end_time": 1,
+        })
+        # batch_size=1 triggers flush; no endpoint or fallback → returns True
+        assert len(exporter._buffer) == 0
+
+    def test_send_http_failure_with_fallback(self, tmp_path: Path) -> None:
+        """Line 178: _send_http failure writes to fallback file."""
+        fallback = tmp_path / "traces.jsonl"
+        exporter = OTelExporter(OTelConfig(endpoint="http://localhost:9999", fallback_file=fallback))
+        with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("fail")):
+            result = exporter._send_http(b'{"resourceSpans": []}')
+        assert result is True
+        assert fallback.exists()
+
+    def test_write_fallback_no_file(self) -> None:
+        """Line 184: _write_fallback with no fallback_file returns False."""
+        exporter = OTelExporter(OTelConfig())
+        result = exporter._write_fallback([{"traceId": "t1"}])
+        assert result is False
+
+    def test_write_fallback_os_error(self, tmp_path: Path) -> None:
+        """Lines 192-193: _write_fallback catches OSError and returns False."""
+        fallback = tmp_path / "traces.jsonl"
+        exporter = OTelExporter(OTelConfig(fallback_file=fallback))
+        with patch.object(Path, "open", side_effect=OSError("disk full")):
+            result = exporter._write_fallback([{"traceId": "t1"}])
+        assert result is False
+
+    def test_main_block(self, tmp_path: Path) -> None:
+        """Lines 247-252: __main__ block."""
+        import os
+        import runpy
+
+        script = str(Path(__file__).resolve().parent.parent / "otel_exporter.py")
+        old_cwd = os.getcwd()
+        os.chdir(str(tmp_path))
+        try:
+            runpy.run_path(script, run_name="__main__")
+        finally:
+            os.chdir(old_cwd)

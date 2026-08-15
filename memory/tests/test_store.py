@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
+
 from memory.store import Memory, MemoryStore
 
 # ---------------------------------------------------------------------------
@@ -262,6 +264,26 @@ class TestDeleteAndInvalidate:
         try:
             store = _store(tmp)
             assert store.delete_by_source_batch([]) == []
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_delete_by_source_batch_rejects_non_string_source(self):
+        """Line 287: non-string source raises ValueError."""
+        tmp = _tmp()
+        try:
+            store = _store(tmp)
+            with pytest.raises(ValueError, match="Invalid source"):
+                store.delete_by_source_batch([123])
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_delete_by_source_batch_rejects_empty_string_source(self):
+        """Line 287: empty string source raises ValueError."""
+        tmp = _tmp()
+        try:
+            store = _store(tmp)
+            with pytest.raises(ValueError, match="Invalid source"):
+                store.delete_by_source_batch([""])
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

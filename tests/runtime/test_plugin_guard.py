@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from runtime.plugin import PluginGuard
 
 
@@ -20,12 +22,8 @@ def test_guard_wrap_blocks() -> None:
 
     wrapped = guard.wrap(tool, "demo")
     assert wrapped(action="Read") == "Read"
-    try:
+    with pytest.raises(RuntimeError, match="blocked by sandbox"):
         wrapped(action="Bash")
-    except RuntimeError:
-        pass
-    else:
-        raise AssertionError("Expected RuntimeError")
 
 
 def test_guard_allowed_empty() -> None:

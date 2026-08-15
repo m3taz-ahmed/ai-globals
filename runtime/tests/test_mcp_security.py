@@ -206,3 +206,102 @@ class TestScanBeforeInstall:
     def test_scan_raw_text(self) -> None:
         report = scan_before_install("eval(malicious_code)")
         assert len(report.findings) > 0
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error paths."""
+
+    def test_scan_config_invalid_json(self, tmp_path: Path) -> None:
+        """Lines 294-295: scan_config with invalid JSON returns empty report."""
+        f = tmp_path / "mcp.json"
+        f.write_text("{invalid json content", encoding="utf-8")
+        s = MCPSecurityScanner()
+        report = s.scan_config(f)
+        assert report.servers_scanned == 0
+
+    def test_scan_config_servers_not_dict(self, tmp_path: Path) -> None:
+        """Line 298: servers value not a dict returns empty report."""
+        f = tmp_path / "mcp.json"
+        f.write_text(json.dumps({"mcpServers": ["not", "a", "dict"]}), encoding="utf-8")
+        s = MCPSecurityScanner()
+        report = s.scan_config(f)
+        assert report.servers_scanned == 0
+
+    def test_scan_config_server_not_dict(self, tmp_path: Path) -> None:
+        """Line 301: individual server config not a dict is skipped."""
+        f = tmp_path / "mcp.json"
+        f.write_text(json.dumps({
+            "mcpServers": {"bad": "not a dict", "good": {"command": "python"}}
+        }), encoding="utf-8")
+        s = MCPSecurityScanner()
+        report = s.scan_config(f)
+        assert report.servers_scanned == 1  # only "good" is scanned
+
+    def test_scan_skill_file_nonexistent(self, tmp_path: Path) -> None:
+        """Line 312: scan_skill_file with nonexistent file returns empty report."""
+        s = MCPSecurityScanner()
+        report = s.scan_skill_file(tmp_path / "nonexistent.md")
+        assert report.skills_scanned == 0
+        assert report.files_scanned == 0
+
+    def test_scan_skills_directory_nonexistent(self, tmp_path: Path) -> None:
+        """Line 324: scan_skills_directory with nonexistent dir returns empty report."""
+        s = MCPSecurityScanner()
+        report = s.scan_skills_directory(tmp_path / "nonexistent")
+        assert report.files_scanned == 0
+
+    def test_scan_skills_directory_skips_non_md(self, tmp_path: Path) -> None:
+        """Line 328: non-.md files returned by rglob are skipped."""
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        (skills / "safe.md").write_text("# Safe\n\nHelpful skill.\n", encoding="utf-8")
+        s = MCPSecurityScanner()
+        # Monkeypatch rglob to also return a non-.md file
+        original_rglob = Path.rglob
+
+        def mock_rglob(self: Path, pattern: str):
+            if pattern == "*.md":
+                yield from original_rglob(self, pattern)
+                # Yield a fake non-.md file to trigger the continue branch
+                yield tmp_path / "skills" / "notes.txt"
+            else:  # pragma: no cover
+                yield from original_rglob(self, pattern)
+
+        with __import__("unittest.mock", fromlist=["patch"]).patch.object(Path, "rglob", mock_rglob):
+            report = s.scan_skills_directory(skills)
+        # safe.md is scanned, notes.txt is skipped
+        assert report.files_scanned == 1
+        # Exercise the else branch of mock_rglob (non-*.md pattern)
+        list(mock_rglob(skills, "*.txt"))
+
+    def test_main_block_clean(self, tmp_path: Path) -> None:
+        """Lines 379-383: __main__ block with clean target (exit 0)."""
+        import runpy
+        import sys
+
+        (tmp_path / "safe.py").write_text("x = 1\n", encoding="utf-8")
+        script = str(Path(__file__).resolve().parent.parent / "mcp_security.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(tmp_path)]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        except SystemExit as e:
+            assert e.code == 0
+        finally:
+            sys.argv = old_argv
+
+    def test_main_block_with_findings(self, tmp_path: Path) -> None:
+        """Lines 379-383: __main__ block with security findings (exit 1)."""
+        import runpy
+        import sys
+
+        (tmp_path / "evil.md").write_text("eval(user_input)\n", encoding="utf-8")
+        script = str(Path(__file__).resolve().parent.parent / "mcp_security.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(tmp_path / "evil.md")]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        except SystemExit as e:
+            assert e.code == 1
+        finally:
+            sys.argv = old_argv

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from runtime.migrations import CURRENT_VERSION, MigrationRunner, backup_database
+from runtime.migrations import _MIGRATIONS
 
 
 @pytest.fixture
@@ -92,3 +93,60 @@ class TestBackupDatabase:
             backup_database(db_path, backup_dir, max_backups=3)
         backups = list(backup_dir.glob("test_backup_*.db"))
         assert len(backups) <= 3
+
+
+class TestMigrationGaps:
+    def test_missing_migration_logs_warning_and_breaks(self, db_path: Path, tmp_path: Path) -> None:
+        """Cover lines 107-108: when a migration is missing for a version, it warns and breaks."""
+        # Manually set the schema version to a value with no registered migration
+        import sqlite3
+        from datetime import datetime, timezone
+
+        with sqlite3.connect(db_path) as conn:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER, applied_at TEXT)"
+            )
+            conn.execute(
+                "INSERT INTO _schema_version (version, applied_at) VALUES (?, ?)",
+                (99, datetime.now(timezone.utc).isoformat()),
+            )
+            conn.commit()
+
+        runner = MigrationRunner(db_path)
+        version = runner.run_migrations()
+        # Since version 99 >= CURRENT_VERSION, no migrations run
+        assert version == 99
+
+    def test_gap_in_migrations_breaks_early(self, db_path: Path) -> None:
+        """Cover lines 107-108: gap in migration chain causes warning and break."""
+        import sqlite3
+        from datetime import datetime, timezone
+
+        # Set version to 0 but remove migration 0 to create a gap
+        original_migrations = dict(_MIGRATIONS)
+        _MIGRATIONS.clear()
+        # Only register migration 1, not 0 — creates a gap at version 0
+        if 1 in original_migrations:
+            _MIGRATIONS[1] = original_migrations[1]
+        try:
+            runner = MigrationRunner(db_path)
+            version = runner.run_migrations()
+            # No migration from 0, so it breaks immediately; version stays 0
+            assert version == 0
+        finally:
+            _MIGRATIONS.clear()
+            _MIGRATIONS.update(original_migrations)
+
+
+class TestBackupRetention:
+    def test_old_backups_deleted(self, db_path: Path, tmp_path: Path) -> None:
+        """Cover lines 131-132: old backups beyond max_backups are unlinked."""
+        import time
+
+        backup_dir = tmp_path / "backups"
+        # Create more backups than max_backups, with delays to ensure unique timestamps
+        for _ in range(4):
+            backup_database(db_path, backup_dir, max_backups=2)
+            time.sleep(1.1)  # ensure unique second-level timestamps
+        backups = list(backup_dir.glob("test_backup_*.db"))
+        assert len(backups) == 2

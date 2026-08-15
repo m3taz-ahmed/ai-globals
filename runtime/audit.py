@@ -84,6 +84,53 @@ class AuditLogger:
             with self.log_file.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, default=str) + "\n")
 
+    def log_admission(self, record: dict[str, Any]) -> None:
+        """Append an admission event with identity keys (Hazem R1-R15).
+
+        Stores the four identity keys (context_hash, runtime_key, output_key,
+        promotion lineage) so an incident can be replayed from evidence
+        records without retaining raw sensitive payloads. Sensitive keys
+        are redacted via ``_redact`` before hashing.
+        """
+        details = {
+            "request_id": record.get("request_id", ""),
+            "context_hash": record.get("context_hash", ""),
+            "runtime_key": record.get("runtime_key", ""),
+            "output_key": record.get("output_key", ""),
+            "stop_reason": record.get("stop_reason", ""),
+            "schema_valid": record.get("schema_valid", False),
+            "evidence_coverage": record.get("evidence_coverage", 0.0),
+            "policy_verdict": record.get("policy_verdict", ""),
+            "admission_policy": record.get("admission_policy", ""),
+            "decision": record.get("decision", ""),
+            "reason_code": record.get("reason_code", ""),
+            "tenant_id": record.get("tenant_id", ""),
+        }
+        self.log("admission", details)
+
+    def log_authorization(self, record: dict[str, Any]) -> None:
+        """Append an authorization decision event (Hazem zero-trust PDP/PEP).
+
+        Stores the authorization tuple hash, decision, obligations, and
+        receipt linkage so an auditor can reconstruct proposal, decision,
+        and consequence from evidence.
+        """
+        details = {
+            "decision_id": record.get("decision_id", ""),
+            "tuple_hash": record.get("tuple_hash", ""),
+            "subject_id": record.get("subject_id", ""),
+            "tenant_id": record.get("tenant_id", ""),
+            "workload_id": record.get("workload_id", ""),
+            "operation_id": record.get("operation_id", ""),
+            "target_id": record.get("target_id", ""),
+            "decision": record.get("decision", ""),
+            "reason": record.get("reason", ""),
+            "obligations": record.get("obligations", []),
+            "idempotency_key": record.get("idempotency_key", ""),
+            "receipt_id": record.get("receipt_id", ""),
+        }
+        self.log("authorization", details)
+
     def verify_chain(self) -> dict[str, Any]:
         """Verify the integrity of the hash chain.
 

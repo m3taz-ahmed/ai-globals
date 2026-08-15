@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -279,3 +281,108 @@ class TestSpecEngine:
         content = md_path.read_text(encoding="utf-8")
         assert "Auth" in content
         assert "Users can log in" in content
+
+    # --- Missing line coverage ---
+
+    def test_markdown_with_constitution(self, engine: SpecEngine) -> None:
+        """Markdown artifact includes constitution section."""
+        spec = engine.init_spec("auth", "Auth", "Login system")
+        spec.constitution = "No plaintext passwords."
+        engine._save(spec)
+        md_path = engine._spec_md_path("auth")
+        content = md_path.read_text(encoding="utf-8")
+        assert "Constitution" in content
+        assert "No plaintext passwords." in content
+
+    def test_set_plan_nonexistent(self, engine: SpecEngine) -> None:
+        with pytest.raises(ValueError, match="not found"):
+            engine.set_plan("nonexistent", {"stack": "x"})
+
+    def test_add_task_nonexistent(self, engine: SpecEngine) -> None:
+        with pytest.raises(ValueError, match="not found"):
+            engine.add_task("nonexistent", "task1")
+
+    def test_update_task_status_spec_not_found(self, engine: SpecEngine) -> None:
+        assert engine.update_task_status("nonexistent", "TASK-001", "done") is False
+
+    def test_advance_nonexistent(self, engine: SpecEngine) -> None:
+        with pytest.raises(ValueError, match="not found"):
+            engine.advance("nonexistent")
+
+    # --- can_advance branch coverage ---
+
+    def test_can_advance_plan_no_plan(self, engine: SpecEngine) -> None:
+        engine.init_spec("auth", "Auth")
+        engine.add_requirement("auth", "req1")
+        engine.advance("auth")  # -> plan
+        can, msg = engine.can_advance("auth")
+        assert can is False
+        assert "No plan" in msg
+
+    def test_can_advance_tasks_no_tasks(self, engine: SpecEngine) -> None:
+        engine.init_spec("auth", "Auth")
+        engine.add_requirement("auth", "req1")
+        engine.advance("auth")  # -> plan
+        engine.set_plan("auth", {"stack": "x"})
+        engine.advance("auth")  # -> tasks
+        can, msg = engine.can_advance("auth")
+        assert can is False
+        assert "No tasks" in msg
+
+    def test_can_advance_implement_incomplete(self, engine: SpecEngine) -> None:
+        engine.init_spec("auth", "Auth")
+        engine.add_requirement("auth", "req1")
+        engine.advance("auth")  # -> plan
+        engine.set_plan("auth", {"stack": "x"})
+        engine.advance("auth")  # -> tasks
+        engine.add_task("auth", "task1")
+        engine.advance("auth")  # -> implement
+        can, msg = engine.can_advance("auth")
+        assert can is False
+        assert "Tasks not done" in msg
+
+    def test_can_advance_done(self, engine: SpecEngine) -> None:
+        engine.init_spec("auth", "Auth")
+        engine.add_requirement("auth", "req1")
+        engine.advance("auth")  # -> plan
+        engine.set_plan("auth", {"stack": "x"})
+        engine.advance("auth")  # -> tasks
+        engine.add_task("auth", "task1")
+        engine.advance("auth")  # -> implement
+        engine.update_task_status("auth", "TASK-001", "done")
+        engine.advance("auth")  # -> done
+        can, msg = engine.can_advance("auth")
+        assert can is False
+        assert "Already done" in msg
+
+    # --- list_specs error handling ---
+
+    def test_list_specs_invalid_json(self, engine: SpecEngine) -> None:
+        """Invalid JSON files are skipped during listing."""
+        bad_file = engine.specs_dir / "bad.json"
+        bad_file.write_text("not valid json", encoding="utf-8")
+        specs = engine.list_specs()
+        assert specs == []
+
+    def test_list_specs_missing_keys(self, engine: SpecEngine) -> None:
+        """JSON files missing required keys are skipped during listing."""
+        bad_file = engine.specs_dir / "bad2.json"
+        bad_file.write_text(json.dumps({"foo": "bar"}), encoding="utf-8")
+        specs = engine.list_specs()
+        assert specs == []
+
+    # --- __main__ block ---
+
+    def test_main_block(self, engine: SpecEngine, capsys) -> None:
+        """Exercise __main__ block of spec_engine.py."""
+        engine.init_spec("auth", "Auth")
+        source = Path(__file__).resolve().parent.parent / "spec_engine.py"
+        code = source.read_text(encoding="utf-8")
+        old_argv = sys.argv
+        sys.argv = ["spec_engine.py", str(engine.specs_dir)]
+        try:
+            exec(compile(code, str(source), "exec"), {"__name__": "__main__"})
+        finally:
+            sys.argv = old_argv
+        out = capsys.readouterr().out
+        assert "auth" in out

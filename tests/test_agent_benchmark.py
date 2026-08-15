@@ -238,3 +238,65 @@ class TestBenchmarkEngine:
         result = engine.run_task(task)
         # Unknown action type returns an error in the response, not as exception
         assert "Unknown action type" in result.response.get("error", "")
+
+    def test_get_kernel_lazy_init(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Lines 202-204: _get_kernel lazily creates a Kernel when none provided."""
+        engine = BenchmarkEngine(kernel=None, tasks=[])
+        # Mock Kernel to avoid real initialization
+        mock_kernel = MagicMock()
+        mock_kernel.act.return_value = {"ok": True}
+        mock_kernel.chat_message.return_value = {"ok": True}
+        monkeypatch.setattr("runtime.kernel.Kernel", lambda: mock_kernel)
+        kernel = engine._get_kernel()
+        assert kernel is mock_kernel
+        # Second call should return cached kernel
+        assert engine._get_kernel() is mock_kernel
+
+    def test_run_task_with_lazy_kernel(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Lines 202-204: run_task uses lazy kernel init."""
+        mock_kernel = MagicMock()
+        mock_kernel.chat_message.return_value = {"ok": True, "text": "hello"}
+        monkeypatch.setattr("runtime.kernel.Kernel", lambda: mock_kernel)
+        engine = BenchmarkEngine(kernel=None)
+        task = BenchmarkTask(id="t", prompt="hello", expected={"keywords": ["hello"]})
+        result = engine.run_task(task)
+        assert result.score > 0
+        assert result.error is None
+
+
+class TestBenchmarkMainBlock:
+    """Tests for the __main__ block (lines 266-268)."""
+
+    def test_main_block_runs(self) -> None:
+        """Lines 266-268: __main__ block executes run_all and prints summary."""
+        import os as _os
+        import subprocess
+        import sys
+        env = dict(_os.environ)
+        env.update({
+            "AGENT_OS_ROOT": str(Path(__file__).resolve().parent.parent),
+            "PYTHONIOENCODING": "utf-8",
+            "PYTHONHASHSEED": "0",
+            "PYTHONPATH": str(Path(__file__).resolve().parent.parent),
+        })
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().parent.parent / "eval" / "agent_benchmark.py")],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env=env,
+        )
+        if result.returncode != 0 and "HashRandomization" in result.stderr:  # pragma: no cover
+            pytest.skip("Windows subprocess hash randomization issue")
+        # The __main__ block should produce JSON output
+        assert result.stdout.strip().startswith("{")
+
+    def test_main_block_in_process(self, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+        """Lines 266-268: __main__ block via runpy for in-process coverage."""
+        import runpy
+
+        os_root = str(Path(__file__).resolve().parent.parent)
+        monkeypatch.setenv("AGENT_OS_ROOT", os_root)
+        runpy.run_module("eval.agent_benchmark", run_name="__main__")
+        captured = capsys.readouterr()
+        assert captured.out.strip().startswith("{")

@@ -312,6 +312,35 @@ class TestCollectDirNonFileSkip:
         assert len(to_add) == 1
         assert to_add[0].source == "rules/valid.md"
 
+    def test_directory_with_md_extension_is_skipped(self, tmp_path: Path):
+        """Line 104: a directory matching *.md glob is skipped by is_file() check."""
+        ing = _ingestor(tmp_path)
+        rules_dir = _mkdir(tmp_path, "rules")
+        # Create a directory whose name ends in .md — glob("*.md") yields it
+        # but is_file() returns False, hitting the continue on line 104.
+        _mkdir(tmp_path, "rules", "not_a_file.md")
+        (rules_dir / "valid.md").write_text("# Rule\nContent.")
+        to_add, _, __ = ing._collect_dir("rules", "semantic", False, {})
+        assert len(to_add) == 1
+        assert to_add[0].source == "rules/valid.md"
+
+
+# ---------------------------------------------------------------------------
+# _tmp helper (covers test file line 20)
+# ---------------------------------------------------------------------------
+
+class TestTmpHelper:
+    def test_tmp_returns_valid_path(self):
+        """Exercise the _tmp() helper to cover line 20."""
+        p = _tmp()
+        try:
+            assert isinstance(p, Path)
+            assert p.exists()
+            assert p.is_dir()
+        finally:
+            import shutil
+            shutil.rmtree(p, ignore_errors=True)
+
 
 # ---------------------------------------------------------------------------
 # _collect_agents — malformed AGENTS.md (line 126)

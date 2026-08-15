@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from runtime.rule_compiler import RuleIR, compile_rule_file, compile_rules, to_json
+from runtime.rule_compiler import _code_prefix, _parse_rules, _split_rules_section
 
 
 def _write_rule_file(tmp_path: Path, name: str, content: str) -> Path:
@@ -134,3 +135,95 @@ def test_compile_rules_with_custom_glob(tmp_path: Path) -> None:
     assert "alpha" in files
     assert "beta" in files
     assert all(r.source.parent == tmp_path for r in results)
+
+
+# ---------------------------------------------------------------------------
+# Coverage for internal helpers and edge cases
+# ---------------------------------------------------------------------------
+
+def test_code_prefix_extracts_category() -> None:
+    """Cover line 52: _code_prefix returns the category prefix."""
+    assert _code_prefix("BEH-01") == "BEH"
+    assert _code_prefix("SEC-03") == "SEC"
+
+
+def test_split_rules_section_no_rules_tag() -> None:
+    """Cover line 64: _split_rules_section returns (body, '') when no [RULES] tag."""
+    body = "[FILE] test\n[OBJ] No rules here.\n"
+    prefix, rules = _split_rules_section(body)
+    assert prefix == body
+    assert rules == ""
+
+
+def test_parse_rules_stops_at_tag() -> None:
+    """Cover line 80: parsing stops when a stop tag like [FILE] is encountered."""
+    section = "1. [REQ] First rule.\n[FILE] next-section\n2. [REQ] Should not parse.\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 1
+    assert entries[0].text == "First rule."
+
+
+def test_parse_rules_bullet_without_bracket_skipped() -> None:
+    """Cover line 97: lines not starting with [ are skipped."""
+    section = "- some plain text\n1. [REQ] Real rule.\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 1
+    assert entries[0].kind == "REQ"
+
+
+def test_parse_rules_bullet_stripped() -> None:
+    """Cover line 94: bullet prefix is stripped before parsing."""
+    section = "* [REQ] Bullet rule.\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 1
+    assert entries[0].kind == "REQ"
+    assert entries[0].text == "Bullet rule."
+
+
+def test_parse_rules_parts_not_starting_with_bracket_skipped() -> None:
+    """Cover line 101: when first part doesn't start with [, the line is skipped."""
+    section = "1. plain text without bracket\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 0
+
+
+def test_parse_rules_empty_text_skipped() -> None:
+    """Cover line 128: rules with empty text after stripping are skipped."""
+    section = "1. [REQ] :\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 0
+
+
+def test_parse_rules_code_as_first_token() -> None:
+    """Cover line 52 via _code_prefix: when the first token is a code like [BEH-01]."""
+    section = "1. [BEH-01] Some behavioral rule.\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 1
+    assert entries[0].code == "BEH-01"
+    assert entries[0].kind == "BEH"
+    assert entries[0].text == "Some behavioral rule."
+
+
+def test_compile_rules_default_globs(tmp_path: Path) -> None:
+    """Cover line 157: compile_rules uses default globs when none provided."""
+    rules_dir = tmp_path / "rules"
+    rules_dir.mkdir()
+    (rules_dir / "test.md").write_text(
+        "[FILE] test\n[OBJ] Test.\n[RULES]\n1. [REQ] Rule.\n", encoding="utf-8"
+    )
+    results = compile_rules(tmp_path)
+    assert any(r.file == "test" for r in results)
+
+
+def test_parse_rules_incomplete_bracket_skipped() -> None:
+    """Cover line 101: first part starts with [ but doesn't end with ]."""
+    section = "1. [incomplete bracket text\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 0
+
+
+def test_parse_rules_empty_kind_skipped() -> None:
+    """Cover line 122: kind is empty (token from [] is empty string)."""
+    section = "1. [] some text\n"
+    entries = _parse_rules(section)
+    assert len(entries) == 0

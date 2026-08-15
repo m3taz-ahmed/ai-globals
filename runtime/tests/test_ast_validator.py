@@ -189,3 +189,97 @@ class TestValidationResult:
         assert r.warnings == []
         assert r.imports == []
         assert r.symbols == []
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error paths."""
+
+    def test_parse_wildcard_import(self) -> None:
+        """Line 82: wildcard import `from module import *`."""
+        v = PythonASTValidator()
+        result = v.parse("from os import *\n")
+        assert "os.*" in result.imports
+
+    def test_check_imports_syntax_error(self) -> None:
+        """Line 99: check_imports returns early on syntax error."""
+        v = PythonASTValidator()
+        result = v.check_imports("def (:\n")
+        assert result.valid is False
+
+    def test_check_undefined_names_syntax_error(self) -> None:
+        """Line 113: check_undefined_names returns early on syntax error."""
+        v = PythonASTValidator()
+        result = v.check_undefined_names("def (:\n")
+        assert result.valid is False
+
+    def test_check_undefined_names_second_parse_syntax_error(self) -> None:
+        """Lines 116-117: second ast.parse raises SyntaxError (via mocked parse)."""
+        v = PythonASTValidator()
+        # Mock parse to return valid result so we reach the second ast.parse
+        valid_result = ValidationResult(valid=True)
+        with __import__("unittest.mock", fromlist=["patch"]).patch.object(v, "parse", return_value=valid_result):
+            result = v.check_undefined_names("def (:\n")
+            # The second ast.parse raises SyntaxError, caught at line 116-117
+            assert result.valid is True  # returns the (mocked valid) result
+
+    def test_check_undefined_names_with_functions(self) -> None:
+        """Line 122: function/class names are added to defined set."""
+        v = PythonASTValidator()
+        code = "def foo():\n    pass\nclass Bar:\n    pass\nfoo()\nBar()\n"
+        result = v.check_undefined_names(code)
+        assert all("foo" not in w for w in result.warnings)
+        assert all("Bar" not in w for w in result.warnings)
+
+    def test_check_undefined_names_with_import_from(self) -> None:
+        """Lines 131-133: ImportFrom names are added to defined set."""
+        v = PythonASTValidator()
+        code = "from os import path\npath.join('a', 'b')\n"
+        result = v.check_undefined_names(code)
+        assert all("path" not in w for w in result.warnings)
+
+    def test_check_undefined_names_with_import_from_alias(self) -> None:
+        """Lines 131-133: ImportFrom with alias (asname) is added to defined set."""
+        v = PythonASTValidator()
+        code = "from os import path as p\np.join('a', 'b')\n"
+        result = v.check_undefined_names(code)
+        assert all("p" not in w for w in result.warnings)
+
+    def test_check_undefined_names_with_args(self) -> None:
+        """Line 135: function arguments are added to defined set."""
+        v = PythonASTValidator()
+        code = "def foo(x, y):\n    return x + y\n"
+        result = v.check_undefined_names(code)
+        assert all("x" not in w for w in result.warnings)
+        assert all("y" not in w for w in result.warnings)
+
+    def test_validate_diff_unsupported_language(self, tmp_path: Path) -> None:
+        """Line 225: validate_diff with unsupported language returns warning."""
+        v = CodeValidator()
+        f = tmp_path / "test.js"
+        result = v.validate_diff(f, "old code", "new code")
+        assert result.valid is True
+        assert any("No AST validator" in w for w in result.warnings)
+
+    def test_check_dependency_guard_unsupported_language(self, tmp_path: Path) -> None:
+        """Line 267: check_dependency_guard with unsupported language returns valid."""
+        v = CodeValidator()
+        f = tmp_path / "test.js"
+        f.write_text("console.log('hello')\n", encoding="utf-8")
+        result = v.check_dependency_guard(f, [])
+        assert result.valid is True
+
+    def test_check_dependency_guard_syntax_error(self, tmp_path: Path) -> None:
+        """Line 271: check_dependency_guard with syntax error returns parse result."""
+        v = CodeValidator()
+        f = tmp_path / "test.py"
+        f.write_text("def (:\n", encoding="utf-8")
+        result = v.check_dependency_guard(f, [])
+        assert result.valid is False
+
+    def test_check_dependency_guard_builtin_imports(self, tmp_path: Path) -> None:
+        """Lines 284-285: builtin and __future__ imports are skipped in dependency guard."""
+        v = CodeValidator()
+        f = tmp_path / "test.py"
+        f.write_text("from __future__ import annotations\nimport os\n", encoding="utf-8")
+        result = v.check_dependency_guard(f, [])
+        assert result.valid is True

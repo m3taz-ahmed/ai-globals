@@ -96,6 +96,12 @@ class TestGenerateKey:
         Fernet(key.encode())
 
 
+class TestIsEncrypted:
+    def test_nonexistent_file_returns_false(self, tmp_path: Path) -> None:
+        """Cover line 38: is_encrypted returns False for nonexistent path."""
+        assert is_encrypted(tmp_path / "missing.json") is False
+
+
 def is_encrypted_bytes(data: bytes) -> bool:
     """Check if bytes start with the encryption magic prefix."""
     return data.startswith(b"AIOS_ENC:")

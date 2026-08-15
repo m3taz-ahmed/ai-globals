@@ -123,6 +123,20 @@ class TestEmbedder:
             emb = Embedder()
         assert emb.is_available() is False
 
+    def test_reset_singleton_clears_cached_model(self):
+        """Lines 75-76: _reset_singleton sets _singleton and _singleton_model_name to None."""
+        st_instance = _make_st_mock()
+        mock_st_cls = MagicMock(return_value=st_instance)
+        with patch.object(vector_module, "SentenceTransformer", mock_st_cls):
+            emb = Embedder()
+            # Singleton should be set after instantiation
+            assert Embedder._singleton is not None
+            assert Embedder._singleton_model_name is not None
+        # Reset
+        Embedder._reset_singleton()
+        assert Embedder._singleton is None
+        assert Embedder._singleton_model_name is None
+
 
 # ---------------------------------------------------------------------------
 # VectorMemory — is_available
@@ -294,6 +308,18 @@ class TestVectorMemorySearch:
         try:
             vm = _mock_vm(tmp)
             assert vm.search("query", k=5, ids=[]) == []
+            vm.index.search.assert_not_called()
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_search_with_ids_not_in_map_returns_empty(self):
+        """Line 146: ids provided but none present in id_map → return []."""
+        tmp = _tmp()
+        try:
+            vm = _mock_vm(tmp)
+            # id_map is empty, so no u64s will be present
+            uid = str(uuid.uuid4())
+            assert vm.search("query", k=5, ids=[uid]) == []
             vm.index.search.assert_not_called()
         finally:
             shutil.rmtree(tmp, ignore_errors=True)

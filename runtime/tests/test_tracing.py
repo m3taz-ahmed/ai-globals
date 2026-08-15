@@ -254,3 +254,20 @@ class TestContextManagers:
         with pytest.raises(RuntimeError), with_span(tracer, "op"):
             raise RuntimeError("test")
         assert get_current_span() is None
+
+
+class TestConsoleSpanExporterStdout:
+    """Tests for ConsoleSpanExporter printing to stdout (line 101)."""
+
+    def test_prints_to_stdout_when_no_path(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """ConsoleSpanExporter prints JSON line to stdout when no path is given."""
+        exporter = ConsoleSpanExporter(path=None)
+        span = Span("t1", "s1", None, "test_op", SpanKind.INTERNAL, time.time())
+        span.end()
+        exporter.on_end(span)
+        captured = capsys.readouterr()
+        assert captured.out.strip()
+        entry = json.loads(captured.out.strip())
+        assert entry["trace_id"] == "t1"
+        assert entry["span_id"] == "s1"
+        assert entry["name"] == "test_op"

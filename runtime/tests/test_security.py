@@ -55,3 +55,11 @@ def test_audit_redacts_sensitive_keys(tmp_path: Path) -> None:
     assert "secret123" not in text
     assert "[REDACTED]" in text
     assert "moataz" in text
+
+
+def test_bad_plugin_on_load_executes() -> None:
+    """Cover the _BadPlugin.on_load pass statement (line 16)."""
+    from unittest.mock import MagicMock
+
+    plugin = _BadPlugin(MagicMock())
+    plugin.on_load()  # should not raise

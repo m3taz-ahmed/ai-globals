@@ -40,6 +40,10 @@ def _call(name: str, arguments: dict) -> str:
     return mcp._tool_manager.get_tool(name).fn(**arguments)
 
 
+# Ingest initial content so search/query tests have data to match.
+_call("ingest_memory", {})
+
+
 # ---------------------------------------------------------------------------
 # Tool registration
 # ---------------------------------------------------------------------------
@@ -326,3 +330,78 @@ class TestSecurity:
         result = _call("add_memory", {"kind": "factual", "content": "", "source": "mcp"})
         data = json.loads(result)
         assert data["ok"] is False
+
+
+class TestPluginRegistration:
+    """Cover _register_plugins when plugins expose tools and resources."""
+
+    def test_register_plugins_with_tools_and_resources(self):
+        from aios_mcp import aios_server
+
+        mock_kernel = MagicMock()
+        mock_tool = MagicMock()
+        mock_resource = MagicMock()
+        mock_kernel.plugins.get_tools.return_value = [mock_tool]
+        mock_kernel.plugins.get_resources.return_value = [mock_resource]
+
+        with patch.object(aios_server, "kernel", return_value=mock_kernel), \
+             patch("aios_mcp.tools.common.memory", return_value=MagicMock()), \
+             patch.object(aios_server.mcp, "add_tool") as mock_add_tool, \
+             patch.object(aios_server.mcp, "add_resource") as mock_add_resource:
+            aios_server._register_plugins()
+            mock_add_tool.assert_called_once_with(mock_tool)
+            mock_add_resource.assert_called_once_with(mock_resource)
+
+
+class TestResourceFallbacks:
+    """Cover fallback paths in get_rule_resource / get_workflow_resource."""
+
+    def test_get_rule_resource_via_tool_fn(self):
+        """Cover line 62: get_rule_resource returns via registered tool fn."""
+        from aios_mcp import aios_server
+
+        mock_fn = MagicMock(return_value="tool-content")
+        mock_tool = MagicMock()
+        mock_tool.fn = mock_fn
+        with patch.object(aios_server._tool_manager, "get_tool", return_value=mock_tool):
+            result = aios_server.get_rule_resource("core")
+            assert result == "tool-content"
+            mock_fn.assert_called_once_with("core")
+
+    def test_get_rule_resource_fallback_missing_file(self):
+        """Cover line 73: fallback path when file does not exist."""
+        from aios_mcp import aios_server
+
+        # Ensure tool fn is not found so fallback runs
+        with patch.object(aios_server._tool_manager, "get_tool", return_value=None):
+            result = aios_server.get_rule_resource("nonexistent-rule-xyz")
+            assert result == ""
+
+    def test_get_workflow_resource_unsafe_name(self):
+        """Cover line 83: get_workflow_resource rejects unsafe name."""
+        from aios_mcp import aios_server
+
+        result = aios_server.get_workflow_resource("../../etc/passwd")
+        assert result == ""
+
+    def test_get_workflow_resource_fallback_missing_file(self):
+        """Cover line 87: fallback path when workflow file does not exist."""
+        from aios_mcp import aios_server
+
+        result = aios_server.get_workflow_resource("nonexistent-wf-xyz")
+        assert result == ""
+
+
+class TestMainBlock:
+    """Cover the if __name__ == '__main__' block (line 92)."""
+
+    def test_main_block_calls_run(self):
+        from aios_mcp import aios_server
+        from pathlib import Path
+
+        source = Path(aios_server.__file__).read_text(encoding="utf-8")
+        with patch("mcp.server.fastmcp.FastMCP.run") as mock_run:
+            code = compile(source, str(aios_server.__file__), "exec")
+            namespace: dict = {"__name__": "__main__", "__file__": str(aios_server.__file__)}
+            exec(code, namespace)
+            mock_run.assert_called_once_with(transport="stdio")

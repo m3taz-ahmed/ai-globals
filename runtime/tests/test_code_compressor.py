@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from runtime.code_compressor import (
@@ -220,3 +221,127 @@ class TestCodeCompressor:
         c = CodeCompressor()
         result = c.compress_code("def foo():\n    return 1\n", Path("test.py"))
         assert result.language == "python"
+
+    def test_compress_code_auto_detect_generic(self) -> None:
+        """Code without 'def ' or 'import ' uses GenericCompressor."""
+        c = CodeCompressor()
+        result = c.compress_code("var x = 1;\n")
+        assert result.language == ""
+
+    # --- PythonCompressor: argument formatting branches ---
+
+    def test_compress_vararg(self) -> None:
+        c = PythonCompressor()
+        result = c.compress("def foo(*args): ...\n")
+        assert "*args" in result.compressed_code
+
+    def test_compress_kwonly_with_star_sep(self) -> None:
+        c = PythonCompressor()
+        result = c.compress("def foo(a, *, b: int): ...\n")
+        assert "*" in result.compressed_code
+        assert "b: int" in result.compressed_code
+
+    def test_compress_kwarg(self) -> None:
+        c = PythonCompressor()
+        result = c.compress("def foo(**kwargs): ...\n")
+        assert "**kwargs" in result.compressed_code
+
+    # --- PythonCompressor: class with docstring and decorator ---
+
+    def test_compress_class_with_docstring(self) -> None:
+        c = PythonCompressor()
+        code = 'class Bar:\n    """A test class."""\n    pass\n'
+        result = c.compress(code)
+        assert "A test class" in result.compressed_code
+
+    def test_compress_class_with_decorator(self) -> None:
+        c = PythonCompressor()
+        code = "from dataclasses import dataclass\n\n@dataclass\nclass Foo:\n    pass\n"
+        result = c.compress(code)
+        assert "@dataclass" in result.compressed_code
+
+    # --- PythonCompressor: _format_expr branches ---
+
+    def test_compress_attribute_annotation(self) -> None:
+        """Attribute expression in type annotation."""
+        c = PythonCompressor()
+        code = "def foo(x: module.Type) -> None: ...\n"
+        result = c.compress(code)
+        assert "module.Type" in result.compressed_code
+
+    def test_compress_call_value(self) -> None:
+        """Call expression as a constant value."""
+        c = PythonCompressor()
+        code = "DEFAULT = func()\n"
+        result = c.compress(code)
+        assert "func(...)" in result.compressed_code
+
+    def test_compress_binop_value(self) -> None:
+        """BinOp expression as a constant value."""
+        c = PythonCompressor()
+        code = "TOTAL = 1 + 2\n"
+        result = c.compress(code)
+        assert "+" in result.compressed_code or "..." in result.compressed_code
+
+    def test_compress_list_value(self) -> None:
+        """List literal as a constant value."""
+        c = PythonCompressor()
+        code = "ITEMS = [1, 2, 3]\n"
+        result = c.compress(code)
+        assert "[" in result.compressed_code
+
+    def test_compress_dict_value(self) -> None:
+        """Dict literal as a constant value."""
+        c = PythonCompressor()
+        code = 'CONFIG = {"key": 1}\n'
+        result = c.compress(code)
+        assert "{" in result.compressed_code
+
+    def test_compress_unhandled_expr_fallback(self) -> None:
+        """Unhandled expression type (Set) falls back to '...'."""
+        c = PythonCompressor()
+        code = "_VALUES = {1, 2, 3}\n"
+        result = c.compress(code)
+        assert "..." in result.compressed_code
+
+    # --- compress_directory: non-matching extension ---
+
+    def test_compress_directory_skips_non_matching_ext(self, tmp_path: Path) -> None:
+        (tmp_path / "a.py").write_text("def a():\n    pass\n", encoding="utf-8")
+        (tmp_path / "b.txt").write_text("not code\n", encoding="utf-8")
+        c = CodeCompressor()
+        results = c.compress_directory(tmp_path)
+        assert len(results) == 1
+
+    # --- __main__ block ---
+
+    def test_main_block_file(self, tmp_path: Path, capsys) -> None:
+        """Exercise __main__ block with a file target."""
+        f = tmp_path / "test.py"
+        f.write_text("def foo():\n    return 1\n", encoding="utf-8")
+        source = Path(__file__).resolve().parent.parent / "code_compressor.py"
+        code = source.read_text(encoding="utf-8")
+        old_argv = sys.argv
+        sys.argv = ["code_compressor.py", str(f)]
+        try:
+            exec(compile(code, str(source), "exec"), {"__name__": "__main__"})
+        finally:
+            sys.argv = old_argv
+        out = capsys.readouterr().out
+        assert "Language:" in out
+        assert "Reduction:" in out
+
+    def test_main_block_directory(self, tmp_path: Path, capsys) -> None:
+        """Exercise __main__ block with a directory target."""
+        (tmp_path / "a.py").write_text("def a():\n    pass\n", encoding="utf-8")
+        source = Path(__file__).resolve().parent.parent / "code_compressor.py"
+        code = source.read_text(encoding="utf-8")
+        old_argv = sys.argv
+        sys.argv = ["code_compressor.py", str(tmp_path)]
+        try:
+            exec(compile(code, str(source), "exec"), {"__name__": "__main__"})
+        finally:
+            sys.argv = old_argv
+        out = capsys.readouterr().out
+        assert "Files:" in out
+        assert "Tokens:" in out

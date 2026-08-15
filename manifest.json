@@ -55,7 +55,14 @@
     "/execute": "workflows/02-execution.md",
     "execute": "workflows/02-execution.md",
     "spec-driven": "workflows/21-spec-driven.md",
-    "spec": "workflows/21-spec-driven.md"
+    "spec": "workflows/21-spec-driven.md",
+    "flutter": "skills/flutter-architect/SKILL.md",
+    "flutter design": "skills/flutter-design/SKILL.md",
+    "flutter develop": "skills/flutter-developer/SKILL.md",
+    "dart": "tech-stack/flutter.md",
+    "riverpod": "skills/flutter-developer/SKILL.md",
+    "bloc": "skills/flutter-developer/SKILL.md",
+    "material 3": "skills/flutter-design/SKILL.md"
   },
   "features": {
     "audit_log": "runtime/audit.py",

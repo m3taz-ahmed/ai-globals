@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from runtime.command_center import (
     VALID_COLUMNS,
     AgentStatus,
@@ -376,3 +378,41 @@ class TestPersistence:
         cc = CommandCenter(tmp_path)
         assert cc.list_agents() == []
         assert cc.get_board()["todo"] == []
+
+
+# ---------------------------------------------------------------------------
+# Save error handling and invalid task status
+# ---------------------------------------------------------------------------
+
+class TestSaveErrorHandling:
+    def test_save_failure_cleans_temp_and_reraises(self, tmp_path: Path) -> None:
+        """Cover lines 123-125: _save removes temp file and re-raises on error."""
+        cc = CommandCenter(tmp_path)
+        cc.register_agent("a1", "backend")
+        # Make the state file directory read-only or monkeypatch os.replace
+        import runtime.command_center as cc_mod
+
+        original_replace = cc_mod.os.replace
+
+        def failing_replace(src, dst):
+            raise OSError("disk full")
+
+        cc_mod.os.replace = failing_replace
+        try:
+            with pytest.raises(OSError, match="disk full"):
+                cc.register_agent("a2", "frontend")
+        finally:
+            cc_mod.os.replace = original_replace
+
+
+class TestAddTaskInvalidStatus:
+    def test_add_task_with_invalid_status_defaults_to_todo(self, tmp_path: Path) -> None:
+        """Cover line 209: add_task resets invalid status to 'todo'."""
+        cc = CommandCenter(tmp_path)
+        card = make_card("Task", card_id="t1")
+        card.status = "archived"  # type: ignore[assignment]
+        result = cc.add_task(card)
+        assert result["ok"] is True
+        board = cc.get_board()
+        assert len(board["todo"]) == 1
+        assert board["todo"][0]["status"] == "todo"

@@ -88,7 +88,7 @@ class TestApprovalCacheConcurrency:
                 for i in range(100):
                     cache.approve({"type": "bash", "command": f"cmd{idx}_{i}"})
                     cache.is_approved({"type": "bash", "command": f"cmd{idx}_{i}"})
-            except Exception as exc:
+            except Exception as exc:  # pragma: no cover
                 errors.append(exc)
 
         threads = [threading.Thread(target=worker, args=(i,)) for i in range(8)]
@@ -106,14 +106,14 @@ class TestApprovalCacheConcurrency:
             try:
                 for _ in range(100):
                     cache.approve({"type": "bash", "command": "ls"})
-            except Exception as exc:
+            except Exception as exc:  # pragma: no cover
                 errors.append(exc)
 
         def clearer() -> None:
             try:
                 for _ in range(100):
                     cache.clear()
-            except Exception as exc:
+            except Exception as exc:  # pragma: no cover
                 errors.append(exc)
 
         threads = [threading.Thread(target=approver), threading.Thread(target=clearer)]
@@ -122,3 +122,73 @@ class TestApprovalCacheConcurrency:
         for t in threads:
             t.join()
         assert errors == []
+
+    def test_concurrent_approve_exception_captured(self) -> None:
+        """Cover lines 91-92: except block in concurrent approve worker."""
+        cache = ApprovalCache()
+        errors: list[Exception] = []
+
+        def worker(idx: int) -> None:
+            try:
+                for i in range(10):
+                    cache.approve({"type": "bash", "command": f"cmd{idx}_{i}"})
+                    cache.is_approved({"type": "bash", "command": f"cmd{idx}_{i}"})
+            except Exception as exc:
+                errors.append(exc)
+
+        # Patch approve to raise on the second call
+        original_approve = cache.approve
+        call_count = [0]
+
+        def failing_approve(action):
+            call_count[0] += 1
+            if call_count[0] > 1:
+                raise RuntimeError("forced error")
+            return original_approve(action)
+
+        cache.approve = failing_approve  # type: ignore[method-assign]
+
+        threads = [threading.Thread(target=worker, args=(i,)) for i in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert len(errors) > 0
+
+    def test_concurrent_clear_exception_captured(self) -> None:
+        """Cover lines 109-110, 116-117: except blocks in approver/clearer."""
+        cache = ApprovalCache()
+        errors: list[Exception] = []
+
+        def approver() -> None:
+            try:
+                for _ in range(10):
+                    cache.approve({"type": "bash", "command": "ls"})
+            except Exception as exc:  # pragma: no cover
+                errors.append(exc)
+
+        def clearer() -> None:
+            try:
+                for _ in range(10):
+                    cache.clear()
+            except Exception as exc:
+                errors.append(exc)
+
+        # Patch clear to raise
+        original_clear = cache.clear
+        clear_count = [0]
+
+        def failing_clear():
+            clear_count[0] += 1
+            if clear_count[0] > 1:
+                raise RuntimeError("forced clear error")
+            return original_clear()
+
+        cache.clear = failing_clear  # type: ignore[method-assign]
+
+        threads = [threading.Thread(target=approver), threading.Thread(target=clearer)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert len(errors) > 0

@@ -217,3 +217,77 @@ class TestCodeReviewEngine:
         report = engine.review_diff("", code, Path("test.py"))
         # split("\n") on trailing newline produces an extra empty string
         assert report.lines_reviewed >= 3
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error paths."""
+
+    def test_review_directory_skips_non_file(self, tmp_path: Path) -> None:
+        """Line 190: non-file entries (directories) are skipped in review_directory."""
+        (tmp_path / "safe.py").write_text("x = 1\n", encoding="utf-8")
+        (tmp_path / "subdir").mkdir()  # directory entry — should be skipped
+        engine = CodeReviewEngine()
+        reports = engine.review_directory(tmp_path)
+        assert len(reports) == 1  # only safe.py, not subdir
+
+    def test_review_directory_skips_unsupported_extension(self, tmp_path: Path) -> None:
+        """Line 192: files with unsupported extensions are skipped."""
+        (tmp_path / "safe.py").write_text("x = 1\n", encoding="utf-8")
+        (tmp_path / "data.xml").write_text("eval(x)\n", encoding="utf-8")
+        engine = CodeReviewEngine()
+        reports = engine.review_directory(tmp_path)
+        assert len(reports) == 1  # only .py, .xml skipped
+
+    def test_review_directory_skips_excluded_dirs(self, tmp_path: Path) -> None:
+        """Line 194: files in excluded directories (.git, __pycache__, etc.) are skipped."""
+        (tmp_path / "safe.py").write_text("x = 1\n", encoding="utf-8")
+        git_dir = tmp_path / ".git"
+        git_dir.mkdir()
+        (git_dir / "config.py").write_text("eval(x)\n", encoding="utf-8")
+        engine = CodeReviewEngine()
+        reports = engine.review_directory(tmp_path)
+        assert len(reports) == 1  # only safe.py, .git/config.py skipped
+
+    def test_review_performance_string_concat_in_loop(self) -> None:
+        """Line 386: string concatenation in loop triggers PERF-STR-CONCAT."""
+        engine = CodeReviewEngine()
+        # Line exactly "for " followed by a line with + 'string'
+        code = "for \nresult = result + 'hello'\n"
+        report = engine.review_diff("", code, Path("test.py"))
+        assert any(f.rule_id == "PERF-STR-CONCAT" for f in report.findings)
+
+    def test_review_performance_list_append_in_loop(self) -> None:
+        """Line 397: list.append in for-loop triggers PERF-LIST-APPEND."""
+        engine = CodeReviewEngine()
+        code = "for item in items:\n    result.append(item)\n"
+        report = engine.review_diff("", code, Path("test.py"))
+        assert any(f.rule_id == "PERF-LIST-APPEND" for f in report.findings)
+
+    def test_main_block_with_file(self, tmp_path: Path) -> None:
+        """Lines 416-430: __main__ block with a file argument (else branch)."""
+        import runpy
+        import sys
+
+        f = tmp_path / "test.py"
+        f.write_text("eval(x)\n", encoding="utf-8")
+        script = str(Path(__file__).resolve().parent.parent / "review_engine.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(f)]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        finally:
+            sys.argv = old_argv
+
+    def test_main_block_with_directory(self, tmp_path: Path) -> None:
+        """Lines 416-430: __main__ block with a directory argument (is_dir branch)."""
+        import runpy
+        import sys
+
+        (tmp_path / "safe.py").write_text("x = 1\n", encoding="utf-8")
+        script = str(Path(__file__).resolve().parent.parent / "review_engine.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(tmp_path)]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        finally:
+            sys.argv = old_argv

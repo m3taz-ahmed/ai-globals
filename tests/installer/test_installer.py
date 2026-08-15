@@ -116,6 +116,12 @@ def test_resolve_stale_root_logic(tmp_path: Path):
     (valid_root / "pyproject.toml").write_text("version='1.0'", encoding="utf-8")
     assert resolve_stale_root(repo, str(valid_root)) == str(valid_root)
 
+    # Current root exists but doesn't have pyproject.toml -> should return repo
+    stale_root2 = tmp_path / "stale_no_pyproject"
+    stale_root2.mkdir()
+    (stale_root2 / "other.txt").write_text("not a project", encoding="utf-8")
+    assert resolve_stale_root(repo, str(stale_root2)) == str(repo)
+
 
 def test_mcp_health_check_logic(tmp_path: Path):
     """Test MCP health check logic with a mock config."""

@@ -249,3 +249,26 @@ class TestSafeEvaluatorNodes:
         result = e.can("Read")
         assert result["decision"] == "ask"  # falls through to default
 
+
+# ---------------------------------------------------------------------------
+# Malformed default_action skipping
+# ---------------------------------------------------------------------------
+
+class TestMalformedDefaultAction:
+    def test_invalid_default_action_skips_file(self, tmp_path: Path):
+        """Cover lines 135-136: policy file with invalid default_action is skipped."""
+        policy_dir = tmp_path / "runtime" / "policies"
+        policy_dir.mkdir(parents=True, exist_ok=True)
+        (policy_dir / "default.yaml").write_text(
+            "default_action: maybe\nrules:\n"
+            "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
+        )
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            e = PolicyEngine(tmp_path)
+        assert any("invalid default_action" in str(warning.message) for warning in w)
+        # default_action stays at its initial value "ask"
+        assert e.default_action == "ask"
+        # Rules from the skipped file are not loaded
+        assert len(e.rules) == 0
+

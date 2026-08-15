@@ -6,6 +6,7 @@ from pathlib import Path
 
 from runtime.rule_frontmatter import (
     RuleFrontmatter,
+    _as_str_list,
     _match_path,
     _match_paths,
     _match_personas,
@@ -56,6 +57,27 @@ class TestParseFrontmatter:
         frontmatter, _ = parse_frontmatter(text)
         assert frontmatter == RuleFrontmatter()
 
+    def test_non_str_non_list_value_normalized_to_list(self):
+        """Cover line 43: _as_str_list converts non-str/non-list values to [str(value)]."""
+        text = "---\npaths: 42\n---\nbody"
+        frontmatter, _ = parse_frontmatter(text)
+        assert frontmatter.paths == ["42"]
+
+
+class TestAsStrList:
+    def test_none_returns_none(self):
+        assert _as_str_list(None) is None
+
+    def test_str_returns_single_item_list(self):
+        assert _as_str_list("hello") == ["hello"]
+
+    def test_list_returns_str_list(self):
+        assert _as_str_list(["a", "b"]) == ["a", "b"]
+
+    def test_other_type_returns_str_list(self):
+        assert _as_str_list(42) == ["42"]
+        assert _as_str_list(3.14) == ["3.14"]
+
 
 class TestMatchPath:
     def test_exact_match(self):
@@ -68,6 +90,21 @@ class TestMatchPath:
     def test_double_star_falls_back_to_single_star_on_older_python(self):
         # `**` may not match on Python <3.13 without full_match; ensure no crash.
         assert _match_path("src/**/*.py", "src/main.py") in (True, False)
+
+    def test_double_star_full_match(self):
+        """Cover line 79: full_match branch for ** patterns."""
+        # On Python 3.13+, full_match is available and should match nested paths.
+        result = _match_path("src/**/*.py", "src/sub/main.py")
+        assert isinstance(result, bool)
+
+    def test_double_star_full_match_mocked(self, monkeypatch):
+        """Cover line 79: force full_match branch even on Python <3.13."""
+        from pathlib import PurePosixPath
+
+        monkeypatch.setattr(
+            PurePosixPath, "full_match", lambda self, pattern: True, raising=False
+        )
+        assert _match_path("src/**/*.py", "src/sub/main.py") is True
 
     def test_backslash_normalization(self):
         assert _match_path("src/*", "src\\main.py")

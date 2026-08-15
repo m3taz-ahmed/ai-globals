@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from runtime.kernel import Kernel
 from runtime.persona import PersonaDetector, detect_persona
 from runtime.skill_resolver import SkillResolver
@@ -53,12 +55,8 @@ class TestPersonaDetector:
         assert len(d.list_personas()) == 20
 
     def test_unknown_default_raises(self):
-        try:
+        with pytest.raises(ValueError, match="Unknown default persona"):
             PersonaDetector(default="UNKNOWN")
-        except ValueError as e:
-            assert "Unknown default persona" in str(e)
-        else:
-            raise AssertionError("expected ValueError")
 
     def test_detects_security(self):
         d = PersonaDetector()
@@ -196,3 +194,101 @@ class TestKernelPersonaIntegration:
         status = k.status()
         assert "personas" in status
         assert "ARCH" in status["personas"]
+
+
+class TestSkillResolverLoadAndFrontmatter:
+    def test_load_returns_text_for_existing_skill(self, tmp_path: Path):
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        (skills / "myload.md").write_text(
+            "---\nname: myload\n---\n[SKILL] myload\n[OBJ] Test.\n", encoding="utf-8"
+        )
+        resolver = SkillResolver(tmp_path)
+        text = resolver.load("myload")
+        assert text is not None
+        assert "[SKILL] myload" in text
+
+    def test_load_returns_none_for_missing_skill(self, tmp_path: Path):
+        resolver = SkillResolver(tmp_path)
+        assert resolver.load("nonexistent") is None
+
+    def test_load_with_frontmatter_returns_none_for_missing_skill(self, tmp_path: Path):
+        resolver = SkillResolver(tmp_path, tmp_path)
+        assert resolver.load_with_frontmatter("nonexistent", {}) is None
+
+
+class TestPersonaDetectorCoverage:
+    def test_list_lord_skills(self):
+        d = PersonaDetector()
+        lords = d.list_lord_skills()
+        assert isinstance(lords, list)
+        assert len(lords) > 0
+
+    def test_is_active_skill_returns_true_when_resolved(self, tmp_path: Path):
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        (skills / "active.md").write_text(
+            "---\nname: active\n---\n[SKILL] active\n[OBJ] Test.\n", encoding="utf-8"
+        )
+        resolver = SkillResolver(tmp_path)
+        d = PersonaDetector(skill_resolver=resolver)
+        assert d._is_active_skill("active", {}) is True
+
+    def test_detect_lords_finds_matching_skills(self):
+        d = PersonaDetector()
+        lords = d._detect_lords("optimize react frontend performance")
+        assert "frontend-frameworks-lord" in lords
+
+    def test_detect_multiple_skips_duplicate_or_inactive_skill(self, tmp_path: Path):
+        """Cover line 124: continue when skill in seen_skills or not active."""
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        # Create a skill file that won't match context (persona=SEC only)
+        (skills / "backend-api-expert.md").write_text(
+            "---\npersonas: [SEC]\n---\n[SKILL] backend\n", encoding="utf-8"
+        )
+        resolver = SkillResolver(tmp_path)
+        d = PersonaDetector(skill_resolver=resolver)
+        # "backend api server" triggers DEV persona whose skill is backend-api-expert
+        # but the skill file requires persona=SEC, so it won't be active for DEV context
+        result = d.detect_multiple("backend api server", context={"persona": "DEV"})
+        # The primary skill should fall back to default since backend-api-expert is inactive
+        assert isinstance(result["skills"], list)
+
+    def test_resolve_skills_returns_active_skills(self, tmp_path: Path):
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        (skills / "backend-api-expert.md").write_text(
+            "---\nname: backend-api-expert\n---\n[SKILL] backend\n", encoding="utf-8"
+        )
+        (skills / "frontend-frameworks-lord.md").write_text(
+            "---\nname: frontend-frameworks-lord\n---\n[SKILL] frontend\n", encoding="utf-8"
+        )
+        resolver = SkillResolver(tmp_path)
+        d = PersonaDetector(skill_resolver=resolver)
+        result = d.resolve_skills(["DEV"], lords=["frontend-frameworks-lord"])
+        assert "backend-api-expert" in result
+        assert "frontend-frameworks-lord" in result
+
+    def test_resolve_skills_filters_inactive(self, tmp_path: Path):
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        (skills / "backend-api-expert.md").write_text(
+            "---\npersonas: [SEC]\n---\n[SKILL] backend\n", encoding="utf-8"
+        )
+        resolver = SkillResolver(tmp_path)
+        d = PersonaDetector(skill_resolver=resolver)
+        # With DEV context, backend-api-expert (requires SEC) won't match
+        result = d.resolve_skills(["DEV"], context={"persona": "DEV"})
+        assert "backend-api-expert" not in result
+
+    def test_resolve_skills_with_no_lords(self, tmp_path: Path):
+        skills = tmp_path / "skills"
+        skills.mkdir()
+        (skills / "backend-api-expert.md").write_text(
+            "---\nname: backend-api-expert\n---\n[SKILL] backend\n", encoding="utf-8"
+        )
+        resolver = SkillResolver(tmp_path)
+        d = PersonaDetector(skill_resolver=resolver)
+        result = d.resolve_skills(["DEV"])
+        assert "backend-api-expert" in result

@@ -91,3 +91,12 @@
 [SaaS-02]: Separate DB: Async provision.
 [SaaS-03]: Enterprise: SAML/SSO, Tenant RBAC.
 [SaaS-04]: Gate features via subscriptions.
+
+[ARCH]
+[ARCH-01]: No folklore engineering. Name the problem before the pattern. No interface without a client/contract/boundary. No "Clean Architecture" by folder shape — inspect dependency direction. No "well-architected" by managed services — review flows/failure/security/cost/ops/perf.
+[ARCH-02]: No source-only runtime inference when optimization/concurrency/generated code/native boundaries are relevant. Capture the effective execution contract.
+[ARCH-03]: No multi-variable debugging experiments unless the result remains discriminating.
+[ARCH-04]: No passing-test-as-proof when the test cannot observe the claimed failure class.
+[ARCH-05]: No hidden accepted risk. Record consequence, owner, expiry, and trigger for reconsideration.
+[ARCH-06]: No governance theater. Controls must exist in measurable runtime evidence, not only documents. A policy check that runs only after user-visible output is governance theater.
+[ARCH-07]: No ambient authority. The model may propose; only an independent control plane authorizes consequence. A policy decision cannot be reused across targets. Tool output is untrusted until revalidated at the next boundary.

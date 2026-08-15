@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import runpy
+import subprocess
+import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -175,3 +181,97 @@ class TestGitMemoryStore:
         store.write("facts", "b", {"x": 2})  # uncommitted
         status = store.status()
         assert status["dirty"] is True
+
+
+class TestGitErrorHandling:
+    """Tests for git command error paths."""
+
+    def test_git_raises_on_failed_check(self, store: GitMemoryStore) -> None:
+        """Line 92: _git raises RuntimeError when check=True and command fails."""
+        with pytest.raises(RuntimeError, match="git.*failed"):
+            store._git("checkout", "nonexistent-branch-xyz")
+
+    def test_git_check_false_no_raise(self, store: GitMemoryStore) -> None:
+        """check=False should not raise even on failure."""
+        result = store._git("checkout", "nonexistent-branch-xyz", check=False)
+        assert result.returncode != 0
+
+
+class TestLogEmptyLines:
+    """Tests for log parsing edge cases."""
+
+    def test_log_skips_empty_lines(self, store: GitMemoryStore) -> None:
+        """Line 179: empty lines in log output are skipped."""
+        store.write("facts", "a", {"x": 1})
+        store.commit("Commit 1")
+        # Mock _git to return output with embedded empty lines
+        fake_result = subprocess.CompletedProcess(
+            args=["git", "log"],
+            returncode=0,
+            stdout="abc123|Agent|2026-01-01|Commit 1\n\n\ndef456|Agent|2026-01-02|Commit 2",
+            stderr="",
+        )
+        with patch.object(store, "_git", return_value=fake_result):
+            log = store.log()
+        assert len(log) == 2
+        assert log[0]["hash"] == "abc123"
+        assert log[1]["hash"] == "def456"
+
+
+class TestCheckout:
+    """Tests for checkout (time-travel)."""
+
+    def test_checkout_valid_ref(self, store: GitMemoryStore) -> None:
+        """Lines 197-198: checkout a valid commit ref returns True."""
+        store.write("facts", "a", {"x": 1})
+        store.commit("Commit 1")
+        store.write("facts", "b", {"x": 2})
+        store.commit("Commit 2")
+        log = store.log()
+        first_commit_hash = log[-1]["hash"]  # oldest commit
+        assert store.checkout(first_commit_hash) is True
+
+    def test_checkout_invalid_ref_returns_false(self, store: GitMemoryStore) -> None:
+        """Lines 197-198: checkout an invalid ref returns False."""
+        assert store.checkout("nonexistent-ref-xyz") is False
+
+
+class TestPushPullRemote:
+    """Tests for push, pull, and add_remote."""
+
+    def test_add_remote_success(self, store: GitMemoryStore) -> None:
+        """Lines 231-232: add_remote returns True on success."""
+        assert store.add_remote("origin", "https://example.com/repo.git") is True
+
+    def test_push_without_remote_returns_false(self, store: GitMemoryStore) -> None:
+        """Lines 221-222: push returns False when no remote is configured."""
+        assert store.push() is False
+
+    def test_pull_without_remote_returns_false(self, store: GitMemoryStore) -> None:
+        """Lines 226-227: pull returns False when no remote is configured."""
+        assert store.pull() is False
+
+    def test_add_remote_duplicate_returns_false(self, store: GitMemoryStore) -> None:
+        """Lines 231-232: adding a duplicate remote returns False."""
+        store.add_remote("origin", "https://example.com/repo.git")
+        assert store.add_remote("origin", "https://example.com/other.git") is False
+
+
+class TestMainBlock:
+    """Tests for the __main__ block (lines 249-252)."""
+
+    def test_main_block_with_arg(self, tmp_path: Path) -> None:
+        """Lines 249-252: running the script with a path arg initializes and prints status."""
+        repo_path = tmp_path / "main_test_repo"
+        script_path = str(Path(__file__).resolve().parents[1] / "git_memory.py")
+        old_argv = sys.argv
+        sys.argv = ["git_memory.py", str(repo_path)]
+        try:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                runpy.run_path(script_path, run_name="__main__")
+            status = json.loads(buf.getvalue())
+            assert "branch" in status
+            assert (repo_path / ".git").exists()
+        finally:
+            sys.argv = old_argv

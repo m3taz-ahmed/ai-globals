@@ -317,3 +317,71 @@ class TestACPBroker:
         topics = broker2.list_topics()
         assert "reviews" in topics
         assert "a1" in topics["reviews"]
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error paths."""
+
+    def test_is_expired_invalid_timestamp(self) -> None:
+        """Lines 107-108: is_expired catches ValueError/TypeError on bad timestamp."""
+        msg = ACPMessage(ttl=30)
+        msg.timestamp = "not-a-date"
+        assert msg.is_expired is False
+
+    def test_register_existing_with_metadata(self) -> None:
+        """Line 166: registering existing agent with metadata updates it."""
+        broker = ACPBroker()
+        broker.register("a1", ["review"], metadata={"version": "1.0"})
+        info = broker.register("a1", metadata={"env": "prod"})
+        assert info.metadata.get("env") == "prod"
+
+    def test_unregister_removes_from_topics(self) -> None:
+        """Lines 189-190: unregister removes agent from topic subscriptions."""
+        broker = ACPBroker()
+        broker.register("a1")
+        broker.register("a2")
+        broker.subscribe("a1", "reviews")
+        broker.subscribe("a2", "reviews")
+        broker.unregister("a1")
+        topics = broker.list_topics()
+        assert "a1" not in topics.get("reviews", [])
+
+    def test_unsubscribe_agent_not_in_topic(self) -> None:
+        """Line 210: unsubscribe returns False when agent not in topic subscribers."""
+        broker = ACPBroker()
+        broker.register("a1")
+        broker.register("a2")
+        broker.subscribe("a1", "reviews")
+        # a2 is not subscribed to reviews
+        assert broker.unsubscribe("a2", "reviews") is False
+
+    def test_peek_nonexistent_agent(self) -> None:
+        """Line 272: peek with nonexistent agent returns empty list."""
+        broker = ACPBroker()
+        assert broker.peek("nonexistent") == []
+
+    def test_clear_queue_agent_not_in_queues(self) -> None:
+        """Line 354: clear_queue for unregistered agent returns 0."""
+        broker = ACPBroker()
+        assert broker.clear_queue("nonexistent") == 0
+
+    def test_load_state_corrupt_json(self, tmp_path: Path) -> None:
+        """Lines 405-406: _load_state with corrupt JSON is silently ignored."""
+        state_dir = tmp_path / "state"
+        state_dir.mkdir()
+        (state_dir / "acp_state.json").write_text("{invalid json content", encoding="utf-8")
+        broker = ACPBroker(state_dir)
+        assert broker.list_agents() == []
+
+    def test_main_block(self, tmp_path: Path) -> None:
+        """Lines 419-422: __main__ block."""
+        import runpy
+        import sys
+
+        script = str(Path(__file__).resolve().parent.parent / "acp_protocol.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(tmp_path / "state")]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        finally:
+            sys.argv = old_argv

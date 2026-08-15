@@ -243,3 +243,104 @@ class TestScanProject:
         report = scan_project(tmp_path)
         assert len(report.findings) > 0
         assert report.passed is False
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error paths."""
+
+    def test_scan_directory_skips_unsupported_extension(self, tmp_path: Path) -> None:
+        """Line 248: file with unsupported extension is skipped."""
+        (tmp_path / "safe.py").write_text("x = 1\n", encoding="utf-8")
+        (tmp_path / "data.xml").write_text("eval(x)\n", encoding="utf-8")
+        s = AgenticSecurityScanner()
+        report = s.scan_directory(tmp_path)
+        assert report.files_scanned == 1  # only .py, .xml skipped
+
+    def test_scan_policy_rules_nonexistent(self, tmp_path: Path) -> None:
+        """Line 258: nonexistent policy file returns empty findings."""
+        s = AgenticSecurityScanner()
+        findings = s.scan_policy_rules(tmp_path / "nonexistent.yaml")
+        assert findings == []
+
+    def test_scan_policy_rules_invalid_yaml(self, tmp_path: Path) -> None:
+        """Lines 262-263: invalid YAML returns empty findings."""
+        f = tmp_path / "policy.yaml"
+        f.write_text("invalid: yaml: content: [unclosed\n", encoding="utf-8")
+        s = AgenticSecurityScanner()
+        findings = s.scan_policy_rules(f)
+        assert findings == []
+
+    def test_scan_mcp_config_invalid_json(self, tmp_path: Path) -> None:
+        """Lines 306-307: invalid JSON returns empty findings."""
+        f = tmp_path / "mcp.json"
+        f.write_text("{invalid json content", encoding="utf-8")
+        s = AgenticSecurityScanner()
+        findings = s.scan_mcp_config(f)
+        assert findings == []
+
+    def test_scan_mcp_config_servers_not_dict(self, tmp_path: Path) -> None:
+        """Line 310: servers value not a dict returns empty findings."""
+        f = tmp_path / "mcp.json"
+        f.write_text(json.dumps({"mcpServers": ["not", "a", "dict"]}), encoding="utf-8")
+        s = AgenticSecurityScanner()
+        findings = s.scan_mcp_config(f)
+        assert findings == []
+
+    def test_scan_mcp_config_server_config_not_dict(self, tmp_path: Path) -> None:
+        """Line 313: individual server config not a dict is skipped."""
+        f = tmp_path / "mcp.json"
+        f.write_text(json.dumps({"mcpServers": {"bad": "not a dict", "good": {"command": "python"}}}), encoding="utf-8")
+        s = AgenticSecurityScanner()
+        findings = s.scan_mcp_config(f)
+        # Only "good" server is scanned; "bad" is skipped
+        assert all("bad" not in f.description for f in findings)
+
+    def test_scan_mcp_config_dangerous_commands(self, tmp_path: Path) -> None:
+        """Line 333: curl/wget in config triggers A06 finding."""
+        f = tmp_path / "mcp.json"
+        f.write_text(json.dumps({
+            "mcpServers": {
+                "fetcher": {
+                    "command": "bash",
+                    "args": ["-c", "curl http://example.com"],
+                }
+            }
+        }), encoding="utf-8")
+        s = AgenticSecurityScanner()
+        findings = s.scan_mcp_config(f)
+        assert any(f.control_id == "A06" for f in findings)
+
+    def test_scan_project_with_policy_dir(self, tmp_path: Path) -> None:
+        """Lines 351-352: scan_project scans policy YAML files in runtime/policies."""
+        (tmp_path / "runtime" / "policies").mkdir(parents=True)
+        (tmp_path / "runtime" / "policies" / "test.yaml").write_text(
+            "name: test\nrules:\n  - name: allow-all\n    condition: 'True'\n    action: allow\n",
+            encoding="utf-8",
+        )
+        report = scan_project(tmp_path)
+        assert any(f.control_id == "A10" for f in report.findings)
+
+    def test_scan_project_with_mcp_config(self, tmp_path: Path) -> None:
+        """Line 357: scan_project scans MCP config files."""
+        (tmp_path / ".devin").mkdir()
+        (tmp_path / ".devin" / "mcp_config.json").write_text(json.dumps({
+            "mcpServers": {
+                "fetcher": {"command": "bash", "args": ["-c", "wget http://example.com"]}
+            }
+        }), encoding="utf-8")
+        report = scan_project(tmp_path)
+        assert any(f.control_id == "A06" for f in report.findings)
+
+    def test_main_block(self, tmp_path: Path) -> None:
+        """Lines 362-366: __main__ block."""
+        import runpy
+        import sys
+
+        (tmp_path / "unsafe.py").write_text("eval(x)\n", encoding="utf-8")
+        script = str(Path(__file__).resolve().parent.parent / "agentic_security.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(tmp_path)]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        finally:
+            sys.argv = old_argv

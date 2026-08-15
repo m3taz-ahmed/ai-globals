@@ -380,3 +380,54 @@ class TestEdgeCases:
         manager.reset()
         assert manager.list_personas() == []
         assert manager.get_experience("ARCH") is None
+
+    def test_learned_patterns_trimmed_when_over_limit(self, manager):
+        """Cover lines 224-229: learned patterns exceeding LEARNED_PATTERNS_LIMIT are trimmed."""
+        from runtime.dynamic_persona import LEARNED_PATTERNS_LIMIT
+
+        for i in range(LEARNED_PATTERNS_LIMIT + 20):
+            manager.record_interaction(
+                "ARCH", success=True, context={"pattern": f"pattern-{i}"}
+            )
+        exp = manager.get_experience("ARCH")
+        assert len(exp.learned_patterns) == LEARNED_PATTERNS_LIMIT
+
+    def test_root_resolved_by_walking_parents(self, tmp_path, monkeypatch):
+        """Cover lines 128-132: root resolved by walking up to find .ai marker."""
+        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        # Create a .ai directory structure under tmp_path
+        ai_dir = tmp_path / ".ai"
+        (ai_dir / "state").mkdir(parents=True)
+        # Place a fake module file inside .ai/runtime/ to simulate __file__
+        fake_runtime = ai_dir / "runtime"
+        fake_runtime.mkdir(parents=True)
+        fake_file = fake_runtime / "dynamic_persona.py"
+        fake_file.write_text("# placeholder", encoding="utf-8")
+        # Monkeypatch __file__ to point inside the .ai tree
+        import runtime.dynamic_persona as mod
+
+        original_file = mod.__file__
+        monkeypatch.setattr(mod, "__file__", str(fake_file))
+        try:
+            m = DynamicPersonaManager()
+            assert m.root == ai_dir
+        finally:
+            monkeypatch.setattr(mod, "__file__", original_file)
+
+    def test_root_fallback_when_no_ai_marker(self, tmp_path, monkeypatch):
+        """Cover line 132: _resolve_root falls back to here.parent when no .ai found."""
+        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        # Place a fake module file in a directory with no .ai ancestor
+        fake_dir = tmp_path / "some_pkg"
+        fake_dir.mkdir(parents=True)
+        fake_file = fake_dir / "dynamic_persona.py"
+        fake_file.write_text("# placeholder", encoding="utf-8")
+        import runtime.dynamic_persona as mod
+
+        original_file = mod.__file__
+        monkeypatch.setattr(mod, "__file__", str(fake_file))
+        try:
+            m = DynamicPersonaManager()
+            assert m.root == fake_dir
+        finally:
+            monkeypatch.setattr(mod, "__file__", original_file)

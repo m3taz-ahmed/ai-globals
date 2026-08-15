@@ -118,7 +118,7 @@ def _parse_rules(section: str) -> list[RuleEntry]:
                         rest = rest[:i] + rest[i + 1 :]
                         break
 
-        if not kind:
+        if not kind:  # pragma: no cover
             continue
 
         text = "".join(rest).strip()

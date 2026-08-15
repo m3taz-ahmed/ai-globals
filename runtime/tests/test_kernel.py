@@ -124,3 +124,45 @@ def test_fresh_workflow_resets_derived_context(tmp_path):
     assert "session_id" in result
     assert context["persona"] == "ARCH"  # original not mutated
     assert result["context"]["persona"] != "ARCH"
+
+
+def test_auto_persona_skips_when_persona_already_set(tmp_path):
+    """Cover line 141: _auto_persona returns early when persona already in kwargs."""
+    k = _kernel(tmp_path)
+    result = k.act("Read", content="audit firewall", persona="DEV", approved=True)
+    assert result["ok"]
+    assert result["args"]["persona"] == "DEV"
+
+
+def test_act_invalid_args_returns_error(tmp_path):
+    """Cover lines 162-163: ValidationError handling in act."""
+    k = _kernel(tmp_path)
+    result = k.act("", approved=True)
+    assert not result["ok"]
+    assert "Invalid action arguments" in result["error"]
+
+
+def test_save_persists_budget(tmp_path):
+    """Cover line 240: Kernel.save() calls budget.save()."""
+    k = _kernel(tmp_path)
+    k.budget.budgets["session"] = Budget(max_tokens=100, period="session")
+    k.save()
+    assert (tmp_path / "state" / "budget.json").exists()
+
+
+def test_main_block_prints_status(tmp_path, monkeypatch, capsys):
+    """Cover lines 268-269: __main__ block creates Kernel and prints status JSON."""
+    import runpy
+
+    for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
+        (tmp_path / sub).mkdir(parents=True, exist_ok=True)
+    (tmp_path / "runtime/policies/default.yaml").write_text(
+        "default_action: ask\nrules:\n"
+        "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
+    )
+    monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
+    runpy.run_module("runtime.kernel", run_name="__main__")
+    captured = capsys.readouterr()
+    import json
+    data = json.loads(captured.out)
+    assert "version" in data

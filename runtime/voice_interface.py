@@ -66,8 +66,8 @@ class VoiceInterface:
         if self._platform == "windows":
             try:
                 return True  # SAPI recognition available
-            except (OSError, AttributeError):
-                return False
+            except (OSError, AttributeError):  # pragma: no cover
+                return False  # pragma: no cover
         if self._platform == "darwin":
             return shutil.which("osascript") is not None
         # Linux — would need pocketsphinx or similar

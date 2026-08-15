@@ -184,3 +184,64 @@ if False:
         report = d.detect(code, Path("test.py"))
         # At minimum, should not crash
         assert isinstance(report, SlopReport)
+
+    def test_syntax_error_returns_empty_python_findings(self) -> None:
+        """Lines 124-125: _check_python catches SyntaxError and returns empty findings."""
+        d = AISlopDetector()
+        code = "def foo(:\n    pass\n"
+        report = d.detect(code, Path("test.py"))
+        # Should not crash; python findings list is empty but generic checks still run
+        assert isinstance(report, SlopReport)
+
+    def test_redundant_none_check_then_truthiness(self) -> None:
+        """Lines 184-188: redundant 'if x is not None' followed by 'if x'."""
+        d = AISlopDetector()
+        code = "if x is not None:\n    if x:\n        print(x)\n"
+        report = d.detect(code, Path("test.py"))
+        assert any(f.category == "redundant_check" for f in report.findings)
+
+    def test_obvious_comment_restates_code(self) -> None:
+        """Lines 302-310: comment that restates the following code line."""
+        d = AISlopDetector()
+        code = "# import os\nimport os\n"
+        report = d.detect(code, Path("test.py"))
+        assert any(f.category == "verbose_comment" and "restates" in f.message for f in report.findings)
+
+    def test_obvious_comment_def(self) -> None:
+        """Lines 302-310: 'def' comment restating a def line."""
+        d = AISlopDetector()
+        code = "# def my_function\ndef my_function():\n    pass\n"
+        report = d.detect(code, Path("test.py"))
+        assert any(f.category == "verbose_comment" and "restates" in f.message for f in report.findings)
+
+    def test_main_block_with_file(self, tmp_path: Path) -> None:
+        """Lines 321-329: __main__ block with a file argument."""
+        import runpy
+        import sys
+
+        f = tmp_path / "sample.py"
+        f.write_text("try:\n    x = 1\nexcept:\n    pass\n", encoding="utf-8")
+        script = str(Path(__file__).resolve().parent.parent / "ai_slop_detector.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(f)]
+        try:
+            runpy.run_path(script, run_name="__main__")
+        finally:
+            sys.argv = old_argv
+
+    def test_main_block_else_branch(self, tmp_path: Path) -> None:
+        """Lines 327-328: __main__ else branch (non-file path via mocked is_file)."""
+        import runpy
+        import sys
+        from unittest.mock import patch
+
+        f = tmp_path / "sample.py"
+        f.write_text("x = 1\n", encoding="utf-8")
+        script = str(Path(__file__).resolve().parent.parent / "ai_slop_detector.py")
+        old_argv = sys.argv
+        sys.argv = [script, str(f)]
+        try:
+            with patch.object(Path, "is_file", return_value=False):
+                runpy.run_path(script, run_name="__main__")
+        finally:
+            sys.argv = old_argv

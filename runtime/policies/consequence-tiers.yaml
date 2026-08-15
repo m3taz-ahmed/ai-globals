@@ -1,0 +1,92 @@
+name: consequence-tiers
+apiVersion: governance.ai-global-os/v1
+default_action: ask
+description: >
+  Consequence-tier admission policy adapted from Hazem Ali's practice-level
+  model (principals/README.md). The model's confidence does NOT select the
+  tier — the consequence and reversibility do. Each tier defines the minimum
+  evidence required before an action is admitted.
+
+  Advisory   — output informs a person; no direct side effect.
+  Assisted   — output proposes a bounded operation for confirmation.
+  Delegated  — runtime executes reversible, low-impact actions.
+  Consequential — runtime can affect money, access, safety, production, or
+                 regulated data.
+
+tiers:
+  advisory:
+    description: Output informs a person; no direct side effect.
+    required_evidence:
+      - input_output_identity
+      - source_citations
+      - model_version
+      - prompt_version
+    fail_closed: false
+
+  assisted:
+    description: Output proposes a bounded operation for confirmation.
+    required_evidence:
+      - input_output_identity
+      - source_citations
+      - model_version
+      - prompt_version
+      - exact_diff
+      - target_binding
+      - policy_decision
+      - approver
+    fail_closed: false
+
+  delegated:
+    description: Runtime executes reversible, low-impact actions.
+    required_evidence:
+      - capability_scope
+      - idempotency_key
+      - limits
+      - trace
+      - rollback_plan
+      - kill_switch
+    fail_closed: true
+
+  consequential:
+    description: Runtime can affect money, access, safety, production, or regulated data.
+    required_evidence:
+      - independent_verifier
+      - human_or_deterministic_admission
+      - immutable_audit
+      - tested_containment
+      - named_owner
+      - receipt_id
+    fail_closed: true
+
+# Tier assignment rules — map action types to tiers.
+# A rule's condition uses the same _SafeEvaluator syntax as default.yaml.
+rules:
+  - name: tier-advisory-reads
+    condition: "type in ['view', 'read', 'Read', 'grep', 'Glob', 'search', 'query', 'list', 'get', 'status']"
+    action: allow
+    tier: advisory
+    description: Read-only operations are advisory tier.
+
+  - name: tier-assisted-proposals
+    condition: "type in ['propose', 'suggest', 'draft', 'plan']"
+    action: ask
+    tier: assisted
+    description: Proposals that require human confirmation are assisted tier.
+
+  - name: tier-delegated-reversible-writes
+    condition: "type in ['edit', 'write', 'apply'] and reversible == true"
+    action: allow
+    tier: delegated
+    description: Reversible writes are delegated tier; require idempotency + rollback.
+
+  - name: tier-consequential-irreversible
+    condition: "type in ['deploy', 'release', 'delete', 'drop', 'truncate', 'destroy'] or affects in ['money', 'access', 'safety', 'production', 'regulated_data']"
+    action: deny
+    tier: consequential
+    description: Irreversible or high-consequence operations are consequential tier; require independent verifier + human admission + immutable audit. Denied by default; must be explicitly admitted.
+
+  - name: tier-consequential-git-writes
+    condition: "'git commit' in command or 'git push' in command or 'git reset --hard' in command or force_push == true"
+    action: deny
+    tier: consequential
+    description: Git writes affecting history are consequential; require explicit user approval.
