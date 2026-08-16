@@ -152,7 +152,10 @@ def test_save_persists_budget(tmp_path):
 
 def test_main_block_prints_status(tmp_path, monkeypatch, capsys):
     """Cover lines 268-269: __main__ block creates Kernel and prints status JSON."""
-    import runpy
+    import json
+    import os
+    import subprocess
+    import sys
 
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp_path / sub).mkdir(parents=True, exist_ok=True)
@@ -161,8 +164,10 @@ def test_main_block_prints_status(tmp_path, monkeypatch, capsys):
         "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
     )
     monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
-    runpy.run_module("runtime.kernel", run_name="__main__")
-    captured = capsys.readouterr()
-    import json
-    data = json.loads(captured.out)
+    env = {**os.environ, "AGENT_OS_ROOT": str(tmp_path)}
+    result = subprocess.run(
+        [sys.executable, "-m", "runtime.kernel"],
+        capture_output=True, text=True, env=env,
+    )
+    data = json.loads(result.stdout)
     assert "version" in data

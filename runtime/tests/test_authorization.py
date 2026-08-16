@@ -10,6 +10,8 @@ from pathlib import Path
 
 from runtime.authorization import (
     AuthorizationTuple,
+    ConditionEvaluator,
+    EnforcementMode,
     ExecutionReceipt,
     PermitDecision,
     PolicyDecisionPoint,
@@ -314,3 +316,193 @@ class TestPolicyEnforcementPoint:
         )
         result = pep.enforce(tup, decision, observed_target_id="doc1")
         assert result is decision
+
+
+class TestConditionEvaluator:
+    """Tests for parameterized policy conditions (DAE Standard)."""
+
+    def test_prefix_match_passes(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"path": "/tmp/file.txt"},
+            {"path": {"prefix": ["/tmp/", "/workspace/"]}},
+        )
+        assert failures == []
+
+    def test_prefix_mismatch_fails(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"path": "/etc/passwd"},
+            {"path": {"prefix": ["/tmp/", "/workspace/"]}},
+        )
+        assert len(failures) == 1
+        assert "prefix" in failures[0]
+
+    def test_max_exceeds_fails(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"size": 20_000_000},
+            {"size": {"max": 10_485_760}},
+        )
+        assert len(failures) == 1
+        assert "exceeds" in failures[0]
+
+    def test_allowlist_match_passes(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"file": "test_foo.py"},
+            {"file": {"allowlist": ["test_*.py", "conftest.py"]}},
+        )
+        assert failures == []
+
+    def test_denylist_match_fails(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"file": "secret.key"},
+            {"file": {"denylist": ["*.key", "*.pem"]}},
+        )
+        assert len(failures) == 1
+        assert "denylist" in failures[0]
+
+    def test_regex_match_passes(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"name": "user_123"},
+            {"name": {"regex": r"^user_\d+$"}},
+        )
+        assert failures == []
+
+    def test_regex_mismatch_fails(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"name": "admin"},
+            {"name": {"regex": r"^user_\d+$"}},
+        )
+        assert len(failures) == 1
+
+    def test_equals_match_passes(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"env": "production"},
+            {"env": {"equals": "production"}},
+        )
+        assert failures == []
+
+    def test_multiple_constraints_all_pass(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"path": "/workspace/app.py", "size": 5000},
+            {"path": {"prefix": ["/workspace/"]}, "size": {"max": 10_000_000}},
+        )
+        assert failures == []
+
+    def test_multiple_constraints_one_fails(self) -> None:
+        failures = ConditionEvaluator.evaluate(
+            {"path": "/workspace/app.py", "size": 20_000_000},
+            {"path": {"prefix": ["/workspace/"]}, "size": {"max": 10_000_000}},
+        )
+        assert len(failures) == 1
+
+
+class TestParameterizedConditionsInPDP:
+    """Tests for condition evaluation integration in PolicyDecisionPoint."""
+
+    def test_condition_failure_denies(self) -> None:
+        pdp = PolicyDecisionPoint(
+            conditions={"write_file": {"target_id": {"prefix": ["/tmp/", "/workspace/"]}}},
+        )
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="write_file", target_id="/etc/passwd",
+            delegated_scope=("write_file",),
+        )
+        decision = pdp.decide(tup)
+        assert decision.decision == "deny"
+        assert "condition_failed" in decision.reason
+
+    def test_condition_pass_allows(self) -> None:
+        pdp = PolicyDecisionPoint(
+            conditions={"write_file": {"target_id": {"prefix": ["/tmp/", "/workspace/"]}}},
+        )
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="write_file", target_id="/tmp/safe.txt",
+            delegated_scope=("write_file",),
+        )
+        decision = pdp.decide(tup)
+        assert decision.decision == "allow"
+
+
+class TestLeaseGeneration:
+    """Tests for lease generation fencing token."""
+
+    def test_default_lease_generation_zero(self) -> None:
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="read", target_id="doc1",
+        )
+        assert tup.lease_generation == 0
+
+    def test_lease_generation_set(self) -> None:
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="read", target_id="doc1",
+            lease_generation=5,
+        )
+        assert tup.lease_generation == 5
+
+    def test_lease_in_dict(self) -> None:
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="read", target_id="doc1",
+            lease_generation=3,
+        )
+        assert tup.to_dict()["lease_generation"] == 3
+
+
+class TestEnforcementModes:
+    """Tests for DISABLED/OBSERVE/ENFORCE modes."""
+
+    def test_disabled_mode_skips_enforcement(self, tmp_path: Path) -> None:
+        store = ReceiptStore(tmp_path)
+        pep = PolicyEnforcementPoint(store, mode=EnforcementMode.DISABLED)
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="write", target_id="doc1",
+            arguments_schema_hash="sha256:abc",
+            delegated_scope=("write",),
+        )
+        decision = PermitDecision(
+            decision="allow", decision_id="dec-1", tuple_hash=tup.identity_hash(),
+        )
+        # Even with schema mismatch, DISABLED mode passes through
+        result = pep.enforce(tup, decision, observed_schema_hash="sha256:xyz")
+        assert result is decision
+
+    def test_observe_mode_skips_enforcement(self, tmp_path: Path) -> None:
+        store = ReceiptStore(tmp_path)
+        pep = PolicyEnforcementPoint(store, mode=EnforcementMode.OBSERVE)
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="write", target_id="doc1",
+            arguments_schema_hash="sha256:abc",
+            delegated_scope=("write",),
+        )
+        decision = PermitDecision(
+            decision="allow", decision_id="dec-1", tuple_hash=tup.identity_hash(),
+        )
+        # OBSERVE mode logs but proceeds
+        result = pep.enforce(tup, decision, observed_schema_hash="sha256:xyz")
+        assert result is decision
+
+    def test_enforce_mode_blocks_schema_drift(self, tmp_path: Path) -> None:
+        store = ReceiptStore(tmp_path)
+        pep = PolicyEnforcementPoint(store, mode=EnforcementMode.ENFORCE)
+        tup = AuthorizationTuple(
+            subject_id="u1", tenant_id="t1", workload_id="w1",
+            operation_id="write", target_id="doc1",
+            arguments_schema_hash="sha256:abc",
+            delegated_scope=("write",),
+        )
+        decision = PermitDecision(
+            decision="allow", decision_id="dec-1", tuple_hash=tup.identity_hash(),
+        )
+        result = pep.enforce(tup, decision, observed_schema_hash="sha256:xyz")
+        assert isinstance(result, PermitDecision)
+        assert result.decision == "deny"
+
+    def test_default_mode_is_enforce(self, tmp_path: Path) -> None:
+        store = ReceiptStore(tmp_path)
+        pep = PolicyEnforcementPoint(store)
+        assert pep.mode == EnforcementMode.ENFORCE

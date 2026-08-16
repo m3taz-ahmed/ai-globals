@@ -26,6 +26,7 @@ Usage::
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -45,6 +46,59 @@ class SpecPhase(str, Enum):
 
 
 PHASE_ORDER = [SpecPhase.SPECIFY, SpecPhase.PLAN, SpecPhase.TASKS, SpecPhase.IMPLEMENT, SpecPhase.DONE]
+
+
+class DeltaType(str, Enum):
+    """Delta spec change types (from OpenSpec)."""
+
+    ADDED = "added"
+    MODIFIED = "modified"
+    REMOVED = "removed"
+
+
+@dataclass
+class SpecDelta:
+    """A delta change to a spec (ADDED/MODIFIED/REMOVED).
+
+    Inspired by OpenSpec's delta-based spec management. Deltas merge
+    cleanly into main specs during archive, enabling parallel feature
+    development without conflicts.
+    """
+
+    requirement_id: str
+    delta_type: DeltaType
+    description: str = ""
+    old_description: str = ""  # For MODIFIED deltas
+    priority: str = "must"
+
+
+@dataclass
+class SpecManifest:
+    """Hash-tracked file manifest for safe spec file management (from spec-kit).
+
+    Tracks SHA-256 hashes of generated spec files to detect manual edits
+    and prevent accidental overwriting of user modifications.
+    """
+
+    files: dict[str, str] = field(default_factory=dict)  # rel_path → sha256
+
+    def record_file(self, rel_path: str, content: str) -> None:
+        """Record a file's hash."""
+        self.files[rel_path] = hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+    def is_modified(self, rel_path: str, current_content: str) -> bool:
+        """Check if a file was modified since recording."""
+        if rel_path not in self.files:
+            return True  # New file
+        current_hash = hashlib.sha256(current_content.encode("utf-8")).hexdigest()
+        return current_hash != self.files[rel_path]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"files": dict(self.files)}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> SpecManifest:
+        return cls(files=dict(data.get("files", {})))
 
 
 @dataclass
@@ -82,6 +136,7 @@ class Spec:
     created_at: str = ""
     updated_at: str = ""
     constitution: str = ""  # Project governing principles
+    deltas: list[SpecDelta] = field(default_factory=list)  # Delta-based changes
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -102,6 +157,12 @@ class Spec:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "constitution": self.constitution,
+            "deltas": [
+                {"requirement_id": d.requirement_id, "delta_type": d.delta_type.value,
+                 "description": d.description, "old_description": d.old_description,
+                 "priority": d.priority}
+                for d in self.deltas
+            ],
         }
 
     @classmethod
@@ -129,6 +190,16 @@ class Spec:
             created_at=data.get("created_at", ""),
             updated_at=data.get("updated_at", ""),
             constitution=data.get("constitution", ""),
+            deltas=[
+                SpecDelta(
+                    requirement_id=d["requirement_id"],
+                    delta_type=DeltaType(d.get("delta_type", "added")),
+                    description=d.get("description", ""),
+                    old_description=d.get("old_description", ""),
+                    priority=d.get("priority", "must"),
+                )
+                for d in data.get("deltas", [])
+            ],
         )
 
 
@@ -348,6 +419,86 @@ class SpecEngine:
         if md_path.exists():
             md_path.unlink()
         return deleted
+
+    def add_delta(
+        self,
+        spec_id: str,
+        requirement_id: str,
+        delta_type: DeltaType,
+        description: str = "",
+        old_description: str = "",
+        priority: str = "must",
+    ) -> SpecDelta:
+        """Add a delta change to a spec (ADDED/MODIFIED/REMOVED)."""
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            raise ValueError(f"Spec not found: {spec_id}")
+        delta = SpecDelta(
+            requirement_id=requirement_id,
+            delta_type=delta_type,
+            description=description,
+            old_description=old_description,
+            priority=priority,
+        )
+        spec.deltas.append(delta)
+        self._save(spec)
+        return delta
+
+    def apply_deltas(self, spec_id: str) -> int:
+        """Apply all deltas to the spec's requirements and clear them.
+
+        Returns the number of deltas applied.
+        """
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            raise ValueError(f"Spec not found: {spec_id}")
+        applied = 0
+        for delta in spec.deltas:
+            if delta.delta_type == DeltaType.ADDED:
+                req = Requirement(
+                    id=delta.requirement_id,
+                    description=delta.description,
+                    priority=delta.priority,
+                )
+                spec.requirements.append(req)
+            elif delta.delta_type == DeltaType.MODIFIED:
+                for req in spec.requirements:
+                    if req.id == delta.requirement_id:
+                        req.description = delta.description
+                        break
+            elif delta.delta_type == DeltaType.REMOVED:
+                spec.requirements = [
+                    r for r in spec.requirements if r.id != delta.requirement_id
+                ]
+            applied += 1
+        spec.deltas.clear()
+        self._save(spec)
+        return applied
+
+    def get_manifest(self, spec_id: str) -> SpecManifest:
+        """Get the hash-tracked manifest for a spec's files."""
+        manifest = SpecManifest()
+        json_path = self._spec_path(spec_id)
+        md_path = self._spec_md_path(spec_id)
+        if json_path.exists():
+            manifest.record_file(json_path.name, json_path.read_text(encoding="utf-8"))
+        if md_path.exists():
+            manifest.record_file(md_path.name, md_path.read_text(encoding="utf-8"))
+        return manifest
+
+    def is_file_modified(self, spec_id: str, file_type: str = "json") -> bool:
+        """Check if a spec file was modified since last manifest recording."""
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            return True
+        manifest = self.get_manifest(spec_id)
+        if file_type == "json":
+            path = self._spec_path(spec_id)
+        else:
+            path = self._spec_md_path(spec_id)
+        if not path.exists():
+            return True
+        return manifest.is_modified(path.name, path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

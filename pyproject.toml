@@ -112,7 +112,7 @@ module = ["yaml", "sentence_transformers", "turbovec", "numpy", "psutil", "sentr
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["runtime/tests", "memory/tests", "tests"]
+testpaths = ["runtime/tests", "memory/tests", "eval/tests", "tests"]
 python_files = "test_*.py"
 pythonpath = ["."]
 addopts = "-ra -q"

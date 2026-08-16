@@ -29,11 +29,58 @@
 - `aios_mcp/config.json`: standardized ai-global-os and graphify to use wrapper scripts (consistent with .devin/.claude configs).
 - `global-roles.md`: added FREELANCE persona (#20) to match `personas.yaml`.
 - 551 new tests added (total: 1121 passing).
+- 1222 additional tests added from 45 repo-research enhancements (total: 2343 passing).
 - ruff clean across entire codebase.
 
 ## [Unreleased]
 
-### Added
+### Added — 45 new enhancements (repo research driven)
+
+Deep analysis of 22 GitHub repositories yielded 45 enhancements across 3 phases. See `IMPLEMENTATION-REPORT.md` for full details.
+
+#### Phase 1 — High-Impact, Low-Complexity (12 features)
+- **Parameterized policy conditions** (`runtime/authorization.py`): YAML-based prefix/suffix/allowlist/denylist/max/min/regex/equals conditions. No code changes for new constraints.
+- **Lease generation (fencing token)** (`runtime/authorization.py`): Monotonic fencing token to prevent stale session recovery attacks.
+- **3 enforcement modes** (`runtime/authorization.py`): DISABLED (dev), OBSERVE (log but proceed), ENFORCE (full).
+- **5-gate evidence-based evaluation** (`eval/harness.py`): Scope → Quality → Evidence → Risk → Communication gates.
+- **Single-writer atomic file locking** (`runtime/file_lock.py`): Atomic lock files with fsync + post-write verification. TTL-based expiry.
+- **SimHash deduplication** (`memory/simhash.py`): 64-bit SimHash with Hamming distance for near-duplicate detection.
+- **Heat-based memory prioritization** (`memory/heat.py`): Multi-factor heat scoring: visits + interaction_length + recency with exponential decay.
+- **Stall detection** (`runtime/worktree_pool.py`): Detect stalled agents by hashing output. Auto-respawn with max retries.
+- **Tether files** (`runtime/worktree_pool.py`): Persistent assignment files with atomic writes for crash recovery.
+- **5-gate file filter** (`runtime/review_engine.py`): Binary → User Include → User Exclude → Default Paths → Extension. Deterministic pre-filtering.
+- **Hash-tracked spec manifests** (`runtime/spec_engine.py`): SHA-256 hash tracking of generated spec files. Detects manual edits.
+- **Delta-based specs** (`runtime/spec_engine.py`): ADDED/MODIFIED/REMOVED sections. Deltas merge cleanly into main specs.
+
+#### Phase 2 — Medium-Impact, Medium-Complexity (18 features)
+- **Execution rings** (`runtime/execution_rings.py`): 4 privilege levels (RING_0_ROOT → RING_3_SANDBOX) with trust-score-based assignment + sudo elevation with TTL.
+- **3-stage evaluation gate** (`eval/stages.py`): Mechanical → Semantic → Consensus progressive verification.
+- **Saga compensation** (`runtime/saga_compensation.py`): Automatic rollback for multi-step transactions. Best-effort compensation in reverse order.
+- **Memory consolidation primitives** (`memory/consolidation.py`): Dry-runnable hygiene jobs: dedupe_entities, summarize_long_traces, detect_superseded_facts.
+- **5 cognitive sector classification** (`memory/sectors.py`): Episodic, Semantic, Procedural, Emotional, Reflective. Pattern-based detection + sector-specific decay rates.
+- **Temporal knowledge graph** (`memory/temporal.py`): Facts with validity windows (valid_from / valid_to). Point-in-time queries.
+- **3-mode delegation** (`runtime/authorization.py`): inherit/narrow/none with hop limits to prevent infinite chains.
+- **Runtime state machine** (`runtime/authorization.py`): IDLE → INTENT_SET → PLAN_APPROVED → EXECUTING → TERMINATED. Illegal transitions rejected.
+- **Provenance tracking** (`runtime/authorization.py`): USER_TRUSTED, EXTERNAL_UNTRUSTED, SYSTEM_GENERATED. External data cannot grant authority.
+- **Three-zone memory compression** (`runtime/memory_compression.py`): Frozen + Compress + Active zones. 60% async, 80% sync compression.
+- **CodeGraph builder** (`runtime/codegraph.py`): AST-based code graph with functions and call edges. Mergeable across files.
+- **CodeGraph reachability** (`runtime/codegraph.py`): DFS-based path finding from source to sink. Configurable max path length.
+- **Budget rate limiting** (`runtime/rate_limiter.py`): Per-agent leaky bucket rate limiting. Configurable burst and sustained rates.
+- **Self-healing runtime** (`runtime/self_healing.py`): Heartbeat tracking + crash detection + respawn with max retries.
+- **Spec constitution validation** (`runtime/spec_validation.py`): Project governing principles that specs must comply with. Pattern-based validation.
+- **Spec test scenarios** (`runtime/spec_validation.py`): Gherkin-style acceptance criteria linked to requirements. Feature file export.
+- **Spec linkage graph** (`runtime/spec_validation.py`): Track dependencies between specs, requirements, and code. Impact analysis.
+- **Fuzz testing harness** (`runtime/fuzz_testing.py`): Random input generation for PDP robustness testing.
+
+#### Phase 3 — High-Impact, High-Complexity (15 features)
+- **Tree-sitter symbol provider** (`runtime/tree_sitter_provider.py`): Language-neutral symbol extraction. Pluggable extractors per language.
+- **Diff-based code review** (`runtime/diff_review.py`): Reviews only changed lines (diff-based) instead of full file. Parses unified diff.
+- **Budget anomaly detection** (`runtime/budget_anomaly.py`): Z-score statistical anomaly detection. Sliding window baseline.
+- **Policy decision caching** (`runtime/policy_cache.py`): TTL-based PDP decision caching. SHA-256 key generation. LRU eviction.
+- **Memory decay scheduler** (`memory/decay_scheduler.py`): Periodic decay of memory salience based on sector-specific rates.
+- **Semantic code search** (`runtime/semantic_search.py`): TF-IDF-like scoring on code tokens. Finds semantically similar functions.
+
+### Added — Previous unreleased items
 - **Global Bootloader documentation** (`docs/BOOTLOADER.md`): full boot sequence diagram and agent integration guide.
 - **MCP wrapper script** (`scripts/aios_mcp_wrapper.py`): replaces inline Python code in MCP config files (security).
 - Externalized persona definitions in `runtime/personas.yaml` loaded by `runtime/persona.py`.

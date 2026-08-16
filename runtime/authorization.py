@@ -20,16 +20,91 @@ Reference: principals/cybersecurity/01-zero-trust-ai-execution.md
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
+import re
 import threading
 import time
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any, Literal
 
 # A permit decision is never inferred from model confidence.
 Decision = Literal["allow", "deny", "ask"]
+
+
+class EnforcementMode(str, Enum):
+    """Three enforcement modes for the PEP (from agent-policy-engine)."""
+
+    DISABLED = "disabled"  # Development only — tools execute directly
+    OBSERVE = "observe"    # Log policy evaluation but proceed
+    ENFORCE = "enforce"    # Full enforcement — block without authority
+
+
+class DelegationMode(str, Enum):
+    """Three-mode delegation (from caracal).
+
+    - inherit: carries parent's effective authority forward
+    - narrow: issues bounded delegation (server re-validates subset)
+    - none: starts child explicitly delegation-less
+    """
+
+    INHERIT = "inherit"
+    NARROW = "narrow"
+    NONE = "none"
+
+
+class Provenance(str, Enum):
+    """Data provenance labels (from agent-policy-engine).
+
+    External data cannot create authority — only USER_TRUSTED inputs
+    can grant authority for consequential operations.
+    """
+
+    USER_TRUSTED = "user_trusted"
+    EXTERNAL_UNTRUSTED = "external_untrusted"
+    SYSTEM_GENERATED = "system_generated"
+
+
+class RuntimeState(str, Enum):
+    """Runtime state machine (from agent-policy-engine).
+
+    Illegal transitions are rejected. Authority issuance only
+    allowed in EXECUTING state.
+    """
+
+    IDLE = "idle"
+    INTENT_SET = "intent_set"
+    PLAN_APPROVED = "plan_approved"
+    EXECUTING = "executing"
+    TERMINATED = "terminated"
+
+
+# Legal state transitions (from agent-policy-engine)
+_LEGAL_TRANSITIONS: dict[RuntimeState, set[RuntimeState]] = {
+    RuntimeState.IDLE: {RuntimeState.INTENT_SET},
+    RuntimeState.INTENT_SET: {RuntimeState.PLAN_APPROVED, RuntimeState.TERMINATED},
+    RuntimeState.PLAN_APPROVED: {RuntimeState.EXECUTING, RuntimeState.TERMINATED},
+    RuntimeState.EXECUTING: {RuntimeState.TERMINATED},
+    RuntimeState.TERMINATED: set(),
+}
+
+
+@dataclass
+class DelegationConstraints:
+    """Typed delegation limits (from caracal).
+
+    Prevents infinite delegation chains via max_hops and max_depth.
+    """
+
+    resources: list[str] | None = None
+    max_depth: int | None = None
+    max_hops: int | None = None
+    ttl_seconds: int | None = None
+    policy_approved: bool = False
+    broad_reason: str = ""
 
 # Hard invariants (Hazem, cybersecurity/01):
 #   - admitted scope is a subset of delegated scope.
@@ -61,6 +136,10 @@ class AuthorizationTuple:
     environment: str = "dev"
     arguments_schema_hash: str = ""
     delegated_scope: tuple[str, ...] = ()
+    lease_generation: int = 0  # Fencing token to prevent stale session recovery
+    delegation_mode: DelegationMode = DelegationMode.INHERIT
+    hop_count: int = 0  # Delegation chain depth
+    provenance: Provenance = Provenance.USER_TRUSTED
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -114,6 +193,66 @@ def _scope_is_subset(requested: tuple[str, ...], delegated: tuple[str, ...]) -> 
     return set(requested).issubset(set(delegated))
 
 
+class ConditionEvaluator:
+    """Evaluates parameterized conditions on action parameters (DAE Standard).
+
+    Supports constraint types: prefix, suffix, allowlist, denylist,
+    max, min, regex, equals. Used by the PDP for fine-grained policy
+    enforcement without code changes.
+    """
+
+    @staticmethod
+    def evaluate(
+        parameters: dict[str, Any],
+        conditions: dict[str, Any],
+    ) -> list[str]:
+        """Return list of failure messages (empty = all conditions pass)."""
+        failures: list[str] = []
+        for param_name, constraints in conditions.items():
+            param_value = parameters.get(param_name)
+            for ctype, cvalue in constraints.items():
+                msg = ConditionEvaluator._check(
+                    param_name, param_value, ctype, cvalue,
+                )
+                if msg:
+                    failures.append(msg)
+        return failures
+
+    @staticmethod
+    def _check(
+        name: str, value: Any, ctype: str, cvalue: Any,
+    ) -> str | None:
+        """Check a single constraint. Returns failure message or None."""
+        if ctype == "prefix":
+            if not isinstance(value, str) or not any(
+                value.startswith(p) for p in cvalue
+            ):
+                return f"{name}: prefix mismatch {cvalue}"
+        elif ctype == "suffix":
+            if not isinstance(value, str) or not any(
+                value.endswith(s) for s in cvalue
+            ):
+                return f"{name}: suffix mismatch {cvalue}"
+        elif ctype == "allowlist":
+            if not any(fnmatch.fnmatch(str(value), p) for p in cvalue):
+                return f"{name}: not in allowlist"
+        elif ctype == "denylist":
+            if any(fnmatch.fnmatch(str(value), p) for p in cvalue):
+                return f"{name}: matches denylist"
+        elif ctype == "max":
+            if isinstance(value, (int, float)) and value > cvalue:
+                return f"{name}: exceeds max {cvalue}"
+        elif ctype == "min":
+            if isinstance(value, (int, float)) and value < cvalue:
+                return f"{name}: below min {cvalue}"
+        elif ctype == "regex":
+            if not isinstance(value, str) or not re.search(cvalue, value):
+                return f"{name}: regex mismatch {cvalue}"
+        elif ctype == "equals" and value != cvalue:
+            return f"{name}: expected {cvalue!r}"
+        return None
+
+
 class PolicyDecisionPoint:
     """Independent decision component (PDP).
 
@@ -131,10 +270,12 @@ class PolicyDecisionPoint:
             "git.commit", "git.push", "spend", "grant_access",
         ),
         max_risk_score: float = 0.8,
+        conditions: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self.fail_closed = fail_closed
         self.consequential_operations = set(consequential_operations)
         self.max_risk_score = max_risk_score
+        self.conditions = conditions or {}  # operation_id → conditions dict
 
     def is_consequential(self, tup: AuthorizationTuple) -> bool:
         """An operation is consequential if it can affect money, access,
@@ -179,6 +320,20 @@ class PolicyDecisionPoint:
                 reason="requested_scope_not_subset_of_delegated",
             )
 
+        # Parameterized condition evaluation (DAE Standard precedence).
+        op_conditions = self.conditions.get(tup.operation_id)
+        if op_conditions:
+            failures = ConditionEvaluator.evaluate(
+                tup.to_dict(), op_conditions,
+            )
+            if failures:
+                return PermitDecision(
+                    decision="deny",
+                    decision_id=decision_id,
+                    tuple_hash=tuple_hash,
+                    reason=f"condition_failed: {'; '.join(failures)}",
+                )
+
         # Risk gate — hard deny before consequential classification.
         if tup.risk_score >= self.max_risk_score:
             return PermitDecision(
@@ -191,6 +346,14 @@ class PolicyDecisionPoint:
         # Consequential operations require human admission (ask) unless
         # an explicit allow rule is wired by the caller.
         if self.is_consequential(tup):
+            # Provenance check: external untrusted data cannot grant authority
+            if tup.provenance == Provenance.EXTERNAL_UNTRUSTED:
+                return PermitDecision(
+                    decision="deny",
+                    decision_id=decision_id,
+                    tuple_hash=tuple_hash,
+                    reason="external_untrusted_cannot_authorize_consequential",
+                )
             return PermitDecision(
                 decision="ask",
                 decision_id=decision_id,
@@ -297,8 +460,13 @@ class PolicyEnforcementPoint:
     matches the operation about to execute.
     """
 
-    def __init__(self, receipt_store: ReceiptStore) -> None:
+    def __init__(
+        self,
+        receipt_store: ReceiptStore,
+        mode: EnforcementMode = EnforcementMode.ENFORCE,
+    ) -> None:
         self.receipt_store = receipt_store
+        self.mode = mode
 
     def enforce(
         self,
@@ -317,6 +485,14 @@ class PolicyEnforcementPoint:
         - An existing ``ExecutionReceipt`` if the idempotency key already
           has a receipt (ambiguous-outcome reconciliation).
         """
+        # DISABLED mode: skip all enforcement (development only).
+        if self.mode == EnforcementMode.DISABLED:
+            return decision
+
+        # OBSERVE mode: log but proceed regardless.
+        if self.mode == EnforcementMode.OBSERVE:
+            return decision
+
         # Idempotency reconciliation: if we already have a receipt, return it.
         if tup.idempotency_key:
             existing = self.receipt_store.lookup(tup.idempotency_key)
@@ -360,3 +536,37 @@ class PolicyEnforcementPoint:
         if not tup.idempotency_key:
             return None
         return self.receipt_store.lookup(tup.idempotency_key)
+
+
+class RuntimeOrchestrator:
+    """Runtime state machine (from agent-policy-engine).
+
+    Enforces legal state transitions. Authority issuance only
+    allowed in EXECUTING state. Plan mutation after approval
+    invalidates all tokens.
+    """
+
+    def __init__(self) -> None:
+        self._state: RuntimeState = RuntimeState.IDLE
+
+    @property
+    def state(self) -> RuntimeState:
+        return self._state
+
+    def transition(self, new_state: RuntimeState) -> RuntimeState:
+        """Transition to a new state. Raises on illegal transitions."""
+        legal = _LEGAL_TRANSITIONS.get(self._state, set())
+        if new_state not in legal:
+            raise ValueError(
+                f"Illegal state transition: {self._state.value} → {new_state.value}"
+            )
+        self._state = new_state
+        return self._state
+
+    def can_issue_authority(self) -> bool:
+        """Authority issuance only allowed in EXECUTING state."""
+        return self._state == RuntimeState.EXECUTING
+
+    def reset(self) -> None:
+        """Reset to IDLE state."""
+        self._state = RuntimeState.IDLE

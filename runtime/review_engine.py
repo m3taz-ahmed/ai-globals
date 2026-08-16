@@ -27,10 +27,99 @@ from __future__ import annotations
 import ast
 import re
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
 from runtime.agentic_security import AgenticSecurityScanner
+
+
+class ExcludeReason(str, Enum):
+    """Reasons a file is excluded by the 5-gate filter (from open-code-review)."""
+
+    NONE = "none"
+    BINARY = "binary"
+    USER_EXCLUDE = "user_exclude"
+    EXTENSION = "extension"
+    DEFAULT_PATH = "default_path"
+
+
+@dataclass
+class FileFilter:
+    """5-gate file filter for deterministic pre-filtering (from open-code-review).
+
+    Gates (in order):
+    1. Binary files — skip non-text files
+    2. User exclude patterns — skip user-excluded paths
+    3. User include patterns — override excludes (if include patterns set)
+    4. Extension allowlist — skip non-code files
+    5. Default path patterns — skip test/generated/vendor dirs
+    """
+
+    user_excludes: list[str] = field(default_factory=list)
+    user_includes: list[str] = field(default_factory=list)
+    allowed_extensions: set[str] = field(default_factory=lambda: {
+        ".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rs", ".java",
+        ".c", ".cpp", ".h", ".hpp", ".rb", ".php", ".swift", ".kt",
+    })
+    excluded_paths: set[str] = field(default_factory=lambda: {
+        ".git", "__pycache__", "node_modules", ".venv", "vendor",
+        "dist", "build", ".next", "generated", ".mypy_cache",
+    })
+
+    def should_review(self, file_path: Path) -> bool:
+        """Return True if the file should be reviewed."""
+        return self.why_excluded(file_path) == ExcludeReason.NONE
+
+    def why_excluded(self, file_path: Path) -> ExcludeReason:
+        """Return the reason a file is excluded, or NONE if it should be reviewed."""
+        # Gate 1: Binary files (no extension or non-code extension)
+        if self._is_binary(file_path):
+            return ExcludeReason.BINARY
+        # Gate 2: User include patterns (override excludes — check first)
+        if self._matches_patterns(file_path, self.user_includes):
+            return ExcludeReason.NONE
+        # Gate 3: User exclude patterns
+        if self._matches_patterns(file_path, self.user_excludes):
+            return ExcludeReason.USER_EXCLUDE
+        # Gate 4: Default path patterns (check before extension)
+        if any(part in self.excluded_paths for part in file_path.parts):
+            return ExcludeReason.DEFAULT_PATH
+        # Gate 5: Extension allowlist
+        if file_path.suffix not in self.allowed_extensions:
+            return ExcludeReason.EXTENSION
+        return ExcludeReason.NONE
+
+    @staticmethod
+    def _is_binary(file_path: Path) -> bool:
+        """Check if a file is binary (no code extension)."""
+        binary_exts = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico",
+                       ".pdf", ".zip", ".tar", ".gz", ".so", ".dll", ".exe",
+                       ".bin", ".dat", ".db", ".sqlite", ".jpg"}
+        return file_path.suffix.lower() in binary_exts
+
+    @staticmethod
+    def _matches_patterns(file_path: Path, patterns: list[str]) -> bool:
+        """Check if file_path matches any glob pattern."""
+        if not patterns:
+            return False
+        path_str = str(file_path).replace("\\", "/")
+        for pattern in patterns:
+            p = pattern.replace("\\", "/")
+            if p in path_str:
+                return True
+            try:
+                if file_path.match(pattern):
+                    return True
+            except ValueError:
+                pass
+        return False
+
+    def _matches_any_include(self, file_path: Path) -> bool:
+        """Check if file matches any include pattern or has allowed extension."""
+        if self._matches_patterns(file_path, self.user_includes):
+            return True
+        return file_path.suffix in self.allowed_extensions
 
 
 @dataclass
@@ -138,6 +227,7 @@ class CodeReviewEngine:
     def __init__(self, config: ReviewConfig | None = None) -> None:
         self.config = config or ReviewConfig()
         self._security_scanner = AgenticSecurityScanner()
+        self.file_filter = FileFilter()
 
     def review_diff(
         self,
@@ -181,16 +271,14 @@ class CodeReviewEngine:
         directory: Path,
         extensions: set[str] | None = None,
     ) -> list[ReviewReport]:
-        """Review all files in a directory."""
-        if extensions is None:
-            extensions = {".py", ".js", ".ts"}
+        """Review all files in a directory using the 5-gate file filter."""
+        if extensions:
+            self.file_filter.allowed_extensions = extensions
         reports: list[ReviewReport] = []
         for f in directory.rglob("*"):
             if not f.is_file():
                 continue
-            if f.suffix not in extensions:
-                continue
-            if any(part in {".git", "__pycache__", "node_modules", ".venv"} for part in f.parts):
+            if not self.file_filter.should_review(f):
                 continue
             reports.append(self.review_file(f))
         return reports

@@ -5,7 +5,7 @@
 
   <p>
     <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.0.0">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-1121%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="1121 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-2343%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="2343 اختبار ناجح">
     <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-91%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 91%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-20-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="20 شخصية">
     <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-66-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="66 مهارة">
     <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-31-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="31 سير عمل">
-    <img src="https://img.shields.io/badge/%D9%85%D9%8A%D8%B2%D8%A7%D8%AA_%D8%AC%D8%AF%D9%8A%D8%AF%D8%A9-18-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="18 ميزة جديدة">
+    <img src="https://img.shields.io/badge/%D9%85%D9%8A%D8%B2%D8%A7%D8%AA-63%20%D8%A5%D8%AC%D9%85%D8%A7%D9%84%D9%8A-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="63 ميزة إجمالي">
   </p>
 </div>
 
@@ -113,8 +113,8 @@ SQLite + FTS5 + فهرسة متجهة اختيارية. طبقات: عرضية،
 ### 5. بوابات الجودة (عيب صفر)
 ```bash
 ruff check .          # 0 تحذيرات
-mypy                  # 0 أخطاء (73 ملف، strict)
-pytest -q             # 1121 اختبار، 91% تغطية
+mypy                  # 0 أخطاء (90+ ملف، strict)
+pytest -q             # 2343 اختبار، 91% تغطية
 python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 ```
 
@@ -125,7 +125,9 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 
 ## الجديد في v5.0.0
 
-18 ميزة جديدة من تحليل تنافسي شامل:
+### 18 ميزة أصلية
+
+من تحليل تنافسي شامل لأدوات حوكمة الوكلاء الذكيين:
 
 | الميزة | الوحدة | الغرض |
 | :--- | :--- | :--- |
@@ -147,6 +149,63 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 | كاشف AI slop | `runtime/ai_slop_detector.py` | كشف مشاكل جودة كود AI |
 | واجهة صوتية | `runtime/voice_interface.py` | STT/TTS عبر الأنظمة |
 | بروتوكول ACP | `runtime/acp_protocol.py` | تواصل بين الوكلاء |
+
+### 45 تحسين جديد (من تحليل المستودعات)
+
+تحليل عميق لـ 22 مستودع GitHub (agent-governance-toolkit، OpenMemory، metis، spec-kit، open-code-review، agent-policy-engine، sol sentinel، caracal، ouroboros، وغيرها) أنتج 45 تحسينًا في 3 مراحل:
+
+#### المرحلة 1 — تأثير عالي، تعقيد منخفض (12 ميزة)
+
+| الميزة | الوحدة | المصدر |
+| :--- | :--- | :--- |
+| شروط سياسة معاملات | `runtime/authorization.py` | DAE Standard |
+| توليد lease (fencing token) | `runtime/authorization.py` | agent-policy-engine |
+| 3 أوضاع تطبيق (DISABLED/OBSERVE/ENFORCE) | `runtime/authorization.py` | agent-policy-engine |
+| 5 بوابات تقييم بالأدلة | `eval/harness.py` | agentic-os |
+| قفل ملفات atomic لكاتب واحد | `runtime/file_lock.py` | agentic-os |
+| SimHash لإزالة التكرار | `memory/simhash.py` | OpenMemory |
+| ترتيب الذاكرة بالحرارة | `memory/heat.py` | MemoryOS |
+| كشف توقف الوكلاء | `runtime/worktree_pool.py` | sol sentinel |
+| ملفات tether للاسترجاع بعد الانهيار | `runtime/worktree_pool.py` | sol |
+| 5 بوابات تصفية ملفات deterministic | `runtime/review_engine.py` | open-code-review |
+| manifests بمواصفات متتبعة بـ hash | `runtime/spec_engine.py` | spec-kit |
+| مواصفات delta (ADDED/MODIFIED/REMOVED) | `runtime/spec_engine.py` | OpenSpec |
+
+#### المرحلة 2 — تأثير متوسط، تعقيد متوسط (18 ميزة)
+
+| الميزة | الوحدة | المصدر |
+| :--- | :--- | :--- |
+| حلقات تنفيذ (4 مستويات صلاحية) | `runtime/execution_rings.py` | agent-governance-toolkit |
+| بوابة تقييم 3-مراحل | `eval/stages.py` | ouroboros |
+| saga compensation (rollback متعدد الخطوات) | `runtime/saga_compensation.py` | agent-governance-toolkit |
+| primitives توحيد الذاكرة | `memory/consolidation.py` | agent-memory |
+| تصنيف 5 قطاعات معرفية | `memory/sectors.py` | OpenMemory HMD v2 |
+| رسم زمني للمعرفة | `memory/temporal.py` | OpenMemory |
+| تفويض 3-أوضاع (inherit/narrow/none) | `runtime/authorization.py` | caracal |
+| آلة حالة runtime | `runtime/authorization.py` | agent-policy-engine |
+| تتبع المصدر (provenance) | `runtime/authorization.py` | agent-policy-engine |
+| ضغط ذاكرة 3-مناطق | `runtime/memory_compression.py` | open-code-review |
+| بناء CodeGraph (AST) | `runtime/codegraph.py` | metis |
+| تحليل قابلية الوصول في CodeGraph | `runtime/codegraph.py` | metis |
+| تحديد معدل الميزانية (token bucket) | `runtime/rate_limiter.py` | agent-governance-toolkit |
+| runtime ذاتي الشفاء | `runtime/self_healing.py` | sol sentinel |
+| تحقق دستور المواصفات | `runtime/spec_validation.py` | spec-kit |
+| سيناريوهات اختبار المواصفات (Gherkin) | `runtime/spec_validation.py` | spec-kit |
+| رسم ارتباط المواصفات (تحليل التأثير) | `runtime/spec_validation.py` | spec-kit |
+| harness اختبار fuzz | `runtime/fuzz_testing.py` | agent-policy-engine |
+
+#### المرحلة 3 — تأثير عالي، تعقيد عالي (15 ميزة)
+
+| الميزة | الوحدة | المصدر |
+| :--- | :--- | :--- |
+| مزود رموز tree-sitter | `runtime/tree_sitter_provider.py` | metis |
+| مراجعة كود delta-based | `runtime/diff_review.py` | open-code-review |
+| كشف شذوذ الميزانية (z-score) | `runtime/budget_anomaly.py` | agent-governance-toolkit |
+| تخزين قرارات السياسة (TTL) | `runtime/policy_cache.py` | agent-policy-engine |
+| مجدول اضمحلال الذاكرة | `memory/decay_scheduler.py` | OpenMemory |
+| بحث دلالي في الكود (TF-IDF) | `runtime/semantic_search.py` | metis |
+
+راجع [IMPLEMENTATION-REPORT.md](IMPLEMENTATION-REPORT.md) للتفاصيل الكاملة.
 
 ---
 
@@ -212,8 +271,8 @@ python dashboard/server.py 8080
 | البوابة | الأمر | الحالة |
 | :--- | :--- | :--- |
 | Lint | `ruff check .` | 0 تحذيرات |
-| الأنواع | `mypy` | 0 أخطاء (73 ملف) |
-| الاختبارات | `pytest -q` | 1121 ناجح، 91% تغطية |
+| الأنواع | `mypy` | 0 أخطاء (90+ ملف) |
+| الاختبارات | `pytest -q` | 2343 ناجح، 91% تغطية |
 | السلامة | `validate-globals.py` | 0 أخطاء |
 | E2E | `eval/harness.py` | all_pass: true |
 

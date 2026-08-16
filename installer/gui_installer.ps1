@@ -216,6 +216,14 @@ Add-Type -AssemblyName System.Windows.Forms
                         <CheckBox x:Name="CompGraphify" Style="{StaticResource CheckboxStyle}" Content="Build knowledge graph (graphify update)" IsChecked="True"/>
                         <CheckBox x:Name="CompDashboard" Style="{StaticResource CheckboxStyle}" Content="Dashboard server" IsChecked="True"/>
 
+                        <TextBlock Style="{StaticResource BodyText}" Text="Enhancement Modules (45 new)" FontWeight="Bold" Foreground="#F59E0B" Margin="0,15,0,5"/>
+                        <CheckBox x:Name="CompExecRings" Style="{StaticResource CheckboxStyle}" Content="Execution Rings (4 privilege levels + trust scoring)" IsChecked="True"/>
+                        <CheckBox x:Name="CompCodeGraph" Style="{StaticResource CheckboxStyle}" Content="CodeGraph + Reachability (AST-based security analysis)" IsChecked="True"/>
+                        <CheckBox x:Name="CompMemoryEnh" Style="{StaticResource CheckboxStyle}" Content="Memory enhancements (SimHash, Heat, Sectors, Temporal, Decay, Consolidation)" IsChecked="True"/>
+                        <CheckBox x:Name="CompSpecValidation" Style="{StaticResource CheckboxStyle}" Content="Spec validation (Constitution, Scenarios, Linkage graph)" IsChecked="True"/>
+                        <CheckBox x:Name="CompSelfHealing" Style="{StaticResource CheckboxStyle}" Content="Self-healing runtime (crash detection + respawn)" IsChecked="True"/>
+                        <CheckBox x:Name="CompSemanticSearch" Style="{StaticResource CheckboxStyle}" Content="Semantic code search + Tree-sitter symbols" IsChecked="True"/>
+
                         <TextBlock Style="{StaticResource BodyText}" Text="MCP Servers" FontWeight="Bold" Foreground="#58A6FF" Margin="0,15,0,5"/>
                         <CheckBox x:Name="CompMCPGraphify" Style="{StaticResource CheckboxStyle}" Content="Graphify MCP (codebase knowledge graph)" IsChecked="True"/>
                         <CheckBox x:Name="CompMCPContext7" Style="{StaticResource CheckboxStyle}" Content="Context7 MCP (library docs - requires npx)" IsChecked="True"/>

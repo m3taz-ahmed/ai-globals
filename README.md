@@ -5,7 +5,7 @@
 
   <p>
     <img src="https://img.shields.io/badge/Version-5.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.0.0">
-    <img src="https://img.shields.io/badge/Tests-1121%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 1121 passed">
+    <img src="https://img.shields.io/badge/Tests-2343%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 2343 passed">
     <img src="https://img.shields.io/badge/Coverage-91%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 91%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/badge/Personas-20-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="20 Personas">
     <img src="https://img.shields.io/badge/Skills-66-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="66 Skills">
     <img src="https://img.shields.io/badge/Workflows-31-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="31 Workflows">
-    <img src="https://img.shields.io/badge/Features-18%20new-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="18 new features">
+    <img src="https://img.shields.io/badge/Features-63%20total-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="63 total features">
   </p>
 </div>
 
@@ -87,7 +87,7 @@ ai-os status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 20 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 48 modules
+├── runtime/                 # Kernel: policy, budget, audit, 63+ modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
 ├── aios_mcp/                # MCP server (27 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
@@ -139,8 +139,8 @@ ai-os memory search "docker" # Full-text + vector search
 ### 5. Quality Gates (Zero Defect)
 ```bash
 ruff check .                 # 0 warnings
-mypy                         # Strict typing, 73 files
-pytest -q                    # 1121 tests, 91% coverage
+mypy                         # Strict typing, 90+ files
+pytest -q                    # 2343 tests, 91% coverage
 python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 ```
 
@@ -151,7 +151,9 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 
 ## What's New in v5.0.0
 
-18 new features from competitive analysis of AI agent OS and coding governance tools:
+### 18 Original Features
+
+From competitive analysis of AI agent OS and coding governance tools:
 
 | Feature | Module | Purpose |
 | :--- | :--- | :--- |
@@ -173,6 +175,63 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 | AI slop detector | `runtime/ai_slop_detector.py` | Detects AI-generated code quality issues |
 | Voice interface | `runtime/voice_interface.py` | Cross-platform STT/TTS |
 | ACP protocol | `runtime/acp_protocol.py` | Inter-agent communication broker |
+
+### 45 New Enhancements (Repo Research Driven)
+
+Deep analysis of 22 GitHub repositories (agent-governance-toolkit, OpenMemory, metis, spec-kit, open-code-review, agent-policy-engine, sol sentinel, caracal, ouroboros, and more) yielded 45 enhancements across 3 phases:
+
+#### Phase 1 — High-Impact, Low-Complexity (12 features)
+
+| Feature | Module | Source |
+| :--- | :--- | :--- |
+| Parameterized policy conditions | `runtime/authorization.py` | DAE Standard |
+| Lease generation (fencing token) | `runtime/authorization.py` | agent-policy-engine |
+| 3 enforcement modes (DISABLED/OBSERVE/ENFORCE) | `runtime/authorization.py` | agent-policy-engine |
+| 5-gate evidence-based evaluation | `eval/harness.py` | agentic-os |
+| Single-writer atomic file locking | `runtime/file_lock.py` | agentic-os |
+| SimHash deduplication | `memory/simhash.py` | OpenMemory |
+| Heat-based memory prioritization | `memory/heat.py` | MemoryOS |
+| Stall detection (output hashing) | `runtime/worktree_pool.py` | sol sentinel |
+| Tether files (crash recovery) | `runtime/worktree_pool.py` | sol |
+| 5-gate deterministic file filter | `runtime/review_engine.py` | open-code-review |
+| Hash-tracked spec manifests | `runtime/spec_engine.py` | spec-kit |
+| Delta-based specs (ADDED/MODIFIED/REMOVED) | `runtime/spec_engine.py` | OpenSpec |
+
+#### Phase 2 — Medium-Impact, Medium-Complexity (18 features)
+
+| Feature | Module | Source |
+| :--- | :--- | :--- |
+| Execution rings (4 privilege levels) | `runtime/execution_rings.py` | agent-governance-toolkit |
+| 3-stage evaluation gate | `eval/stages.py` | ouroboros |
+| Saga compensation (multi-step rollback) | `runtime/saga_compensation.py` | agent-governance-toolkit |
+| Memory consolidation primitives | `memory/consolidation.py` | agent-memory |
+| 5 cognitive sector classification | `memory/sectors.py` | OpenMemory HMD v2 |
+| Temporal knowledge graph | `memory/temporal.py` | OpenMemory |
+| 3-mode delegation (inherit/narrow/none) | `runtime/authorization.py` | caracal |
+| Runtime state machine | `runtime/authorization.py` | agent-policy-engine |
+| Provenance tracking | `runtime/authorization.py` | agent-policy-engine |
+| Three-zone memory compression | `runtime/memory_compression.py` | open-code-review |
+| CodeGraph builder (AST-based) | `runtime/codegraph.py` | metis |
+| CodeGraph reachability analysis | `runtime/codegraph.py` | metis |
+| Budget rate limiting (token bucket) | `runtime/rate_limiter.py` | agent-governance-toolkit |
+| Self-healing runtime (crash recovery) | `runtime/self_healing.py` | sol sentinel |
+| Spec constitution validation | `runtime/spec_validation.py` | spec-kit |
+| Spec test scenarios (Gherkin) | `runtime/spec_validation.py` | spec-kit |
+| Spec linkage graph (impact analysis) | `runtime/spec_validation.py` | spec-kit |
+| Fuzz testing harness | `runtime/fuzz_testing.py` | agent-policy-engine |
+
+#### Phase 3 — High-Impact, High-Complexity (15 features)
+
+| Feature | Module | Source |
+| :--- | :--- | :--- |
+| Tree-sitter symbol provider | `runtime/tree_sitter_provider.py` | metis |
+| Diff-based code review | `runtime/diff_review.py` | open-code-review |
+| Budget anomaly detection (z-score) | `runtime/budget_anomaly.py` | agent-governance-toolkit |
+| Policy decision caching (TTL) | `runtime/policy_cache.py` | agent-policy-engine |
+| Memory decay scheduler | `memory/decay_scheduler.py` | OpenMemory |
+| Semantic code search (TF-IDF) | `runtime/semantic_search.py` | metis |
+
+See [IMPLEMENTATION-REPORT.md](IMPLEMENTATION-REPORT.md) for full details.
 
 ---
 
@@ -273,9 +332,9 @@ Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, st
 | Gate | Command | Status |
 | :--- | :--- | :--- |
 | Lint | `ruff check .` | 0 warnings |
-| Types | `mypy` | 0 errors (73 files, strict) |
-| Tests (fast) | `ai-os test` | 984 passed, ~12s |
-| Tests (full) | `ai-os test --full` | 1121 passed, 91% coverage, ~35s |
+| Types | `mypy` | 0 errors (90+ files, strict) |
+| Tests (fast) | `ai-os test` | 2100+ passed, ~12s |
+| Tests (full) | `ai-os test --full` | 2343 passed, 91% coverage, ~100s |
 | Integrity | `scripts/validate-globals.py` | 0 errors |
 | E2E | `python eval/harness.py` | all_pass: true |
 
