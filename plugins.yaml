@@ -1,4 +1,6 @@
 plugins:
+  code2video:
+    enabled: true
   graphify:
     enabled: true
   context7:
