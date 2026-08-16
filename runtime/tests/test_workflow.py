@@ -176,6 +176,49 @@ def test_workflow_bash_command_denied(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# PowerShell (pwsh:) prefix — cross-platform shell support
+# ---------------------------------------------------------------------------
+
+def test_workflow_pwsh_command_success(tmp_path: Path) -> None:
+    """pwsh: prefix is recognized and dispatched like bash:."""
+    _make_workflow(tmp_path, "pwsh-ok", "1. [CMD] pwsh: Write-Output hello\n")
+
+    def act(action: str, **kwargs):
+        assert action == "Bash"
+        return {"ok": True}
+
+    runner = WorkflowRunner(tmp_path, os_root=tmp_path)
+    result = runner.run("pwsh-ok", {}, act=act)
+    assert result["steps"][0]["status"] == "allowed"
+
+
+def test_workflow_ps_command_success(tmp_path: Path) -> None:
+    """ps: prefix is recognized as a PowerShell shorthand."""
+    _make_workflow(tmp_path, "ps-ok", "1. [CMD] ps: Get-ChildItem\n")
+
+    def act(action: str, **kwargs):
+        assert action == "Bash"
+        return {"ok": True}
+
+    runner = WorkflowRunner(tmp_path, os_root=tmp_path)
+    result = runner.run("ps-ok", {}, act=act)
+    assert result["steps"][0]["status"] == "allowed"
+
+
+def test_workflow_pwsh_command_exception(tmp_path: Path) -> None:
+    """pwsh: command that raises returns 'error' status."""
+    _make_workflow(tmp_path, "pwsh-err", "1. [CMD] pwsh: risky command\n")
+
+    def act(action: str, **kwargs):
+        raise RuntimeError("pwsh boom")
+
+    runner = WorkflowRunner(tmp_path, os_root=tmp_path)
+    result = runner.run("pwsh-err", {}, act=act)
+    assert result["steps"][0]["status"] == "error"
+    assert "pwsh boom" in result["steps"][0]["evaluation"]["error"]
+
+
+# ---------------------------------------------------------------------------
 # MCP command: not configured — line 185
 # ---------------------------------------------------------------------------
 
@@ -242,7 +285,7 @@ def test_workflow_mcp_call_exception(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def test_workflow_cmd_noop(tmp_path: Path) -> None:
-    """CMD step without bash:/mcp: prefix returns 'noop'."""
+    """CMD step without bash:/pwsh:/ps:/mcp: prefix returns 'noop'."""
     _make_workflow(tmp_path, "noop", "1. [CMD] do something vague\n")
     runner = WorkflowRunner(tmp_path, os_root=tmp_path)
     result = runner.run("noop", {}, act=lambda **_: {"ok": True})

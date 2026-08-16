@@ -47,3 +47,9 @@ Every project — Laravel, React, Python, Go, Node — follows two-tier testing 
 - FULL test suite is mandatory before declaring done — no exceptions.
 - No `git add .` / `git add -A` (`[GIT-06]`). No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
 - Delete temporary/scratch/test files immediately after use.
+
+## Shell Compatibility `[SHELL-01]`
+- Detect the active shell before running commands. On Windows the default shell is **PowerShell** — never use bash syntax (`&&`, `||`, `2>nul`, `ls`, `cat`, `grep`).
+- PowerShell equivalents: `;` instead of `&&`, `if ($?) { ... }` instead of `||`, `Test-Path` instead of `ls ... 2>nul`, `Get-ChildItem` instead of `ls`, `Get-Content` instead of `cat`, `Select-String` instead of `grep`.
+- In workflow CMD steps, use `pwsh:` or `ps:` prefix for PowerShell commands on Windows; `bash:` for POSIX shells on Linux/macOS.
+- When using `subprocess` in Python, pass command lists (not shell strings) to stay cross-platform. Use `shell=True` only when absolutely necessary and never with user input.

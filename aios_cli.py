@@ -9,15 +9,16 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 import config
-from memory.ingest import Ingestor
-from memory.store import MemoryStore
-from runtime.kernel import Kernel
+
+if TYPE_CHECKING:
+    from runtime.kernel import Kernel
 
 console = Console()
 
@@ -34,6 +35,8 @@ def _project_root(args: argparse.Namespace) -> Path:
 
 
 def _kernel(args: argparse.Namespace) -> Kernel:
+    from runtime.kernel import Kernel
+
     return Kernel(_root(args), _project_root(args))
 
 
@@ -77,6 +80,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_query(args: argparse.Namespace) -> int:
+    from memory.store import MemoryStore
+
     root = _project_root(args)
     store = MemoryStore(root)
     results = store.search_hybrid(
@@ -96,6 +101,8 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_memory(args: argparse.Namespace) -> int:
+    from memory.store import MemoryStore
+
     root = _project_root(args)
     store = MemoryStore(root)
     if args.subcommand == "search":
@@ -124,6 +131,8 @@ def cmd_memory(args: argparse.Namespace) -> int:
         m = store.add(args.kind, args.content, source=args.source or "cli")
         console.print(f"[green]Added memory:[/green] {m.id}")
     elif args.subcommand == "ingest":
+        from memory.ingest import Ingestor
+
         with console.status("Ingesting memories..."):
             ingestor = Ingestor(store, _root(args))
             ids = ingestor.ingest_all()

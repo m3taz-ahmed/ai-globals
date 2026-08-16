@@ -141,6 +141,18 @@ class WorkflowRunner(BaseRepository):
                 steps.append({"type": StepType(m.group(1)), "text": m.group(2)})
         return steps
 
+    @staticmethod
+    def _detect_shell_prefix(cmd: str) -> tuple[str, str]:
+        """Detect shell prefix and return (prefix, action_type).
+
+        Supports explicit prefixes (``bash:``, ``pwsh:``, ``ps:``).
+        Returns ("", "") when no known prefix is found.
+        """
+        for prefix, action in (("bash:", "Bash"), ("pwsh:", "Bash"), ("ps:", "Bash")):
+            if cmd.startswith(prefix):
+                return prefix, action
+        return "", ""
+
     def _execute_step(
         self,
         step: dict[str, Any],
@@ -160,10 +172,11 @@ class WorkflowRunner(BaseRepository):
 
         if step_type == StepType.CMD and act:
             cmd = text.strip()
-            if cmd.startswith("bash:"):
-                shell_cmd = cmd[5:].strip()
+            shell_prefix, shell_action = self._detect_shell_prefix(cmd)
+            if shell_prefix:
+                shell_cmd = cmd[len(shell_prefix):].strip()
                 try:
-                    act_result = act("Bash", command=shell_cmd, approved=True, dry_run=True)
+                    act_result = act(shell_action, command=shell_cmd, approved=True, dry_run=True)
                     result["status"] = (
                         ActionResultStatus.ALLOWED.value
                         if act_result["ok"]
