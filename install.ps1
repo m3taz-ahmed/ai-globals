@@ -537,6 +537,54 @@ if (-not $SkipPip) {
         }
     }
 
+    # --- Legacy cleanup: remove old ai-global-os / aios artifacts ---
+    Write-Step "Legacy cleanup (ai-global-os -> aizee)"
+
+    # 1. Remove old AGENT_OS_ROOT env var (renamed to AIZEE_ROOT)
+    $oldOsRoot = [Environment]::GetEnvironmentVariable("AGENT_OS_ROOT", "User")
+    if ($oldOsRoot) {
+        Write-Step "Removing legacy AGENT_OS_ROOT env var (was: $oldOsRoot)"
+        if (-not $WhatIf) {
+            [Environment]::SetEnvironmentVariable("AGENT_OS_ROOT", $null, "User")
+        }
+    }
+    $oldOsRootMachine = [Environment]::GetEnvironmentVariable("AGENT_OS_ROOT", "Machine")
+    if ($oldOsRootMachine) {
+        Write-Step "Removing legacy AGENT_OS_ROOT (Machine scope)"
+        if (-not $WhatIf) {
+            [Environment]::SetEnvironmentVariable("AGENT_OS_ROOT", $null, "Machine")
+        }
+    }
+
+    # 2. Remove old AGENT_OS_DASHBOARD_TOKEN env var (renamed to AIZEE_DASHBOARD_TOKEN)
+    $oldDashToken = [Environment]::GetEnvironmentVariable("AGENT_OS_DASHBOARD_TOKEN", "User")
+    if ($oldDashToken) {
+        Write-Step "Removing legacy AGENT_OS_DASHBOARD_TOKEN env var"
+        if (-not $WhatIf) {
+            [Environment]::SetEnvironmentVariable("AGENT_OS_DASHBOARD_TOKEN", $null, "User")
+        }
+    }
+
+    # 3. Remove old CLI shim (ai-os.cmd) if it exists
+    $oldShim = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\ai-os.cmd"
+    if (Test-Path $oldShim) {
+        Write-Step "Removing legacy CLI shim: $oldShim"
+        if (-not $WhatIf) {
+            Remove-Item $oldShim -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    # 4. Remove old .aios-version file if it exists in root
+    $oldVersionFile = Join-Path $Root ".aios-version"
+    if (Test-Path $oldVersionFile) {
+        Write-Step "Removing legacy .aios-version file"
+        if (-not $WhatIf) {
+            Remove-Item $oldVersionFile -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    Write-Ok "Legacy cleanup complete"
+
     $PipSpec = "$Root[dev,graphify]"
     if ($WhatIf) {
         Write-Host "WhatIf: python -m pip install -e `"$PipSpec`""

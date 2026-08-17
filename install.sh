@@ -358,6 +358,43 @@ if ! $SKIP_PIP; then
         step "Removing legacy 'aios' package (renamed to 'aizee')"
         python -m pip uninstall aios -y 2>&1 || true
     fi
+
+    # --- Legacy cleanup: remove old ai-global-os / aios artifacts ---
+    step "Legacy cleanup (ai-global-os -> aizee)"
+
+    # 1. Remove old AGENT_OS_ROOT from shell profile (renamed to AIZEE_ROOT)
+    PROFILE=""
+    if [[ -f "$HOME/.bashrc" ]]; then PROFILE="$HOME/.bashrc"
+    elif [[ -f "$HOME/.zshrc" ]]; then PROFILE="$HOME/.zshrc"
+    elif [[ -f "$HOME/.profile" ]]; then PROFILE="$HOME/.profile"
+    fi
+    if [[ -n "$PROFILE" ]]; then
+        if grep -q "AGENT_OS_ROOT" "$PROFILE" 2>/dev/null; then
+            step "Removing legacy AGENT_OS_ROOT from $PROFILE"
+            if ! $WHATIF; then
+                if [[ "$(uname)" == "Darwin" ]]; then
+                    sed -i.bak '/AGENT_OS_ROOT/d' "$PROFILE" 2>/dev/null && rm -f "${PROFILE}.bak"
+                else
+                    sed -i '/AGENT_OS_ROOT/d' "$PROFILE" 2>/dev/null
+                fi
+            fi
+        fi
+    fi
+
+    # 2. Remove old CLI shim (ai-os) if it exists
+    OLD_SHIM="$HOME/.local/bin/ai-os"
+    if [[ -f "$OLD_SHIM" ]]; then
+        step "Removing legacy CLI shim: $OLD_SHIM"
+        if ! $WHATIF; then rm -f "$OLD_SHIM"; fi
+    fi
+
+    # 3. Remove old .aios-version file if it exists
+    if [[ -f "$ROOT/.aios-version" ]]; then
+        step "Removing legacy .aios-version file"
+        if ! $WHATIF; then rm -f "$ROOT/.aios-version"; fi
+    fi
+
+    ok "Legacy cleanup complete"
     if $WHATIF; then
         echo "WhatIf: python -m pip install -e '.[dev,graphify]'"
     else
