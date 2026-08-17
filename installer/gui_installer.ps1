@@ -51,12 +51,12 @@ $TargetVersion = Get-TargetVersion $Repo
 # ---------------------------------------------------------------------------
 if ($Silent) {
     $installScript = Join-Path $Repo "install.ps1"
-    $args = @()
-    if ($InstallDir) { $args += "-InstallDir"; $args += $InstallDir }
-    if ($SkipPip) { $args += "-SkipPip" }
-    if ($SkipGraphify) { $args += "-SkipGraphify" }
-    if ($SkipMCP) { $args += "-SkipMCP" }
-    & powershell -ExecutionPolicy Bypass -File $installScript @args
+    $installArgs = @()
+    if ($InstallDir) { $installArgs += "-InstallDir"; $installArgs += $InstallDir }
+    if ($SkipPip) { $installArgs += "-SkipPip" }
+    if ($SkipGraphify) { $installArgs += "-SkipGraphify" }
+    if ($SkipMCP) { $installArgs += "-SkipMCP" }
+    & powershell -ExecutionPolicy Bypass -File $installScript @installArgs
     exit $LASTEXITCODE
 }
 
