@@ -87,8 +87,7 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--ai-primary), var(--ai-violet));
-  box-shadow: 0 0 14px var(--accent-glow);
+  object-fit: contain;
 }
 
 .brand h2 {

@@ -253,6 +253,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._serve_file(self.root / "dashboard" / "index.html")
         elif parsed.path == "/index.css":
             self._serve_file(self.root / "dashboard" / "index.css")
+        elif parsed.path == "/favicon.ico":
+            self._serve_file(self.root / "dashboard" / "static" / "favicon.ico")
+        elif parsed.path == "/favicon-32.png":
+            self._serve_file(self.root / "dashboard" / "static" / "favicon-32.png")
+        elif parsed.path == "/favicon-16.png":
+            self._serve_file(self.root / "dashboard" / "static" / "favicon-16.png")
+        elif parsed.path == "/apple-touch-icon.png":
+            self._serve_file(self.root / "dashboard" / "static" / "apple-touch-icon.png")
+        elif parsed.path == "/logo.png":
+            self._serve_file(self.root / "logo.png")
         else:
             self._send(404, b"Not found")
 

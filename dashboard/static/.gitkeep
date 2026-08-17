@@ -1,0 +1,8 @@
+# Place favicon files here:
+#   favicon.ico          — 32x32 ICO (multi-resolution: 16, 32, 48)
+#   favicon-16.png       — 16x16 PNG
+#   favicon-32.png       — 32x32 PNG
+#   apple-touch-icon.png — 180x180 PNG (iOS home screen)
+#
+# These are served by dashboard/server.py at their respective paths.
+# Generate from logo.png using https://realfavicongenerator.net
