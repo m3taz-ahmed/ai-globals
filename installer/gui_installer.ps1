@@ -842,7 +842,7 @@ function Start-Installation {
     if ($needsSecrets) {
         $envPath = Join-Path $installRoot ".env"
         $Window.FindName("FinishEnvWarning").Visibility = "Visible"
-        $Window.FindName("FinishEnvText").Text = "Edit: $envPath`nFill in UPWORK_CLIENT_ID, UPWORK_CLIENT_SECRET, FREELANCER_OAUTH_TOKEN, and/or LINKEDIN_ACCESS_TOKEN.`nMCP servers will not work until credentials are set."
+        $Window.FindName("FinishEnvText").Text = "Edit: $envPath`nFill in LINKEDIN_ACCESS_TOKEN, UPWORK_CLIENT_ID, UPWORK_CLIENT_SECRET, and/or FREELANCER_OAUTH_TOKEN.`nMCP servers will not work until credentials are set."
         $Window.FindName("FinishOpenEnv").IsChecked = $true
     }
 

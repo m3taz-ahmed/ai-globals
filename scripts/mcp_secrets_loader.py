@@ -97,22 +97,32 @@ def load_env(env_path: Path | None = None, overwrite: bool = False) -> dict[str,
     return injected
 
 
-# Required vars per MCP server (for --check mode)
-REQUIRED_VARS: dict[str, list[str]] = {
-    "linkedin": ["LINKEDIN_ACCESS_TOKEN"],
-    "upwork": ["UPWORK_CLIENT_ID", "UPWORK_CLIENT_SECRET"],
-    "freelancer": ["FREELANCER_OAUTH_TOKEN"],
+# Required vars per MCP server (for --check mode).
+# A server passes if ANY of its alternative vars is set.
+REQUIRED_VARS: dict[str, list[list[str]]] = {
+    "linkedin": [["LINKEDIN_ACCESS_TOKEN"], ["LINKEDIN_MCP_TOKEN_PATH"]],
+    "upwork": [["UPWORK_CLIENT_ID", "UPWORK_CLIENT_SECRET"]],
+    "freelancer": [["FREELANCER_OAUTH_TOKEN"]],
     # fiverr: no secrets required
 }
 
 
 def check_required() -> dict[str, list[str]]:
-    """Return dict of server -> list of missing required vars."""
+    """Return dict of server -> list of missing required var groups.
+
+    A server is satisfied if ANY alternative group is fully present.
+    """
     missing: dict[str, list[str]] = {}
-    for server, vars_list in REQUIRED_VARS.items():
-        missing_for_server = [v for v in vars_list if not os.environ.get(v)]
-        if missing_for_server:
-            missing[server] = missing_for_server
+    for server, alternatives in REQUIRED_VARS.items():
+        # Server is OK if at least one alternative group is fully set
+        satisfied = any(
+            all(os.environ.get(v) for v in group)
+            for group in alternatives
+        )
+        if not satisfied:
+            # Report all vars from all alternatives as missing
+            all_vars = [v for group in alternatives for v in group]
+            missing[server] = all_vars
     return missing
 
 

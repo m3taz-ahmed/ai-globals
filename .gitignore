@@ -55,3 +55,13 @@ backups/
 .mypy_cache/
 .ruff_cache/
 aios.egg-info/
+
+# Personal utility scripts (not part of aiZee system)
+scripts/fetch-free-keys.py
+scripts/run-opencode-free.ps1
+scripts/run-opencode-free.cmd
+scripts/apply-zenmux-cursor-model.ps1
+scripts/ingest-community-skill.ps1
+
+# Nested duplicate (canonical is .github/copilot-instructions.md)
+.github/.github/
