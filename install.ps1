@@ -443,7 +443,8 @@ if ($CopyMode) {
         ".git", ".github", "__pycache__", "*.pyc", "*.pyo",
         ".pytest_cache", "node_modules", ".venv", "venv",
         "temp", "state", "brain", "graphify-out",
-        ".ai", ".aizee-version"
+        ".ai", ".aizee-version", ".env",
+        "backups", ".aizee-backups"
     )
 
     Write-Step "Copying repo contents to $Root"
@@ -516,6 +517,16 @@ if (-not $WhatIf) {
 
 if (-not $SkipPip) {
     Write-Step "Checking Python dependencies"
+
+    # Uninstall old 'aios' package if it exists (legacy rename cleanup)
+    $oldPkg = & python -m pip show aios 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Step "Removing legacy 'aios' package (renamed to 'aizee')"
+        if (-not $WhatIf) {
+            & python -m pip uninstall aios -y 2>&1 | ForEach-Object { Write-Host $_ }
+        }
+    }
+
     $PipSpec = "$Root[dev,graphify]"
     if ($WhatIf) {
         Write-Host "WhatIf: python -m pip install -e `"$PipSpec`""
@@ -760,6 +771,19 @@ if (-not $WhatIf) {
             }
         } catch {
             Write-Warn "Could not verify global MCP config: $_"
+        }
+    }
+
+    # Update global Devin AGENTS.md to point to the new root
+    $devinDir = Join-Path $env:APPDATA "devin"
+    $globalAgents = Join-Path $devinDir "AGENTS.md"
+    $sourceAgents = Join-Path $Root "AGENTS.md"
+    if (Test-Path $sourceAgents) {
+        try {
+            Copy-Item -Path $sourceAgents -Destination $globalAgents -Force
+            Write-Ok "Global Devin AGENTS.md updated to root: $Root"
+        } catch {
+            Write-Warn "Could not update global Devin AGENTS.md: $_"
         }
     }
 }

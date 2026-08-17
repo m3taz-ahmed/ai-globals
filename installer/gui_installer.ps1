@@ -784,9 +784,9 @@ function Start-Installation {
 
     # Run installation in a background job
     $installJob = Start-Job -ScriptBlock {
-        param($Args)
-        & powershell @Args 2>&1
-    } -ArgumentList $installArgs
+        param($InstallArgs)
+        & powershell @InstallArgs 2>&1
+    } -ArgumentList (, $installArgs)
 
     # Monitor job progress
     $totalSteps = 10
@@ -811,9 +811,52 @@ function Start-Installation {
 
     $exitCode = 0
     if ($installJob.State -ne "Completed") { $exitCode = 1 }
+    # Capture the actual exit code from the install job
+    if ($installJob.State -eq "Completed" -and $installJob.ChildJobs.Count -gt 0) {
+        $childExit = $installJob.ChildJobs[0].JobStateInfo.Reason
+        if ($childExit) {
+            Log-Message "[WARN] Install job completed with error: $childExit"
+            $exitCode = 1
+        }
+    }
     Remove-Job $installJob -Force
 
+    if ($exitCode -ne 0) {
+        Log-Message "[ERROR] Installation failed (exit code $exitCode)"
+        Update-Progress 100 "Installation failed!"
+        $script:currentPage = 7
+        Show-Page 7
+        $Window.FindName("FinishVersion").Text = "Installation FAILED - check log"
+        $Window.FindName("FinishLocation").Text = "Location: $installRoot"
+        if ($script:latestLog) {
+            $Window.FindName("FinishLog").Text = "Log: $($script:latestLog.FullName)"
+        }
+        $NextBtn.IsEnabled = $true
+        return
+    }
+
     Update-Progress 100 "Installation complete!"
+
+    # Post-install verification
+    $verifyIssues = @()
+    $envRoot = [Environment]::GetEnvironmentVariable("AIZEE_ROOT", "User")
+    if ($Window.FindName("CompEnvVar").IsChecked -and $envRoot -ne $installRoot) {
+        $verifyIssues += "AIZEE_ROOT not set correctly (got: '$envRoot', expected: '$installRoot')"
+    }
+    if ($Window.FindName("CompCLIShim").IsChecked -and -not (Test-Path (Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\aizee.cmd"))) {
+        $verifyIssues += "CLI shim not created at expected location"
+    }
+    if (-not (Test-Path (Join-Path $installRoot ".aizee-version"))) {
+        $verifyIssues += ".aizee-version file not written"
+    }
+    foreach ($issue in $verifyIssues) {
+        Log-Message "[VERIFY] WARN: $issue"
+    }
+    if ($verifyIssues.Count -gt 0) {
+        Log-Message "[VERIFY] $($verifyIssues.Count) issue(s) found - installation may be incomplete"
+    } else {
+        Log-Message "[VERIFY] All post-install checks passed"
+    }
 
     # Show finish page
     $script:currentPage = 7
@@ -842,7 +885,7 @@ function Start-Installation {
     if ($needsSecrets) {
         $envPath = Join-Path $installRoot ".env"
         $Window.FindName("FinishEnvWarning").Visibility = "Visible"
-        $Window.FindName("FinishEnvText").Text = "Edit: $envPath`nFill in LINKEDIN_ACCESS_TOKEN, UPWORK_CLIENT_ID, UPWORK_CLIENT_SECRET, and/or FREELANCER_OAUTH_TOKEN.`nMCP servers will not work until credentials are set."
+        $Window.FindName("FinishEnvText").Text = "Edit: $envPath`nFill in LINKEDIN_ACCESS_TOKEN (or LINKEDIN_MCP_TOKEN_PATH), UPWORK_CLIENT_ID, UPWORK_CLIENT_SECRET, and/or FREELANCER_OAUTH_TOKEN.`nMCP servers will not work until credentials are set."
         $Window.FindName("FinishOpenEnv").IsChecked = $true
     }
 

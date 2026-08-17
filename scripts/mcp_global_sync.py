@@ -101,8 +101,18 @@ def main() -> int:
         # Windows: rename fails if destination exists — replace stale backup.
         if backup.exists():
             backup.unlink(missing_ok=True)
-        target.rename(backup)
-        print(f"[mcp-global-sync] Backed up existing config to {backup}")
+        # Read existing to check if it points to a different root
+        try:
+            existing = json.loads(target.read_text(encoding="utf-8"))
+            existing_str = json.dumps(existing)
+            if str(root) not in existing_str:
+                print("[mcp-global-sync] Existing config points to different root — replacing")
+                target.unlink()
+            else:
+                target.rename(backup)
+                print(f"[mcp-global-sync] Backed up existing config to {backup}")
+        except (OSError, ValueError):
+            target.unlink(missing_ok=True)
 
     target.write_text(json.dumps(config, indent=2), encoding="utf-8")
     print(f"[mcp-global-sync] Written global MCP config ({len(config['mcpServers'])} servers)")

@@ -299,6 +299,7 @@ if $COPY_MODE; then
             --exclude='node_modules' --exclude='.venv' --exclude='venv' \
             --exclude='temp' --exclude='state' --exclude='brain' \
             --exclude='graphify-out' --exclude='.ai' --exclude='.aizee-version' \
+            --exclude='.env' --exclude='backups' --exclude='.aizee-backups' \
             "$REPO/" "$ROOT/"
     else
         cp -R "$REPO"/* "$ROOT/" 2>/dev/null || true
@@ -351,6 +352,12 @@ fi
 if ! $SKIP_PIP; then
     step "Checking Python dependencies"
     cd "$ROOT"
+
+    # Uninstall old 'aios' package if it exists (legacy rename cleanup)
+    if python -m pip show aios >/dev/null 2>&1; then
+        step "Removing legacy 'aios' package (renamed to 'aizee')"
+        python -m pip uninstall aios -y 2>&1 || true
+    fi
     if $WHATIF; then
         echo "WhatIf: python -m pip install -e '.[dev,graphify]'"
     else
@@ -512,6 +519,22 @@ python "$ROOT/aizee_cli.py" "\$@"
 EOF
 chmod +x "$BIN_DIR/aizee"
 ok "CLI shim: $BIN_DIR/aizee"
+
+# ---------------------------------------------------------------------------
+# 11b. Global MCP config sync + Devin AGENTS.md update
+# ---------------------------------------------------------------------------
+
+step "Global MCP config sync"
+if ! $WHATIF; then
+    python "$ROOT/scripts/mcp_global_sync.py" 2>&1 || warn "MCP global sync failed"
+    # Update global Devin AGENTS.md
+    devin_dir="$HOME/.config/devin"
+    [[ "$(uname)" == "Darwin" ]] && devin_dir="$HOME/Library/Application Support/devin"
+    mkdir -p "$devin_dir" 2>/dev/null
+    if [[ -f "$ROOT/AGENTS.md" ]]; then
+        cp "$ROOT/AGENTS.md" "$devin_dir/AGENTS.md" 2>/dev/null && ok "Global Devin AGENTS.md updated"
+    fi
+fi
 
 # ---------------------------------------------------------------------------
 # 12. Post-install verification
