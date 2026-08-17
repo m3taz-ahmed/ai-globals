@@ -35,7 +35,7 @@ def _load_secrets_once() -> None:
     if _SECRETS_LOADED:
         return
     _SECRETS_LOADED = True
-    env_file = Path(os.environ.get("AGENT_OS_ROOT", "")) / ".env"
+    env_file = Path(os.environ.get("AIZEE_ROOT", "")) / ".env"
     if not env_file.is_file():
         # Fallback: parent of runtime/ directory
         env_file = Path(__file__).resolve().parent.parent / ".env"
@@ -120,7 +120,7 @@ class McpClient:
         self._key = (server_name, os_root)
 
     def _load_config(self) -> dict[str, Any]:
-        for settings_path in [self.os_root / ".claude" / "settings.json", self.os_root / "aios_mcp" / "config.json"]:
+        for settings_path in [self.os_root / ".claude" / "settings.json", self.os_root / "aizee_mcp" / "config.json"]:
             if settings_path.exists():
                 data = cast(dict[str, Any], json.loads(settings_path.read_text(encoding="utf-8")))
                 mcp_servers = cast(dict[str, Any], data.get("mcpServers") or data.get("mcp_servers", {}))
@@ -135,7 +135,7 @@ class McpClient:
         args = self.config.get("args", [])
         # Load centralized .env secrets so external MCP servers inherit them
         _load_secrets_once()
-        env = {"AGENT_OS_ROOT": str(self.os_root), **os.environ}
+        env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
         # Augment PATH with per-user Python script dirs so entry-point MCP
         # servers (e.g. installed via ``pip install --user``) resolve without
         # hardcoding machine-specific paths in config.json.
@@ -227,7 +227,7 @@ class McpClient:
                         "params": {
                             "protocolVersion": "2024-11-05",
                             "capabilities": {},
-                            "clientInfo": {"name": "ai-global-os", "version": "4.22.1"},
+                            "clientInfo": {"name": "aizee", "version": "4.22.1"},
                         },
                     },
                 )
@@ -289,7 +289,7 @@ class McpClient:
         cmd = self.config["command"]
         args = self.config.get("args", [])
         _load_secrets_once()
-        env = {"AGENT_OS_ROOT": str(self.os_root), **os.environ}
+        env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
         try:
             proc = await asyncio.create_subprocess_exec(
                 cmd,
@@ -313,7 +313,7 @@ class McpClient:
                 "params": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": {},
-                    "clientInfo": {"name": "ai-global-os", "version": "4.22.1"},
+                    "clientInfo": {"name": "aizee", "version": "4.22.1"},
                 },
             }) + "\n"
             assert proc.stdin is not None

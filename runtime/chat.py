@@ -1,4 +1,4 @@
-"""Persistent chat sessions for AI Global OS."""
+"""Persistent chat sessions for aiZee."""
 
 from __future__ import annotations
 

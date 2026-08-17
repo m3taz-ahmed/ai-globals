@@ -128,7 +128,7 @@ class TestEmbedder:
         st_instance = _make_st_mock()
         mock_st_cls = MagicMock(return_value=st_instance)
         with patch.object(vector_module, "SentenceTransformer", mock_st_cls):
-            emb = Embedder()
+            Embedder()
             # Singleton should be set after instantiation
             assert Embedder._singleton is not None
             assert Embedder._singleton_model_name is not None

@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy source code
 COPY runtime/ ./runtime/
 COPY memory/ ./memory/
-COPY aios_mcp/ ./aios_mcp/
+COPY aizee_mcp/ ./aizee_mcp/
 COPY dashboard/ ./dashboard/
 COPY cli.py config.py ./
 COPY plugins.yaml ./
@@ -58,7 +58,7 @@ COPY workflows/ ./workflows/
 COPY skills/ ./skills/
 COPY --from=builder /app/runtime/ ./runtime/
 COPY --from=builder /app/memory/ ./memory/
-COPY --from=builder /app/aios_mcp/ ./aios_mcp/
+COPY --from=builder /app/aizee_mcp/ ./aizee_mcp/
 COPY --from=builder /app/dashboard/ ./dashboard/
 COPY --from=builder /app/cli.py /app/config.py /app/plugins.yaml ./
 COPY --from=builder /app/scripts/validate-globals.py ./scripts/validate-globals.py

@@ -66,5 +66,5 @@ Apply to every authority promotion boundary:
 - Side effect → persisted state.
 If a boundary increases possible consequence, it needs independent verification.
 
-[APPLY] Use this rule in `ai-os check` reviews, ARCH persona decisions, and
+[APPLY] Use this rule in `aizee check` reviews, ARCH persona decisions, and
 any `runtime/admission.py` / `runtime/authorization.py` gate evaluation.

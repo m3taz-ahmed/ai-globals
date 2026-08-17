@@ -1,5 +1,39 @@
 # Changelog
 
+## [Unreleased] — 2026-08-17
+
+### Branding — Renamed to aiZee
+- **Project renamed**: AI Global OS → **aiZee** ("The policy layer for AI coding.").
+- **Package**: `aios` → `aizee` (pip install aizee).
+- **CLI**: `ai-os` → `aizee` (lowercase, no capital Z required).
+- **Env vars**: `AGENT_OS_ROOT` → `AIZEE_ROOT`, `AGENT_OS_DASHBOARD_TOKEN` → `AIZEE_DASHBOARD_TOKEN`.
+- **MCP server name**: `ai-global-os` → `aizee` in all agent configs.
+- **Files renamed**: `aios_cli.py` → `aizee_cli.py`, `aios_mcp/` → `aizee_mcp/`, `aios_server.py` → `aizee_server.py`, `.aios-version` → `.aizee-version`, `aios_mcp_wrapper.py` → `aizee_mcp_wrapper.py`.
+- **Clean break**: no backward-compat alias for `ai-os` (per user decision).
+
+### Added — Uninstaller + K8s + Benchmarks
+- **Interactive uninstaller** (`runtime/uninstaller.py` + `aizee uninstall`): per-category keep/delete, optional zip backup, preserves learned data (memory/state/brain/.env) by default. 23 tests.
+- **GUI uninstaller** (`runtime/uninstaller_gui.py` + `aizee uninstall --gui`): tkinter GUI with Treeview of categories, Keep/Delete toggle, backup path picker, live log output, threaded execution. 7 tests.
+- **Update script** (`scripts/update.py` + `update.bat`): git pull from GitHub, compare local vs remote, pull if behind, re-run post-install hooks (pip install, MCP sync, CLI shim, memory ingest). Preserves learned data.
+- **Brain backup** (`scripts/backup_brain.py` + `backup.bat`): backs up memory/, state/, brain/, graphify-out/, .env to `aizee-backup-<date>-<time>/` folder. Metadata file included.
+- **Brain restore** (`scripts/restore_brain.py` + `restore.bat`): restores from backup folder, overwrites existing data, `--list` flag shows available backups.
+- **Smart auto-merge restore** (`restore.bat` / `restore_brain.py --auto`): reads checkpoint from `state/restore_checkpoint.json`, merges all backups newer than last restore. Memory is merged by timestamp (INSERT new, UPDATE if source is newer, SKIP if older). state/brain/.env take the latest backup's version. Checkpoint updated after each merge. Prevents duplicate processing.
+- **One-click .bat launchers**: `update.bat`, `backup.bat`, `restore.bat`, `uninstall.bat` — double-click on Windows, no terminal needed.
+- **Kubernetes manifests** (`deploy/k8s/`): Deployment, Service, PVCs, Secret, NetworkPolicy, HelmRelease. Production-ready with securityContext, readiness/liveness probes, resource limits.
+- **Performance benchmarks** (`runtime/perf_benchmark.py`): Kernel.act, persona.detect, skill.list, memory.search with mean/median/p95/p99 stats. JSON output mode.
+
+### Fixed — P0/P1 from full audit
+- **`spec.md` created**: aiZee now dogfoods its own spec-driven workflow.
+- **ruff exclusions removed**: `tests/*` and `skills/*` no longer excluded from linting.
+- **mypy exclusions removed**: `tests/`, `dashboard/`, `scripts/` no longer excluded from type checking.
+- **`--strict-markers` added** to pytest config: unknown markers now error instead of passing silently.
+- **`ActionSchema` documented**: `extra="allow"` is intentional for dynamic action params; added docstring + `ge=0` constraints on `tokens`/`cost`.
+- **PROPOSAL + FREELANCE personas merged**: 20 → 19 personas. FREELANCE now covers both proposal writing and platform bidding.
+- **Dictatorship/Warlord tone softened**: `[DICTATORSHIP]` → `[STANDARDS]`, "God-Tier SRE & Cloud Dictator" → "Principal SRE & Cloud Architect", "SecOps Warlord" → "SecOps Specialist", "Google Play Ecosystem Warlord" → "Google Play Ecosystem Expert".
+- **Dashboard auth warning**: prints explicit security warning when no token is set. Env vars renamed to `AIZEE_DASHBOARD_*` with legacy fallback.
+- **subprocess audit**: all 30+ subprocess calls confirmed using list args (shell=False default). No shell=True in production code.
+- **Memory.md/state conflict resolved**: all rules now point to `Memory.md` at root (not `state/MEMORY.md`). `state/` remains gitignored for runtime data.
+
 ## [5.0.0] — 2026-08-13
 
 ### Added — 18 new features (competitive analysis driven)
@@ -24,9 +58,9 @@
 - **Spec-driven workflow** (`workflows/21-spec-driven.md`): workflow for spec-driven development.
 
 ### Changed
-- Version bumped to 5.0.0 across `pyproject.toml`, `manifest.json`, `config.py`, `.aios-version`, `README.md`, `README-AR.md`.
+- Version bumped to 5.0.0 across `pyproject.toml`, `manifest.json`, `config.py`, `.aizee-version`, `README.md`, `README-AR.md`.
 - `pyproject.toml`: added `eval*` to setuptools packages.find.
-- `aios_mcp/config.json`: standardized ai-global-os and graphify to use wrapper scripts (consistent with .devin/.claude configs).
+- `aizee_mcp/config.json`: standardized aizee and graphify to use wrapper scripts (consistent with .devin/.claude configs).
 - `global-roles.md`: added FREELANCE persona (#20) to match `personas.yaml`.
 - 551 new tests added (total: 1121 passing).
 - 1222 additional tests added from 45 repo-research enhancements (total: 2343 passing).
@@ -36,7 +70,7 @@
 
 ### Added — 45 new enhancements (repo research driven)
 
-Deep analysis of 22 GitHub repositories yielded 45 enhancements across 3 phases. See `IMPLEMENTATION-REPORT.md` for full details.
+Deep analysis of 22 GitHub repositories yielded 45 enhancements across 3 phases.
 
 #### Phase 1 — High-Impact, Low-Complexity (12 features)
 - **Parameterized policy conditions** (`runtime/authorization.py`): YAML-based prefix/suffix/allowlist/denylist/max/min/regex/equals conditions. No code changes for new constraints.
@@ -82,27 +116,27 @@ Deep analysis of 22 GitHub repositories yielded 45 enhancements across 3 phases.
 
 ### Added — Previous unreleased items
 - **Global Bootloader documentation** (`docs/BOOTLOADER.md`): full boot sequence diagram and agent integration guide.
-- **MCP wrapper script** (`scripts/aios_mcp_wrapper.py`): replaces inline Python code in MCP config files (security).
+- **MCP wrapper script** (`scripts/aizee_mcp_wrapper.py`): replaces inline Python code in MCP config files (security).
 - Externalized persona definitions in `runtime/personas.yaml` loaded by `runtime/persona.py`.
 - New Dashboard and MCP security tests.
 - **At-rest encryption** (`runtime/crypto.py`): Fernet-based encryption for `state/budget.json` when `AIOS_ENCRYPTION_KEY` is set.
 - **Schema migration framework** (`runtime/migrations.py`): versioned SQLite schema migrations with backup + retention.
 - **Observability module** (`runtime/observability.py`): optional Sentry integration + Prometheus export wrapper.
 - **E2E test suite** (`tests/e2e/`): kernel lifecycle, policy evaluation, chat, memory, workflows, metrics.
-- **MCP API reference** (`aios_mcp/API.md`): full documentation of all MCP tools and resources.
+- **MCP API reference** (`aizee_mcp/API.md`): full documentation of all MCP tools and resources.
 - **Feature documentation** (`docs/FEATURES.md`): documents approval_cache, hybrid memory, rule_frontmatter, fresh_context, encryption, migrations, observability, MCP modules, kernel facade.
 - **Legal docs**: `NOTICE`, `docs/PRIVACY_POLICY.md`, `docs/TERMS_OF_USE.md`, `docs/AI_DISCLAIMER.md`.
 - **Supply-chain CI** (`.github/workflows/supply-chain.yml`): OIDC keyless, SBOM (syft), Cosign, TruffleHog secret scanning, dependency-review.
 - **Release workflow** (`.github/workflows/release.yml`): PyPI (OIDC), Docker (GHCR), SBOM, Cosign, GitHub Release.
 - **CODEOWNERS** (`.github/CODEOWNERS`) and **branch protection** config (`.github/branch-protection.json`).
-- **Docs-guard CI check** in `validate.yml`: verifies `aios_mcp/API.md`, `LICENSE`, `CODEOWNERS` exist.
+- **Docs-guard CI check** in `validate.yml`: verifies `aizee_mcp/API.md`, `LICENSE`, `CODEOWNERS` exist.
 - **Async MCP client** (`runtime/mcp_client.py`): `async_call_tool` method using `asyncio.subprocess`.
 - **Lazy loading**: `PluginManager` is now a lazy property; `parse_frontmatter` uses `@lru_cache`; `detect_tech_stack` is cached per kernel instance.
 - **Migration 4.22.0 → 4.22.1** in `scripts/migrate.py`: runs schema migrations, verifies encryption compatibility, creates new directories.
 
 ### Changed
 - **Kernel refactored** into facade + managers: `PolicyManager`, `WorkflowManager`, `AgentManager`, `ChatManager` in `runtime/managers/`.
-- **MCP server split** into tool modules: `memory_tools.py`, `workflow_tools.py`, `policy_tools.py`, `context_tools.py`, `common.py` in `aios_mcp/tools/`.
+- **MCP server split** into tool modules: `memory_tools.py`, `workflow_tools.py`, `policy_tools.py`, `context_tools.py`, `common.py` in `aizee_mcp/tools/`.
 - **Repository layer** extracted from `workflow.py`, `saga.py`, `memory/store.py` into `runtime/repository.py`.
 - **Magic strings replaced** with enums: `Decision`, `StepType`, `CommandType`, `StepStatus`, `RouteName` in `runtime/enums.py`.
 - **Dockerfile rewritten**: multi-stage build, digest pinning, `.dockerignore`.
@@ -123,14 +157,14 @@ Deep analysis of 22 GitHub repositories yielded 45 enhancements across 3 phases.
 - **run_workflow validation**: added `is_safe_name()` check to prevent path traversal.
 - **RemoteA2AAdapter SSL**: added SSL context with `verify_ssl` config + HTTPS endpoint validation.
 - **Agent tool whitelist**: `_SAFE_COMMANDS` for server registration + `allowed_tools` whitelist in `call_tool`.
-- **MCP config externalized**: inline Python one-liners replaced with `scripts/aios_mcp_wrapper.py`.
+- **MCP config externalized**: inline Python one-liners replaced with `scripts/aizee_mcp_wrapper.py`.
 - **settings.json deny list expanded**: added `chmod`, `chown`, `sudo`, `dd`, `mkfs`, `nc`, `netcat`, `iptables`, `ufw`, `curl|bash`.
 - **install.sh macOS fix**: BSD `sed -i` compatibility with `.bak` suffix.
 - Dashboard CORS, token auth, CSRF, request-size, and origin-trust fixes.
 - MCP path-traversal and input-validation fixes.
 - SQL injection fixed in `memory/store.py`, `hybrid.py`, `graph.py` (whitelisted column/table names).
 - Hardcoded `D:/.ai` paths removed from `.devin/mcp_config.json` and `.claude/settings.json`.
-- Stub adapters in `aios_mcp/adapters.py` completed/removed with tracking ticket.
+- Stub adapters in `aizee_mcp/adapters.py` completed/removed with tracking ticket.
 - MIT LICENSE added (2024-2025, Moataz Ahmed).
 
 ## [4.22.0]
@@ -140,19 +174,19 @@ Deep analysis of 22 GitHub repositories yielded 45 enhancements across 3 phases.
 - `[graphify]` optional dependency (`graphifyy>=0.8.20,<0.8.21`) and updated `Dockerfile`, `install.sh`, `install.ps1` to build `integrity.manifest` and `graphify-out/` after all source files are present.
 - Budget `period` enforcement: `session`/`hourly`/`daily`/`weekly`/`monthly` with per-process session isolation and atomic `BudgetManager`/`AuditLogger` locks.
 - Policy engine validates rule schema, loads all `runtime/policies/*.yaml` files, and skips malformed rules instead of crashing.
-- Hybrid context retrieval: `VectorMemory.search` allowlist filtering, `MemoryStore.search_vector(kind/source)`, `ai-os query`, MCP `query_context`, `ingest_memory`, and `search_memory_vector(kind)`.
+- Hybrid context retrieval: `VectorMemory.search` allowlist filtering, `MemoryStore.search_vector(kind/source)`, `aizee query`, MCP `query_context`, `ingest_memory`, and `search_memory_vector(kind)`.
 - Memory ingestion now covers `skills/` (recursive) and `AGENTS.md`, validates AI file structure, and batches source deletions with relation cleanup.
-- CLI `ai-os query` for combined FTS + vector search.
+- CLI `aizee query` for combined FTS + vector search.
 - AGENTS.md canonical cross-tool instruction.
 - Tool-specific adapters: `.cursor/rules/`, `.claude/`, `.clinerules/`, `.windsurfrules`, `.aider.conf.yml`, `.github/copilot-instructions.md`.
 - Runtime kernel: policy, budget, workflow runner.
 - Memory service: temporal SQLite-backed memory store with FTS5 and optional vector index.
 - Audit logging (`state/audit.log`) for policy, budget, and workflow events.
 - MCP server built on FastMCP exposing rules, workflows, memory, policy, and vector search.
-- CLI `ai-os` with `--root`, `AGENT_OS_ROOT`, `check --args`, `memory vector`, and `run --context`.
+- CLI `aizee` with `--root`, `AIZEE_ROOT`, `check --args`, `memory vector`, and `run --context`.
 - Dashboard with auto-refresh, CORS, optional bearer auth, and audit endpoint.
 - `pyproject.toml`, `ruff`, `mypy`, `pytest` suite, `Dockerfile`, `docker-compose.yml`, and CI workflow.
-- Root discovery via `config.py` using `AGENT_OS_ROOT` or install directory.
+- Root discovery via `config.py` using `AIZEE_ROOT` or install directory.
 - Safe AST-based policy evaluator (no `eval`).
 
 ### Changed
@@ -171,4 +205,4 @@ Deep analysis of 22 GitHub repositories yielded 45 enhancements across 3 phases.
 - Policy `condition` no longer uses `eval`.
 - `LIKE` wildcards escaped in memory search.
 - Dashboard supports `AGENT_OS_DASHBOARD_TOKEN` bearer auth.
-- `ai-os` CLI `check` accepts JSON args only, no shell execution.
+- `aizee` CLI `check` accepts JSON args only, no shell execution.

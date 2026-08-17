@@ -1,4 +1,4 @@
-# AI Global OS — Global Bootloader
+# aiZee — Global Bootloader
 
 The **Global Bootloader** is the entry point that every AI agent (Claude, Cursor, Windsurf, Aider, Devin) reads at session start. It sets the OS root, loads personas, rules, skills, and workflows, and routes all actions through the runtime gate.
 
@@ -9,9 +9,9 @@ The **Global Bootloader** is the entry point that every AI agent (Claude, Cursor
 │  Session Start                                                   │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │  1. Read AGENTS.md (this file's source)                   │  │
-│  │  2. Set AGENT_OS_ROOT (env or config.discover_root())     │  │
+│  │  2. Set AIZEE_ROOT (env or config.discover_root())     │  │
 │  │  3. Read global-roles.md + global-workflow.md + Memory.md │  │
-│  │  4. Detect personas: ai-os persona detect --multi         │  │
+│  │  4. Detect personas: aizee persona detect --multi         │  │
 │  │  5. Load returned skills/ before acting                   │  │
 │  │  6. If project has spec.md, read it                       │  │
 │  └───────────────────────────────────────────────────────────┘  │
@@ -35,7 +35,7 @@ The **Global Bootloader** is the entry point that every AI agent (Claude, Cursor
 │  │  • Detect tech stack from lockfile → tech-stack/*.md      │  │
 │  │  • Query graphify (if graph.json exists) — never raw grep │  │
 │  │  • Query Context7 MCP for external libraries              │  │
-│  │  • ai-os memory ingest when rules/workflows change        │  │
+│  │  • aizee memory ingest when rules/workflows change        │  │
 │  │  • Update Memory.md via workflows/17-memory-sync.md       │  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                              ▼                                   │
@@ -43,7 +43,7 @@ The **Global Bootloader** is the entry point that every AI agent (Claude, Cursor
 │  │  Quality Gate (before declaring done)                     │  │
 │  │  • ruff check .                                           │  │
 │  │  • mypy                                                   │  │
-│  │  • ai-os test --full  (or pytest -q)                      │  │
+│  │  • aizee test --full  (or pytest -q)                      │  │
 │  │  • python eval/harness.py                                 │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -53,13 +53,13 @@ The **Global Bootloader** is the entry point that every AI agent (Claude, Cursor
 
 ### 1. Root Discovery
 The bootloader discovers the OS root via (in order):
-1. `AGENT_OS_ROOT` environment variable
+1. `AIZEE_ROOT` environment variable
 2. `config.discover_root()` (walks up from CWD looking for `config.py`)
 3. Fallback: current working directory
 
 ### 2. Persona Detection
 ```bash
-ai-os persona detect --multi "your task description"
+aizee persona detect --multi "your task description"
 ```
 Returns top-N personas + skills to load. Example:
 ```json
@@ -73,7 +73,7 @@ Returns top-N personas + skills to load. Example:
 ### 3. Runtime Gate
 Every action passes through `runtime/kernel.py`:
 ```bash
-ai-os check Read --args '{"tokens": 100}'
+aizee check Read --args '{"tokens": 100}'
 ```
 The kernel evaluates: **probity → guardian → policy → budget** → returns ALLOW/DENY/ASK.
 
@@ -87,7 +87,7 @@ The installer symlinks agent configs from the OS root to common locations:
 
 ### 5. MCP Servers
 6 MCP servers are configured (see [MCP servers](../README.md#mcp-servers)):
-- `ai-global-os` — core OS tools (policy, memory, workflows, rules)
+- `aizee` — core OS tools (policy, memory, workflows, rules)
 - `graphify` — codebase knowledge graph
 - `context7` — external library docs
 - `upwork` / `freelancer` / `fiverr` — freelance platforms
@@ -108,4 +108,4 @@ The installer symlinks agent configs from the OS root to common locations:
 | `Memory.md` | Cross-session memory |
 | `config.py` | Root discovery + configuration |
 | `runtime/kernel.py` | Runtime gate (policy + budget + guardian) |
-| `aios_cli.py` | CLI entry point (`ai-os` command) |
+| `aizee_cli.py` | CLI entry point (`aizee` command) |

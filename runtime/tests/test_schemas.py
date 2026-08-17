@@ -108,7 +108,7 @@ class TestPolicyFileSchema:
     def test_defaults(self) -> None:
         schema = PolicyFileSchema()
         assert schema.name == "default"
-        assert schema.api_version == "governance.ai-global-os/v1"
+        assert schema.api_version == "governance.aizee/v1"
         assert schema.default_action == "ask"
         assert schema.rules == []
 

@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from aios_mcp.agent import McpAgent
+from aizee_mcp.agent import McpAgent
 
 
 class StepStatus(str, Enum):

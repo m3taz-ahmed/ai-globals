@@ -21,7 +21,7 @@ personas:
 2. [REQ] Two operating modes:
    - ADVISORY: strategy, research, profile/proposal drafts, pricing, client analysis. No credentials required.
    - AUTOMATION: requires an MCP server + valid OAuth token. Every write action (bid, message, profile update, contract action) requires an explicit `yes` from the user before execution.
-3. [CMD] MCP servers (configured in `.devin/mcp_config.json` + `aios_mcp/config.json` + AIOS plugins in `plugins/`):
+3. [CMD] MCP servers (configured in `.devin/mcp_config.json` + `aizee_mcp/config.json` + AIOS plugins in `plugins/`):
    - Upwork: `npx -y @furkankoykiran/upwork-mcp` (GraphQL, official API). Required env: `UPWORK_CLIENT_ID`, `UPWORK_CLIENT_SECRET`. Run `npx -y @furkankoykiran/upwork-mcp auth` first. AIOS plugin: `plugins/upwork/` exposes 8 tools (search_jobs, get_job_details, get_profile, list_contracts, get_balance, list_saved_jobs, save_job, get_proposal_stats).
    - Freelancer.com: `npx -y freelancer-mcp-server` (official API). Required env: `FREELANCER_OAUTH_TOKEN` (or `FREELANCER_ACCOUNTS` JSON for multi-account). AIOS plugin: `plugins/freelancer/` exposes 11 tools (search_projects, get_project, my_projects, my_bids, place_bid, get_milestones, list_threads, get_messages, send_message, get_self, list_accounts).
    - Fiverr: `uvx fiverr-mcp-server` (Python/PyPI, no API key, scraper-based). READ-ONLY: search_gigs, get_gig_details, get_seller_profile, get_gig_reviews, list_categories. [PROHIBIT] Use only for market research; never for automated bidding or messaging (violates Fiverr ToS). AIOS plugin: `plugins/fiverr/` exposes 5 read-only tools.
@@ -64,7 +64,7 @@ personas:
 14. [REQ] Fees and pricing: always factor in platform fees and currency conversion. Show net earnings after fees when quoting.
 15. [REQ] Output format: markdown tables for job shortlists, checklists for profile/proposal tasks, structured bullet sections for strategy.
 16. [REQ] Fallback: if MCP is not configured, provide copy-paste-ready actions and CLI commands for the user to run manually.
-17. [REQ] Memory: after each bid, contract, or client interaction, store key facts via `ai-os memory add` or `workflows/17-memory-sync.md`.
+17. [REQ] Memory: after each bid, contract, or client interaction, store key facts via `aizee memory add` or `workflows/17-memory-sync.md`.
 18. [REQ] Continuous improvement: track win rate, average bid value, and response time. Suggest profile/proposal adjustments based on data.
 
 [PROHIBIT]

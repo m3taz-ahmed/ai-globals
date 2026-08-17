@@ -1,5 +1,5 @@
 [FILE] CODE_OF_CONDUCT
-[OBJ] Community standards for AI Global OS.
+[OBJ] Community standards for aiZee.
 [RULES]
 1. [REQ] Pledge: Harassment-free experience. Respect, precision, intellectual honesty.
 2. [REQ] Behaviors: Constructive code review. Focus on code, not individuals. Share knowledge.

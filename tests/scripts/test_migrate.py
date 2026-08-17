@@ -9,8 +9,6 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # Path to the migrate.py script.
 _MIGRATE = Path(__file__).resolve().parent.parent.parent / "scripts" / "migrate.py"
 
@@ -43,7 +41,7 @@ def _write_pyproject(root: Path, version: str) -> None:
 
 
 def _write_version_file(root: Path, version: str) -> None:
-    (root / ".aios-version").write_text(version, encoding="utf-8")
+    (root / ".aizee-version").write_text(version, encoding="utf-8")
 
 
 def test_migrate_check_up_to_date(tmp_path: Path):
@@ -66,7 +64,7 @@ def test_migrate_check_pending(tmp_path: Path):
 
 def test_migrate_no_version_file_treats_as_zero(tmp_path: Path):
     _write_pyproject(tmp_path, "4.22.0")
-    # No .aios-version file
+    # No .aizee-version file
     code, output = _run_migrate(tmp_path, "--check")
     assert code == 3
     assert "0.0.0" in output or "Pending" in output
@@ -75,20 +73,20 @@ def test_migrate_no_version_file_treats_as_zero(tmp_path: Path):
 def test_migrate_dry_run_does_not_write_version(tmp_path: Path):
     _write_pyproject(tmp_path, "4.22.0")
     _write_version_file(tmp_path, "4.21.0")
-    code, output = _run_migrate(tmp_path, "--dry-run")
+    code, _output = _run_migrate(tmp_path, "--dry-run")
     assert code == 3
     # Version file should still say 4.21.0
-    assert (tmp_path / ".aios-version").read_text(encoding="utf-8").strip() == "4.21.0"
+    assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "4.21.0"
 
 
 def test_migrate_run_writes_target_version(tmp_path: Path):
     _write_pyproject(tmp_path, "4.22.0")
     _write_version_file(tmp_path, "4.21.0")
-    code, output = _run_migrate(tmp_path)
+    code, _output = _run_migrate(tmp_path)
     # Migration should complete (exit 1 = migrated successfully)
     assert code in (1, 0)
     # Version file should now say 4.22.0
-    assert (tmp_path / ".aios-version").read_text(encoding="utf-8").strip() == "4.22.0"
+    assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "4.22.0"
 
 
 def test_migrate_already_at_target_exits_zero(tmp_path: Path):
@@ -110,10 +108,10 @@ def test_migrate_future_version_jumps_directly(tmp_path: Path):
     """If current is 4.22.0 and target is 5.0.0 (no migration chain), jump."""
     _write_pyproject(tmp_path, "5.0.0")
     _write_version_file(tmp_path, "4.22.0")
-    code, output = _run_migrate(tmp_path)
+    code, _output = _run_migrate(tmp_path)
     # No chain exists from 4.22 → 5.0, so it jumps and writes version
     assert code in (0, 1)
-    assert (tmp_path / ".aios-version").read_text(encoding="utf-8").strip() == "5.0.0"
+    assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "5.0.0"
 
 
 def test_migrate_version_tuple_ordering():
@@ -186,20 +184,20 @@ def test_migrate_4_22_to_4_23_is_noop(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 def test_read_version_file_missing(tmp_path: Path):
-    """Line 35-36: returns None when .aios-version doesn't exist."""
+    """Line 35-36: returns None when .aizee-version doesn't exist."""
     mod = _load_migrate_module()
     assert mod._read_version_file(tmp_path) is None
 
 
 def test_read_version_file_empty(tmp_path: Path):
-    """Line 38: returns None when .aios-version is empty."""
+    """Line 38: returns None when .aizee-version is empty."""
     mod = _load_migrate_module()
     _write_version_file(tmp_path, "")
     assert mod._read_version_file(tmp_path) is None
 
 
 def test_read_version_file_whitespace(tmp_path: Path):
-    """Line 38: returns None when .aios-version is only whitespace."""
+    """Line 38: returns None when .aizee-version is only whitespace."""
     mod = _load_migrate_module()
     _write_version_file(tmp_path, "   \n  ")
     assert mod._read_version_file(tmp_path) is None
@@ -262,10 +260,10 @@ def test_migrate_4_21_to_4_22_with_plugins_yaml(tmp_path: Path):
 
 
 def test_migrate_4_21_to_4_22_with_config_json(tmp_path: Path):
-    """Lines 77-87: migration handles aios_mcp/config.json."""
+    """Lines 77-87: migration handles aizee_mcp/config.json."""
     mod = _load_migrate_module()
     import json
-    config_dir = tmp_path / "aios_mcp"
+    config_dir = tmp_path / "aizee_mcp"
     config_dir.mkdir(parents=True)
     config = {"mcpServers": {"existing": {"command": "test"}}}
     (config_dir / "config.json").write_text(json.dumps(config), encoding="utf-8")
@@ -275,7 +273,7 @@ def test_migrate_4_21_to_4_22_with_config_json(tmp_path: Path):
 def test_migrate_4_21_to_4_22_config_json_invalid(tmp_path: Path):
     """Lines 86-87: migration handles invalid config.json."""
     mod = _load_migrate_module()
-    config_dir = tmp_path / "aios_mcp"
+    config_dir = tmp_path / "aizee_mcp"
     config_dir.mkdir(parents=True)
     (config_dir / "config.json").write_text("invalid json{", encoding="utf-8")
     # Should not crash
@@ -348,7 +346,7 @@ def test_migrate_4_22_to_4_22_1_docs_already_exists(tmp_path: Path):
 def test_migrate_4_22_to_4_22_1_missing_module_dirs(tmp_path: Path):
     """Lines 158-165: migration warns about missing module directories."""
     mod = _load_migrate_module()
-    # Don't create runtime/managers or aios_mcp/tools
+    # Don't create runtime/managers or aizee_mcp/tools
     mod._migrate_4_22_to_4_22_1(tmp_path)
 
 
@@ -356,7 +354,7 @@ def test_migrate_4_22_to_4_22_1_with_module_dirs(tmp_path: Path):
     """Lines 159-165: migration verifies module directories exist."""
     mod = _load_migrate_module()
     (tmp_path / "runtime" / "managers").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "aios_mcp" / "tools").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "aizee_mcp" / "tools").mkdir(parents=True, exist_ok=True)
     mod._migrate_4_22_to_4_22_1(tmp_path)
 
 
@@ -407,7 +405,7 @@ def test_run_migrations_full_chain(tmp_path: Path):
     _write_version_file(tmp_path, "4.21.0")
     code = mod.run_migrations(tmp_path)
     assert code == 1  # migrated successfully
-    assert (tmp_path / ".aios-version").read_text(encoding="utf-8").strip() == "4.23.0"
+    assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "4.23.0"
 
 
 def test_run_migrations_dry_run_full_chain(tmp_path: Path):
@@ -418,7 +416,7 @@ def test_run_migrations_dry_run_full_chain(tmp_path: Path):
     code = mod.run_migrations(tmp_path, dry_run=True)
     assert code == 3  # dry-run
     # Version file should still say 4.21.0
-    assert (tmp_path / ".aios-version").read_text(encoding="utf-8").strip() == "4.21.0"
+    assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "4.21.0"
 
 
 def test_run_migrations_no_chain_jumps(tmp_path: Path):
@@ -428,7 +426,7 @@ def test_run_migrations_no_chain_jumps(tmp_path: Path):
     _write_version_file(tmp_path, "4.23.0")
     code = mod.run_migrations(tmp_path)
     assert code == 1
-    assert (tmp_path / ".aios-version").read_text(encoding="utf-8").strip() == "9.9.9"
+    assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "9.9.9"
 
 
 def test_run_migrations_no_chain_dry_run(tmp_path: Path):
@@ -439,7 +437,7 @@ def test_run_migrations_no_chain_dry_run(tmp_path: Path):
     code = mod.run_migrations(tmp_path, dry_run=True)
     assert code == 1
     # Version file should still say 4.23.0 in dry-run
-    assert (tmp_path / ".aios-version").read_text(encoding="utf-8").strip() == "4.23.0"
+    assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "4.23.0"
 
 
 # ---------------------------------------------------------------------------
@@ -488,7 +486,7 @@ def test_main_check_flag(tmp_path: Path):
     """Line 302-303: main with --check flag."""
     _write_pyproject(tmp_path, "4.22.0")
     _write_version_file(tmp_path, "4.22.0")
-    code, output = _run_migrate(tmp_path, "--check")
+    code, _output = _run_migrate(tmp_path, "--check")
     assert code == 0
 
 
@@ -496,7 +494,7 @@ def test_main_dry_run_flag(tmp_path: Path):
     """Line 304: main with --dry-run flag."""
     _write_pyproject(tmp_path, "4.22.0")
     _write_version_file(tmp_path, "4.21.0")
-    code, output = _run_migrate(tmp_path, "--dry-run")
+    code, _output = _run_migrate(tmp_path, "--dry-run")
     assert code == 3
 
 

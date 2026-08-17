@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LinkedIn plugin for AI Global OS — proxies to octopus-linkedin MCP server.
+"""LinkedIn plugin for aiZee — proxies to octopus-linkedin MCP server.
 
 Requires an authenticated LinkedIn session. Run ``octopus-linkedin authorize``
 once to cache an access token (valid ~60 days). The token is stored locally in

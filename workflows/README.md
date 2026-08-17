@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **29 numbered execution workflows** plus reference/standards files. Each activates when the AI detects a specific task type.
+This directory contains **31 execution workflows** plus reference/standards files. Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 

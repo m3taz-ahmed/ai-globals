@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Centralized enums for AI Global OS runtime.
+"""Centralized enums for aiZee runtime.
 
 Replaces magic strings with type-safe enums across workflow, saga, and
 kernel modules. Existing enums (DecisionStatus, StepStatus) remain in their

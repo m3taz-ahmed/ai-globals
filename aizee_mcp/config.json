@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "ai-global-os": {
+    "aizee": {
       "command": "python",
-      "args": ["scripts/aios_mcp_wrapper.py"]
+      "args": ["scripts/aizee_mcp_wrapper.py"]
     },
     "graphify": {
       "command": "python",

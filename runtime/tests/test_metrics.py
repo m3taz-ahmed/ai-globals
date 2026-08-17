@@ -17,7 +17,6 @@ from runtime.metrics import (
     LabelValueError,
     MetricDuplicationError,
     MetricNameError,
-    RestrictedRegistry,
     Summary,
     Timer,
     _base_name,

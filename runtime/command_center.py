@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent Command Center — fleet management dashboard for AI Global OS.
+"""Agent Command Center — fleet management dashboard for aiZee.
 
 Provides a Kanban-style task board and agent fleet tracking layer that
 complements the existing ``AgentManager``.  All state is persisted to

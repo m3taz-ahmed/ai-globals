@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Markdown rule compiler for AI Global OS.
+"""Markdown rule compiler for aiZee.
 
 Re-implements the AI-RULES rule compiler pattern: parse project-authored
 rule/skill markdown files into a normalized Rule IR that agents, validators,

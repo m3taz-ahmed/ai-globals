@@ -25,7 +25,7 @@ def _serve(tmp_root: Path):
         "default_action: ask\nrules:\n"
         "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
     )
-    os.environ["AGENT_OS_ROOT"] = str(tmp_root)
+    os.environ["AIZEE_ROOT"] = str(tmp_root)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -525,7 +525,7 @@ def test_dashboard_audit_with_log_file():
     )
     audit_log = tmp / "state" / "audit.log"
     audit_log.write_text(json.dumps({"event": "test"}) + "\n", encoding="utf-8")
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -604,7 +604,7 @@ def test_dashboard_tracing_with_spans():
     )
     spans_file = tmp / "state" / "spans.jsonl"
     spans_file.write_text(json.dumps({"span_id": "s1"}) + "\n", encoding="utf-8")
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -681,7 +681,7 @@ def test_dashboard_workflows_endpoint():
     (tmp / "workflows/test.md").write_text(
         "[WORKFLOW] test\n[OBJ] Test.\n[RULES]\n1. [REQ] Step.\n"
     )
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -712,7 +712,7 @@ def test_dashboard_workflow_run_endpoint():
     (tmp / "workflows/test.md").write_text(
         "[WORKFLOW] test\n[OBJ] Test.\n[RULES]\n1. [REQ] Step.\n"
     )
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -933,7 +933,7 @@ def test_dashboard_graph_endpoint_with_data():
     graph_dir = tmp / "graphify-out"
     graph_dir.mkdir(parents=True, exist_ok=True)
     (graph_dir / "graph.json").write_text(json.dumps({"nodes": [], "links": []}))
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -981,7 +981,7 @@ def test_dashboard_graph_stats_with_data():
         "links": [{"source": "a", "target": "b"}],
     }
     (graph_dir / "graph.json").write_text(json.dumps(graph))
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -1011,7 +1011,7 @@ def test_dashboard_graph_stats_invalid_json():
     graph_dir = tmp / "graphify-out"
     graph_dir.mkdir(parents=True, exist_ok=True)
     (graph_dir / "graph.json").write_text("invalid json{{{")
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -1042,7 +1042,7 @@ def test_dashboard_serves_index_html():
     dash_dir = tmp / "dashboard"
     dash_dir.mkdir(parents=True, exist_ok=True)
     (dash_dir / "index.html").write_text("<html>Dashboard</html>", encoding="utf-8")
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -1069,7 +1069,7 @@ def test_dashboard_serves_index_css():
     dash_dir = tmp / "dashboard"
     dash_dir.mkdir(parents=True, exist_ok=True)
     (dash_dir / "index.css").write_text("body { color: red; }", encoding="utf-8")
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -1234,7 +1234,7 @@ def test_dashboard_unauthorized_without_token():
         "default_action: ask\nrules:\n"
         "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
     )
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
     t = threading.Thread(target=server.serve_forever, daemon=True)
@@ -1276,7 +1276,7 @@ def test_dashboard_main_block():
     )
     env = dict(os.environ)
     env.update({
-        "AGENT_OS_ROOT": str(tmp),
+        "AIZEE_ROOT": str(tmp),
         "AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN": "1",
         "PYTHONIOENCODING": "utf-8",
         "PYTHONHASHSEED": "0",
@@ -1499,7 +1499,7 @@ def test_dashboard_graph_too_large():
     # Create a graph.json larger than 2MB
     large_nodes = [{"id": f"node-{i}", "community": i} for i in range(200000)]
     (graph_dir / "graph.json").write_text(json.dumps({"nodes": large_nodes, "links": []}))
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
     port = server.server_address[1]
@@ -1566,7 +1566,7 @@ def test_dashboard_main_block_in_process():
         "default_action: ask\nrules:\n"
         "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
     )
-    os.environ["AGENT_OS_ROOT"] = str(tmp)
+    os.environ["AIZEE_ROOT"] = str(tmp)
     os.environ["AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN"] = "1"
     original_argv = sys.argv
     sys.argv = ["server.py", "0"]

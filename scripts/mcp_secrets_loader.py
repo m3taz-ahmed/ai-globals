@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Centralized secrets loader for AI Global OS MCP servers.
+"""Centralized secrets loader for aiZee MCP servers.
 
 Reads ``.env`` from the OS root and injects all key-value pairs into
 ``os.environ`` **before** any MCP server process is spawned. This keeps
@@ -7,7 +7,7 @@ secrets out of the repository (``.env`` is git-ignored) while making
 them available to every MCP server and plugin transparently.
 
 Usage (automatic):
-    The MCP wrappers (``aios_mcp_wrapper.py``, ``graphify_mcp_wrapper.py``)
+    The MCP wrappers (``aizee_mcp_wrapper.py``, ``graphify_mcp_wrapper.py``)
     call ``load_env()`` at startup. External MCP servers spawned by
     ``runtime/mcp_client.py`` inherit the augmented environment.
 
@@ -16,7 +16,7 @@ Usage (manual / CLI):
     python scripts/mcp_secrets_loader.py --check   # exit 1 if missing required vars
 
 Resolution order:
-    1. ``AGENT_OS_ROOT/.env``  (canonical location)
+    1. ``AIZEE_ROOT/.env``  (canonical location)
     2. ``cwd/.env``            (fallback for non-standard layouts)
 """
 from __future__ import annotations
@@ -28,8 +28,8 @@ from pathlib import Path
 
 def discover_env_file() -> Path | None:
     """Find the ``.env`` file to load."""
-    # 1. Explicit AGENT_OS_ROOT
-    root_env = os.environ.get("AGENT_OS_ROOT")
+    # 1. Explicit AIZEE_ROOT
+    root_env = os.environ.get("AIZEE_ROOT")
     if root_env:
         candidate = Path(root_env) / ".env"
         if candidate.is_file():

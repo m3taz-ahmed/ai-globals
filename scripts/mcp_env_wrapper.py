@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generic env-loading wrapper for external MCP servers.
 
-Reads ``.env`` from the AI Global OS root, injects secrets into the
+Reads ``.env`` from the aiZee root, injects secrets into the
 environment, then ``exec``s the original MCP server command. This makes
 Devin-managed MCP servers (defined in ``.devin/mcp_config.json``) pick
 up centralized secrets without relying on OS-level env vars.
@@ -25,7 +25,7 @@ from pathlib import Path
 
 
 def _discover_root() -> Path:
-    root = os.environ.get("AGENT_OS_ROOT")
+    root = os.environ.get("AIZEE_ROOT")
     if root and Path(root).is_dir():
         return Path(root)
     return Path(__file__).resolve().parent.parent
@@ -53,7 +53,7 @@ def _load_env(root: Path) -> None:
 
 def main() -> int:
     root = _discover_root()
-    os.environ["AGENT_OS_ROOT"] = str(root)
+    os.environ["AIZEE_ROOT"] = str(root)
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
     _load_env(root)
 

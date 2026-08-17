@@ -1,6 +1,6 @@
 <div align="right" dir="rtl">
-  <img src="logo.png" width="160" alt="شعار AI Global OS">
-  <h1>AI Global OS — نظام التشغيل العالمي للذكاء الاصطناعي</h1>
+  <img src="logo.png" width="160" alt="شعار aiZee">
+  <h1>aiZee — نظام التشغيل العالمي للذكاء الاصطناعي</h1>
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
@@ -25,13 +25,13 @@
 
 ---
 
-## ما هو AI Global OS؟
+## ما هو aiZee؟
 
 **نظام تشغيل محكم الإصدار** يجلس بينك وب كل مساعد ذكاء اصطناعي — Cursor، Claude، Copilot، Windsurf، Cline، Aider، Devin — ويفرض معايير الهندسة وسياسات الأمان والانضباط المعماري على كل سطر كود مولّد.
 
-**المشكلة التي يحلها:** المساعدات الذكية تهلوس APIs، تنسى الاتفاقيات، تتجاهل الأمان، وتشحن ديونًا تقنية صامتة. AI Global OS يجبرها على القراءة من مصدر حقيقة مركزي *قبل* كتابة سطر واحد.
+**المشكلة التي يحلها:** المساعدات الذكية تهلوس APIs، تنسى الاتفاقيات، تتجاهل الأمان، وتشحن ديونًا تقنية صامتة. aiZee يجبرها على القراءة من مصدر حقيقة مركزي *قبل* كتابة سطر واحد.
 
-| بدون AI Global OS | مع AI Global OS |
+| بدون aiZee | مع aiZee |
 | :--- | :--- |
 | انحراف السياق بعد عدة prompts | القواعد والشخصيات تُحمّل كل جلسة |
 | حزم قديمة وديون تقنية صامتة | تثبيت إصدار دقيق عبر MCP حي |
@@ -76,8 +76,8 @@ bash install.sh
 ### التحقق
 
 ```bash
-ai-os doctor    # فحص صحة
-ai-os status    # الشخصية، المهارات، الميزانية
+aizee doctor    # فحص صحة
+aizee status    # الشخصية، المهارات، الميزانية
 ```
 
 ---
@@ -88,7 +88,7 @@ ai-os status    # الشخصية، المهارات، الميزانية
 20 شخصية (`ARCH`، `QA`، `SEC`، `DEV`، `SRE`، `DATA`، `ML`، `DEVOPS`، `FREELANCE`، إلخ) مع 13 مهارة lord. تُكتشف تلقائيًا حسب المهمة.
 
 ```bash
-ai-os persona detect --multi "ابني API آمن مع docker و postgres"
+aizee persona detect --multi "ابني API آمن مع docker و postgres"
 # ← Primary: ARCH + Secondary: SEC, DEVOPS + Lords: security-lord, cloud-platforms-lord
 ```
 
@@ -212,15 +212,15 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 ## مرجع CLI
 
 ```bash
-ai-os status                         # صحة + إحصائات
-ai-os doctor                         # تشخيص كامل
-ai-os persona detect --multi "مهمة"  # كشف الشخصيات
-ai-os check edit --args '{"tokens":100}'  # بوابة policy + budget
-ai-os run 02-execution               # تشغيل سير عمل
-ai-os memory ingest                  # إعادة بناء الفهرس
-ai-os memory search "استعلام"        # بحث في الذاكرة
-ai-os skill list                     # قائمة المهارات
-ai-os test --full                    # اختبارات كاملة مع تغطية
+aizee status                         # صحة + إحصائات
+aizee doctor                         # تشخيص كامل
+aizee persona detect --multi "مهمة"  # كشف الشخصيات
+aizee check edit --args '{"tokens":100}'  # بوابة policy + budget
+aizee run 02-execution               # تشغيل سير عمل
+aizee memory ingest                  # إعادة بناء الفهرس
+aizee memory search "استعلام"        # بحث في الذاكرة
+aizee skill list                     # قائمة المهارات
+aizee test --full                    # اختبارات كاملة مع تغطية
 ```
 
 ---
@@ -229,10 +229,10 @@ ai-os test --full                    # اختبارات كاملة مع تغطي
 
 | الأداة | ملف الإعداد |
 | :--- | :--- |
-| Cursor | `.cursor/rules/ai-global-os.mdc` |
+| Cursor | `.cursor/rules/aizee.mdc` |
 | Claude Code | `.claude/CLAUDE.md` |
 | Windsurf | `.windsurfrules` |
-| Cline | `.clinerules/ai-global-os.md` |
+| Cline | `.clinerules/aizee.md` |
 | Aider | `.aider.conf.yml` |
 | GitHub Copilot | `.github/copilot-instructions.md` |
 | Devin | `.devin/skills/global-os/SKILL.md` |
@@ -287,6 +287,6 @@ MIT — راجع [LICENSE](LICENSE).
 </div>
 
 <div align="center">
-  <p dir="rtl"><strong>AI Global OS</strong> — توقف عن السماح للذكاء الاصطناعي بكتابة كود فوضوي. حوّله إلى مهندسك الرئيسي.</p>
+  <p dir="rtl"><strong>aiZee</strong> — توقف عن السماح للذكاء الاصطناعي بكتابة كود فوضوي. حوّله إلى مهندسك الرئيسي.</p>
   <p>بناه <a href="https://linkedin.com/in/moataz-ahmed">معتز أحمد</a></p>
 </div>

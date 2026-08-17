@@ -1,4 +1,4 @@
-"""Comprehensive tests for aios_cli.py."""
+"""Comprehensive tests for aizee_cli.py."""
 
 from __future__ import annotations
 
@@ -11,17 +11,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from aios_cli import main
+from aizee_cli import main
 from memory.store import MemoryStore
 from runtime.kernel import Kernel
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _tmp_root(with_vector: bool = False) -> Path:
-    tmp = Path(tempfile.mkdtemp(prefix="aios_cli_test_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_cli_test_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -46,7 +45,7 @@ class TestCliStatus:
             rc = main(["--root", str(tmp), "status"])
             captured = capsys.readouterr()
             assert rc == 0
-            assert "AI Global OS Status" in captured.out
+            assert "aiZee Status" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -62,7 +61,7 @@ class TestCliVersion:
             rc = main(["--root", str(tmp), "version"])
             captured = capsys.readouterr()
             assert rc == 0
-            assert "AI Global OS" in captured.out
+            assert "aiZee" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -75,9 +74,9 @@ class TestCliDoctor:
     def test_doctor_ok(self, capsys):
         tmp = _tmp_root()
         try:
-            rc = main(["--root", str(tmp), "doctor"])
+            main(["--root", str(tmp), "doctor"])
             captured = capsys.readouterr()
-            assert "AI Global OS Doctor" in captured.out
+            assert "aiZee Doctor" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -123,7 +122,7 @@ class TestCliRun:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "run", "test"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -370,7 +369,7 @@ class TestCliSync:
     def test_sync_runs_subprocess(self, capsys):
         tmp = _tmp_root()
         try:
-            with patch("aios_cli.subprocess.run") as mock_run:
+            with patch("aizee_cli.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
                 rc = main(["--root", str(tmp), "sync"])
                 assert rc == 0
@@ -387,7 +386,7 @@ class TestCliGraphify:
     def test_graphify_runs_subprocess(self, capsys):
         tmp = _tmp_root()
         try:
-            with patch("aios_cli.subprocess.run") as mock_run:
+            with patch("aizee_cli.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
                 rc = main(["--root", str(tmp), "graphify"])
                 assert rc == 0
@@ -422,7 +421,7 @@ class TestCliSaga:
         try:
             steps = '[{"action": "Read", "args": {}}]'
             rc = main(["--root", str(tmp), "saga", "test-saga", "--steps", steps])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -445,7 +444,7 @@ class TestCliTelemetry:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "telemetry", "summary"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -454,7 +453,7 @@ class TestCliTelemetry:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "telemetry", "events", "--limit", "5"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -463,7 +462,7 @@ class TestCliTelemetry:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "telemetry", "system"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -478,7 +477,7 @@ class TestCliStack:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "stack", "detect"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -487,7 +486,7 @@ class TestCliStack:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "stack", "show"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -519,7 +518,7 @@ class TestCliLinkedin:
                 mock_client = MagicMock()
                 mock_client.is_configured.return_value = False
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "profile"))
                 captured = capsys.readouterr()
                 assert rc == 1
@@ -535,7 +534,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"name": "John"}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "profile"))
                 assert rc == 0
         finally:
@@ -549,7 +548,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "post", text="Hello LinkedIn"))
                 assert rc == 0
         finally:
@@ -563,7 +562,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"draft_id": "d1"}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "draft", text="Draft text"))
                 assert rc == 0
         finally:
@@ -577,7 +576,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"drafts": []}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "drafts"))
                 assert rc == 0
         finally:
@@ -591,7 +590,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "approve", draft_id="d1"))
                 assert rc == 0
         finally:
@@ -605,7 +604,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "publish", draft_id="d1"))
                 assert rc == 0
         finally:
@@ -619,7 +618,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "schedule", draft_id="d1", when="2026-07-02T09:00:00Z"))
                 assert rc == 0
         finally:
@@ -633,7 +632,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"likes": 10}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "stats", urn="urn:li:post:123"))
                 assert rc == 0
         finally:
@@ -647,7 +646,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 rc = cmd_linkedin(self._make_args(tmp, "delete", urn="urn:li:post:123"))
                 assert rc == 0
         finally:
@@ -741,7 +740,7 @@ class TestCliChat:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "chat", "hello"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -811,9 +810,9 @@ class TestCliAgent:
     def test_agent_spawn(self, capsys):
         tmp = _tmp_root()
         try:
-            with patch.object(Kernel, "spawn_agent", return_value={"ok": True}) as mock_spawn:
+            with patch.object(Kernel, "spawn_agent", return_value={"ok": True}):
                 rc = main(["--root", str(tmp), "agent", "spawn", "--agent-id", "a1", "--persona", "ARCH"])
-                captured = capsys.readouterr()
+                capsys.readouterr()
                 assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -823,7 +822,7 @@ class TestCliAgent:
         try:
             with patch.object(Kernel, "delegate", return_value={"ok": True}):
                 rc = main(["--root", str(tmp), "agent", "delegate", "--agent-id", "a1", "--action", "Read"])
-                captured = capsys.readouterr()
+                capsys.readouterr()
                 assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -832,7 +831,7 @@ class TestCliAgent:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "agent", "list"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -841,7 +840,7 @@ class TestCliAgent:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "agent", "sync"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -856,7 +855,7 @@ class TestCliPersona:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "persona", "list"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -865,7 +864,7 @@ class TestCliPersona:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "persona", "detect", "Design", "a", "microservices", "architecture"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -874,7 +873,7 @@ class TestCliPersona:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "persona", "detect", "--single", "Audit", "for", "SQL", "injection"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -887,7 +886,7 @@ class TestCliPersona:
             # Actually nargs="+" requires at least one arg, so this tests
             # the " ".join(args.text) == "" path
             rc = main(["--root", str(tmp), "persona", "detect", ""])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 1
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -902,7 +901,7 @@ class TestCliSkill:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "skill", "list"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -921,7 +920,7 @@ class TestCliSkill:
         tmp = _tmp_root()
         try:
             rc = main(["--root", str(tmp), "skill", "search", "test"])
-            captured = capsys.readouterr()
+            capsys.readouterr()
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -936,10 +935,10 @@ class TestCliDoctorExtended:
     def test_doctor_with_version_file(self, capsys):
         tmp = _tmp_root()
         try:
-            (tmp / ".aios-version").write_text("5.0.0", encoding="utf-8")
-            rc = main(["--root", str(tmp), "doctor"])
+            (tmp / ".aizee-version").write_text("5.0.0", encoding="utf-8")
+            main(["--root", str(tmp), "doctor"])
             captured = capsys.readouterr()
-            assert "AI Global OS Doctor" in captured.out
+            assert "aiZee Doctor" in captured.out
             assert "5.0.0" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -948,9 +947,9 @@ class TestCliDoctorExtended:
         tmp = _tmp_root()
         try:
             monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "invalid-key-that-will-fail")
-            rc = main(["--root", str(tmp), "doctor"])
+            main(["--root", str(tmp), "doctor"])
             captured = capsys.readouterr()
-            assert "AI Global OS Doctor" in captured.out
+            assert "aiZee Doctor" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
             monkeypatch.delenv("AIOS_ENCRYPTION_KEY", raising=False)
@@ -1009,13 +1008,13 @@ class TestCliMain:
         try:
             env = dict(os.environ)
             env.update({
-                "AGENT_OS_ROOT": str(tmp),
+                "AIZEE_ROOT": str(tmp),
                 "PYTHONIOENCODING": "utf-8",
                 "PYTHONHASHSEED": "0",
                 "PYTHONPATH": str(Path(__file__).resolve().parent.parent),
             })
             result = subprocess.run(
-                [sys.executable, str(Path(__file__).resolve().parent.parent / "aios_cli.py"), "version"],
+                [sys.executable, str(Path(__file__).resolve().parent.parent / "aizee_cli.py"), "version"],
                 env=env,
                 capture_output=True,
                 text=True,
@@ -1023,7 +1022,7 @@ class TestCliMain:
             )
             if result.returncode != 0 and "HashRandomization" in result.stderr:  # pragma: no cover
                 pytest.skip("Windows subprocess hash randomization issue")
-            assert "AI Global OS" in result.stdout
+            assert "aiZee" in result.stdout
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1113,7 +1112,7 @@ class TestCliLinkedinUnknownAction:
                 mock_client = MagicMock()
                 mock_client.is_configured.return_value = True
                 mock_cls.return_value = mock_client
-                from aios_cli import cmd_linkedin
+                from aizee_cli import cmd_linkedin
                 args = MagicMock()
                 args.root = tmp
                 args.project = None
@@ -1226,9 +1225,9 @@ class TestCliDoctorPipFailure:
                 return real_import(name, *args, **kwargs)
 
             with patch("builtins.__import__", side_effect=selective_import):
-                rc = main(["--root", str(tmp), "doctor"])
+                main(["--root", str(tmp), "doctor"])
                 captured = capsys.readouterr()
-                assert "AI Global OS Doctor" in captured.out
+                assert "aiZee Doctor" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1242,9 +1241,9 @@ class TestCliDoctorVectorException:
         tmp = _tmp_root()
         try:
             with patch("memory.vector.VectorMemory", side_effect=Exception("vector error")):
-                rc = main(["--root", str(tmp), "doctor"])
+                main(["--root", str(tmp), "doctor"])
                 captured = capsys.readouterr()
-                assert "AI Global OS Doctor" in captured.out
+                assert "aiZee Doctor" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1262,7 +1261,7 @@ class TestCliDoctorNonWindows:
             args.root = tmp
             args.project = tmp
             with patch("os.name", "posix"):
-                from aios_cli import cmd_doctor
+                from aizee_cli import cmd_doctor
                 rc = cmd_doctor(args)
                 assert rc in (0, 1)
         finally:
@@ -1280,9 +1279,9 @@ class TestCliDoctorGlobalMcp:
         tmp_appdata = Path(tempfile.mkdtemp(prefix="aios_appdata_"))
         try:
             with patch.dict(os.environ, {"APPDATA": str(tmp_appdata)}):
-                rc = main(["--root", str(tmp), "doctor"])
+                main(["--root", str(tmp), "doctor"])
                 captured = capsys.readouterr()
-                assert "AI Global OS Doctor" in captured.out
+                assert "aiZee Doctor" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
             shutil.rmtree(tmp_appdata, ignore_errors=True)
@@ -1296,9 +1295,9 @@ class TestCliDoctorGlobalMcp:
         (g_dir / "mcp_config.json").write_text("invalid json{{{", encoding="utf-8")
         try:
             with patch.dict(os.environ, {"APPDATA": str(tmp_appdata)}):
-                rc = main(["--root", str(tmp), "doctor"])
+                main(["--root", str(tmp), "doctor"])
                 captured = capsys.readouterr()
-                assert "AI Global OS Doctor" in captured.out
+                assert "aiZee Doctor" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
             shutil.rmtree(tmp_appdata, ignore_errors=True)
@@ -1333,10 +1332,10 @@ class TestCliMainBlockInProcess:
         import runpy
         tmp = _tmp_root()
         try:
-            monkeypatch.setattr(sys, "argv", ["aios_cli.py", "--root", str(tmp), "version"])
+            monkeypatch.setattr(sys, "argv", ["aizee_cli.py", "--root", str(tmp), "version"])
             with pytest.raises(SystemExit):
                 runpy.run_path(
-                    str(Path(__file__).resolve().parent.parent / "aios_cli.py"),
+                    str(Path(__file__).resolve().parent.parent / "aizee_cli.py"),
                     run_name="__main__",
                 )
         finally:

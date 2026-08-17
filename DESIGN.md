@@ -1,8 +1,8 @@
 ---
 version: alpha
-name: AI-Global-OS-design
+name: aiZee-design
 
-description: AI Global OS design language — a sovereign AI engineering control plane. Dark-first command center built on deep violet (#150f23) and ink (#1f1633) canvas, electric lime (#c2ef4e) and cyan/violet accents. Display type in a chunky, technical sans (Rubik fallback) for UI copy and JetBrains Mono for code. Cards and glass panels float on the dark surface, with status pills, bento metric cards, and a command palette (Cmd/Ctrl+K). Primary actions use black-violet buttons; destructive actions use accent-pink; success states use accent-lime.
+description: aiZee design language — a sovereign AI engineering control plane. Dark-first command center built on deep violet (#150f23) and ink (#1f1633) canvas, electric lime (#c2ef4e) and cyan/violet accents. Display type in a chunky, technical sans (Rubik fallback) for UI copy and JetBrains Mono for code. Cards and glass panels float on the dark surface, with status pills, bento metric cards, and a command palette (Cmd/Ctrl+K). Primary actions use black-violet buttons; destructive actions use accent-pink; success states use accent-lime.
 
 colors:
   primary: "#150f23"

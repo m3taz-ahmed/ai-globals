@@ -1,4 +1,4 @@
-"""CI pipeline runner for AI Global OS quality gates."""
+"""CI pipeline runner for aiZee quality gates."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def run_command(cmd: list[str], cwd: Path) -> tuple[int, str]:
 
 
 class CIPipeline:
-    """Runs the standard AI Global OS quality gates."""
+    """Runs the standard aiZee quality gates."""
 
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -34,7 +34,7 @@ class CIPipeline:
 
         checks: list[tuple[str, list[str]]] = [
             ("ruff", [sys.executable, "-m", "ruff", "check", "."]),
-            ("mypy", [sys.executable, "-m", "mypy", "runtime", "memory", "aios_mcp", "aios_cli.py", "config.py", "dashboard/server.py"]),
+            ("mypy", [sys.executable, "-m", "mypy", "runtime", "memory", "aizee_mcp", "aizee_cli.py", "config.py", "dashboard/server.py"]),
         ]
         if not skip_pytest:
             checks.append(("pytest", [sys.executable, "-m", "pytest", "-q"]))

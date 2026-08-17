@@ -1,17 +1,17 @@
-# AI Global OS — Repositories to Study
+# aiZee — Repositories to Study
 
 ## Meta-prompt for the reviewing agent
 
-You are an architecture research agent. Your task is to study each repository listed below, extract the most valuable ideas, patterns, and reusable code for AI Global OS, and produce a decision report.
+You are an architecture research agent. Your task is to study each repository listed below, extract the most valuable ideas, patterns, and reusable code for aiZee, and produce a decision report.
 
 ### Workflow
-1. Create a fresh `temp/repos-study/` directory under the AI Global OS root.
+1. Create a fresh `temp/repos-study/` directory under the aiZee root.
 2. For every repository in the list below:
    - `git clone --depth 1 https://github.com/<repo>.git temp/repos-study/<safe-name>`
    - Read the README, top-level docs, and key source files (look at `src/`, `docs/`, `examples/`).
    - Identify:
      - Core architecture pattern (orchestrator, memory, policy, guardrails, etc.).
-     - 3–5 concrete ideas or code patterns that AI Global OS can reuse.
+     - 3–5 concrete ideas or code patterns that aiZee can reuse.
      - License and maintenance status (last commit, stars, activity).
      - Integration effort (small / medium / large).
      - Risk or lock-in (needs external service, heavy dependencies, opinionated stack).
@@ -21,7 +21,7 @@ You are an architecture research agent. Your task is to study each repository li
    - **Summary** — one-paragraph elevator pitch.
    - **Top takeaways** — bullet list of ideas/patterns to adopt.
    - **Adopt?** — `YES` / `HOLD` / `NO`.
-   - **Why?** — how it improves AI Global OS or why it is not a fit.
+   - **Why?** — how it improves aiZee or why it is not a fit.
    - **Effort** — small / medium / large.
    - **Target component** — `runtime/`, `memory/`, `aios_mcp/`, `dashboard/`, `rules/`, `CI/CD`, etc.
 4. At the end, produce a ranked priority list: which repos to integrate first, which to watch, and which to skip.

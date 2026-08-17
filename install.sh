@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AI Global OS installer for Linux/macOS/Ubuntu
+# aiZee installer for Linux/macOS/Ubuntu
 # Idempotent: safe to run on first install, reinstall, or after a git pull update.
 # Preserves runtime state, runs migrations, verifies dependencies, and self-heals
 # broken symlinks / stale paths.
@@ -50,7 +50,7 @@ start_log() {
     mkdir -p "$log_dir" 2>/dev/null
     LOG_FILE="$log_dir/install-$(date +%Y%m%d-%H%M%S).log"
     if ! $WHATIF; then
-        echo "AI Global OS Install Log - $(date)" > "$LOG_FILE"
+        echo "aiZee Install Log - $(date)" > "$LOG_FILE"
     fi
 }
 
@@ -104,7 +104,7 @@ root_valid() {
 resolve_stale_root() {
     local repo="$1" current="$2"
     if [[ -n "$current" && ! -d "$current" ]]; then
-        warn "AGENT_OS_ROOT points to missing location: $current"
+        warn "AIZEE_ROOT points to missing location: $current"
         if root_valid "$repo"; then
             step "Auto-detecting: using repo location as root: $repo"
             echo "$repo"
@@ -124,7 +124,7 @@ health_check_mcp() {
     local root="$1"
     step "Health check: MCP servers"
     local config="$root/.devin/mcp_config.json"
-    [[ ! -f "$config" ]] && config="$root/aios_mcp/config.json"
+    [[ ! -f "$config" ]] && config="$root/aizee_mcp/config.json"
     [[ ! -f "$config" ]] && { warn "No MCP config found"; return; }
     # Parse with python for portability
     python3 -c "
@@ -148,7 +148,7 @@ for name, srv in cfg.get('mcpServers', {}).items():
 
 get_installed_version() {
     local root="$1"
-    local vf="$root/.aios-version"
+    local vf="$root/.aizee-version"
     if [[ -f "$vf" ]]; then
         cat "$vf" | tr -d '[:space:]'
     fi
@@ -184,12 +184,12 @@ elif [[ -f "$REPO/pyproject.toml" ]]; then
     ROOT="$REPO"
     COPY_MODE=false
 else
-    ROOT="${AGENT_OS_ROOT:-$HOME/.ai-os}"
+    ROOT="${AIZEE_ROOT:-$HOME/.aizee}"
     COPY_MODE=true
 fi
 
 # Auto-detect moved repo
-if [[ -z "$INSTALL_DIR" && -n "$AGENT_OS_ROOT" && "$AGENT_OS_ROOT" != "$REPO" ]]; then
+if [[ -z "$INSTALL_DIR" && -n "$AIZEE_ROOT" && "$AIZEE_ROOT" != "$REPO" ]]; then
     ROOT=$(resolve_stale_root "$REPO" "$ROOT")
 fi
 
@@ -199,7 +199,7 @@ if $UPDATE; then COPY_MODE=false; fi
 start_log "$ROOT"
 
 if $WHATIF; then
-    echo -e "\033[36mWhatIf: would install AI Global OS"
+    echo -e "\033[36mWhatIf: would install aiZee"
     echo "  Repo:      $REPO"
     echo "  Root:      $ROOT"
     echo "  CopyMode:  $COPY_MODE"
@@ -298,7 +298,7 @@ if $COPY_MODE; then
             --exclude='*.pyc' --exclude='*.pyo' --exclude='.pytest_cache' \
             --exclude='node_modules' --exclude='.venv' --exclude='venv' \
             --exclude='temp' --exclude='state' --exclude='brain' \
-            --exclude='graphify-out' --exclude='.ai' --exclude='.aios-version' \
+            --exclude='graphify-out' --exclude='.ai' --exclude='.aizee-version' \
             "$REPO/" "$ROOT/"
     else
         cp -R "$REPO"/* "$ROOT/" 2>/dev/null || true
@@ -383,10 +383,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 7. Set AGENT_OS_ROOT
+# 7. Set AIZEE_ROOT
 # ---------------------------------------------------------------------------
 
-export AGENT_OS_ROOT="$ROOT"
+export AIZEE_ROOT="$ROOT"
 if ! $WHATIF; then
     # Persist to shell profile (bash or zsh)
     PROFILE=""
@@ -395,15 +395,15 @@ if ! $WHATIF; then
     elif [[ -f "$HOME/.profile" ]]; then PROFILE="$HOME/.profile"
     fi
     if [[ -n "$PROFILE" ]]; then
-        # Remove old AGENT_OS_ROOT lines and add new one
+        # Remove old AIZEE_ROOT lines and add new one
         # Use portable sed: create backup on macOS (BSD sed requires -i with suffix)
         if [[ "$(uname)" == "Darwin" ]]; then
-            sed -i.bak '/^export AGENT_OS_ROOT=/d' "$PROFILE" 2>/dev/null && rm -f "${PROFILE}.bak"
+            sed -i.bak '/^export AIZEE_ROOT=/d' "$PROFILE" 2>/dev/null && rm -f "${PROFILE}.bak"
         else
-            sed -i '/^export AGENT_OS_ROOT=/d' "$PROFILE" 2>/dev/null
+            sed -i '/^export AIZEE_ROOT=/d' "$PROFILE" 2>/dev/null
         fi
-        echo "export AGENT_OS_ROOT=\"$ROOT\"" >> "$PROFILE"
-        ok "AGENT_OS_ROOT set to $ROOT (in $PROFILE)"
+        echo "export AIZEE_ROOT=\"$ROOT\"" >> "$PROFILE"
+        ok "AIZEE_ROOT set to $ROOT (in $PROFILE)"
     fi
 fi
 
@@ -484,7 +484,7 @@ if ! $SKIP_MCP; then
     "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:node -e","bash:python -c"]
   },
   "mcpServers": {
-    "ai-global-os": { "command": "python", "args": ["scripts/aios_mcp_wrapper.py"] },
+    "aizee": { "command": "python", "args": ["scripts/aizee_mcp_wrapper.py"] },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
     "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
     "upwork": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
@@ -504,14 +504,14 @@ fi
 
 BIN_DIR="$HOME/.local/bin"
 mkdir -p "$BIN_DIR"
-cat > "$BIN_DIR/ai-os" <<EOF
+cat > "$BIN_DIR/aizee" <<EOF
 #!/usr/bin/env bash
-export AGENT_OS_ROOT="$ROOT"
+export AIZEE_ROOT="$ROOT"
 export PYTHONIOENCODING=utf-8
-python "$ROOT/aios_cli.py" "\$@"
+python "$ROOT/aizee_cli.py" "\$@"
 EOF
-chmod +x "$BIN_DIR/ai-os"
-ok "CLI shim: $BIN_DIR/ai-os"
+chmod +x "$BIN_DIR/aizee"
+ok "CLI shim: $BIN_DIR/aizee"
 
 # ---------------------------------------------------------------------------
 # 12. Post-install verification
@@ -519,8 +519,8 @@ ok "CLI shim: $BIN_DIR/ai-os"
 
 step "Post-install verification"
 if ! $WHATIF; then
-    if python "$ROOT/aios_cli.py" status >/dev/null 2>&1; then
-        ok "CLI: ai-os status works"
+    if python "$ROOT/aizee_cli.py" status >/dev/null 2>&1; then
+        ok "CLI: aizee status works"
     else
         warn "CLI status check failed"
     fi
@@ -542,11 +542,11 @@ if ! $WHATIF; then
 fi
 
 # ---------------------------------------------------------------------------
-# 13. Write .aios-version
+# 13. Write .aizee-version
 # ---------------------------------------------------------------------------
 
 if ! $WHATIF; then
-    echo "$TARGET_VERSION" > "$ROOT/.aios-version"
+    echo "$TARGET_VERSION" > "$ROOT/.aizee-version"
 fi
 ok "Version: $TARGET_VERSION"
 
@@ -567,8 +567,8 @@ fi
 # ---------------------------------------------------------------------------
 
 echo ""
-echo -e "\033[32mAI Global OS $TARGET_VERSION installed to $ROOT\033[0m"
-echo -e "\033[32mCLI: ai-os status\033[0m"
+echo -e "\033[32maiZee $TARGET_VERSION installed to $ROOT\033[0m"
+echo -e "\033[32mCLI: aizee status\033[0m"
 if [[ -n "$LOG_FILE" ]]; then
     echo -e "\033[90mLog: $LOG_FILE\033[0m"
 fi

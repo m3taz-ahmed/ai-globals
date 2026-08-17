@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI code review engine for AI Global OS.
+"""AI code review engine for aiZee.
 
 Provides automated code review with multi-dimensional analysis and
 confidence scoring. Reviews code changes (diffs) for:
@@ -95,7 +95,7 @@ class FileFilter:
         """Check if a file is binary (no code extension)."""
         binary_exts = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico",
                        ".pdf", ".zip", ".tar", ".gz", ".so", ".dll", ".exe",
-                       ".bin", ".dat", ".db", ".sqlite", ".jpg"}
+                       ".bin", ".dat", ".db", ".sqlite"}
         return file_path.suffix.lower() in binary_exts
 
     @staticmethod

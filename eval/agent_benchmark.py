@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent benchmark engine for AI Global OS.
+"""Agent benchmark engine for aiZee.
 
 Measures the quality of persona/skill output on structured coding tasks.
 Each task has:
@@ -186,7 +186,7 @@ def default_tasks() -> list[BenchmarkTask]:
 
 
 class BenchmarkEngine:
-    """Runs benchmark tasks against the AI Global OS kernel and scores results."""
+    """Runs benchmark tasks against the aiZee kernel and scores results."""
 
     def __init__(
         self,

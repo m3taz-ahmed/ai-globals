@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freelancer.com plugin for AI Global OS — proxies to godesigntech/freelancer-mcp-server.
+"""Freelancer.com plugin for aiZee — proxies to godesigntech/freelancer-mcp-server.
 
 Requires FREELANCER_OAUTH_TOKEN env var (or FREELANCER_ACCOUNTS JSON for multi-account).
 """

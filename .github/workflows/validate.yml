@@ -19,15 +19,15 @@ jobs:
       - name: Lint
         run: python -m ruff check .
       - name: Type check
-        run: python -m mypy runtime memory aios_mcp cli.py config.py dashboard/server.py
+        run: python -m mypy runtime memory aizee_mcp cli.py config.py dashboard/server.py
       - name: Test with coverage
         run: python -m pytest -q --cov-fail-under=80
       - name: Validate globals
         run: python scripts/validate-globals.py
       - name: Docs guard — API.md exists
         run: |
-          if [ ! -f aios_mcp/API.md ]; then
-            echo "::error::aios_mcp/API.md is missing"
+          if [ ! -f aizee_mcp/API.md ]; then
+            echo "::error::aizee_mcp/API.md is missing"
             exit 1
           fi
       - name: Docs guard — LICENSE exists

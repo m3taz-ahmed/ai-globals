@@ -163,8 +163,8 @@ def test_main_block_prints_status(tmp_path, monkeypatch, capsys):
         "default_action: ask\nrules:\n"
         "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
     )
-    monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
-    env = {**os.environ, "AGENT_OS_ROOT": str(tmp_path)}
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
+    env = {**os.environ, "AIZEE_ROOT": str(tmp_path)}
     result = subprocess.run(
         [sys.executable, "-m", "runtime.kernel"],
         capture_output=True, text=True, env=env,

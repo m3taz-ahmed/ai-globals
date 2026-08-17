@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Git-backed memory layer for AI Global OS.
+"""Git-backed memory layer for aiZee.
 
 Manages agent memory as a git repository, providing:
 - Versioned memory entries (commit history)
@@ -73,7 +73,7 @@ class MemoryEntry:
 
 
 class GitMemoryStore:
-    """Git-backed memory store for AI Global OS agents."""
+    """Git-backed memory store for aiZee agents."""
 
     def __init__(self, repo_path: Path) -> None:
         self.repo_path = repo_path
@@ -96,8 +96,8 @@ class GitMemoryStore:
         """Initialize the git memory repository."""
         if not (self.repo_path / ".git").exists():
             self._git("init")
-            self._git("config", "user.email", "agent@ai-global-os")
-            self._git("config", "user.name", "AI Global OS Agent")
+            self._git("config", "user.email", "agent@aizee")
+            self._git("config", "user.name", "aiZee Agent")
         # Create category directories
         for category in ("facts", "preferences", "corrections", "sessions"):
             (self.repo_path / category).mkdir(exist_ok=True)

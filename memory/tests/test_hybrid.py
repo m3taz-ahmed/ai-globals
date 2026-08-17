@@ -50,10 +50,8 @@ class TestExtractEntities:
         assert "world" in extract_entities('the "hello world" phrase')
 
     def test_extract_capitalized_phrase(self):
-        entities = extract_entities("query about AI Global OS")
-        assert "ai" in entities
-        assert "global" in entities
-        assert "os" in entities
+        entities = extract_entities("query about aiZee")
+        assert "aizee" in entities
 
     def test_extract_mixed_identifier(self):
         assert "get_repo_map" in extract_entities("call get_repo_map")

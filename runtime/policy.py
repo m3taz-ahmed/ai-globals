@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Policy engine for AI Global OS."""
+"""Policy engine for aiZee."""
 
 from __future__ import annotations
 

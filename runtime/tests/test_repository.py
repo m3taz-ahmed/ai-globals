@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -13,10 +13,10 @@ from runtime.repository import BaseRepository
 class _TestRepo(BaseRepository):
     """Concrete subclass for testing."""
 
-    _schema_sql: list[str] = [
+    _schema_sql: ClassVar[list[str]] = [
         "CREATE TABLE IF NOT EXISTS items (id TEXT PRIMARY KEY, value TEXT)",
     ]
-    _index_sql: list[str] = [
+    _index_sql: ClassVar[list[str]] = [
         "CREATE INDEX IF NOT EXISTS idx_items_value ON items(value)",
     ]
 
@@ -70,5 +70,5 @@ class TestBaseRepository:
     def test_db_path_parent_created(self, tmp_path: Path) -> None:
         """Ensure parent directory is created if it doesn't exist."""
         nested = tmp_path / "nested" / "dir" / "test.db"
-        repo = _TestRepo(nested)
+        _TestRepo(nested)
         assert nested.parent.exists()

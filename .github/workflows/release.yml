@@ -28,7 +28,7 @@ jobs:
       - name: Run quality gates
         run: |
           ruff check .
-          mypy runtime memory aios_mcp
+          mypy runtime memory aizee_mcp
           pytest -q --cov-fail-under=80
       - name: Extract version
         id: version

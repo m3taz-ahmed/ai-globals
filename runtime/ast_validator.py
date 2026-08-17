@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AST-based code validation for AI Global OS.
+"""AST-based code validation for aiZee.
 
 Validates code before and after edits to catch issues that policy rules
 cannot detect: syntax errors, undefined imports, missing dependencies,

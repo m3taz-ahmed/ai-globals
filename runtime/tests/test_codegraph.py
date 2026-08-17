@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from runtime.codegraph import CodeGraph, CodeGraphBuilder, ReachabilityAnalyzer
-
+from runtime.codegraph import CodeGraphBuilder, ReachabilityAnalyzer
 
 SAMPLE_CODE = '''
 def func_a():

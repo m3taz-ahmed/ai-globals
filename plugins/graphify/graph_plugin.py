@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Graphify plugin for AI Global OS."""
+"""Graphify plugin for aiZee."""
 
 from __future__ import annotations
 

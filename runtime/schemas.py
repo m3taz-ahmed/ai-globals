@@ -54,7 +54,7 @@ class PolicyFileSchema(BaseModel):
     """Top-level policy YAML schema."""
 
     name: str = "default"
-    api_version: str = "governance.ai-global-os/v1"
+    api_version: str = "governance.aizee/v1"
     default_action: str = "ask"
     rules: list[PolicyRuleSchema] = Field(default_factory=list)
 

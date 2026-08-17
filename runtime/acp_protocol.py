@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ACP (Agent Communication Protocol) support for AI Global OS.
+"""ACP (Agent Communication Protocol) support for aiZee.
 
 Implements a lightweight ACP-compatible message bus for inter-agent
 communication. Agents can discover each other, send messages, and

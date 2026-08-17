@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenTelemetry-inspired distributed tracing for AI Global OS.
+"""OpenTelemetry-inspired distributed tracing for aiZee.
 
 Re-implements the API/SDK split pattern from opentelemetry-python so library
 code depends only on this API, while the OS runtime supplies the SDK exporter.

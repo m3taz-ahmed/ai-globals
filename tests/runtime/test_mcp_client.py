@@ -87,7 +87,7 @@ def test_mcp_client_loads_config(tmp_path: Path) -> None:
 
 
 def test_mcp_client_loads_from_aios_config(tmp_path: Path) -> None:
-    config_dir = tmp_path / "aios_mcp"
+    config_dir = tmp_path / "aizee_mcp"
     config_dir.mkdir()
     (config_dir / "config.json").write_text(
         json.dumps({"mcpServers": {"test-server": {"command": "echo", "args": ["hi"]}}}),
@@ -132,7 +132,7 @@ def test_mcp_client_key_is_tuple(tmp_path: Path) -> None:
 
 
 def test_load_secrets_once_no_env_file(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
     mcp_client._SECRETS_LOADED = False
     mcp_client._load_secrets_once()
     assert mcp_client._SECRETS_LOADED is True
@@ -150,7 +150,7 @@ def test_load_secrets_once_loads_env(tmp_path: Path, monkeypatch) -> None:
         "NOEQUALS\n",
         encoding="utf-8",
     )
-    monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
     monkeypatch.delenv("API_KEY", raising=False)
     monkeypatch.delenv("QUOTED", raising=False)
     monkeypatch.delenv("SINGLE", raising=False)
@@ -165,14 +165,14 @@ def test_load_secrets_once_loads_env(tmp_path: Path, monkeypatch) -> None:
 
 def test_load_secrets_once_skipped_if_already_loaded(tmp_path: Path, monkeypatch) -> None:
     mcp_client._SECRETS_LOADED = True
-    monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path / "nonexistent"))
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path / "nonexistent"))
     mcp_client._load_secrets_once()  # should be no-op
     assert mcp_client._SECRETS_LOADED is True
 
 
 def test_load_secrets_once_fallback_to_parent_dir(tmp_path: Path, monkeypatch) -> None:
-    # AGENT_OS_ROOT points to nonexistent; fallback uses __file__.parent.parent
-    monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path / "nope"))
+    # AIZEE_ROOT points to nonexistent; fallback uses __file__.parent.parent
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path / "nope"))
     mcp_client._SECRETS_LOADED = False
     # Should not raise even if fallback .env doesn't exist
     mcp_client._load_secrets_once()
@@ -646,7 +646,7 @@ def test_async_call_tool_wait_timeout_kills(tmp_path: Path) -> None:
 
 def test_load_secrets_once_no_env_file_anywhere(tmp_path: Path, monkeypatch) -> None:
     """Cover line 43: _load_secrets_once returns when no .env exists at any path."""
-    monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path / "nonexistent"))
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path / "nonexistent"))
     mcp_client._SECRETS_LOADED = False
     # Monkeypatch __file__ so the fallback parent.parent has no .env
     fake_dir = tmp_path / "some_pkg"
@@ -681,10 +681,9 @@ def test_call_tool_response_error_after_successful_init(tmp_path: Path) -> None:
         '{"jsonrpc":"2.0","result":{}}\n',
         '{"jsonrpc":"2.0","error":"tool error"}\n',
     ]
-    with patch("subprocess.Popen", return_value=proc):
-        with patch("shutil.which", return_value=None):
-            with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
-                with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
-                    result = client.call_tool("my_tool", {})
+    with patch("subprocess.Popen", return_value=proc), patch("shutil.which", return_value=None):
+        with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
+            with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
+                result = client.call_tool("my_tool", {})
     assert result["ok"] is False
     assert result["error"] == "tool error"

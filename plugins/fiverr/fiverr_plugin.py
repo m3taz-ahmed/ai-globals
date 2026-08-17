@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fiverr plugin for AI Global OS — proxies to KyuRish/fiverr-mcp-server.
+"""Fiverr plugin for aiZee — proxies to KyuRish/fiverr-mcp-server.
 
 No API key required (scraper-based). READ-ONLY: search gigs, get details, view
 sellers and reviews. Bidding/messaging are NOT exposed because they violate

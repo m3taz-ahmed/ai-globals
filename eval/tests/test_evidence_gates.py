@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from eval.harness import EvidenceGates, GateName, GateResult
+from eval.harness import EvidenceGates, GateName
 
 
 class TestEvidenceGates:

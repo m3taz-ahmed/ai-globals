@@ -1,5 +1,5 @@
 name: data-exfiltration-prevention
-apiVersion: governance.ai-global-os/v1
+apiVersion: governance.aizee/v1
 default_action: ask
 rules:
   - name: block-external-post

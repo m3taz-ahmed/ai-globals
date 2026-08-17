@@ -1,4 +1,4 @@
-"""Tests for aios_mcp/tools/context_tools.py — context discovery MCP tools."""
+"""Tests for aizee_mcp/tools/context_tools.py — context discovery MCP tools."""
 
 from __future__ import annotations
 
@@ -6,14 +6,13 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 from mcp.server.fastmcp import FastMCP
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aios_ctx_test_")
-os.environ["AGENT_OS_ROOT"] = _ROOT
+os.environ["AIZEE_ROOT"] = _ROOT
 ROOT = Path(_ROOT)
 for sub in ("tech-stack", "skills", "skills/python", "state", "brain"):
     (ROOT / sub).mkdir(parents=True, exist_ok=True)
@@ -35,7 +34,7 @@ for sub in ("tech-stack", "skills", "skills/python", "state", "brain"):
     encoding="utf-8",
 )
 (ROOT / "AGENTS.md").write_text(
-    "# AGENTS\n\nAI Global OS bootloader.\n",
+    "# AGENTS\n\naiZee bootloader.\n",
     encoding="utf-8",
 )
 (ROOT / "tech-stack" / "react-18.md").write_text(
@@ -52,8 +51,8 @@ for sub in ("tech-stack", "skills", "skills/python", "state", "brain"):
     encoding="utf-8",
 )
 
-from aios_mcp.tools.context_tools import register_context_tools  # noqa: E402
-from aios_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.context_tools import register_context_tools  # noqa: E402
 
 # Build a dedicated FastMCP with only context tools
 _mcp = FastMCP("test-context")
@@ -61,7 +60,7 @@ register_context_tools(_mcp)
 
 
 def _call(name: str, arguments: dict) -> str:
-    os.environ["AGENT_OS_ROOT"] = _ROOT
+    os.environ["AIZEE_ROOT"] = _ROOT
     reset_state()
     return _mcp._tool_manager.get_tool(name).fn(**arguments)
 
@@ -90,7 +89,7 @@ class TestGetTechStack:
 
     def test_resolve_path_returns_none(self):
         """Cover line 33: resolve_path returns None for valid names."""
-        with patch("aios_mcp.tools.context_tools.resolve_path", return_value=None):
+        with patch("aizee_mcp.tools.context_tools.resolve_path", return_value=None):
             result = _call("get_tech_stack", {"pkg": "react", "ver": "18"})
             data = json.loads(result)
             assert data["ok"] is False
@@ -136,13 +135,13 @@ class TestSearchSkills:
         """Cover line 50: return empty list when skills dir missing."""
         # Point root to a temp dir without skills/
         tmp_root = tempfile.mkdtemp(prefix="aios_no_skills_")
-        os.environ["AGENT_OS_ROOT"] = tmp_root
+        os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         result = _mcp._tool_manager.get_tool("search_skills").fn(query="anything")
         data = json.loads(result)
         assert data == []
         # Restore
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
 
     def test_search_oserror_on_read(self):
@@ -187,13 +186,13 @@ class TestGetChangelog:
     def test_changelog_not_found(self):
         """Cover line 77: CHANGELOG.md missing."""
         tmp_root = tempfile.mkdtemp(prefix="aios_no_cl_")
-        os.environ["AGENT_OS_ROOT"] = tmp_root
+        os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         result = _mcp._tool_manager.get_tool("get_changelog").fn(section="unreleased")
         data = json.loads(result)
         assert data["ok"] is False
         assert "not found" in data["error"]
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
 
     def test_unreleased_section_break(self):
@@ -218,20 +217,20 @@ class TestGetActiveContext:
     def test_missing_active_context(self):
         """Cover line 108: ACTIVE_CONTEXT.md not found."""
         tmp_root = tempfile.mkdtemp(prefix="aios_no_ac_")
-        os.environ["AGENT_OS_ROOT"] = tmp_root
+        os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         result = _mcp._tool_manager.get_tool("get_active_context").fn()
         data = json.loads(result)
         assert data["ok"] is False
         assert "not found" in data["error"]
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
 
 
 class TestGetAgents:
     def test_existing_agents(self):
         """Cover lines 113-115: get_agents resource with existing file."""
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
         # Get the resource function directly
         resources = _mcp._resource_manager._resources
@@ -242,12 +241,12 @@ class TestGetAgents:
                 break
         assert agents_fn is not None
         result = agents_fn()
-        assert "AI Global OS" in result
+        assert "aiZee" in result
 
     def test_missing_agents(self):
         """Cover line 115: get_agents returns empty string when file missing."""
         tmp_root = tempfile.mkdtemp(prefix="aios_no_agents_")
-        os.environ["AGENT_OS_ROOT"] = tmp_root
+        os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         resources = _mcp._resource_manager._resources
         agents_fn = None
@@ -258,5 +257,5 @@ class TestGetAgents:
         assert agents_fn is not None
         result = agents_fn()
         assert result == ""
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()

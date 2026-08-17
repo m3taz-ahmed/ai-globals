@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parallel agent execution via git worktrees for AI Global OS.
+"""Parallel agent execution via git worktrees for aiZee.
 
 Allows multiple personas to work on the same project simultaneously
 in isolated git worktrees. Each agent gets its own working directory
@@ -204,7 +204,6 @@ class WorktreePool:
             raise ValueError(f"Worktree path already exists: {wt_path}")
         # Create the worktree with a new branch
         self._git("worktree", "add", "-b", branch, str(wt_path))
-        from datetime import datetime, timezone
         wt = Worktree(
             id=wt_id,
             agent_id=agent_id,

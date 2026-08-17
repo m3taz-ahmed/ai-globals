@@ -15,7 +15,7 @@ assignees: []
 - [ ] Release Candidate
 - [ ] Beta / Preview (will be marked `[!SPECULATIVE]`)
 
-## Why This Belongs in AI Global OS
+## Why This Belongs in aiZee
 
 <!-- How widely used is this? Is there a clear AI anti-pattern risk?
      Strong candidates: actively used frameworks with common mistakes. -->

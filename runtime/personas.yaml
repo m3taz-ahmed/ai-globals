@@ -424,41 +424,6 @@ personas:
     - stress test
     - caching
     - query optimization
-  PROPOSAL:
-    name: Proposal Specialist & Bid Strategist
-    weight: 1.3
-    skill: proposal-writer
-    lords: []
-    keywords:
-    - proposal
-    - proposals
-    - bid
-    - bids
-    - website proposal
-    - web proposal
-    - digital proposal
-    - service proposal
-    - sales proposal
-    - client proposal
-    - rfp
-    - request for proposal
-    - quotation
-    - quote
-    - quotes
-    - pitch
-    - scope of work
-    - sow
-    - proposal writing
-    - proposal writer
-    - بروبوزل
-    - عروض
-    - عروض أسعار
-    - عرض سعر
-    - كتابة عروض
-    - موقع
-    - مواقع
-    - تصميم موقع
-    - تطوير موقع
   CV:
     name: CV/Resume Specialist & Career Writer
     weight: 1.3
@@ -498,7 +463,7 @@ personas:
     - portfolio
     - معرض أعمال
   FREELANCE:
-    name: Freelance Marketplace Strategist
+    name: Proposal Specialist & Freelance Platform Strategist
     weight: 1.3
     skill: freelance-platforms
     lords:
@@ -529,7 +494,12 @@ personas:
       - خمسات
       - منصات
       - بروبوزل
+      - عروض
       - عروض أسعار
+      - عرض سعر
+      - كتابة عروض
+      - تصميم موقع
+      - تطوير موقع
       - freelance platforms
       - remote work
       - gig
@@ -538,6 +508,22 @@ personas:
       - bidding
       - proposal
       - proposals
+      - website proposal
+      - web proposal
+      - digital proposal
+      - service proposal
+      - sales proposal
+      - client proposal
+      - rfp
+      - request for proposal
+      - quotation
+      - quote
+      - quotes
+      - pitch
+      - scope of work
+      - sow
+      - proposal writing
+      - proposal writer
       - portfolio
       - client
       - clients

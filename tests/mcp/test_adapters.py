@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for aios_mcp.adapters."""
+"""Tests for aizee_mcp.adapters."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from aios_mcp.adapters import (
+from aizee_mcp.adapters import (
     AdapterError,
     AdapterRegistry,
     Backend,
@@ -20,7 +20,6 @@ from aios_mcp.adapters import (
     Session,
     default_registry,
 )
-
 
 # ---------------------------------------------------------------------------
 # LocalAdapter (existing tests, kept for regression)
@@ -150,7 +149,7 @@ def test_claude_code_adapter_timeout_config():
 def test_cli_launch_binary_not_found():
     """Cover lines 115-118: binary not on PATH raises AdapterError."""
     adapter = CodexAdapter()
-    with patch("aios_mcp.adapters.shutil.which", return_value=None):
+    with patch("aizee_mcp.adapters.shutil.which", return_value=None):
         with pytest.raises(AdapterError, match="Binary 'codex' not found"):
             asyncio.run(adapter.launch("task"))
 
@@ -158,7 +157,7 @@ def test_cli_launch_binary_not_found():
 def test_cli_launch_oserror():
     """Cover lines 136-139: OSError during subprocess spawn raises AdapterError."""
     adapter = CodexAdapter()
-    with patch("aios_mcp.adapters.shutil.which", return_value="/usr/bin/codex"), \
+    with patch("aizee_mcp.adapters.shutil.which", return_value="/usr/bin/codex"), \
          patch("asyncio.create_subprocess_exec", side_effect=OSError("spawn failed")):
         with pytest.raises(AdapterError, match="Failed to spawn codex"):
             asyncio.run(adapter.launch("task"))
@@ -169,7 +168,7 @@ def test_cli_launch_success():
     adapter = CodexAdapter()
     mock_proc = MagicMock()
     mock_proc.pid = 12345
-    with patch("aios_mcp.adapters.shutil.which", return_value="/usr/bin/codex"), \
+    with patch("aizee_mcp.adapters.shutil.which", return_value="/usr/bin/codex"), \
          patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         session = asyncio.run(adapter.launch("my task", profile="dev"))
         assert session.status == "running"
@@ -522,7 +521,7 @@ def test_registry_run_codex_with_mocks():
     mock_proc.returncode = 0
     mock_proc.communicate = AsyncMock(return_value=(b"codex output", b""))
 
-    with patch("aios_mcp.adapters.shutil.which", return_value="/usr/bin/codex"), \
+    with patch("aizee_mcp.adapters.shutil.which", return_value="/usr/bin/codex"), \
          patch("asyncio.create_subprocess_exec", return_value=mock_proc):
         result = asyncio.run(registry.run(Backend.CODEX, "write code"))
         assert result["backend"] == "codex"

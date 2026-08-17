@@ -3,7 +3,7 @@
     "strict": true,
     "contexts": [
       "validate",
-      "AI Global OS Security",
+      "aiZee Security",
       "Supply Chain Security"
     ]
   },

@@ -1,8 +1,8 @@
-# AI Global OS — Feature Documentation
+# aiZee — Feature Documentation
 
 **Version:** 4.22.1
 
-This document describes the key features added or enhanced in AI Global OS v4.22.1.
+This document describes the key features added or enhanced in aiZee v4.22.1.
 
 ## Table of Contents
 
@@ -198,7 +198,7 @@ Optional Sentry integration and Prometheus metrics export.
 
 ## MCP Tool Modules
 
-The MCP server (`aios_mcp/aios_server.py`) is now a thin facade that
+The MCP server (`aizee_mcp/aizee_server.py`) is now a thin facade that
 delegates tool registration to specialized modules:
 
 | Module | Tools |

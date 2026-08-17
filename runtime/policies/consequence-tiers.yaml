@@ -1,5 +1,5 @@
 name: consequence-tiers
-apiVersion: governance.ai-global-os/v1
+apiVersion: governance.aizee/v1
 default_action: ask
 description: >
   Consequence-tier admission policy adapted from Hazem Ali's practice-level

@@ -1,0 +1,175 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aizee
+  labels:
+    app.kubernetes.io/name: aizee
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aizee
+  namespace: aizee
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aizee-dashboard
+  namespace: aizee
+  labels:
+    app.kubernetes.io/name: aizee
+    app.kubernetes.io/component: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aizee
+      app.kubernetes.io/component: dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aizee
+        app.kubernetes.io/component: dashboard
+    spec:
+      serviceAccountName: aizee
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: dashboard
+          image: ghcr.io/m3taz-ahmed/aizee:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: AIZEE_ROOT
+              value: /opt/aizee
+            - name: AIZEE_DASHBOARD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aizee-dashboard-token
+                  key: token
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: aizee-state
+              mountPath: /opt/aizee/state
+            - name: aizee-memory
+              mountPath: /opt/aizee/memory
+            - name: aizee-brain
+              mountPath: /opt/aizee/brain
+      volumes:
+        - name: aizee-state
+          persistentVolumeClaim:
+            claimName: aizee-state
+        - name: aizee-memory
+          persistentVolumeClaim:
+            claimName: aizee-memory
+        - name: aizee-brain
+          persistentVolumeClaim:
+            claimName: aizee-brain
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aizee-dashboard
+  namespace: aizee
+  labels:
+    app.kubernetes.io/name: aizee
+    app.kubernetes.io/component: dashboard
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: aizee
+    app.kubernetes.io/component: dashboard
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aizee-state
+  namespace: aizee
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aizee-memory
+  namespace: aizee
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aizee-brain
+  namespace: aizee
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Mi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aizee-dashboard-token
+  namespace: aizee
+type: Opaque
+stringData:
+  token: CHANGE_ME_IN_PRODUCTION
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aizee-dashboard
+  namespace: aizee
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: aizee
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: 8080
+          protocol: TCP
+  egress:
+    - {}

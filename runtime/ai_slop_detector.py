@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI slop detector for AI Global OS.
+"""AI slop detector for aiZee.
 
 Detects common patterns in AI-generated code that indicate low quality:
 - Silent error swallowing (except: pass)

@@ -7,8 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from runtime.migrations import CURRENT_VERSION, MigrationRunner, backup_database
-from runtime.migrations import _MIGRATIONS
+from runtime.migrations import _MIGRATIONS, CURRENT_VERSION, MigrationRunner, backup_database
 
 
 @pytest.fixture
@@ -119,8 +118,6 @@ class TestMigrationGaps:
 
     def test_gap_in_migrations_breaks_early(self, db_path: Path) -> None:
         """Cover lines 107-108: gap in migration chain causes warning and break."""
-        import sqlite3
-        from datetime import datetime, timezone
 
         # Set version to 0 but remove migration 0 to create a gap
         original_migrations = dict(_MIGRATIONS)

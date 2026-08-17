@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lightweight Prometheus-compatible metrics registry for AI Global OS.
+"""Lightweight Prometheus-compatible metrics registry for aiZee.
 
 Re-implements the core patterns from prometheus/client_python without the
 external dependency, keeping the OS sovereign and offline-capable.

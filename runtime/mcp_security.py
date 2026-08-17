@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MCP server and skill security scanner for AI Global OS.
+"""MCP server and skill security scanner for aiZee.
 
 Scans MCP server configurations, skill files, and plugin definitions
 for security risks before installation or activation. Detects:
@@ -358,7 +358,7 @@ class MCPSecurityScanner:
 def scan_before_install(target: Path | str) -> MCPScanReport:
     """Scan a target (file, directory, or URL string) before installation.
 
-    This is the main entry point for the ``ai-os mcp install`` security gate.
+    This is the main entry point for the ``aizee mcp install`` security gate.
     """
     scanner = MCPSecurityScanner()
     target_path = Path(target)

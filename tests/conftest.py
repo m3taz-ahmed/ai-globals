@@ -1,4 +1,4 @@
-"""Shared pytest fixtures and auto-marking for AI Global OS test suite."""
+"""Shared pytest fixtures and auto-marking for aiZee test suite."""
 
 import shutil
 import tempfile

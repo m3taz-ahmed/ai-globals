@@ -1,20 +1,18 @@
-"""Tests for aios_mcp/tools/workflow_tools.py — workflow, rules, and MCP plan tools."""
+"""Tests for aizee_mcp/tools/workflow_tools.py — workflow, rules, and MCP plan tools."""
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from mcp.server.fastmcp import FastMCP
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aios_wf_test_")
-os.environ["AGENT_OS_ROOT"] = _ROOT
+os.environ["AIZEE_ROOT"] = _ROOT
 ROOT = Path(_ROOT)
 for sub in ("rules", "workflows", "tech-stack", "skills", "state", "brain"):
     (ROOT / sub).mkdir(parents=True, exist_ok=True)
@@ -38,15 +36,15 @@ for sub in ("rules", "workflows", "tech-stack", "skills", "state", "brain"):
     encoding="utf-8",
 )
 
-from aios_mcp.tools.workflow_tools import register_workflow_tools  # noqa: E402
-from aios_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.workflow_tools import register_workflow_tools  # noqa: E402
 
 _mcp = FastMCP("test-workflow")
 register_workflow_tools(_mcp)
 
 
 def _call(name: str, arguments: dict) -> str:
-    os.environ["AGENT_OS_ROOT"] = _ROOT
+    os.environ["AIZEE_ROOT"] = _ROOT
     reset_state()
     return _mcp._tool_manager.get_tool(name).fn(**arguments)
 
@@ -89,7 +87,7 @@ class TestQueryRules:
         mock_mem = MagicMock(id="m1", kind="semantic", source="tech-stack/react.md", content="behavioral")
         mock_store = MagicMock()
         mock_store.search.return_value = [mock_mem]
-        with patch("aios_mcp.tools.workflow_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.workflow_tools.memory", return_value=mock_store):
             result = _call("query_rules", {"query": "behavioral"})
             data = json.loads(result)
             # The tech-stack source should be skipped, but core.md should still match
@@ -101,7 +99,7 @@ class TestQueryRules:
         mock_mem = MagicMock(id="m1", kind="semantic", source=source_path, content="behavioral rules")
         mock_store = MagicMock()
         mock_store.search.return_value = [mock_mem]
-        with patch("aios_mcp.tools.workflow_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.workflow_tools.memory", return_value=mock_store):
             result = _call("query_rules", {"query": "behavioral"})
             data = json.loads(result)
             # core.md should appear (from FTS), and not be duplicated by glob
@@ -110,7 +108,7 @@ class TestQueryRules:
 
     def test_query_memory_exception(self):
         """Cover lines 53-54: memory search exception yields empty FTS."""
-        with patch("aios_mcp.tools.workflow_tools.memory", side_effect=Exception("db error")):
+        with patch("aizee_mcp.tools.workflow_tools.memory", side_effect=Exception("db error")):
             result = _call("query_rules", {"query": "behavioral"})
             data = json.loads(result)
             # Should still find core.md via glob
@@ -124,7 +122,7 @@ class TestQueryRules:
         mock_mem = MagicMock(id="m1", kind="semantic", source=source_path, content="behavioral rules")
         mock_store = MagicMock()
         mock_store.search.return_value = [mock_mem]
-        with patch("aios_mcp.tools.workflow_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.workflow_tools.memory", return_value=mock_store):
             result = _call("query_rules", {"query": "behavioral"})
             data = json.loads(result)
             # core.md should appear only once (FTS result, glob skipped)
@@ -162,7 +160,7 @@ class TestRunWorkflow:
         """Cover lines 75-76: successful workflow run."""
         mock_k = MagicMock()
         mock_k.run_workflow.return_value = {"status": "completed", "steps": ["s1"]}
-        with patch("aios_mcp.tools.workflow_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.workflow_tools.kernel", return_value=mock_k):
             result = _call("run_workflow", {"id": "deploy"})
             data = json.loads(result)
             assert data["status"] == "completed"
@@ -171,7 +169,7 @@ class TestRunWorkflow:
         """Cover line 75: workflow with context."""
         mock_k = MagicMock()
         mock_k.run_workflow.return_value = {"status": "completed"}
-        with patch("aios_mcp.tools.workflow_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.workflow_tools.kernel", return_value=mock_k):
             result = _call("run_workflow", {"id": "deploy", "context": {"env": "prod"}})
             data = json.loads(result)
             assert data["status"] == "completed"
@@ -207,7 +205,7 @@ class TestGetRule:
 
     def test_resolve_path_returns_none(self):
         """Cover line 93: resolve_path returns None."""
-        with patch("aios_mcp.tools.workflow_tools.resolve_path", return_value=None):
+        with patch("aizee_mcp.tools.workflow_tools.resolve_path", return_value=None):
             result = _call("get_rule", {"id": "core"})
             data = json.loads(result)
             assert data["ok"] is False
@@ -242,7 +240,7 @@ class TestGetWorkflow:
 
     def test_resolve_path_returns_none(self):
         """Cover line 113: resolve_path returns None."""
-        with patch("aios_mcp.tools.workflow_tools.resolve_path", return_value=None):
+        with patch("aizee_mcp.tools.workflow_tools.resolve_path", return_value=None):
             result = _call("get_workflow", {"id": "deploy"})
             data = json.loads(result)
             assert data["ok"] is False
@@ -254,7 +252,7 @@ class TestRuleResource:
         """Cover line 126: get_rule_resource returns content."""
         fn = _get_resource_fn("rules")
         assert fn is not None
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
         result = fn("core")
         assert "Core Rules" in result
@@ -270,7 +268,7 @@ class TestRuleResource:
         """Cover line 125: get_rule_resource returns empty for missing file."""
         fn = _get_resource_fn("rules")
         assert fn is not None
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
         result = fn("nonexistent-xyz")
         assert result == ""
@@ -281,7 +279,7 @@ class TestWorkflowResource:
         """Cover line 136: get_workflow_resource returns content."""
         fn = _get_resource_fn("workflows")
         assert fn is not None
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
         result = fn("deploy")
         assert "deploy" in result
@@ -297,7 +295,7 @@ class TestWorkflowResource:
         """Cover line 135: get_workflow_resource returns empty for missing file."""
         fn = _get_resource_fn("workflows")
         assert fn is not None
-        os.environ["AGENT_OS_ROOT"] = _ROOT
+        os.environ["AIZEE_ROOT"] = _ROOT
         reset_state()
         result = fn("nonexistent-xyz")
         assert result == ""
@@ -310,7 +308,7 @@ class TestCompileRuleFiles:
         mock_rule.file = "rules/core.md"
         mock_rule.obj = "core"
         mock_rule.rules = [MagicMock(), MagicMock()]
-        with patch("aios_mcp.tools.workflow_tools.compile_rules", return_value=[mock_rule]):
+        with patch("aizee_mcp.tools.workflow_tools.compile_rules", return_value=[mock_rule]):
             result = _call("compile_rule_files", {})
             data = json.loads(result)
             assert len(data) == 1
@@ -323,7 +321,7 @@ class TestCompileRuleFiles:
         mock_rule.file = "rules/core.md"
         mock_rule.obj = "core"
         mock_rule.rules = []
-        with patch("aios_mcp.tools.workflow_tools.compile_rules", return_value=[mock_rule]):
+        with patch("aizee_mcp.tools.workflow_tools.compile_rules", return_value=[mock_rule]):
             result = _call("compile_rule_files", {"globs": ["rules/*.md"]})
             data = json.loads(result)
             assert len(data) == 1
@@ -358,8 +356,8 @@ class TestRunMcpPlan:
         mock_step_result.output = "done"
         mock_step_result.error = ""
 
-        with patch("aios_mcp.tools.workflow_tools.McpAgent"), \
-             patch("aios_mcp.tools.workflow_tools.McpOrchestrator") as mock_orch_cls:
+        with patch("aizee_mcp.tools.workflow_tools.McpAgent"), \
+             patch("aizee_mcp.tools.workflow_tools.McpOrchestrator") as mock_orch_cls:
             mock_orch = MagicMock()
             mock_orch.execute = AsyncMock(return_value={"s1": mock_step_result})
             mock_orch_cls.return_value = mock_orch
@@ -377,8 +375,8 @@ class TestRunMcpPlan:
         mock_step_result.output = "result"
         mock_step_result.error = ""
 
-        with patch("aios_mcp.tools.workflow_tools.McpAgent"), \
-             patch("aios_mcp.tools.workflow_tools.McpOrchestrator") as mock_orch_cls:
+        with patch("aizee_mcp.tools.workflow_tools.McpAgent"), \
+             patch("aizee_mcp.tools.workflow_tools.McpOrchestrator") as mock_orch_cls:
             mock_orch = MagicMock()
             mock_orch.execute = AsyncMock(return_value={"s1": mock_step_result})
             mock_orch_cls.return_value = mock_orch

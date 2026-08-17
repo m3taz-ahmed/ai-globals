@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI Global OS configuration and root discovery."""
+"""aiZee configuration and root discovery."""
 
 from __future__ import annotations
 
@@ -9,13 +9,13 @@ from pathlib import Path
 
 
 def discover_root() -> Path:
-    """Discover AI Global OS root.
+    """Discover aiZee root.
 
     Order:
-    1. AGENT_OS_ROOT environment variable.
+    1. AIZEE_ROOT environment variable.
     2. The directory containing the current install (parent of config.py).
     """
-    return _resolve_env_dir("AGENT_OS_ROOT", Path(__file__).resolve().parent)
+    return _resolve_env_dir("AIZEE_ROOT", Path(__file__).resolve().parent)
 
 
 def discover_project_root() -> Path:
@@ -23,16 +23,16 @@ def discover_project_root() -> Path:
 
     Order:
     1. AGENT_PROJECT_ROOT environment variable.
-    2. AGENT_OS_ROOT environment variable.
+    2. AIZEE_ROOT environment variable.
     3. Current working directory if it contains `.ai/active-context.md`.
     4. The directory containing the current install (parent of config.py).
     """
     project_env = os.environ.get("AGENT_PROJECT_ROOT")
     if project_env:
         return _resolve_env_dir("AGENT_PROJECT_ROOT", discover_root())
-    os_env = os.environ.get("AGENT_OS_ROOT")
+    os_env = os.environ.get("AIZEE_ROOT")
     if os_env:
-        return _resolve_env_dir("AGENT_OS_ROOT", discover_root())
+        return _resolve_env_dir("AIZEE_ROOT", discover_root())
     cwd = Path.cwd()
     if (cwd / ".ai" / "active-context.md").exists():
         return cwd.resolve()

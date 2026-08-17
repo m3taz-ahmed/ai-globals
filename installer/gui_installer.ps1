@@ -1,5 +1,5 @@
 #requires -Version 5.1
-# AI Global OS - Professional WPF GUI Installer for Windows
+# aiZee - Professional WPF GUI Installer for Windows
 #
 # Features:
 #   - 8-page wizard: Welcome, License, Location, Components, Config, Pre-flight, Progress, Finish
@@ -75,7 +75,7 @@ Add-Type -AssemblyName System.Windows.Forms
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="AI Global OS Installer" Height="620" Width="820"
+        Title="aiZee Installer" Height="620" Width="820"
         WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize"
         Background="#0D1117" WindowStyle="SingleBorderWindow">
     <Window.Resources>
@@ -151,7 +151,7 @@ Add-Type -AssemblyName System.Windows.Forms
             <!-- Page 1: Welcome -->
             <ScrollViewer x:Name="PageWelcome" Visibility="Visible" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource PageTitle}" Text="Welcome to AI Global OS"/>
+                    <TextBlock Style="{StaticResource PageTitle}" Text="Welcome to aiZee"/>
                     <TextBlock Style="{StaticResource PageSubtitle}" Text="Sovereign AI engineering control plane - installer wizard"/>
                     <Border Background="#161B22" CornerRadius="8" Padding="20" Margin="0,10,0,10">
                         <StackPanel>
@@ -160,7 +160,7 @@ Add-Type -AssemblyName System.Windows.Forms
                             <TextBlock Style="{StaticResource BodyText}" Text="Author: Moataz"/>
                             <TextBlock Style="{StaticResource BodyText}" Text=""/>
                             <TextBlock Style="{StaticResource BodyText}" Text="This wizard will:"/>
-                            <TextBlock Style="{StaticResource BodyText}" Text="  1. Install AI Global OS core + dependencies"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="  1. Install aiZee core + dependencies"/>
                             <TextBlock Style="{StaticResource BodyText}" Text="  2. Configure MCP servers (graphify, context7, upwork, freelancer, fiverr, LinkedIn)"/>
                             <TextBlock Style="{StaticResource BodyText}" Text="  3. Set up .env secrets file (from .env.example template)"/>
                             <TextBlock Style="{StaticResource BodyText}" Text="  4. Set up agent configs (Claude, Windsurf, Cursor, Aider, Devin, Copilot, Cline)"/>
@@ -190,12 +190,12 @@ Add-Type -AssemblyName System.Windows.Forms
             <ScrollViewer x:Name="PageLocation" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Style="{StaticResource PageTitle}" Text="Installation Location"/>
-                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Choose where to install AI Global OS"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Choose where to install aiZee"/>
                     <RadioButton x:Name="RadioInPlace" Style="{StaticResource RadioStyle}" GroupName="Location" Content="In-place (use current repo location)" IsChecked="True" Margin="0,0,0,5"/>
                     <TextBlock Style="{StaticResource BodyText}" Text="The OS will run directly from the repository. Recommended for developers." Margin="20,0,0,10" Foreground="#8B949E"/>
                     <RadioButton x:Name="RadioCustom" Style="{StaticResource RadioStyle}" GroupName="Location" Content="Custom location (copy files)" IsChecked="False" Margin="0,0,0,5"/>
                     <StackPanel Orientation="Horizontal" Margin="20,0,0,10">
-                        <TextBox x:Name="CustomPath" Width="450" Height="30" Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D" VerticalContentAlignment="Center" Padding="8,0" Text="$env:LOCALAPPDATA\AI-Global-OS" IsEnabled="False"/>
+                        <TextBox x:Name="CustomPath" Width="450" Height="30" Background="#161B22" Foreground="#C9D1D9" BorderBrush="#30363D" VerticalContentAlignment="Center" Padding="8,0" Text="$env:LOCALAPPDATA\aiZee" IsEnabled="False"/>
                         <Button x:Name="BrowseBtn" Style="{StaticResource NavButton}" Content="Browse..." Margin="10,0,0,0" IsEnabled="False"/>
                     </StackPanel>
                     <TextBlock x:Name="DiskSpaceInfo" Style="{StaticResource BodyText}" Text="Disk space: checking..." Margin="0,10,0,0" Foreground="#8B949E"/>
@@ -211,7 +211,7 @@ Add-Type -AssemblyName System.Windows.Forms
                     <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="380">
                         <StackPanel>
                         <TextBlock Style="{StaticResource BodyText}" Text="Core (required)" FontWeight="Bold" Foreground="#58A6FF" Margin="0,0,0,5"/>
-                        <CheckBox x:Name="CompCore" Style="{StaticResource CheckboxStyle}" Content="AI Global OS Core (runtime, memory, MCP server)" IsChecked="True" IsEnabled="False"/>
+                        <CheckBox x:Name="CompCore" Style="{StaticResource CheckboxStyle}" Content="aiZee Core (runtime, memory, MCP server)" IsChecked="True" IsEnabled="False"/>
                         <CheckBox x:Name="CompPip" Style="{StaticResource CheckboxStyle}" Content="Python dependencies (pip install)" IsChecked="True"/>
                         <CheckBox x:Name="CompGraphify" Style="{StaticResource CheckboxStyle}" Content="Build knowledge graph (graphify update)" IsChecked="True"/>
                         <CheckBox x:Name="CompDashboard" Style="{StaticResource CheckboxStyle}" Content="Dashboard server" IsChecked="True"/>
@@ -250,8 +250,8 @@ Add-Type -AssemblyName System.Windows.Forms
                         <CheckBox x:Name="CompAgentCline" Style="{StaticResource CheckboxStyle}" Content="Cline (.clinerules)" IsChecked="True"/>
 
                         <TextBlock Style="{StaticResource BodyText}" Text="System Integration" FontWeight="Bold" Foreground="#58A6FF" Margin="0,15,0,5"/>
-                        <CheckBox x:Name="CompCLIShim" Style="{StaticResource CheckboxStyle}" Content="CLI shim (ai-os command in PATH)" IsChecked="True"/>
-                        <CheckBox x:Name="CompEnvVar" Style="{StaticResource CheckboxStyle}" Content="Set AGENT_OS_ROOT environment variable" IsChecked="True"/>
+                        <CheckBox x:Name="CompCLIShim" Style="{StaticResource CheckboxStyle}" Content="CLI shim (aizee command in PATH)" IsChecked="True"/>
+                        <CheckBox x:Name="CompEnvVar" Style="{StaticResource CheckboxStyle}" Content="Set AIZEE_ROOT environment variable" IsChecked="True"/>
                         <CheckBox x:Name="CompStartMenu" Style="{StaticResource CheckboxStyle}" Content="Create Start Menu shortcut" IsChecked="True"/>
                         <CheckBox x:Name="CompDesktop" Style="{StaticResource CheckboxStyle}" Content="Create Desktop shortcut" IsChecked="False"/>
                         </StackPanel>
@@ -268,7 +268,7 @@ Add-Type -AssemblyName System.Windows.Forms
                         <StackPanel>
                         <TextBlock Style="{StaticResource BodyText}" Text="Environment Variables" FontWeight="Bold" Foreground="#58A6FF" Margin="0,0,0,8"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                            <TextBlock Style="{StaticResource BodyText}" Text="AGENT_OS_ROOT:" Width="150"/>
+                            <TextBlock Style="{StaticResource BodyText}" Text="AIZEE_ROOT:" Width="150"/>
                             <TextBlock x:Name="ConfigRoot" Style="{StaticResource BodyText}" Text="" FontWeight="Bold"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
@@ -327,7 +327,7 @@ Add-Type -AssemblyName System.Windows.Forms
             <ScrollViewer x:Name="PageProgress" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Style="{StaticResource PageTitle}" Text="Installing..."/>
-                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Please wait while AI Global OS is being installed"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="Please wait while aiZee is being installed"/>
                     <ProgressBar x:Name="Progressbar" Height="25" Minimum="0" Maximum="100" Value="0" Margin="0,0,0,10" Foreground="#1F6FEB"/>
                     <TextBlock x:Name="ProgressLabel" Style="{StaticResource BodyText}" Text="Preparing..." Margin="0,0,0,10"/>
                     <TextBox x:Name="LogBox" Style="{StaticResource LogBox}" Height="320" Text=""/>
@@ -338,7 +338,7 @@ Add-Type -AssemblyName System.Windows.Forms
             <ScrollViewer x:Name="PageFinish" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock x:Name="FinishTitle" Style="{StaticResource PageTitle}" Text="Installation Complete!"/>
-                    <TextBlock Style="{StaticResource PageSubtitle}" Text="AI Global OS has been successfully installed"/>
+                    <TextBlock Style="{StaticResource PageSubtitle}" Text="aiZee has been successfully installed"/>
                     <Border Background="#161B22" CornerRadius="8" Padding="20" Margin="0,10,0,15">
                         <StackPanel>
                             <TextBlock x:Name="FinishVersion" Style="{StaticResource BodyText}" Text="" FontWeight="Bold"/>
@@ -648,7 +648,7 @@ function Run-PreFlightChecks {
     }
 
     # Existing installation
-    $versionFile = Join-Path $path ".aios-version"
+    $versionFile = Join-Path $path ".aizee-version"
     if (Test-Path $versionFile) {
         $existingVer = (Get-Content $versionFile -Raw).Trim()
         $Window.FindName("CheckExisting").Text = "[OK] Existing installation: v$existingVer (will be updated)"
@@ -760,7 +760,7 @@ function Start-Installation {
         $installArgs += "-SkipMCP"
     }
 
-    Log-Message "=== AI Global OS Installation ==="
+    Log-Message "=== aiZee Installation ==="
     Log-Message "Root: $installRoot"
     Log-Message "Copy mode: $copyMode"
     Log-Message "Arguments: $($installArgs -join ' ')"

@@ -1,4 +1,4 @@
-"""Issue tracker integration (Linear / Jira / Notion) for AI Global OS.
+"""Issue tracker integration (Linear / Jira / Notion) for aiZee.
 
 Provides automated task management by syncing issues from external trackers and
 pushing OS-generated tasks back to them. Uses stdlib only (urllib, json,

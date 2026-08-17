@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI Global OS runtime kernel — facade delegating to manager submodules."""
+"""aiZee runtime kernel — facade delegating to manager submodules."""
 
 from __future__ import annotations
 
@@ -34,15 +34,25 @@ if TYPE_CHECKING:
 
 
 class ActionSchema(BaseModel):
+    """Validated action envelope for Kernel.act().
+
+    The `type`, `tokens`, and `cost` fields are strictly typed. Extra fields
+    are intentionally allowed because action parameters are dynamic — e.g.
+    `command` for bash, `file_path` for write, `content` for edit. These
+    extra fields are forwarded to the policy engine's YAML rule conditions
+    via ``**action_data``. Forbidding extras would require a schema per
+    action type, which is incompatible with user-defined YAML policies.
+    """
+
     model_config = ConfigDict(extra="allow")
 
     type: str = Field(..., min_length=1)
-    tokens: int = 0
-    cost: float = 0.0
+    tokens: int = Field(default=0, ge=0)
+    cost: float = Field(default=0.0, ge=0.0)
 
 
 class Kernel:
-    """Central runtime for AI Global OS.
+    """Central runtime for aiZee.
 
     Acts as a facade delegating to PolicyManager, WorkflowManager,
     AgentManager, and ChatManager. Each manager owns a single

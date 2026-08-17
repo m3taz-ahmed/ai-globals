@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI Global OS migration engine.
+"""aiZee migration engine.
 
 Runs ordered migrations from the currently installed version to the target
 version (read from pyproject.toml). Each migration is a function that receives
@@ -30,8 +30,8 @@ MigrationFn = Callable[[Path], None]
 
 
 def _read_version_file(root: Path) -> str | None:
-    """Return the version recorded in .aios-version, or None if not present."""
-    vf = root / ".aios-version"
+    """Return the version recorded in .aizee-version, or None if not present."""
+    vf = root / ".aizee-version"
     if not vf.exists():
         return None
     text = vf.read_text(encoding="utf-8").strip()
@@ -73,8 +73,8 @@ def _migrate_4_21_to_4_22(root: Path) -> None:
             # just ensure the file is aware that plugins need re-registration.
             pass
 
-    # 2. Ensure aios_mcp/config.json has the new MCP servers.
-    config_json = root / "aios_mcp" / "config.json"
+    # 2. Ensure aizee_mcp/config.json has the new MCP servers.
+    config_json = root / "aizee_mcp" / "config.json"
     if config_json.exists():
         try:
             data = json.loads(config_json.read_text(encoding="utf-8"))
@@ -111,7 +111,7 @@ def _migrate_4_22_to_4_22_1(root: Path) -> None:
     - Runs SQLite schema migrations (runtime/migrations.py)
     - Verifies encryption compatibility for budget.json
     - Creates new directories (docs/, tests/e2e/)
-    - Ensures runtime/managers/ and aios_mcp/tools/ are present
+    - Ensures runtime/managers/ and aizee_mcp/tools/ are present
     """
     # 1. Run SQLite schema migrations on brain/memory.db
     brain_dir = root / "brain"
@@ -156,7 +156,7 @@ def _migrate_4_22_to_4_22_1(root: Path) -> None:
             print(f"  Created directory: {new_dir}/")
 
     # 4. Verify new module directories exist (installed via file copy)
-    for module_dir in ("runtime/managers", "aios_mcp/tools"):
+    for module_dir in ("runtime/managers", "aizee_mcp/tools"):
         d = root / module_dir
         if not d.exists():
             print(
@@ -254,7 +254,7 @@ def run_migrations(root: Path, dry_run: bool = False) -> int:
         print(f"No migration chain from {current} to {target}. Installer will handle full update.")
         # Still write the version file so future runs know we're at target.
         if not dry_run:
-            (root / ".aios-version").write_text(target, encoding="utf-8")
+            (root / ".aizee-version").write_text(target, encoding="utf-8")
         return 1
 
     print(f"Migrating from {current} to {target} ({len(chain)} step(s))")
@@ -268,7 +268,7 @@ def run_migrations(root: Path, dry_run: bool = False) -> int:
                 return 2
 
     if not dry_run:
-        (root / ".aios-version").write_text(target, encoding="utf-8")
+        (root / ".aizee-version").write_text(target, encoding="utf-8")
     print(f"Migration{' (dry-run)' if dry_run else ''} complete: {current} → {target}")
     return 3 if dry_run else 1
 
@@ -288,7 +288,7 @@ def check_migrations(root: Path) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="AI Global OS migration engine")
+    parser = argparse.ArgumentParser(description="aiZee migration engine")
     parser.add_argument("--root", type=Path, default=None, help="OS root directory")
     parser.add_argument("--dry-run", action="store_true", help="Show migrations without executing")
     parser.add_argument("--check", action="store_true", help="Only check if migrations are pending")
@@ -296,7 +296,7 @@ def main() -> int:
 
     root = args.root or Path(__file__).resolve().parent.parent
     if not (root / "pyproject.toml").exists():
-        print(f"Error: {root} does not look like an AI Global OS root (no pyproject.toml)", file=sys.stderr)
+        print(f"Error: {root} does not look like an aiZee root (no pyproject.toml)", file=sys.stderr)
         return 2
 
     if args.check:

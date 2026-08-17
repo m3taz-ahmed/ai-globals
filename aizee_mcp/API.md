@@ -1,12 +1,12 @@
-# AI Global OS MCP API Reference
+# aiZee MCP API Reference
 
 **Version:** 4.22.1
 **Transport:** stdio
-**Server name:** `ai-global-os`
+**Server name:** `aizee`
 
 ## Overview
 
-The AI Global OS MCP server exposes tools and resources for:
+The aiZee MCP server exposes tools and resources for:
 - Memory search and ingestion
 - Workflow execution
 - Policy and budget governance

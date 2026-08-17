@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI Global OS plugin that drives Code2Video inside a sandboxed Docker container."""
+"""aiZee plugin that drives Code2Video inside a sandboxed Docker container."""
 
 from __future__ import annotations
 

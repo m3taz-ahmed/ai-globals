@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Governance hooks for AI Global OS.
+"""Governance hooks for aiZee.
 
 Re-implements the agent-governance-toolkit pattern: decorator-style hooks that
 wrap actions with audit, telemetry, policy, and tracing checks.

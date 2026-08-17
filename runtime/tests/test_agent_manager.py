@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from runtime.kernel import Kernel
 from runtime.managers.agent_manager import AgentManager
 from runtime.persona import PersonaDetector
 

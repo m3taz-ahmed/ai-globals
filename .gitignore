@@ -48,6 +48,7 @@ GRAPH_REPORT.md
 tmp/
 scratch/
 state/
+backups/
 .coverage
 *.egg-info/
 .pytest_cache/

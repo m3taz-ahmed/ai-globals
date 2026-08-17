@@ -5,8 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
 from runtime.managers.workflow_manager import WorkflowManager
 from runtime.persona import PersonaDetector
 
@@ -66,6 +64,7 @@ class TestRunWorkflow:
         act_fn = MagicMock()
         # Monkeypatch WorkflowContextSchema.validate to raise ValidationError
         from pydantic import ValidationError
+
         from runtime.managers import workflow_manager as wm_mod
 
         original_validate = wm_mod.WorkflowContextSchema.validate
@@ -130,5 +129,5 @@ class TestRunSaga:
         act_fn = MagicMock(return_value={"ok": True, "status": "completed"})
         telemetry = MagicMock()
         steps = [{"action": "Read"}]
-        result = mgr.run_saga("test-saga", steps, {"message": "test"}, act_fn, telemetry=telemetry)
+        mgr.run_saga("test-saga", steps, {"message": "test"}, act_fn, telemetry=telemetry)
         telemetry.record.assert_called_once()

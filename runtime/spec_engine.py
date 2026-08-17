@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Spec-driven development engine for AI Global OS.
+"""Spec-driven development engine for aiZee.
 
 Implements a structured 4-phase development process:
 1. **Specify** — Define what to build (user stories, requirements)
@@ -492,10 +492,7 @@ class SpecEngine:
         if spec is None:
             return True
         manifest = self.get_manifest(spec_id)
-        if file_type == "json":
-            path = self._spec_path(spec_id)
-        else:
-            path = self._spec_md_path(spec_id)
+        path = self._spec_path(spec_id) if file_type == "json" else self._spec_md_path(spec_id)
         if not path.exists():
             return True
         return manifest.is_modified(path.name, path.read_text(encoding="utf-8"))

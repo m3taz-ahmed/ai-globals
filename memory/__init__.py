@@ -1,4 +1,4 @@
-"""AI Global OS memory service."""
+"""aiZee memory service."""
 
 import config
 

@@ -238,8 +238,8 @@ def test_workflow_mcp_call_success(tmp_path: Path) -> None:
     """MCP command with configured server and successful call returns 'allowed'."""
     _make_workflow(tmp_path, "mcp-ok", "1. [CMD] mcp: myserver.mytool\n")
     runner = WorkflowRunner(tmp_path, os_root=tmp_path)
-    with patch("runtime.workflow.McpClient") as MockClient:
-        instance = MockClient.return_value
+    with patch("runtime.workflow.McpClient") as mock_client:
+        instance = mock_client.return_value
         instance.is_configured.return_value = True
         instance.call_tool.return_value = {"ok": True, "result": "done"}
         result = runner.run("mcp-ok", {}, act=lambda **_: {"ok": True})
@@ -255,8 +255,8 @@ def test_workflow_mcp_call_failed(tmp_path: Path) -> None:
     """MCP command with configured server but failed call returns 'mcp_call_failed'."""
     _make_workflow(tmp_path, "mcp-fail", "1. [CMD] mcp: myserver.mytool\n")
     runner = WorkflowRunner(tmp_path, os_root=tmp_path)
-    with patch("runtime.workflow.McpClient") as MockClient:
-        instance = MockClient.return_value
+    with patch("runtime.workflow.McpClient") as mock_client:
+        instance = mock_client.return_value
         instance.is_configured.return_value = True
         instance.call_tool.return_value = {"ok": False, "error": "tool error"}
         result = runner.run("mcp-fail", {}, act=lambda **_: {"ok": True})
@@ -271,8 +271,8 @@ def test_workflow_mcp_call_exception(tmp_path: Path) -> None:
     """MCP command where call_tool raises returns 'error'."""
     _make_workflow(tmp_path, "mcp-exc", "1. [CMD] mcp: myserver.mytool\n")
     runner = WorkflowRunner(tmp_path, os_root=tmp_path)
-    with patch("runtime.workflow.McpClient") as MockClient:
-        instance = MockClient.return_value
+    with patch("runtime.workflow.McpClient") as mock_client:
+        instance = mock_client.return_value
         instance.is_configured.return_value = True
         instance.call_tool.side_effect = RuntimeError("connection lost")
         result = runner.run("mcp-exc", {}, act=lambda **_: {"ok": True})

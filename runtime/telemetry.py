@@ -1,4 +1,4 @@
-"""Telemetry and observability collector for AI Global OS."""
+"""Telemetry and observability collector for aiZee."""
 
 from __future__ import annotations
 

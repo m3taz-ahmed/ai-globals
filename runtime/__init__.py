@@ -1,4 +1,4 @@
-"""AI Global OS runtime kernel."""
+"""aiZee runtime kernel."""
 
 import config
 

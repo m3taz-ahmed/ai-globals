@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - AGENT_OS_ROOT=/app
+      - AIZEE_ROOT=/app
       - AGENT_OS_HOST=0.0.0.0
       - AGENT_OS_DASHBOARD_TOKEN=${AGENT_OS_DASHBOARD_TOKEN:-}
       - PYTHONUNBUFFERED=1

@@ -1,4 +1,4 @@
-# AI Global OS — Active Context / Handoff
+# aiZee — Active Context / Handoff
 
 **Session type:** Stop-and-continue (PC → laptop)  
 **Repo:** `https://github.com/m3taz-ahmed/ai-globals.git` (branch `main`)  
@@ -28,9 +28,9 @@ bandit                ✅ 0 issues
 - `runtime/migrations.py` — Schema versioning + backup
 - `runtime/observability.py` — Sentry + Prometheus
 - `runtime/managers/` — PolicyManager, WorkflowManager, AgentManager, ChatManager
-- `aios_mcp/tools/` — memory_tools, workflow_tools, policy_tools, context_tools, common
+- `aizee_mcp/tools/` — memory_tools, workflow_tools, policy_tools, context_tools, common
 - `docs/FEATURES.md`, `docs/PRIVACY_POLICY.md`, `docs/TERMS_OF_USE.md`, `docs/AI_DISCLAIMER.md`
-- `aios_mcp/API.md` — MCP API reference
+- `aizee_mcp/API.md` — MCP API reference
 - `.github/CODEOWNERS`, `.github/branch-protection.json`
 - `.github/workflows/supply-chain.yml`, `.github/workflows/release.yml`
 - `NOTICE` file
@@ -45,13 +45,13 @@ bandit                ✅ 0 issues
 ## ✅ تم الانتهاء منه (Completed)
 
 ### P0.2 — Conditional Rules with YAML Frontmatter
-- `runtime/rule_frontmatter.py`: integrated into `SkillResolver`/`PersonaDetector`/`aios_mcp`.
+- `runtime/rule_frontmatter.py`: integrated into `SkillResolver`/`PersonaDetector`/`aizee_mcp`.
   - `SkillResolver`: `resolve_with_frontmatter`, `load_with_frontmatter`, `list_active_skills`.
   - `PersonaDetector`: filters primary/lord skill lists by context.
-  - `aios_mcp/aios_server.py::query_rules`: accepts `context` and returns active rules.
+  - `aizee_mcp/aizee_server.py::query_rules`: accepts `context` and returns active rules.
   - Tests added in `runtime/tests/test_rule_frontmatter.py` (34 tests).
 - Quality gates green: `ruff`, `mypy`, `pytest -q` 349 passed, `python eval/harness.py` all_pass true.
-- `graphify update .` and `ai-os memory ingest` run.
+- `graphify update .` and `aizee memory ingest` run.
 
 ### P0.1 — Fresh-Context Boundary in `runtime/kernel.py`
 - Implemented `fresh_context` parameter in `Kernel.act`, `run_workflow`, `chat_message`, `run_saga`.
@@ -63,7 +63,7 @@ bandit                ✅ 0 issues
 ### UI/UX/Responsive Design Repo Research
 - Updated `tech-stack/useful-repos.md` with verified top repositories:
   - `saadeghi/daisyui`, `shadcn-ui/ui`, `carbon-design-system/carbon`, `DouyinFE/semi-design`, `facebook/astryx`.
-- `graphify update .` and `ai-os memory ingest` re-run; `python eval/harness.py` all_pass true.
+- `graphify update .` and `aizee memory ingest` re-run; `python eval/harness.py` all_pass true.
 
 ## 🚧 قيد التنفيذ (In Progress)
 - No active in-progress task. Ready for next milestone.
@@ -73,7 +73,7 @@ bandit                ✅ 0 issues
 ## 📁 ملفات تم تعديلها / إنشاؤها في هذه الجلسة
 
 ### تم تعديلها (Modified)
-- `aios_cli.py` (renamed from `cli.py` to avoid collision with octopus-linkedin's `cli` module)
+- `aizee_cli.py` (renamed from `cli.py` to avoid collision with octopus-linkedin's `cli` module)
 - `memory/store.py`
 - `runtime/budget.py`
 - `runtime/kernel.py`
@@ -93,7 +93,7 @@ bandit                ✅ 0 issues
 ## 🚀 Prompt للاستمرار (انسخه في الجلسة الجديدة)
 
 ```
-You are continuing AI Global OS implementation from a handoff.
+You are continuing aiZee implementation from a handoff.
 
 COMPLETED:
 - P0.4 Approval Caching + Rollout Budget in runtime/*
@@ -104,12 +104,12 @@ CURRENT TASK (start here):
   1. Integrate runtime/rule_frontmatter.py into runtime/skill_resolver.py
      (load_with_frontmatter, list_active_skills, resolve_with_frontmatter).
   2. Filter skill lists in runtime/persona.py using the context.
-  3. Update aios_mcp/aios_server.py::query_rules to accept context and return only active rules.
+  3. Update aizee_mcp/aizee_server.py::query_rules to accept context and return only active rules.
   4. Add tests in runtime/tests/test_rule_frontmatter.py.
 
 NEXT AFTER P0.2:
 - P0.1 Fresh-Context Boundary in runtime/kernel.py.
-- Run graphify update . and ai-os memory ingest.
+- Run graphify update . and aizee memory ingest.
 - Research top UI/UX/Responsive Design GitHub repos.
 
 GATES:

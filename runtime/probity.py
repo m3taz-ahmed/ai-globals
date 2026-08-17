@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lightweight coding guardrails for AI Global OS.
+"""Lightweight coding guardrails for aiZee.
 
 Re-implements the Probity pattern: intercept file writes and shell commands
 before they happen, match them against deterministic rules, and explain why

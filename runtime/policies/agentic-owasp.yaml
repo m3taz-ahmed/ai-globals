@@ -1,5 +1,5 @@
 name: agentic-owasp
-apiVersion: governance.ai-global-os/v1
+apiVersion: governance.aizee/v1
 default_action: ask
 description: >
   OWASP Agentic Top 10 (2026) compliance policy. Enforces controls for

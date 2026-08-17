@@ -8,9 +8,6 @@ import pytest
 
 from runtime.spec_engine import (
     DeltaType,
-    Requirement,
-    Spec,
-    SpecDelta,
     SpecEngine,
     SpecManifest,
 )

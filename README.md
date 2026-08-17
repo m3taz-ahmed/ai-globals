@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="logo.png" width="160" alt="AI Global OS Logo">
-  <h1>AI Global OS</h1>
-  <p><strong>Sovereign AI engineering control plane — turn any AI assistant into your Principal Architect.</strong></p>
+  <img src="logo.png" width="160" alt="aiZee Logo">
+  <h1>aiZee</h1>
+  <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
     <img src="https://img.shields.io/badge/Version-5.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.0.0">
@@ -10,9 +10,9 @@
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/Personas-20-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="20 Personas">
+    <img src="https://img.shields.io/badge/Personas-19-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 Personas">
     <img src="https://img.shields.io/badge/Skills-66-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="66 Skills">
-    <img src="https://img.shields.io/badge/Workflows-31-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="31 Workflows">
+    <img src="https://img.shields.io/badge/Workflows-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 Workflows">
     <img src="https://img.shields.io/badge/Features-63%20total-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="63 total features">
   </p>
 </div>
@@ -23,13 +23,13 @@
 
 ---
 
-## What is AI Global OS?
+## What is aiZee?
 
 A **zero-compromise, version-controlled operating system** that sits between you and every AI coding assistant — Cursor, Claude, Copilot, Windsurf, Cline, Aider, Devin — enforcing engineering standards, security policies, and architectural discipline on every line of generated code.
 
-**The problem it solves:** AI assistants hallucinate APIs, forget conventions, ignore security, and silently ship technical debt. AI Global OS forces them to read from a centralized source of truth *before* writing a single line.
+**The problem it solves:** AI assistants hallucinate APIs, forget conventions, ignore security, and silently ship technical debt. aiZee forces them to read from a centralized source of truth *before* writing a single line.
 
-| Without AI Global OS | With AI Global OS |
+| Without aiZee | With aiZee |
 | :--- | :--- |
 | Context drift after a few prompts | Rules + personas hard-loaded every session |
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
@@ -74,8 +74,8 @@ bash install.sh
 ### Verify
 
 ```bash
-ai-os doctor    # Health check
-ai-os status    # Current persona, skills, budget
+aizee doctor    # Health check
+aizee status    # Current persona, skills, budget
 ```
 
 ---
@@ -83,13 +83,13 @@ ai-os status    # Current persona, skills, budget
 ## Core Architecture
 
 ```
-.ai/                         # Sovereign root (discovered via AGENT_OS_ROOT)
+.ai/                         # Sovereign root (discovered via AIZEE_ROOT)
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 20 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
 ├── runtime/                 # Kernel: policy, budget, audit, 63+ modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
-├── aios_mcp/                # MCP server (27 tools, 3 resources)
+├── aizee_mcp/                # MCP server (27 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
 ├── skills/                  # 66 persona + lord skill files
 ├── workflows/               # 31 trigger-based execution protocols
@@ -109,7 +109,7 @@ ai-os status    # Current persona, skills, budget
 20 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, etc.) with 13 lord-level domain skills. Auto-detected per task — no manual selection needed.
 
 ```bash
-ai-os persona detect --multi "build a secure docker API with postgres"
+aizee persona detect --multi "build a secure docker API with postgres"
 # → Primary: ARCH + Secondary: SEC, DEVOPS + Lords: security-lord, cloud-platforms-lord
 ```
 
@@ -132,8 +132,8 @@ Context7 MCP fetches current library docs before implementation. Graphify knowle
 SQLite + FTS5 full-text search + optional vector indexing (SentenceTransformers). Episodic, semantic, factual, and procedural memory layers.
 
 ```bash
-ai-os memory ingest          # Rebuild index after changes
-ai-os memory search "docker" # Full-text + vector search
+aizee memory ingest          # Rebuild index after changes
+aizee memory search "docker" # Full-text + vector search
 ```
 
 ### 5. Quality Gates (Zero Defect)
@@ -231,27 +231,41 @@ Deep analysis of 22 GitHub repositories (agent-governance-toolkit, OpenMemory, m
 | Memory decay scheduler | `memory/decay_scheduler.py` | OpenMemory |
 | Semantic code search (TF-IDF) | `runtime/semantic_search.py` | metis |
 
-See [IMPLEMENTATION-REPORT.md](IMPLEMENTATION-REPORT.md) for full details.
-
 ---
 
 ## CLI Reference
 
 ```bash
-ai-os status                         # OS health + counts
-ai-os doctor                         # Full diagnostic
-ai-os persona detect --multi "task"  # Detect personas for a task
-ai-os check edit --args '{"tokens":100}'  # Policy + budget gate
-ai-os run 02-execution               # Run a workflow
-ai-os memory ingest                  # Rebuild memory index
-ai-os memory search "query"          # Search memory
-ai-os skill list                     # List available skills
-ai-os skill search security          # Search skills by keyword
-ai-os mcp context7 resolve-library-id --args '{"library":"fastapi"}'
-ai-os graphify                       # Build knowledge graph
-ai-os test                           # Fast test tier (~10s)
-ai-os test --full                    # Full suite with coverage
+aizee status                         # OS health + counts
+aizee doctor                         # Full diagnostic
+aizee persona detect --multi "task"  # Detect personas for a task
+aizee check edit --args '{"tokens":100}'  # Policy + budget gate
+aizee run 02-execution               # Run a workflow
+aizee memory ingest                  # Rebuild memory index
+aizee memory search "query"          # Search memory
+aizee skill list                     # List available skills
+aizee skill search security          # Search skills by keyword
+aizee mcp context7 resolve-library-id --args '{"library":"fastapi"}'
+aizee graphify                       # Build knowledge graph
+aizee test                           # Fast test tier (~10s)
+aizee test --full                    # Full suite with coverage
+aizee uninstall                      # Interactive uninstall (keeps learned data)
+aizee uninstall --gui                # GUI uninstaller (tkinter)
+aizee perf                           # Performance benchmarks
 ```
+
+### One-Click Scripts (Windows .bat)
+
+| Script | Description |
+| :--- | :--- |
+| `install.bat` | GUI installer (double-click) |
+| `update.bat` | Pull latest from GitHub + re-run post-install hooks |
+| `backup.bat` | Backup learned data (memory/state/brain/graph/.env) to timestamped folder |
+| `restore.bat` | Auto-merge learned data from backups (smart checkpoint) |
+| `restore.bat --from PATH` | Full restore from specific backup (overwrite) |
+| `restore.bat --list` | List available backups |
+| `restore.bat --checkpoint` | Show current restore checkpoint |
+| `uninstall.bat` | GUI uninstaller (double-click) |
 
 ---
 
@@ -259,10 +273,10 @@ ai-os test --full                    # Full suite with coverage
 
 | AI tool | Config file |
 | :--- | :--- |
-| Cursor | `.cursor/rules/ai-global-os.mdc` |
+| Cursor | `.cursor/rules/aizee.mdc` |
 | Claude Code | `.claude/CLAUDE.md` |
 | Windsurf | `.windsurfrules` |
-| Cline | `.clinerules/ai-global-os.md` |
+| Cline | `.clinerules/aizee.md` |
 | Aider | `.aider.conf.yml` |
 | GitHub Copilot | `.github/copilot-instructions.md` |
 | Devin | `.devin/skills/global-os/SKILL.md` |
@@ -278,7 +292,7 @@ The installer auto-symlinks these to the correct global locations.
 
 | Server | Purpose | Requires |
 | :--- | :--- | :--- |
-| `ai-global-os` | Core OS tools (27 tools) | Python |
+| `aizee` | Core OS tools (27 tools) | Python |
 | `graphify` | Codebase knowledge graph | Python + graphify |
 | `context7` | Live library documentation | Node.js 18+ |
 | `upwork` | Upwork job search + proposals | Node.js + OAuth |
@@ -333,8 +347,8 @@ Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, st
 | :--- | :--- | :--- |
 | Lint | `ruff check .` | 0 warnings |
 | Types | `mypy` | 0 errors (90+ files, strict) |
-| Tests (fast) | `ai-os test` | 2100+ passed, ~12s |
-| Tests (full) | `ai-os test --full` | 2343 passed, 91% coverage, ~100s |
+| Tests (fast) | `aizee test` | 2100+ passed, ~12s |
+| Tests (full) | `aizee test --full` | 2343 passed, 91% coverage, ~100s |
 | Integrity | `scripts/validate-globals.py` | 0 errors |
 | E2E | `python eval/harness.py` | all_pass: true |
 
@@ -369,6 +383,6 @@ MIT — see [LICENSE](LICENSE).
 ---
 
 <div align="center">
-  <p><strong>AI Global OS</strong> — Stop letting AI write spaghetti code. Turn it into your Principal Architect.</p>
+  <p><strong>aiZee</strong> — The policy layer for AI coding.</p>
   <p>Built by <a href="https://linkedin.com/in/moataz-ahmed">Moataz Ahmed</a></p>
 </div>

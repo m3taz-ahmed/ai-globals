@@ -52,11 +52,11 @@ jobs:
         with:
           format: spdx-json
           output-file: sbom.spdx.json
-          artifact-name: ai-global-os-sbom
+          artifact-name: aizee-sbom
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ai-global-os-sbom
+          name: aizee-sbom
           path: sbom.spdx.json
 
   cosign-sign:
@@ -69,7 +69,7 @@ jobs:
       - name: Download SBOM
         uses: actions/download-artifact@v4
         with:
-          name: ai-global-os-sbom
+          name: aizee-sbom
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
       - name: Sign SBOM with OIDC
@@ -79,7 +79,7 @@ jobs:
       - name: Upload signature
         uses: actions/upload-artifact@v4
         with:
-          name: ai-global-os-sbom-signature
+          name: aizee-sbom-signature
           path: |
             sbom.pem
             sbom.sig

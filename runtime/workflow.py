@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Workflow runner for AI Global OS."""
+"""Workflow runner for aiZee."""
 
 from __future__ import annotations
 

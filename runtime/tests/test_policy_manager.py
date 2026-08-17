@@ -14,7 +14,7 @@ from runtime.guardian import DecisionStatus, Guardian
 from runtime.managers.policy_manager import PolicyManager
 from runtime.metrics import Counter
 from runtime.preloop import FeedbackLoop
-from runtime.probity import GuardrailViolationError, Guardrails
+from runtime.probity import GuardrailViolationError
 
 
 def _setup_roots(tmp_path: Path) -> tuple[Path, Path]:

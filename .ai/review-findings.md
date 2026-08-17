@@ -1,7 +1,7 @@
-# AI Global OS — Review Findings & Fix Plan
+# aiZee — Review Findings & Fix Plan
 
 Generated: 2026-08-06
-Scope: comprehensive review of `D:\server\.ai` (AI Global OS v4.22.0)
+Scope: comprehensive review of `D:\server\.ai` (aiZee v4.22.0)
 Personas: ARCH, PRODUCT, QA, SRE, SEC, DEV, PERF, DOC
 
 ---
@@ -24,7 +24,7 @@ Personas: ARCH, PRODUCT, QA, SRE, SEC, DEV, PERF, DOC
 - `runtime/approval_cache.py`: locked `is_approved()` to avoid race condition.
 - `memory/store.py`: WAL mode, busy timeout, connection lock, and improved FTS5 sanitization.
 - `memory/vector.py`: log embedding failures instead of swallowing `RuntimeError`.
-- `aios_mcp/aios_server.py`: locks on singleton kernel/memory; stricter name/path validation; symlink/UNC traversal defence.
+- `aios_mcp/aizee_server.py`: locks on singleton kernel/memory; stricter name/path validation; symlink/UNC traversal defence.
 - `dashboard/server.py`: added CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy headers.
 - `dashboard/index.html`: added `escapeHtml` helper and escaped all server-rendered dynamic content.
 - `runtime/workflow.py`: WAL/lock for SQLite; exception handling around `act()` and `McpClient.call_tool()`.
@@ -80,7 +80,7 @@ Personas: ARCH, PRODUCT, QA, SRE, SEC, DEV, PERF, DOC
 - [x] `dashboard/server.py`: added CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy.
 - [x] `dashboard/index.html`: `escapeHtml` applied to dynamic data; SRI added for Chart.js CDN.
 - [x] `dashboard/server.py`: token is now required; lazy-generated `state/dashboard.token` unless `AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN=1`.
-- [x] `aios_mcp/aios_server.py`: singletons locked; stricter path validation and UNC/symlink checks.
+- [x] `aios_mcp/aizee_server.py`: singletons locked; stricter path validation and UNC/symlink checks.
 - [x] `memory/store.py`: WAL, busy timeout, lock, and improved FTS5 sanitization.
 - [x] `runtime/approval_cache.py`: fixed — `is_approved()` now uses `self._lock`.
 - [x] `runtime/audit.py`: sensitive-key redaction added.

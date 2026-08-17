@@ -366,7 +366,7 @@ class TestEdgeCases:
             assert exp.interactions == 50
 
     def test_root_resolved_from_env(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
+        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
         m = DynamicPersonaManager()
         assert m.root == tmp_path
 
@@ -394,7 +394,7 @@ class TestEdgeCases:
 
     def test_root_resolved_by_walking_parents(self, tmp_path, monkeypatch):
         """Cover lines 128-132: root resolved by walking up to find .ai marker."""
-        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        monkeypatch.delenv("AIZEE_ROOT", raising=False)
         # Create a .ai directory structure under tmp_path
         ai_dir = tmp_path / ".ai"
         (ai_dir / "state").mkdir(parents=True)
@@ -416,7 +416,7 @@ class TestEdgeCases:
 
     def test_root_fallback_when_no_ai_marker(self, tmp_path, monkeypatch):
         """Cover line 132: _resolve_root falls back to here.parent when no .ai found."""
-        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        monkeypatch.delenv("AIZEE_ROOT", raising=False)
         # Place a fake module file in a directory with no .ai ancestor
         fake_dir = tmp_path / "some_pkg"
         fake_dir.mkdir(parents=True)

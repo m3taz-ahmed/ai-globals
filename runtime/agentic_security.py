@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OWASP Agentic Top 10 compliance scanner for AI Global OS.
+"""OWASP Agentic Top 10 compliance scanner for aiZee.
 
 Scans agent configurations, MCP server definitions, skills, and policy
 rules against the OWASP Agentic Top 10 (2026) controls:

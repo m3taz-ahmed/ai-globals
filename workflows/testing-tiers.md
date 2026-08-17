@@ -1,10 +1,10 @@
 [WORKFLOW] testing-tiers
-[OBJ] Per-stack fast/full test commands — quick reference for ANY project under AI Global OS.
+[OBJ] Per-stack fast/full test commands — quick reference for ANY project under aiZee.
 [TRIGGER] testing-tiers
 [RULES]
 ## Two-Tier Testing Protocol
 
-Every project under AI Global OS follows two tiers:
+Every project under aiZee follows two tiers:
 
 | Tier | When | What | Max time |
 |------|------|------|----------|

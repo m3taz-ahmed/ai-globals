@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MCP agent loop and multi-server routing for AI Global OS.
+"""MCP agent loop and multi-server routing for aiZee.
 
 Re-implements the mcp-agent pattern: an agent that can discover and call tools
 across multiple MCP servers, maintain an event loop, and collect results.

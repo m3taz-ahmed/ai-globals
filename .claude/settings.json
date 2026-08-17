@@ -5,7 +5,7 @@
     "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:Invoke-WebRequest -Method Post","bash:Invoke-WebRequest -Method Delete","bash:node -e","bash:python -c","bash:chmod","bash:chown","bash:sudo","bash:dd","bash:mkfs","bash:nc","bash:netcat","bash:iptables","bash:ufw","bash:curl | bash","bash:curl | sh","bash:wget | bash","bash:wget | sh"]
   },
   "mcpServers": {
-    "ai-global-os": { "command": "python", "args": ["scripts/aios_mcp_wrapper.py"] },
+    "aizee": { "command": "python", "args": ["scripts/aizee_mcp_wrapper.py"] },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
     "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
     "upwork": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },

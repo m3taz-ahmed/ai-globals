@@ -20,7 +20,7 @@ class TestOTelConfig:
 
     def test_defaults(self) -> None:
         c = OTelConfig()
-        assert c.service_name == "ai-global-os"
+        assert c.service_name == "aizee"
         assert c.batch_size == 50
         assert c.endpoint == ""
 

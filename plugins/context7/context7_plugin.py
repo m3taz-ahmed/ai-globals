@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Context7 plugin for AI Global OS — proxies to @upstash/context7-mcp.
+"""Context7 plugin for aiZee — proxies to @upstash/context7-mcp.
 
 Provides live library/framework documentation retrieval. Required by the
 `mcp.mdc` rule: "Query Context7 MCP before writing external library/framework

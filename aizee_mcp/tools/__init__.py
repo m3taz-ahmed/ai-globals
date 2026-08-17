@@ -1,4 +1,4 @@
-"""MCP tool modules for AI Global OS server.
+"""MCP tool modules for aiZee server.
 
 Organized by responsibility:
 - memory_tools: memory search, ingest, graph

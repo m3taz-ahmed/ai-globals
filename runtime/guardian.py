@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lightweight guardian policy SDK for AI Global OS.
+"""Lightweight guardian policy SDK for aiZee.
 
 Re-implements the core patterns from guardian-angel:
 - ActionRequest with tool name and attributes.

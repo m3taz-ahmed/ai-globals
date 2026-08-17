@@ -9,11 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import subprocess
-import sys
 from pathlib import Path
-
-import pytest
 
 _REPO = Path(__file__).resolve().parent.parent.parent
 
@@ -95,9 +91,8 @@ def test_root_validity_check(tmp_path: Path):
 def test_resolve_stale_root_logic(tmp_path: Path):
     """Test auto-detect moved repo logic."""
     def resolve_stale_root(repo: Path, current: str) -> str:
-        if current and not Path(current).exists():
-            if (repo / "pyproject.toml").exists():
-                return str(repo)
+        if current and not Path(current).exists() and (repo / "pyproject.toml").exists():
+            return str(repo)
         if current and not (Path(current) / "pyproject.toml").exists():
             if (repo / "pyproject.toml").exists():
                 return str(repo)
@@ -127,7 +122,7 @@ def test_mcp_health_check_logic(tmp_path: Path):
     """Test MCP health check logic with a mock config."""
     config = {
         "mcpServers": {
-            "ai-global-os": {"command": "python", "args": []},
+            "aizee": {"command": "python", "args": []},
             "context7": {"command": "npx", "args": ["-y", "@upstash/context7-mcp"]},
             "fiverr": {"command": "uvx", "args": ["fiverr-mcp-server"]},
         }
@@ -147,10 +142,10 @@ def test_mcp_health_check_logic(tmp_path: Path):
         elif cmd == "uvx":
             results[name] = "ready" if shutil.which("uvx") else "uvx not found"
 
-    assert "ai-global-os" in results
+    assert "aizee" in results
     assert "context7" in results
     assert "fiverr" in results
-    assert results["ai-global-os"] == "python-based (deferred)"
+    assert results["aizee"] == "python-based (deferred)"
 
 
 def test_install_ps1_exists():
@@ -174,8 +169,8 @@ def test_migrate_script_exists():
 
 
 def test_aios_version_file_exists():
-    """Verify .aios-version exists."""
-    assert (_REPO / ".aios-version").exists()
+    """Verify .aizee-version exists."""
+    assert (_REPO / ".aizee-version").exists()
 
 
 def test_install_ps1_has_log_function():

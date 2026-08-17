@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Code compression for AI Global OS — reduces token usage by ~70%.
+"""Code compression for aiZee — reduces token usage by ~70%.
 
 Extracts code signatures and structure while removing implementation
 details, producing a compact representation optimized for LLM context.

@@ -1,4 +1,4 @@
-"""Manager submodules for the AI Global OS kernel.
+"""Manager submodules for the aiZee kernel.
 
 Each manager encapsulates a single responsibility cluster:
 - PolicyManager: policy + guardian + approval cache

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for aios_mcp.agent."""
+"""Tests for aizee_mcp.agent."""
 
 from __future__ import annotations
 
@@ -8,8 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from aios_mcp.agent import McpAgent, Tool, ToolCall
-
+from aizee_mcp.agent import McpAgent, Tool, ToolCall
 
 # ---------------------------------------------------------------------------
 # Existing tests (kept for regression)
@@ -111,8 +110,8 @@ def test_discover_tools_finds_tools():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aios_mcp.agent.stdio_client", stdio_mock), \
-         patch("aios_mcp.agent.ClientSession", session_mock):
+    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
+         patch("aizee_mcp.agent.ClientSession", session_mock):
         tools = asyncio.run(agent.discover_tools())
 
     assert len(tools) == 1
@@ -133,8 +132,8 @@ def test_discover_tools_empty_server():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aios_mcp.agent.stdio_client", stdio_mock), \
-         patch("aios_mcp.agent.ClientSession", session_mock):
+    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
+         patch("aizee_mcp.agent.ClientSession", session_mock):
         tools = asyncio.run(agent.discover_tools())
 
     assert tools == []
@@ -166,8 +165,8 @@ def test_discover_tools_multiple_servers():
 
     stdio_mock = _mock_stdio_client()
 
-    with patch("aios_mcp.agent.stdio_client", stdio_mock), \
-         patch("aios_mcp.agent.ClientSession", session_mock):
+    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
+         patch("aizee_mcp.agent.ClientSession", session_mock):
         tools = asyncio.run(agent.discover_tools())
 
     assert len(tools) == 2
@@ -241,8 +240,8 @@ def test_call_tool_success():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aios_mcp.agent.stdio_client", stdio_mock), \
-         patch("aios_mcp.agent.ClientSession", session_mock):
+    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
+         patch("aizee_mcp.agent.ClientSession", session_mock):
         call = asyncio.run(agent.call_tool("read", {"path": "/tmp/test.txt"}))
 
     assert call.tool == "read"
@@ -264,8 +263,8 @@ def test_call_tool_success_no_content():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aios_mcp.agent.stdio_client", stdio_mock), \
-         patch("aios_mcp.agent.ClientSession", session_mock):
+    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
+         patch("aizee_mcp.agent.ClientSession", session_mock):
         call = asyncio.run(agent.call_tool("read", {"path": "/tmp/test.txt"}))
 
     assert call.tool == "read"
@@ -288,8 +287,8 @@ def test_call_tool_whitelist_allows():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aios_mcp.agent.stdio_client", stdio_mock), \
-         patch("aios_mcp.agent.ClientSession", session_mock):
+    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
+         patch("aizee_mcp.agent.ClientSession", session_mock):
         call = asyncio.run(agent.call_tool("read", {}))
 
     assert call.error == ""

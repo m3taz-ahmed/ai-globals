@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Schema versioning and migration framework for AI Global OS.
+"""Schema versioning and migration framework for aiZee.
 
 Tracks schema versions in a `_schema_version` table and provides
 a migration registry for applying incremental schema changes.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Token/cost budget governance for AI Global OS."""
+"""Token/cost budget governance for aiZee."""
 
 from __future__ import annotations
 

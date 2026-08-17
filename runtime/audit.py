@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append-only audit logging with hash chaining for AI Global OS.
+"""Append-only audit logging with hash chaining for aiZee.
 
 Each log entry is cryptographically chained to the previous one via SHA-256,
 producing a tamper-evident trail. Any modification or deletion of a past

@@ -7,7 +7,7 @@ so that MCP servers are available in **any** workspace, not just
 ``D:\\.ai``.
 
 All script paths are resolved to absolute paths pointing at the
-AI Global OS root, so the config works regardless of which project
+aiZee root, so the config works regardless of which project
 is currently open.
 
 Usage:
@@ -24,7 +24,7 @@ from typing import Any
 
 
 def discover_root() -> Path:
-    root = os.environ.get("AGENT_OS_ROOT")
+    root = os.environ.get("AIZEE_ROOT")
     if root and Path(root).is_dir():
         return Path(root)
     return Path(__file__).resolve().parent.parent
@@ -47,9 +47,9 @@ def build_global_config(root: Path) -> dict[str, Any]:
 
     return {
         "mcpServers": {
-            "ai-global-os": {
+            "aizee": {
                 "command": py,
-                "args": [abs_script("aios_mcp_wrapper.py")],
+                "args": [abs_script("aizee_mcp_wrapper.py")],
             },
             "graphify": {
                 "command": py,
@@ -116,7 +116,7 @@ def main() -> int:
             print(
                 f"[mcp-global-sync] WARN: verification mismatch — wrote "
                 f"{len(config['mcpServers'])} but read back {seen}. "
-                "Another process may have reset the file. Re-run: ai-os mcp sync",
+                "Another process may have reset the file. Re-run: aizee mcp sync",
                 file=sys.stderr,
             )
             return 2

@@ -1,10 +1,10 @@
 ---
 name: global-os
-description: Load AI Global OS context layers and route to the correct workflow.
+description: Load aiZee context layers and route to the correct workflow.
 ---
 
 [FILE] global-os skill
-[OBJ] Bootstrap AI Global OS context.
+[OBJ] Bootstrap aiZee context.
 [RULES]
 1. [REQ] Read `global-roles.md` then `global-workflow.md`.
 2. [REQ] Read `AGENTS.md` canonical.

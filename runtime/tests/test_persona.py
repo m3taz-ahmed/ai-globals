@@ -52,7 +52,7 @@ class TestPersonaDetector:
         assert "ARCH" in d.list_personas()
         assert "CV" in d.list_personas()
         assert "FREELANCE" in d.list_personas()
-        assert len(d.list_personas()) == 20
+        assert len(d.list_personas()) == 19
 
     def test_unknown_default_raises(self):
         with pytest.raises(ValueError, match="Unknown default persona"):
@@ -132,14 +132,14 @@ class TestPersonaDetector:
     def test_detects_proposal(self):
         d = PersonaDetector()
         result = d.detect("write a bilingual website proposal in arabic and english with pricing and timeline")
-        assert result["persona"] == "PROPOSAL"
-        assert result["skill"] == "proposal-writer"
+        assert result["persona"] == "FREELANCE"
+        assert result["skill"] == "freelance-platforms"
 
     def test_detects_proposal_arabic(self):
         d = PersonaDetector()
         result = d.detect("عايز بروبوزل للموقع بتاعي بالعربي والإنجليزي")
-        assert result["persona"] == "PROPOSAL"
-        assert result["skill"] == "proposal-writer"
+        assert result["persona"] == "FREELANCE"
+        assert result["skill"] == "freelance-platforms"
 
     def test_detects_cv(self):
         d = PersonaDetector()

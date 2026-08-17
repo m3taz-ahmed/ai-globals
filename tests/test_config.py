@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import importlib
-import os
 from pathlib import Path
 from unittest import mock
 
 import pytest
+
 import config as config_mod
 
 
@@ -15,22 +14,22 @@ class TestDiscoverRoot:
     """Tests for config.discover_root()."""
 
     def test_uses_agent_os_root_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
+        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
         assert config_mod.discover_root() == tmp_path.resolve()
 
     def test_falls_back_to_config_parent(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        monkeypatch.delenv("AIZEE_ROOT", raising=False)
         result = config_mod.discover_root()
         assert result == Path(config_mod.__file__).resolve().parent
 
     def test_raises_on_nonexistent_env_dir(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("AGENT_OS_ROOT", "/nonexistent/path/that/should/not/exist")
-        with pytest.raises(ValueError, match="AGENT_OS_ROOT"):
+        monkeypatch.setenv("AIZEE_ROOT", "/nonexistent/path/that/should/not/exist")
+        with pytest.raises(ValueError, match="AIZEE_ROOT"):
             config_mod.discover_root()
 
     def test_resolves_relative_path(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setenv("AGENT_OS_ROOT", ".")
+        monkeypatch.setenv("AIZEE_ROOT", ".")
         result = config_mod.discover_root()
         assert result == tmp_path.resolve()
 
@@ -45,7 +44,7 @@ class TestDiscoverProjectRoot:
 
     def test_falls_back_to_agent_os_root(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("AGENT_PROJECT_ROOT", raising=False)
-        monkeypatch.setenv("AGENT_OS_ROOT", str(tmp_path))
+        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
         result = config_mod.discover_project_root()
         assert result == tmp_path.resolve()
 
@@ -53,7 +52,7 @@ class TestDiscoverProjectRoot:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.delenv("AGENT_PROJECT_ROOT", raising=False)
-        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        monkeypatch.delenv("AIZEE_ROOT", raising=False)
         ai_dir = tmp_path / ".ai"
         ai_dir.mkdir()
         (ai_dir / "active-context.md").write_text("test", encoding="utf-8")
@@ -63,7 +62,7 @@ class TestDiscoverProjectRoot:
 
     def test_falls_back_to_discover_root(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("AGENT_PROJECT_ROOT", raising=False)
-        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        monkeypatch.delenv("AIZEE_ROOT", raising=False)
         monkeypatch.chdir(Path(config_mod.__file__).resolve().parent)
         result = config_mod.discover_project_root()
         assert result == Path(config_mod.__file__).resolve().parent
@@ -134,7 +133,7 @@ class TestDiscoverProjectRootCwdFallback:
     ) -> None:
         """Line 39: when cwd has no .ai/active-context.md, falls back to discover_root()."""
         monkeypatch.delenv("AGENT_PROJECT_ROOT", raising=False)
-        monkeypatch.delenv("AGENT_OS_ROOT", raising=False)
+        monkeypatch.delenv("AIZEE_ROOT", raising=False)
         # Use a temp dir that has no .ai/active-context.md
         import tempfile
         tmp = Path(tempfile.mkdtemp(prefix="aios_cfg_test_"))

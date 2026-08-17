@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from aios_mcp.tools.common import is_safe_name as _is_safe_name
-from aios_mcp.tools.common import resolve_path as _resolve_path
+from aizee_mcp.tools.common import is_safe_name as _is_safe_name
+from aizee_mcp.tools.common import resolve_path as _resolve_path
 from runtime.audit import AuditLogger
 from runtime.kernel import Kernel
 from runtime.plugin import AIOSPlugin, PluginManager

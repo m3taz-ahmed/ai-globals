@@ -4,19 +4,19 @@
 
 ## Acceptance of Terms
 
-By using AI Global OS ("the software"), you agree to be bound by these Terms
+By using aiZee ("the software"), you agree to be bound by these Terms
 of Use. If you do not agree, do not use the software.
 
 ## License
 
-AI Global OS is licensed under the MIT License. See the `LICENSE` file for
+aiZee is licensed under the MIT License. See the `LICENSE` file for
 the full license text.
 
 ## AI Disclaimer
 
 ### No Guarantee of Accuracy
 
-AI Global OS uses artificial intelligence to evaluate actions, detect personas,
+aiZee uses artificial intelligence to evaluate actions, detect personas,
 and manage workflows. AI-generated outputs may contain errors, omissions, or
 inaccurate information. You are responsible for verifying all AI-generated
 content before relying on it.

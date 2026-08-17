@@ -79,7 +79,7 @@ def test_init_sentry_import_error(monkeypatch) -> None:
 
 def test_init_sentry_generic_exception(monkeypatch) -> None:
     monkeypatch.setenv("SENTRY_DSN", "https://example@sentry.io/1")
-    fake, _ = _install_fake_sentry(init_side_effect=RuntimeError("boom"))
+    _fake, _ = _install_fake_sentry(init_side_effect=RuntimeError("boom"))
     assert observability.init_sentry() is False
     assert observability._sentry_initialized is False
 

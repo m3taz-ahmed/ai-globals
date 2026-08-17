@@ -1,4 +1,4 @@
-"""End-to-end tests for AI Global OS core workflows.
+"""End-to-end tests for aiZee core workflows.
 
 Tests the full lifecycle: kernel initialization → persona detection →
 policy evaluation → workflow execution → memory ingestion → search.

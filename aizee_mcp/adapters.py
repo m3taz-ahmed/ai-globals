@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MCP execution adapter layer for AI Global OS.
+"""MCP execution adapter layer for aiZee.
 
 Re-implements the orchestration-mcp adapter pattern: a stable MCP tool surface
 with swappable execution backends (local, codex, claude_code, remote_a2a, etc.).
@@ -67,7 +67,7 @@ class AgentAdapter(ABC):
 
 
 class LocalAdapter(AgentAdapter):
-    """Adapter for local execution within the AI Global OS kernel."""
+    """Adapter for local execution within the aiZee kernel."""
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(Backend.LOCAL, config)

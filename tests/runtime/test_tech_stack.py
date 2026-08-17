@@ -6,11 +6,8 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from runtime.kernel import Kernel
 from runtime.tech_stack import (
-    _candidate_prefixes,
     _candidate_stems,
     _clean_version,
     _package_names,

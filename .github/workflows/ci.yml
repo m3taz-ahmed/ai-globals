@@ -1,4 +1,4 @@
-name: AI Global OS CI
+name: aiZee CI
 
 on:
   push:
@@ -28,6 +28,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e '.[dev]'
     - name: AI OS CI gates
-      run: ai-os ci
+      run: aizee ci
       # Supply-chain hardening: actions above are pinned to immutable commit SHAs.
       # For releases, add SBOM generation (e.g. anchore/syft) and Cosign signing.

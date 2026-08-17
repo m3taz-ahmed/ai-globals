@@ -1,32 +1,32 @@
-# AI Global OS — Claude Code Native
+# aiZee — Claude Code Native
 
 ---
-name: ai-global-os
+name: aizee
 description: Sovereign AI engineering control plane. IDE global bootloader — sets the OS root once and loads all rules, skills, workflows, and tech-stack from it.
 license: MIT
 ---
 
-# AI Global OS — Global Bootloader
+# aiZee — Global Bootloader
 
-- **Root:** discovered via `AGENT_OS_ROOT` env or `config.discover_root()` (no hardcoded path).
-- Set `AGENT_OS_ROOT` if not already set. Use `PYTHONIOENCODING=utf-8` on Windows.
-- This file is the canonical root pointer. All other OS files discover the root via `AGENT_OS_ROOT` or `config.discover_root()` and are loaded relative to it.
+- **Root:** discovered via `AIZEE_ROOT` env or `config.discover_root()` (no hardcoded path).
+- Set `AIZEE_ROOT` if not already set. Use `PYTHONIOENCODING=utf-8` on Windows.
+- This file is the canonical root pointer. All other OS files discover the root via `AIZEE_ROOT` or `config.discover_root()` and are loaded relative to it.
 
 ## Cold Start
 1. Read `global-roles.md`, `global-workflow.md`, and `Memory.md`.
-2. Detect personas with `ai-os persona detect --multi` and load the returned `skills/` before acting.
+2. Detect personas with `aizee persona detect --multi` and load the returned `skills/` before acting.
 3. If the current project has `spec.md`, read it before any action.
 
 ## Runtime Gate
 - Route every action through `runtime/kernel.py`.
-- Use `ai-os check <action> --args '{"tokens":N}'` or `Kernel.act` to validate policy + budget.
+- Use `aizee check <action> --args '{"tokens":N}'` or `Kernel.act` to validate policy + budget.
 - No destructive action without explicit user approval.
 
 ## Context & Memory
 - Detect stack from `package.json` / `composer.json` and load matching `tech-stack/<pkg>-<ver>.md` only after reading the lockfile for the exact version (`[VER-01]`).
 - If `graphify-out/graph.json` exists, use `graphify query` or `query_graph` (MCP); never raw grep.
-- Query Context7 MCP for external libraries/frameworks before implementation; use `aios_mcp/aios_server.py` for global context.
-- Run `ai-os memory ingest` when `rules/`, `tech-stack/`, or `workflows/` change; update `Memory.md` via `workflows/17-memory-sync.md` after every milestone.
+- Query Context7 MCP for external libraries/frameworks before implementation; use `aizee_mcp/aizee_server.py` for global context.
+- Run `aizee memory ingest` when `rules/`, `tech-stack/`, or `workflows/` change; update `Memory.md` via `workflows/17-memory-sync.md` after every milestone.
 
 ## Quality Gate
 Before declaring done, run from the root:

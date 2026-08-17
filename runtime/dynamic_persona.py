@@ -1,4 +1,4 @@
-"""Dynamic evolving personas for AI Global OS.
+"""Dynamic evolving personas for aiZee.
 
 Personas accumulate experience over time across three evolutionary layers:
 
@@ -102,7 +102,7 @@ class DynamicPersonaManager:
 
     The manager is thread-safe and persists state to
     ``<root>/state/persona_experiences.json``. When ``root`` is omitted the
-    OS root is discovered via ``AGENT_OS_ROOT`` or by walking parent
+    OS root is discovered via ``AIZEE_ROOT`` or by walking parent
     directories looking for the ``.ai`` marker.
     """
 
@@ -121,7 +121,7 @@ class DynamicPersonaManager:
         """Resolve the OS root directory."""
         if root is not None:
             return Path(root)
-        env_root = os.environ.get("AGENT_OS_ROOT")
+        env_root = os.environ.get("AIZEE_ROOT")
         if env_root:
             return Path(env_root)
         # Walk up from this file to find the .ai marker directory.

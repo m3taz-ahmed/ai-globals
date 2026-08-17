@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI Global OS CLI."""
+"""aiZee CLI."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ def _kernel(args: argparse.Namespace) -> Kernel:
 def cmd_status(args: argparse.Namespace) -> int:
     k = _kernel(args)
     status = k.status()
-    table = Table(title=f"AI Global OS Status (v{status['version']})")
+    table = Table(title=f"aiZee Status (v{status['version']})")
     table.add_column("Property", style="cyan")
     table.add_column("Value", style="green")
 
@@ -152,7 +152,7 @@ def cmd_graphify(args: argparse.Namespace) -> int:
 
 
 def cmd_version(args: argparse.Namespace) -> int:
-    console.print(f"AI Global OS v{config.VERSION}")
+    console.print(f"aiZee v{config.VERSION}")
     return 0
 
 
@@ -310,8 +310,8 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         return subprocess.call(cmd, cwd=str(root))
 
     if not args.server or not args.tool:
-        console.print("[red]Usage: ai-os mcp <server> <tool> [--args '...'][/red]")
-        console.print("[cyan]       ai-os mcp sync [--check][/cyan]")
+        console.print("[red]Usage: aizee mcp <server> <tool> [--args '...'][/red]")
+        console.print("[cyan]       aizee mcp sync [--check][/cyan]")
         return 1
 
     from runtime.mcp_client import McpClient
@@ -332,7 +332,7 @@ def cmd_chat(args: argparse.Namespace) -> int:
         result = k.chat_message(args.message)
         print(json.dumps(result, indent=2, default=str))
         return 0
-    console.print("[cyan]AI Global OS Chat (type 'exit' to quit)[/cyan]")
+    console.print("[cyan]aiZee Chat (type 'exit' to quit)[/cyan]")
     while True:
         try:
             msg = input("> ")
@@ -426,17 +426,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "state directory": (project_root / "state").exists(),
         "brain directory": (project_root / "brain").exists(),
         "managers module": (os_root / "runtime" / "managers").is_dir(),
-        "mcp tools module": (os_root / "aios_mcp" / "tools").is_dir(),
+        "mcp tools module": (os_root / "aizee_mcp" / "tools").is_dir(),
         "crypto module": (os_root / "runtime" / "crypto.py").exists(),
         "migrations module": (os_root / "runtime" / "migrations.py").exists(),
         "observability module": (os_root / "runtime" / "observability.py").exists(),
         "LICENSE": (os_root / "LICENSE").exists(),
         "CODEOWNERS": (os_root / ".github" / "CODEOWNERS").exists(),
-        "API.md": (os_root / "aios_mcp" / "API.md").exists(),
+        "API.md": (os_root / "aizee_mcp" / "API.md").exists(),
     }
 
     # Version check
-    version_file = os_root / ".aios-version"
+    version_file = os_root / ".aizee-version"
     if version_file.exists():
         installed_ver = version_file.read_text(encoding="utf-8").strip()
         checks[f"installed version ({installed_ver})"] = True
@@ -489,7 +489,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     except Exception:
         checks["global mcp config"] = False
 
-    table = Table(title="AI Global OS Doctor")
+    table = Table(title="aiZee Doctor")
     table.add_column("Check", style="cyan")
     table.add_column("Status", style="green")
     for name, ok in checks.items():
@@ -498,14 +498,35 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0 if all(checks.values()) else 1
 
 
+def cmd_uninstall(args: argparse.Namespace) -> int:
+    """Interactive uninstaller with selective keep/backup.
+
+    Modes:
+      aizee uninstall          → console interactive (default)
+      aizee uninstall --gui    → tkinter GUI
+      aizee uninstall --yes    → non-interactive (defaults: delete OS, keep learned)
+    """
+    root = _root(args)
+    if not root.exists():
+        console.print(f"[red]aiZee root not found: {root}[/red]")
+        return 1
+
+    if args.gui:
+        from runtime.uninstaller_gui import main as gui_main
+        return gui_main([str(root)])
+
+    from runtime.uninstaller import interactive_uninstall
+    return interactive_uninstall(root, assume_yes=args.yes)
+
+
 def cmd_test(args: argparse.Namespace) -> int:
     """Run pytest with configurable speed tiers.
 
     Tiers:
-      ai-os test           → fast (default): skip slow/mcp/dashboard/vector, no coverage, ~12s
-      ai-os test --full    → full: all tests + coverage, ~35s
-      ai-os test --verbose → verbose output
-      ai-os test --xdist   → parallel execution (faster on Linux/macOS, slower on Windows)
+      aizee test           → fast (default): skip slow/mcp/dashboard/vector, no coverage, ~12s
+      aizee test --full    → full: all tests + coverage, ~35s
+      aizee test --verbose → verbose output
+      aizee test --xdist   → parallel execution (faster on Linux/macOS, slower on Windows)
     """
     import subprocess
     import sys
@@ -514,7 +535,7 @@ def cmd_test(args: argparse.Namespace) -> int:
         pytest_args = [
             sys.executable, "-m", "pytest",
             "--tb=short", "-p", "no:warnings",
-            "--cov=runtime", "--cov=memory", "--cov=aios_mcp",
+            "--cov=runtime", "--cov=memory", "--cov=aizee_mcp",
             "--cov-report=term-missing",
             "--cov-fail-under=80",
         ]
@@ -540,8 +561,8 @@ def cmd_test(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="ai-os", description="AI Global OS CLI")
-    parser.add_argument("--root", type=Path, default=None, help="AI Global OS root (default: AGENT_OS_ROOT or install dir)")
+    parser = argparse.ArgumentParser(prog="aizee", description="aiZee CLI")
+    parser.add_argument("--root", type=Path, default=None, help="aiZee root (default: AIZEE_ROOT or install dir)")
     parser.add_argument("--project", type=Path, default=None, help="Active project root (default: AGENT_PROJECT_ROOT, CWD/.ai, or OS root)")
     sub = parser.add_subparsers(dest="command")
 
@@ -615,6 +636,10 @@ def main(argv: list[str] | None = None) -> int:
 
     p_ci = sub.add_parser("ci", help="Run CI quality gates")
     p_ci.add_argument("--skip-pytest", action="store_true", help="Skip pytest to save time")
+
+    p_uninstall = sub.add_parser("uninstall", help="Interactive uninstall with selective keep/backup")
+    p_uninstall.add_argument("--yes", "-y", action="store_true", help="Skip confirmation (use defaults: keep learned, delete OS)")
+    p_uninstall.add_argument("--gui", action="store_true", help="Launch tkinter GUI uninstaller")
 
     p_test = sub.add_parser("test", help="Run tests (fast tier ~12s, --full: all tests with coverage ~35s)")
     p_test.add_argument("--full", action="store_true", help="Full tier: all tests + coverage")
@@ -711,6 +736,7 @@ def main(argv: list[str] | None = None) -> int:
         "graphify": cmd_graphify,
         "version": cmd_version,
         "doctor": cmd_doctor,
+        "uninstall": cmd_uninstall,
     }
     return commands[args.command](args)
 

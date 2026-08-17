@@ -1,4 +1,4 @@
-# AI Global OS — Repository Study Report
+# aiZee — Repository Study Report
 
 - **Date**: 2026-08-06
 - **Method**: `git clone --depth 1` into `temp/repos-study/`, then architecture analysis.
@@ -19,7 +19,7 @@
   - WASM sandbox for untrusted code execution
   - OFP (OpenFang Protocol) for P2P agent discovery and task delegation
 - **Adopt?**: HOLD
-- **Why?**: Strong architecture and performance (180ms cold start, 40MB idle), but Rust-based and monolithic. AI Global OS is Python-first; adopting would require significant rewrite or subprocess integration. Hands pattern is reusable but the implementation is tightly coupled to Rust ecosystem.
+- **Why?**: Strong architecture and performance (180ms cold start, 40MB idle), but Rust-based and monolithic. aiZee is Python-first; adopting would require significant rewrite or subprocess integration. Hands pattern is reusable but the implementation is tightly coupled to Rust ecosystem.
 - **Effort**: large
 - **Target component**: runtime/ (if adopting pattern), otherwise reference only
 
@@ -33,7 +33,7 @@
   - Adapter pattern for pluggable execution backends
   - Immutable activity log for audit trail
 - **Adopt?**: YES
-- **Why?**: TypeScript aligns with AI Global OS stack (has Node.js components). Governance engine and budget tracking are directly applicable to aios_mcp/. Adapter pattern matches AI Global OS's plugin architecture. MIT license, active maintenance (March 2026).
+- **Why?**: TypeScript aligns with aiZee stack (has Node.js components). Governance engine and budget tracking are directly applicable to aios_mcp/. Adapter pattern matches aiZee's plugin architecture. MIT license, active maintenance (March 2026).
 - **Effort**: medium
 - **Target component**: rules/, aios_mcp/
 
@@ -47,7 +47,7 @@
   - Append-only UnifiedLedger for USD + token accounting
   - Task-category backbone mapping categories to workers, budget ceilings, and connectors
 - **Adopt?**: YES
-- **Why?**: Python-first matches AI Global OS stack. Charter pattern is excellent for declarative agent configuration. TrustScore + JIT leases address AI Global OS's runtime gate requirements. Marketplace oversight bridges external task platforms. MIT license, very active (July 2026).
+- **Why?**: Python-first matches aiZee stack. Charter pattern is excellent for declarative agent configuration. TrustScore + JIT leases address aiZee's runtime gate requirements. Marketplace oversight bridges external task platforms. MIT license, very active (July 2026).
 - **Effort**: medium
 - **Target component**: runtime/, rules/, aios_mcp/
 
@@ -61,7 +61,7 @@
   - AgentMesh trust layer: Ed25519 identity, 5-dimension trust scoring, DID (did:mesh)
   - Comprehensive compliance coverage and Microsoft-backed governance
 - **Adopt?**: YES
-- **Why?**: Best-in-class governance with enterprise-grade compliance. Multi-language support matches AI Global OS's polyglot needs. Policy engine and trust layer are directly reusable. Microsoft backing ensures long-term maintenance. MIT license, very active (August 2026).
+- **Why?**: Best-in-class governance with enterprise-grade compliance. Multi-language support matches aiZee's polyglot needs. Policy engine and trust layer are directly reusable. Microsoft backing ensures long-term maintenance. MIT license, very active (August 2026).
 - **Effort**: medium
 - **Target component**: rules/, runtime/, aios_mcp/
 
@@ -75,7 +75,7 @@
   - MCP firewall: allow/deny/approve tool calls with CEL expressions
   - Runtime plugin system for live agent control (OpenClaw, Hermes)
 - **Adopt?**: YES
-- **Why?**: Mature, actively maintained (commit 2026-08-06), MIT-licensed. Policy engine and model gateway patterns directly applicable to AI Global OS runtime governance. MCP firewall aligns with aios_mcp work. NATS+worker pattern for flow execution matches our async architecture needs.
+- **Why?**: Mature, actively maintained (commit 2026-08-06), MIT-licensed. Policy engine and model gateway patterns directly applicable to aiZee runtime governance. MCP firewall aligns with aios_mcp work. NATS+worker pattern for flow execution matches our async architecture needs.
 - **Effort**: medium
 - **Target component**: runtime/, aios_mcp/, rules/
 
@@ -89,7 +89,7 @@
   - Agent scopes: per-role limits with inheritance (inner cannot exceed outer)
   - Direct-call pattern: code drives tool calls, LLM only reasons—model-agnostic
 - **Adopt?**: HOLD
-- **Why?**: Excellent primitive for hard limits, but enforcement model is process-level (parent-child). AI Global OS needs in-process governance for kernel.py routing, not process spawning. SDK patterns (tool decorators, rule functions) are reusable for our policy engine, but the CLI/runtime-plugin approach doesn't fit our architecture.
+- **Why?**: Excellent primitive for hard limits, but enforcement model is process-level (parent-child). aiZee needs in-process governance for kernel.py routing, not process spawning. SDK patterns (tool decorators, rule functions) are reusable for our policy engine, but the CLI/runtime-plugin approach doesn't fit our architecture.
 - **Effort**: small
 - **Target component**: rules/ (pattern extraction only)
 
@@ -103,7 +103,7 @@
   - Server-side MCP: central registry, credentials injected at gateway
   - Sandboxes powerless by construction: no service-account token, no secrets
 - **Adopt?**: HOLD
-- **Why?**: Kubernetes-specific (sandboxes, pods, NetworkPolicy). AI Global OS is not K8s-native. Budget ledger and gateway proxy patterns are valuable, but the sandbox isolation model doesn't translate. OPA integration is worth studying for our policy engine, but full adoption would require significant architectural drift.
+- **Why?**: Kubernetes-specific (sandboxes, pods, NetworkPolicy). aiZee is not K8s-native. Budget ledger and gateway proxy patterns are valuable, but the sandbox isolation model doesn't translate. OPA integration is worth studying for our policy engine, but full adoption would require significant architectural drift.
 - **Effort**: large
 - **Target component**: rules/ (budget ledger pattern only)
 
@@ -130,7 +130,7 @@
   - Agent-as-MCP-server pattern for exposing agents as servers
   - Built-in observability with OpenTelemetry tracing
 - **Adopt?**: YES
-- **Why?**: Mature, well-documented framework with production-ready patterns. Composable design aligns with AI Global OS's modular architecture. Temporal support provides robust execution backend.
+- **Why?**: Mature, well-documented framework with production-ready patterns. Composable design aligns with aiZee's modular architecture. Temporal support provides robust execution backend.
 - **Effort**: medium
 - **Target component**: runtime/orchestrator/
 
@@ -144,7 +144,7 @@
   - A2A bridge exposes orchestrated experts as agent servers
   - Flexible execution: code mode, tool calling, or LLM sampling per task
 - **Adopt?**: YES
-- **Why?**: Innovative Code Mode pattern reduces token costs significantly. A2A bridge enables multi-agent collaboration. TypeScript aligns with AI Global OS frontend/runtime stack.
+- **Why?**: Innovative Code Mode pattern reduces token costs significantly. A2A bridge enables multi-agent collaboration. TypeScript aligns with aiZee frontend/runtime stack.
 - **Effort**: medium
 - **Target component**: runtime/codemode/, aios_mcp/
 
@@ -158,7 +158,7 @@
   - Built-in verification: lint, test, type-check runners
   - Full artifact + trace system with provenance tracking
 - **Adopt?**: HOLD
-- **Why?**: Strong multi-model routing concept but early-stage (v0.1.0). Privacy tiers and verification valuable, but may duplicate AI Global OS policy engine. Monitor for maturity.
+- **Why?**: Strong multi-model routing concept but early-stage (v0.1.0). Privacy tiers and verification valuable, but may duplicate aiZee policy engine. Monitor for maturity.
 - **Effort**: large
 - **Target component**: runtime/router/, policies/
 
@@ -172,7 +172,7 @@
   - Health monitoring with uptime, idle time, resource tracking
   - Event system with comprehensive audit trail
 - **Adopt?**: NO
-- **Why?**: Meta-server pattern is useful but AI Global OS likely needs direct orchestration rather than spawning child processes. Pooling concept reusable but implementation is process-heavy.
+- **Why?**: Meta-server pattern is useful but aiZee likely needs direct orchestration rather than spawning child processes. Pooling concept reusable but implementation is process-heavy.
 - **Effort**: medium
 - **Target component**: runtime/pooling/ (concepts only)
 
@@ -186,7 +186,7 @@
   - Session management with resume capability
   - Profile system for persona/job-description injection
 - **Adopt?**: YES
-- **Why?**: Adapter pattern exactly matches AI Global OS need for backend-agnostic agent execution. Clean separation between MCP surface and execution backends.
+- **Why?**: Adapter pattern exactly matches aiZee need for backend-agnostic agent execution. Clean separation between MCP surface and execution backends.
 - **Effort**: small
 - **Target component**: aios_mcp/adapters/, runtime/agent-runtime/
 
@@ -204,7 +204,7 @@
   - Mature ecosystem with CNCF graduation, security audit, and extensive adopters
   - Decision logging, status reporting, and external data integration
 - **Adopt?**: HOLD
-- **Why?**: Overkill for AI Global OS runtime policies. Heavy Go dependency, complex Rego learning curve, designed for cloud-native infrastructure (K8s, Terraform) not agent runtime governance. Better fit for infrastructure-as-code policies.
+- **Why?**: Overkill for aiZee runtime policies. Heavy Go dependency, complex Rego learning curve, designed for cloud-native infrastructure (K8s, Terraform) not agent runtime governance. Better fit for infrastructure-as-code policies.
 - **Effort**: large
 - **Target component**: infrastructure/policies/
 
@@ -232,7 +232,7 @@
   - CLI with --explain and --verbose for debugging
   - invoke/ainvoke for policy enforcement on any function without decorators
 - **Adopt?**: YES
-- **Why?**: Perfect fit for AI Global OS runtime kernel. Designed specifically for agent tool governance, has approval workflow integration, lightweight Python with no heavy dependencies. Matches runtime/policies/ requirements exactly.
+- **Why?**: Perfect fit for aiZee runtime kernel. Designed specifically for agent tool governance, has approval workflow integration, lightweight Python with no heavy dependencies. Matches runtime/policies/ requirements exactly.
 - **Effort**: small
 - **Target component**: runtime/policies/
 
@@ -260,7 +260,7 @@
   - Build target policies (mobile, desktop, web, server, embedded)
   - Dual licensing: Apache-2.0 code, CC BY-NC-SA 4.0 dataset (non-commercial)
 - **Adopt?**: NO
-- **Why?**: Domain-specific for license compliance, not agent governance. Dataset license restricts commercial use (CC BY-NC-SA 4.0), which conflicts with AI Global OS commercial deployment. No agent runtime concepts.
+- **Why?**: Domain-specific for license compliance, not agent governance. Dataset license restricts commercial use (CC BY-NC-SA 4.0), which conflicts with aiZee commercial deployment. No agent runtime concepts.
 - **Effort**: medium
 - **Target component**: legal/compliance/
 
@@ -278,7 +278,7 @@
   - Logic risk inspection mode for business-logic vulnerabilities
   - Path aliases and exception handling for non-standard repo layouts
 - **Adopt?**: YES
-- **Why?**: Directly aligns with AI Global OS's rule compilation needs. CLI tool integrates easily into existing workflows. Template system matches multi-stack requirements. Logic inspection adds security value.
+- **Why?**: Directly aligns with aiZee's rule compilation needs. CLI tool integrates easily into existing workflows. Template system matches multi-stack requirements. Logic inspection adds security value.
 - **Effort**: small
 - **Target component**: rules/, runtime/
 
@@ -292,7 +292,7 @@
   - Rule harvesting methodology: code → review gaps → extract guidelines
   - Tool independence preserves 75% of rules across agent migrations
 - **Adopt?**: HOLD
-- **Why?**: Strong theoretical foundation but requires adopting entire framework structure. AI Global OS already has rule organization; may conflict with existing architecture. Best for inspiration, not direct adoption.
+- **Why?**: Strong theoretical foundation but requires adopting entire framework structure. aiZee already has rule organization; may conflict with existing architecture. Best for inspiration, not direct adoption.
 - **Effort**: medium
 - **Target component**: rules/ (conceptual)
 
@@ -306,7 +306,7 @@
   - Fast-path optimization for single-test writes using ast-grep
   - AI validation piggybacks on agent's existing authentication
 - **Adopt?**: YES
-- **Why?**: Runtime enforcement matches AI Global OS's kernel.py gate model. Adapter pattern is reusable for multi-agent support. Custom rule DSL flexible for project-specific policies. Active maintenance with good test coverage.
+- **Why?**: Runtime enforcement matches aiZee's kernel.py gate model. Adapter pattern is reusable for multi-agent support. Custom rule DSL flexible for project-specific policies. Active maintenance with good test coverage.
 - **Effort**: medium
 - **Target component**: runtime/kernel.py
 
@@ -320,7 +320,7 @@
   - Lint gate integration (ruff/biome/gofmt) blocks defects from local models
   - Layer 1 Forge handles rescue parsing, validation, retries for tool calling
 - **Adopt?**: HOLD
-- **Why?**: Designed for local LLM proxy architecture, not cloud-first AI Global OS. Python-based but requires llama-server backend. Rule protocol is reusable but full proxy integration would duplicate existing infrastructure.
+- **Why?**: Designed for local LLM proxy architecture, not cloud-first aiZee. Python-based but requires llama-server backend. Rule protocol is reusable but full proxy integration would duplicate existing infrastructure.
 - **Effort**: large
 - **Target component**: runtime/ (if adopting local LLM path)
 
@@ -351,7 +351,7 @@
   - Buffered writes, consolidation primitives, and audit trails for production
   - Cross-language SDKs (Python + TypeScript) with TCK conformance testing
 - **Adopt?**: HOLD
-- **Why?**: Strong Neo4j lock-in. Good for graph-heavy workloads but requires Neo4j infrastructure. Hosted NAMS reduces friction but adds external dependency. Consider if AI Global OS needs graph-native memory vs simpler storage.
+- **Why?**: Strong Neo4j lock-in. Good for graph-heavy workloads but requires Neo4j infrastructure. Hosted NAMS reduces friction but adds external dependency. Consider if aiZee needs graph-native memory vs simpler storage.
 - **Effort**: medium
 - **Target component**: memory/
 
@@ -407,7 +407,7 @@
   - Project/org/group/agent/user/session scoping
   - Self-hosted or cloud options with Apache 2.0 license
 - **Adopt?**: HOLD
-- **Why?**: Good abstraction but requires separate server deployment. Neo4j + SQL dual storage adds complexity. Consider if multi-framework integration is needed for AI Global OS or if simpler memory suffices.
+- **Why?**: Good abstraction but requires separate server deployment. Neo4j + SQL dual storage adds complexity. Consider if multi-framework integration is needed for aiZee or if simpler memory suffices.
 - **Effort**: medium
 - **Target component**: memory/ (if multi-framework support needed)
 
@@ -425,7 +425,7 @@
   - No build plugins required - ships pre-built CSS that works with Tailwind, CSS modules, or plain CSS
   - AI/human parity: same API and tooling for both people and coding assistants
 - **Adopt?**: YES
-- **Why?**: React 19 requirement aligns with modern stack, MIT license, active Meta maintenance, zero styling lock-in, and AI-agent-friendly CLI make it ideal for AI Global OS dashboard/frontend work.
+- **Why?**: React 19 requirement aligns with modern stack, MIT license, active Meta maintenance, zero styling lock-in, and AI-agent-friendly CLI make it ideal for aiZee dashboard/frontend work.
 - **Effort**: medium
 - **Target component**: dashboard/, frontend/
 
@@ -439,7 +439,7 @@
   - Real-world patterns: analyzed from production sites (Linear, Claude, Vercel, Supabase, etc.)
   - Request service: can commission custom DESIGN.md for specific sites
 - **Adopt?**: YES
-- **Why?**: Zero integration effort (just copy markdown), MIT license, provides immediate design direction for AI agents building AI Global OS UI. Use as reference or adopt specific DESIGN.md files that match desired aesthetic.
+- **Why?**: Zero integration effort (just copy markdown), MIT license, provides immediate design direction for AI agents building aiZee UI. Use as reference or adopt specific DESIGN.md files that match desired aesthetic.
 - **Effort**: small
 - **Target component**: docs/, DESIGN.md (root)
 
@@ -457,7 +457,7 @@
   - Exporter abstraction with OTLP (gRPC/HTTP), Prometheus, Zipkin backends - switch backends without code changes
   - Semantic conventions package for standardized attribute naming across services
 - **Adopt?**: YES
-- **Why?**: Industry standard for distributed tracing, essential for AI Global OS observability. API/SDK separation enables library instrumentation without runtime cost. Active CNCF project with strong governance, stable traces/metrics signals, extensive framework integrations via contrib repo.
+- **Why?**: Industry standard for distributed tracing, essential for aiZee observability. API/SDK separation enables library instrumentation without runtime cost. Active CNCF project with strong governance, stable traces/metrics signals, extensive framework integrations via contrib repo.
 - **Effort**: medium
 - **Target component**: runtime/telemetry/
 
@@ -481,7 +481,7 @@
 
 ### Integrate first (YES)
 
-Sorted by effort then fit. All have clear AI Global OS relevance and acceptable licenses.
+Sorted by effort then fit. All have clear aiZee relevance and acceptable licenses.
 
 #### Tier 1 — small effort, high impact
 
@@ -535,7 +535,7 @@ Not a fit or unavailable.
 
 ### Overall assessment
 
-The 32-repo scan reveals a maturing agent-OS market with strong convergence around four concerns: runtime governance, MCP orchestration, memory/RAG, and observability. AI Global OS already owns the runtime/policy skeleton (`runtime/kernel.py`, budget, policy engine). The **YES** repos fill the exact gaps: declarative tool governance, design tokens, MCP adapters, rule compilation, telemetry, and memory. They also confirm that a Python-first, FastAPI/MCP/TypeScript-adjacent stack is the correct long-term bet.
+The 32-repo scan reveals a maturing agent-OS market with strong convergence around four concerns: runtime governance, MCP orchestration, memory/RAG, and observability. aiZee already owns the runtime/policy skeleton (`runtime/kernel.py`, budget, policy engine). The **YES** repos fill the exact gaps: declarative tool governance, design tokens, MCP adapters, rule compilation, telemetry, and memory. They also confirm that a Python-first, FastAPI/MCP/TypeScript-adjacent stack is the correct long-term bet.
 
 The **HOLD** list is valuable as pattern insurance: extract ideas without taking dependencies. The **SKIP** list validates our direction by showing what *not* to build or depend on.
 
@@ -549,7 +549,7 @@ The **HOLD** list is valuable as pattern insurance: extract ideas without taking
 
 ### Feature importance map
 
-| Feature | Source repo | Why it matters for AI Global OS | Target component |
+| Feature | Source repo | Why it matters for aiZee | Target component |
 |---|---|---|---|
 | Approval-required policy signal | `guardian-angel` | Closes the tool-call gate; enables human-in-the-loop and async approvals. | `runtime/policies/` |
 | `DESIGN.md` token contract | `awesome-design-md` | Gives agents a zero-code design language, reducing UI drift. | root `DESIGN.md` / `dashboard/` |

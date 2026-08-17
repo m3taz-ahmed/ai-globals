@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI Global OS dashboard server."""
+"""aiZee dashboard server."""
 
 from __future__ import annotations
 
@@ -92,11 +92,22 @@ def _client_ip(handler: DashboardHandler) -> str:
 
 
 def _dashboard_token(root: Path) -> str | None:
-    """Return the configured dashboard token, generating one lazily if needed."""
-    env_token = os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
+    """Return the configured dashboard token, generating one lazily if needed.
+
+    Checks AIZEE_DASHBOARD_TOKEN first, falls back to legacy AGENT_OS_DASHBOARD_TOKEN.
+    If neither is set and AIZEE_DASHBOARD_ALLOW_NO_TOKEN != "1", generates a
+    random token and prints a security warning.
+    """
+    env_token = os.environ.get("AIZEE_DASHBOARD_TOKEN") or os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
     if env_token:
         return env_token
-    if os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1":
+    allow_no_token = (
+        os.environ.get("AIZEE_DASHBOARD_ALLOW_NO_TOKEN") == "1"
+        or os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1"
+    )
+    if allow_no_token:
+        print("WARNING: Dashboard running without authentication token. "
+              "Set AIZEE_DASHBOARD_TOKEN for production use.")
         return None
     token_file = root / "state" / "dashboard.token"
     if token_file.exists():
@@ -105,6 +116,7 @@ def _dashboard_token(root: Path) -> str | None:
     token = secrets.token_urlsafe(32)
     token_file.write_text(token, encoding="utf-8")
     print(f"Generated dashboard token at {token_file}")
+    print("WARNING: For production, set AIZEE_DASHBOARD_TOKEN env var explicitly.")
     return token
 
 
@@ -119,7 +131,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def _origin(self) -> str:
-        configured = os.environ.get("AGENT_OS_DASHBOARD_ORIGIN")
+        configured = os.environ.get("AIZEE_DASHBOARD_ORIGIN") or os.environ.get("AGENT_OS_DASHBOARD_ORIGIN")
         if configured:
             return configured
         request_origin = self.headers.get("Origin", "")
@@ -165,7 +177,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def _auth(self) -> bool:
         token = _dashboard_token(self.root)
         if not token:
-            return os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1"
+            return (
+                os.environ.get("AIZEE_DASHBOARD_ALLOW_NO_TOKEN") == "1"
+                or os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1"
+            )
         header = self.headers.get("Authorization", "")
         return hmac.compare_digest(header, f"Bearer {token}")
 
@@ -487,5 +502,5 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
     server = ThreadingHTTPServer((host, port), DashboardHandler)
-    print(f"AI Global OS dashboard: http://{host}:{port}")
+    print(f"aiZee dashboard: http://{host}:{port}")
     server.serve_forever()

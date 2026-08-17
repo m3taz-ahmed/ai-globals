@@ -1,4 +1,4 @@
-# AI Global OS installer for Windows
+# aiZee installer for Windows
 # Idempotent: safe to run on first install, reinstall, or after a git pull update.
 # Preserves runtime state, runs migrations, verifies dependencies, and self-heals
 # broken symlinks / stale paths.
@@ -50,7 +50,7 @@ function Start-Log {
     if (-not (Test-Path $logDir)) { New-Directory $logDir }
     $script:LogFile = Join-Path $logDir "install-$(Get-Date -Format yyyyMMdd-HHmmss).log"
     if (-not $WhatIf) {
-        Set-Content -Path $script:LogFile -Value "AI Global OS Install Log - $(Get-Date)`n" -Force
+        Set-Content -Path $script:LogFile -Value "aiZee Install Log - $(Get-Date)`n" -Force
     }
 }
 
@@ -171,7 +171,7 @@ function Test-FileChecksum {
 }
 
 # ---------------------------------------------------------------------------
-# Auto-detect moved repo (if AGENT_OS_ROOT points to old location)
+# Auto-detect moved repo (if AIZEE_ROOT points to old location)
 # ---------------------------------------------------------------------------
 
 function Test-RootValid {
@@ -183,16 +183,16 @@ function Test-RootValid {
 
 function Resolve-StaleRoot {
     param([string]$Repo, [string]$CurrentRoot)
-    # If AGENT_OS_ROOT is set but invalid, or points to a different location
+    # If AIZEE_ROOT is set but invalid, or points to a different location
     # than the repo, prefer the repo if it's a valid AIOS root.
     if (-not $CurrentRoot -or -not (Test-RootValid $CurrentRoot)) {
-        Write-Warn "AGENT_OS_ROOT points to invalid or missing location: $CurrentRoot"
+        Write-Warn "AIZEE_ROOT points to invalid or missing location: $CurrentRoot"
         if (Test-RootValid $Repo) {
             Write-Step "Auto-detecting: using repo location as root: $Repo"
             return $Repo
         }
     }
-    # Check if root has a .aios-version but repo has a newer one (moved repo)
+    # Check if root has a .aizee-version but repo has a newer one (moved repo)
     $rootVersion = Get-InstalledVersion -Root $CurrentRoot
     $repoVersion = Get-TargetVersion -Root $Repo
     if ($rootVersion -and $repoVersion -and (Test-RootValid $Repo) -and -not (Test-RootValid $CurrentRoot)) {
@@ -244,7 +244,7 @@ function Test-MCPServers {
     $results = @{}
     $configPath = Join-Path $Root ".devin\mcp_config.json"
     if (-not (Test-Path $configPath)) {
-        $configPath = Join-Path $Root "aios_mcp\config.json"
+        $configPath = Join-Path $Root "aizee_mcp\config.json"
     }
     if (-not (Test-Path $configPath)) {
         Write-Warn "No MCP config found"
@@ -288,7 +288,7 @@ function Test-MCPServers {
 
 function Get-InstalledVersion {
     param([string]$Root)
-    $vf = Join-Path $Root ".aios-version"
+    $vf = Join-Path $Root ".aizee-version"
     if (Test-Path $vf) {
         return (Get-Content $vf -Raw).Trim()
     }
@@ -329,7 +329,7 @@ if ($Repo -eq "") { $Repo = (Get-Location).Path }
 # Hybrid root detection:
 #   - If -InstallDir is given -> copy mode (repo -> InstallDir)
 #   - If the repo itself has pyproject.toml (in-place) -> root = repo
-#   - Else -> fallback to LOCALAPPDATA\AI-Global-OS
+#   - Else -> fallback to LOCALAPPDATA\aiZee
 if ($InstallDir) {
     $Root = $InstallDir
     $CopyMode = $true
@@ -337,12 +337,12 @@ if ($InstallDir) {
     $Root = $Repo
     $CopyMode = $false
 } else {
-    $Root = if ($env:AGENT_OS_ROOT) { $env:AGENT_OS_ROOT } else { Join-Path $env:LOCALAPPDATA "AI-Global-OS" }
+    $Root = if ($env:AIZEE_ROOT) { $env:AIZEE_ROOT } else { Join-Path $env:LOCALAPPDATA "aiZee" }
     $CopyMode = $true
 }
 
-# Auto-detect moved repo: if AGENT_OS_ROOT is stale, use repo location
-if (-not $InstallDir -and $env:AGENT_OS_ROOT -and $env:AGENT_OS_ROOT -ne $Repo) {
+# Auto-detect moved repo: if AIZEE_ROOT is stale, use repo location
+if (-not $InstallDir -and $env:AIZEE_ROOT -and $env:AIZEE_ROOT -ne $Repo) {
     $Root = Resolve-StaleRoot -Repo $Repo -CurrentRoot $Root
 }
 
@@ -352,7 +352,7 @@ if ($Update) { $CopyMode = $false }
 Start-Log -Root $Root
 
 if ($WhatIf) {
-    Write-Host "WhatIf: would install AI Global OS" -ForegroundColor Cyan
+    Write-Host "WhatIf: would install aiZee" -ForegroundColor Cyan
     Write-Host "  Repo:      $Repo" -ForegroundColor Cyan
     Write-Host "  Root:      $Root" -ForegroundColor Cyan
     Write-Host "  CopyMode:  $CopyMode" -ForegroundColor Cyan
@@ -443,7 +443,7 @@ if ($CopyMode) {
         ".git", ".github", "__pycache__", "*.pyc", "*.pyo",
         ".pytest_cache", "node_modules", ".venv", "venv",
         "temp", "state", "brain", "graphify-out",
-        ".ai", ".aios-version"
+        ".ai", ".aizee-version"
     )
 
     Write-Step "Copying repo contents to $Root"
@@ -559,10 +559,10 @@ if (-not $SkipPip) {
 # 7. Set the canonical root environment variable
 # ---------------------------------------------------------------------------
 
-$env:AGENT_OS_ROOT = $Root
+$env:AIZEE_ROOT = $Root
 if (-not $WhatIf) {
-    [Environment]::SetEnvironmentVariable("AGENT_OS_ROOT", $Root, "User")
-    Write-Ok "AGENT_OS_ROOT set to $Root (User scope)"
+    [Environment]::SetEnvironmentVariable("AIZEE_ROOT", $Root, "User")
+    Write-Ok "AIZEE_ROOT set to $Root (User scope)"
 }
 
 # ---------------------------------------------------------------------------
@@ -697,7 +697,7 @@ if (-not $SkipMCP) {
     "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:Invoke-WebRequest -Method Post","bash:Invoke-WebRequest -Method Delete","bash:node -e","bash:python -c"]
   },
   "mcpServers": {
-    "ai-global-os": { "command": "python", "args": ["scripts/aios_mcp_wrapper.py"] },
+    "aizee": { "command": "python", "args": ["scripts/aizee_mcp_wrapper.py"] },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
     "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
     "upwork": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
@@ -719,8 +719,8 @@ if (-not $SkipMCP) {
 # ---------------------------------------------------------------------------
 
 $ShimDir = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
-$Shim = Join-Path $ShimDir "ai-os.cmd"
-$ShimContent = "@echo off`nset AGENT_OS_ROOT=$Root`nset PYTHONIOENCODING=utf-8`npython `"$Root\aios_cli.py`" %*"
+$Shim = Join-Path $ShimDir "aizee.cmd"
+$ShimContent = "@echo off`nset AIZEE_ROOT=$Root`nset PYTHONIOENCODING=utf-8`npython `"$Root\aizee_cli.py`" %*"
 if (-not $WhatIf) {
     New-Directory $ShimDir
     Set-Content -Path $Shim -Value $ShimContent -Force
@@ -756,7 +756,7 @@ if (-not $WhatIf) {
             if ($serverCount -gt 0) {
                 Write-Ok "Global MCP config verified: $serverCount servers (works from any workspace)"
             } else {
-                Write-Warn "Global MCP config still empty after re-sync — run 'ai-os mcp sync' manually"
+                Write-Warn "Global MCP config still empty after re-sync — run 'aizee mcp sync' manually"
             }
         } catch {
             Write-Warn "Could not verify global MCP config: $_"
@@ -771,19 +771,19 @@ if (-not $WhatIf) {
 Write-Step "Post-install verification"
 if (-not $WhatIf) {
     # CLI test
-    $testOutput = & python (Join-Path $Root "aios_cli.py") status 2>&1
+    $testOutput = & python (Join-Path $Root "aizee_cli.py") status 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Warn "CLI status check failed:`n$testOutput"
     } else {
-        Write-Ok "CLI: ai-os status works"
+        Write-Ok "CLI: aizee status works"
     }
 
-    # AGENT_OS_ROOT verification
-    $envRoot = [Environment]::GetEnvironmentVariable("AGENT_OS_ROOT", "User")
+    # AIZEE_ROOT verification
+    $envRoot = [Environment]::GetEnvironmentVariable("AIZEE_ROOT", "User")
     if ($envRoot -ne $Root) {
-        Write-Warn "AGENT_OS_ROOT mismatch: env=$envRoot, expected=$Root"
+        Write-Warn "AIZEE_ROOT mismatch: env=$envRoot, expected=$Root"
     } else {
-        Write-Ok "AGENT_OS_ROOT verified: $Root"
+        Write-Ok "AIZEE_ROOT verified: $Root"
     }
 
     # Config path verification
@@ -804,11 +804,11 @@ if (-not $WhatIf) {
 }
 
 # ---------------------------------------------------------------------------
-# 13. Write .aios-version
+# 13. Write .aizee-version
 # ---------------------------------------------------------------------------
 
 if (-not $WhatIf) {
-    Set-Content -Path (Join-Path $Root ".aios-version") -Value $TargetVersion -Force
+    Set-Content -Path (Join-Path $Root ".aizee-version") -Value $TargetVersion -Force
 }
 Write-Ok "Version: $TargetVersion"
 
@@ -835,11 +835,11 @@ if (Test-Path $BackupDir) {
 # ---------------------------------------------------------------------------
 
 Write-Host ""
-Write-Host "AI Global OS $TargetVersion installed to $Root" -ForegroundColor Green
-Write-Host "CLI: ai-os status" -ForegroundColor Green
+Write-Host "aiZee $TargetVersion installed to $Root" -ForegroundColor Green
+Write-Host "CLI: aizee status" -ForegroundColor Green
 if ($LogFile) {
     Write-Host "Log: $LogFile" -ForegroundColor Gray
 }
 if (-not $Update) {
-    Write-Host "Restart your terminal to ensure PATH and AGENT_OS_ROOT are updated." -ForegroundColor Yellow
+    Write-Host "Restart your terminal to ensure PATH and AIZEE_ROOT are updated." -ForegroundColor Yellow
 }

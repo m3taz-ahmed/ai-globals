@@ -14,7 +14,7 @@ class _FakeAgent:
         self.outputs = outputs or {}
 
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> object:
-        from aios_mcp.agent import ToolCall
+        from aizee_mcp.agent import ToolCall
 
         return ToolCall(tool=name, arguments=arguments, result=self.outputs.get(name, arguments))
 
@@ -49,7 +49,7 @@ def test_sequential_execution():
 def test_rollback():
     class FailAgent:
         async def call_tool(self, name: str, arguments: dict[str, Any]) -> object:
-            from aios_mcp.agent import ToolCall
+            from aizee_mcp.agent import ToolCall
 
             if name == "write":
                 return ToolCall(tool=name, arguments=arguments, error="disk full")

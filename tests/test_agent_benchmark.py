@@ -274,7 +274,7 @@ class TestBenchmarkMainBlock:
         import sys
         env = dict(_os.environ)
         env.update({
-            "AGENT_OS_ROOT": str(Path(__file__).resolve().parent.parent),
+            "AIZEE_ROOT": str(Path(__file__).resolve().parent.parent),
             "PYTHONIOENCODING": "utf-8",
             "PYTHONHASHSEED": "0",
             "PYTHONPATH": str(Path(__file__).resolve().parent.parent),
@@ -296,7 +296,7 @@ class TestBenchmarkMainBlock:
         import runpy
 
         os_root = str(Path(__file__).resolve().parent.parent)
-        monkeypatch.setenv("AGENT_OS_ROOT", os_root)
+        monkeypatch.setenv("AIZEE_ROOT", os_root)
         runpy.run_module("eval.agent_benchmark", run_name="__main__")
         captured = capsys.readouterr()
         assert captured.out.strip().startswith("{")

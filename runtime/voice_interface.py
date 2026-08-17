@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Voice interface for AI Global OS.
+"""Voice interface for aiZee.
 
 Provides speech-to-text for voice commands and text-to-speech for
 agent responses. Uses the OS-native speech APIs when available:
@@ -40,7 +40,7 @@ class VoiceConfig:
 
 
 class VoiceInterface:
-    """Cross-platform voice interface for AI Global OS."""
+    """Cross-platform voice interface for aiZee."""
 
     def __init__(self, config: VoiceConfig | None = None) -> None:
         self.config = config or VoiceConfig()
@@ -192,7 +192,7 @@ class VoiceInterface:
         """Listen using macOS osascript."""
         script = (
             'set userInput to text returned of (display dialog '
-            '"Speak your command:" default answer "" with title "AI Global OS Voice Input")'
+            '"Speak your command:" default answer "" with title "aiZee Voice Input")'
         )
         result = subprocess.run(
             ["osascript", "-e", script],
@@ -236,4 +236,4 @@ if __name__ == "__main__":
     print(f"TTS: {'available' if vi.tts_available else 'not available'}")
     print(f"STT: {'available' if vi.stt_available else 'not available'}")
     if vi.tts_available:
-        vi.speak("AI Global OS voice interface is ready.")
+        vi.speak("aiZee voice interface is ready.")

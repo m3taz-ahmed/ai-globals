@@ -4,7 +4,7 @@
 
 ## AI-Generated Content
 
-AI Global OS generates, processes, and evaluates content using artificial
+aiZee generates, processes, and evaluates content using artificial
 intelligence. This includes:
 
 - **Persona Detection:** AI determines which specialized persona best matches

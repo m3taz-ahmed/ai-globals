@@ -1,4 +1,4 @@
-"""Tests for aios_mcp/tools/policy_tools.py — policy, budget, guardian, metrics."""
+"""Tests for aizee_mcp/tools/policy_tools.py — policy, budget, guardian, metrics."""
 
 from __future__ import annotations
 
@@ -8,12 +8,11 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from mcp.server.fastmcp import FastMCP
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aios_pol_test_")
-os.environ["AGENT_OS_ROOT"] = _ROOT
+os.environ["AIZEE_ROOT"] = _ROOT
 ROOT = Path(_ROOT)
 for sub in ("runtime/policies", "state", "brain"):
     (ROOT / sub).mkdir(parents=True, exist_ok=True)
@@ -21,15 +20,15 @@ for sub in ("runtime/policies", "state", "brain"):
     "default_action: ask\nrules:\n  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
 )
 
-from aios_mcp.tools.policy_tools import register_policy_tools  # noqa: E402
-from aios_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.policy_tools import register_policy_tools  # noqa: E402
 
 _mcp = FastMCP("test-policy")
 register_policy_tools(_mcp)
 
 
 def _call(name: str, arguments: dict) -> str:
-    os.environ["AGENT_OS_ROOT"] = _ROOT
+    os.environ["AIZEE_ROOT"] = _ROOT
     reset_state()
     return _mcp._tool_manager.get_tool(name).fn(**arguments)
 
@@ -52,7 +51,7 @@ class TestCheckPolicy:
     def test_check_policy_allowed(self):
         mock_k = _mock_kernel()
         mock_k.act.return_value = {"ok": True, "action": "allow"}
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("check_policy", {"action": "Read"})
             data = json.loads(result)
             assert data["ok"] is True
@@ -60,7 +59,7 @@ class TestCheckPolicy:
     def test_check_policy_with_args(self):
         mock_k = _mock_kernel()
         mock_k.act.return_value = {"ok": True}
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("check_policy", {"action": "Read", "args": {"user": "alice"}})
             data = json.loads(result)
             assert data["ok"] is True
@@ -69,7 +68,7 @@ class TestCheckPolicy:
 class TestAnalyzeBudget:
     def test_analyze_budget(self):
         mock_k = _mock_kernel()
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("analyze_budget", {})
             data = json.loads(result)
             assert "usage" in data
@@ -92,7 +91,7 @@ class TestRunGuardianCheck:
         mock_k.guardian.authorize.return_value = MagicMock(
             status="allow", rule_name="allow-read", reason="allowed"
         )
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("run_guardian_check", {"tool": "Read", "attributes": {"file": "test.py"}})
             data = json.loads(result)
             # ok is True because decision.status != default_decision
@@ -107,7 +106,7 @@ class TestRunGuardianCheck:
         mock_k.guardian.authorize.return_value = MagicMock(
             status="deny", rule_name="block-write", reason="write not allowed"
         )
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("run_guardian_check", {"tool": "Write"})
             data = json.loads(result)
             assert data["ok"] is True
@@ -116,7 +115,7 @@ class TestRunGuardianCheck:
     def test_guardian_with_no_attributes(self):
         """Cover line 45: attributes defaults to empty dict."""
         mock_k = _mock_kernel()
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("run_guardian_check", {"tool": "Read"})
             data = json.loads(result)
             assert "status" in data
@@ -126,8 +125,8 @@ class TestGetMetrics:
     def test_get_metrics(self):
         """Cover line 61: format_metrics returns Prometheus text."""
         mock_k = _mock_kernel()
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k), \
-             patch("aios_mcp.tools.policy_tools.format_metrics", return_value="# metrics here"):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k), \
+             patch("aizee_mcp.tools.policy_tools.format_metrics", return_value="# metrics here"):
             result = _call("get_metrics", {})
             assert "metrics" in result
 
@@ -137,7 +136,7 @@ class TestGetOsStatus:
         """Cover line 66: returns kernel status JSON."""
         mock_k = _mock_kernel()
         mock_k.status.return_value = {"workflows": ["w1"], "rules": ["r1"], "budgets": ["b1"]}
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("get_os_status", {})
             data = json.loads(result)
             assert "workflows" in data
@@ -149,7 +148,7 @@ class TestListCapabilities:
         """Cover line 71: returns capabilities list."""
         mock_k = _mock_kernel()
         mock_k.capabilities.list.return_value = ["read", "write"]
-        with patch("aios_mcp.tools.policy_tools.kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("list_capabilities", {})
             data = json.loads(result)
             assert data == ["read", "write"]

@@ -1,10 +1,10 @@
-# AI Global OS
+# aiZee
 
 [FILE] AGENTS
 [OBJ] Cross-tool canonical instruction for all AI coding agents.
 [RULES]
 1. [REQ] Cold Start: Read `global-roles.md` then `global-workflow.md` first. Never cache.
-2. [REQ] Persona: Detect personas with `ai-os persona detect --multi "<user prompt>"` or `Kernel.detect_persona`/`PersonaDetector.detect_multiple`; adopt the returned persona set and read each `skills/<skill>/SKILL.md` (primary + lords) before acting. Available personas: `ARCH`, `QA`, `UX`, `DEV`, `SRE`, `SEC`, `GAME`, `PLAY`, `MOBILE`, `DATA`, `ML`, `DEVOPS`, `API`, `LEGAL`, `PRODUCT`, `DOC`, `PERF`.
+2. [REQ] Persona: Detect personas with `aizee persona detect --multi "<user prompt>"` or `Kernel.detect_persona`/`PersonaDetector.detect_multiple`; adopt the returned persona set and read each `skills/<skill>/SKILL.md` (primary + lords) before acting. Available personas: `ARCH`, `QA`, `UX`, `DEV`, `SRE`, `SEC`, `GAME`, `PLAY`, `MOBILE`, `DATA`, `ML`, `DEVOPS`, `API`, `LEGAL`, `PRODUCT`, `DOC`, `PERF`.
 3. [REQ] Load Context Layers: L0 `rules/core-behavioral-compact.md`, `skills/`; L1 `rules/vocabulary.md`, `rules/anti-patterns.md`, `tech-stack/useful-repos.md`; L2 `rules/*.md` + matched `tech-stack/<pkg>-<ver>.md`; L3 `workflows/*.md` per task.
 4. [REQ] VersionGate `[VER-01]`: Before loading any `tech-stack/` file, read `composer.lock` or `package-lock.json` and load only the matching version file. Never default to v3 for Filament or v11 for Laravel.
 5. [REQ] Use MCP: Query Context7 MCP for any external library/framework before implementing code. Never rely on memory.
@@ -14,10 +14,10 @@
 9. [REQ] Cost: Check `runtime/budget` before every LLM call. Stop on hard cap.
 10. [REQ] Quality: 0 linter warnings. SOLID/DRY/KISS. No `any` types. No inline imports. No raw SQL interpolation.
 11. [REQ] Git: Conventional commits. Atomic. Never `git add .` or force push. Stage only files you modified.
-12. [REQ] Root: Discover OS root from `AGENT_OS_ROOT` env or install dir. Never hardcode `D:/server/.ai`.
-13. [REQ] Runtime Gate: Route all actions through `runtime/kernel.py` (Policy + Budget + Audit). Use `ai-os check <action> --args` or `Kernel.act` before execution.
-14. [REQ] MCP: Use `aios_mcp/aios_server.py` as native MCP server. Prefer `query_rules`, `check_policy`, `search_memory`, `search_memory_vector`.
-15. [REQ] Memory: Run `ai-os memory ingest` after any rule/tech-stack/workflow change.
+12. [REQ] Root: Discover OS root from `AIZEE_ROOT` env or install dir. Never hardcode `D:/server/.ai`.
+13. [REQ] Runtime Gate: Route all actions through `runtime/kernel.py` (Policy + Budget + Audit). Use `aizee check <action> --args` or `Kernel.act` before execution.
+14. [REQ] MCP: Use `aizee_mcp/aizee_server.py` as native MCP server. Prefer `query_rules`, `check_policy`, `search_memory`, `search_memory_vector`.
+15. [REQ] Memory: Run `aizee memory ingest` after any rule/tech-stack/workflow change.
 16. [REQ] Quality: 0 linter warnings. Run `ruff check .`, `mypy`, `pytest -q`, `python eval/harness.py` before declaring done. No `eval` for policy.
 17. [PROHIBIT] No unauthorized server actions. No destructive bash without validation. No `min/` folders. No generic UIs.
 18. [REQ] Handoff: Run `workflows/17-memory-sync.md` after every milestone.

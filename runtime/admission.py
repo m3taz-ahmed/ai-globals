@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Output admission gate for AI Global OS.
+"""Output admission gate for aiZee.
 
 Implements Hazem Ali's representation/authority/memory principal: do not
 evaluate AI correctness from output text alone. Evaluate the full chain

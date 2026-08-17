@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aios"
+name = "aizee"
 version = "5.0.0"
-description = "AI Global OS — sovereign AI engineering control plane"
+description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -55,14 +55,14 @@ vector = [
 ]
 
 [project.scripts]
-ai-os = "aios_cli:main"
+aizee = "aizee_cli:main"
 
 [tool.setuptools]
-py-modules = ["aios_cli", "config"]
+py-modules = ["aizee_cli", "config"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["runtime*", "memory*", "aios_mcp*", "plugins*", "eval*"]
+include = ["runtime*", "memory*", "aizee_mcp*", "plugins*", "eval*"]
 exclude = ["runtime.tests*", "memory.tests*", "tests*"]
 
 [tool.setuptools.package-data]
@@ -85,11 +85,6 @@ exclude = [
     "tmp/**",
     "scratch/**",
     "temp/**",
-    "tests/*",
-    "tests/*/*",
-    "skills/*",
-    "skills/*/*",
-    "skills/*/*/*",
 ]
 
 [tool.ruff.lint]
@@ -97,6 +92,12 @@ select = [
     "E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "TID", "RUF"
 ]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
+"runtime/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
+"memory/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
+"eval/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -106,16 +107,46 @@ python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
-exclude = ["tests/", "skills/", "runtime/tests/", "memory/tests/", "dashboard/", "scripts/", "tmp/", "scratch/", "temp/", "brain/", "state/", "__pycache__/", "\\.git/", "\\.github/"]
+exclude = ["skills/", "tmp/", "scratch/", "temp/", "brain/", "state/", "__pycache__/", "\\.git/", "\\.github/"]
 [[tool.mypy.overrides]]
 module = ["yaml", "sentence_transformers", "turbovec", "numpy", "psutil", "sentry_sdk"]
 ignore_missing_imports = true
+
+# Test files: included in type checking but with relaxed strictness.
+# Tests use mocks, fixtures, and dynamic attributes that don't fit strict typing.
+[[tool.mypy.overrides]]
+module = ["tests.*", "runtime.tests.*", "memory.tests.*", "eval.tests.*"]
+strict = false
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+warn_return_any = false
+warn_unused_ignores = false
+check_untyped_defs = false
+allow_untyped_defs = true
+allow_incomplete_defs = true
+disable_error_code = ["union-attr", "attr-defined", "method-assign", "comparison-overlap", "type-arg", "assignment", "misc"]
+
+# Dashboard: stdlib HTTP server uses dynamic BaseHTTPRequestHandler attributes.
+[[tool.mypy.overrides]]
+module = ["dashboard.*"]
+strict = false
+disallow_untyped_defs = false
+warn_return_any = false
+
+# Scripts: installer/wrapper scripts use subprocess and dynamic paths.
+[[tool.mypy.overrides]]
+module = ["scripts.*"]
+strict = false
+disallow_untyped_defs = false
+warn_return_any = false
 
 [tool.pytest.ini_options]
 testpaths = ["runtime/tests", "memory/tests", "eval/tests", "tests"]
 python_files = "test_*.py"
 pythonpath = ["."]
-addopts = "-ra -q"
+addopts = "-ra -q --strict-markers"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests requiring external services",

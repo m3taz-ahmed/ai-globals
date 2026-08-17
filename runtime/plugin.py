@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plugin manager and base interface for AI Global OS extensions."""
+"""Plugin manager and base interface for aiZee extensions."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ def _is_plugin_source_safe(source: str, filename: str) -> tuple[bool, str]:
 
 
 class AIOSPlugin(ABC):
-    """Base interface for AI Global OS plugins.
+    """Base interface for aiZee plugins.
 
     Plugins are loaded by the kernel after the runtime is initialized and may
     expose MCP tools and resources.

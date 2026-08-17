@@ -1,4 +1,4 @@
-# Bandit security scanner configuration for AI Global OS.
+# Bandit security scanner configuration for aiZee.
 # https://bandit.readthedocs.io/en/latest/config.html
 
 # Skip B101 (assert_used) — pytest tests use assert extensively by design.

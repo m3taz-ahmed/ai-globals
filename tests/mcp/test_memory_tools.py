@@ -1,4 +1,4 @@
-"""Tests for aios_mcp/tools/memory_tools.py — memory-related MCP tools."""
+"""Tests for aizee_mcp/tools/memory_tools.py — memory-related MCP tools."""
 
 from __future__ import annotations
 
@@ -9,25 +9,24 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from mcp.server.fastmcp import FastMCP
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aios_mem_test_")
-os.environ["AGENT_OS_ROOT"] = _ROOT
+os.environ["AIZEE_ROOT"] = _ROOT
 ROOT = Path(_ROOT)
 for sub in ("brain", "rules", "tech-stack", "workflows", "skills"):
     (ROOT / sub).mkdir(parents=True, exist_ok=True)
 
-from aios_mcp.tools.memory_tools import register_memory_tools  # noqa: E402
-from aios_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.common import reset_state  # noqa: E402
+from aizee_mcp.tools.memory_tools import register_memory_tools  # noqa: E402
 
 _mcp = FastMCP("test-memory")
 register_memory_tools(_mcp)
 
 
 def _call(name: str, arguments: dict) -> str:
-    os.environ["AGENT_OS_ROOT"] = _ROOT
+    os.environ["AIZEE_ROOT"] = _ROOT
     reset_state()
     return _mcp._tool_manager.get_tool(name).fn(**arguments)
 
@@ -63,7 +62,7 @@ class TestSearchMemory:
         mock_mem = MagicMock(id="m1", kind="semantic", source="rules/core.md", content="test content")
         mock_store = _mock_memory()
         mock_store.search.return_value = [mock_mem]
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("search_memory", {"query": "test"})
             data = json.loads(result)
             assert len(data) == 1
@@ -86,7 +85,7 @@ class TestSearchMemoryVector:
     def test_successful_vector_search(self):
         mock_store = _mock_memory()
         mock_store.search_vector.return_value = [{"id": "v1", "score": 0.9}]
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("search_memory_vector", {"query": "test"})
             data = json.loads(result)
             assert len(data) == 1
@@ -113,7 +112,7 @@ class TestQueryContext:
         mock_store.search.return_value = []
         mock_store.search_vector.return_value = [{"id": "missing-id", "score": 0.8}]
         mock_store.get.return_value = None
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("query_context", {"query": "test"})
             data = json.loads(result)
             assert data == []
@@ -130,7 +129,7 @@ class TestQueryContext:
         ]
         new_mem = MagicMock(id="m2", kind="factual", source="tech-stack/x.md", content="vector content")
         mock_store.get.side_effect = lambda mid: new_mem if mid == "m2" else None
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("query_context", {"query": "test"})
             data = json.loads(result)
             assert len(data) == 2
@@ -169,7 +168,7 @@ class TestGetRelatedMemories:
         mock_store = _mock_memory()
         related_mem = MagicMock(id="r1", kind="semantic", content="related content")
         mock_store.related.return_value = [(related_mem, "depends_on")]
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("get_related_memories", {"mem_id": "valid-id"})
             data = json.loads(result)
             assert len(data) == 1
@@ -215,7 +214,7 @@ class TestAddMemory:
     def test_successful_add(self):
         mock_store = _mock_memory()
         mock_store.add.return_value = MagicMock(id="new-mem-456")
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("add_memory", {"kind": "factual", "content": "test content", "source": "test"})
             data = json.loads(result)
             assert data["ok"] is True
@@ -239,7 +238,7 @@ class TestInvalidateMemory:
     def test_memory_not_found(self):
         mock_store = _mock_memory()
         mock_store.get.return_value = None
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("invalidate_memory", {"id": "nonexistent-id"})
             data = json.loads(result)
             assert data["ok"] is False
@@ -248,7 +247,7 @@ class TestInvalidateMemory:
     def test_successful_invalidate(self):
         mock_store = _mock_memory()
         mock_store.get.return_value = MagicMock(id="existing-id")
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store):
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("invalidate_memory", {"id": "existing-id"})
             data = json.loads(result)
             assert data["ok"] is True
@@ -259,8 +258,8 @@ class TestInvalidateMemory:
 class TestIngestMemory:
     def test_successful_ingest(self):
         mock_store = _mock_memory()
-        with patch("aios_mcp.tools.memory_tools.memory", return_value=mock_store), \
-             patch("aios_mcp.tools.memory_tools.Ingestor") as mock_ingestor_cls:
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store), \
+             patch("aizee_mcp.tools.memory_tools.Ingestor") as mock_ingestor_cls:
             mock_ingestor = MagicMock()
             mock_ingestor.ingest_all.return_value = ["id1", "id2", "id3"]
             mock_ingestor_cls.return_value = mock_ingestor
@@ -299,7 +298,7 @@ class TestBuildSchemaGraph:
             conn.execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT)")
             conn.commit()
 
-        with patch("aios_mcp.tools.memory_tools.SchemaGraph") as mock_graph_cls:
+        with patch("aizee_mcp.tools.memory_tools.SchemaGraph") as mock_graph_cls:
             mock_graph = MagicMock()
             mock_graph.nodes = [MagicMock(id="table:users"), MagicMock(id="table:posts")]
             mock_graph.edges = []
@@ -314,7 +313,7 @@ class TestBuildSchemaGraph:
 
     def test_resolve_path_returns_none(self):
         """Cover line 165: resolve_path returns None."""
-        with patch("aios_mcp.tools.memory_tools.resolve_path", return_value=None):
+        with patch("aizee_mcp.tools.memory_tools.resolve_path", return_value=None):
             result = _call("build_schema_graph", {"db_path": "test.db"})
             data = json.loads(result)
             assert data["ok"] is False

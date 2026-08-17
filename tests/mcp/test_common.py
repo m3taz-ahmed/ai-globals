@@ -1,4 +1,4 @@
-"""Tests for aios_mcp/tools/common.py helper functions."""
+"""Tests for aizee_mcp/tools/common.py helper functions."""
 
 from __future__ import annotations
 
@@ -8,14 +8,12 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # Set up isolated root BEFORE importing the module
-os.environ["AGENT_OS_ROOT"] = tempfile.mkdtemp(prefix="aios_common_test_")
-ROOT = Path(os.environ["AGENT_OS_ROOT"])
+os.environ["AIZEE_ROOT"] = tempfile.mkdtemp(prefix="aios_common_test_")
+ROOT = Path(os.environ["AIZEE_ROOT"])
 (ROOT / "brain").mkdir(parents=True, exist_ok=True)
 
-from aios_mcp.tools.common import (  # noqa: E402
+from aizee_mcp.tools.common import (  # noqa: E402
     is_safe_name,
     kernel,
     memory,
@@ -158,7 +156,7 @@ class TestInfrastructure:
         """Cover lines 34-36: reset_state clears cached instances."""
         reset_state()
         # Verify it doesn't raise and clears state
-        from aios_mcp.tools import common as common_mod
+        from aizee_mcp.tools import common as common_mod
 
         assert common_mod._kernel_instance is None
         assert common_mod._memory_instance is None
@@ -167,10 +165,9 @@ class TestInfrastructure:
     def test_kernel_returns_instance(self):
         """Cover lines 42-47: kernel() creates and caches Kernel."""
         reset_state()
-        from unittest.mock import MagicMock
 
         mock_k = MagicMock()
-        with patch("aios_mcp.tools.common.Kernel", return_value=mock_k):
+        with patch("aizee_mcp.tools.common.Kernel", return_value=mock_k):
             k1 = kernel()
             assert k1 is mock_k
             # Second call should return cached instance
@@ -180,26 +177,24 @@ class TestInfrastructure:
     def test_kernel_recreates_on_root_change(self):
         """Cover lines 44-46: kernel recreates when root changes."""
         reset_state()
-        from unittest.mock import MagicMock
 
         mock_k1 = MagicMock()
         mock_k2 = MagicMock()
-        with patch("aios_mcp.tools.common.Kernel", side_effect=[mock_k1, mock_k2]):
+        with patch("aizee_mcp.tools.common.Kernel", side_effect=[mock_k1, mock_k2]):
             k1 = kernel()
             assert k1 is mock_k1
             # Change root to force recreation
-            with patch("aios_mcp.tools.common.root", return_value=Path("/different/root")):
+            with patch("aizee_mcp.tools.common.root", return_value=Path("/different/root")):
                 k2 = kernel()
                 assert k2 is mock_k2
 
     def test_memory_returns_instance(self):
         """Cover lines 53-57: memory() creates and caches MemoryStore."""
         reset_state()
-        from unittest.mock import MagicMock
 
         mock_m = MagicMock()
         mock_m.root = ROOT
-        with patch("aios_mcp.tools.common.MemoryStore", return_value=mock_m):
+        with patch("aizee_mcp.tools.common.MemoryStore", return_value=mock_m):
             m1 = memory()
             assert m1 is mock_m
             # Second call should return cached instance
@@ -209,16 +204,15 @@ class TestInfrastructure:
     def test_memory_recreates_on_root_change(self):
         """Cover lines 55-56: memory recreates when root changes."""
         reset_state()
-        from unittest.mock import MagicMock
 
         mock_m1 = MagicMock()
         mock_m1.root = ROOT
         mock_m2 = MagicMock()
         mock_m2.root = Path("/different/root")
-        with patch("aios_mcp.tools.common.MemoryStore", side_effect=[mock_m1, mock_m2]):
+        with patch("aizee_mcp.tools.common.MemoryStore", side_effect=[mock_m1, mock_m2]):
             m1 = memory()
             assert m1 is mock_m1
             # Change root to force recreation
-            with patch("aios_mcp.tools.common.root", return_value=Path("/different/root")):
+            with patch("aizee_mcp.tools.common.root", return_value=Path("/different/root")):
                 m2 = memory()
                 assert m2 is mock_m2

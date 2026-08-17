@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upwork plugin for AI Global OS — proxies to @furkankoykiran/upwork-mcp.
+"""Upwork plugin for aiZee — proxies to @furkankoykiran/upwork-mcp.
 
 Requires UPWORK_CLIENT_ID and UPWORK_CLIENT_SECRET env vars and an authenticated
 session (run `npx @furkankoykiran/upwork-mcp auth` first).

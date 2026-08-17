@@ -1,6 +1,6 @@
 # `scripts/` — Automation & Validation Tools
 
-Self-healing and utility engine for AI Global OS v4.20.0.
+Self-healing and utility engine for aiZee v4.20.0.
 
 ---
 

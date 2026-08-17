@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capability-scoped authorization for AI Global OS.
+"""Capability-scoped authorization for aiZee.
 
 Implements Hazem Ali's zero-trust AI execution principal: the model may propose,
 but only an independent control plane may authorize consequence.

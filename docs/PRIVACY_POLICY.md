@@ -4,7 +4,7 @@
 
 ## Overview
 
-AI Global OS ("we", "us", or "the software") is a sovereign AI engineering
+aiZee ("we", "us", or "the software") is a sovereign AI engineering
 control plane that runs locally on your machine. This privacy policy explains
 how data is collected, stored, and used.
 
@@ -40,7 +40,7 @@ are encrypted at rest using AES-128-CBC with HMAC-SHA256 (Fernet).
 
 ## Third-Party Services
 
-AI Global OS can optionally connect to external MCP servers (e.g., Context7,
+aiZee can optionally connect to external MCP servers (e.g., Context7,
 Upwork, Freelancer). These services have their own privacy policies. We are
 not responsible for how third-party services handle your data.
 

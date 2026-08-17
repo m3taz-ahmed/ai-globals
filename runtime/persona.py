@@ -1,4 +1,4 @@
-"""Persona detection and skill composition for AI Global OS."""
+"""Persona detection and skill composition for aiZee."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def _load_persona_data() -> dict[str, Any]:
 
 
 class PersonaDetector:
-    """Map user prompts to one or more AI Global OS personas and related skills.
+    """Map user prompts to one or more aiZee personas and related skills.
 
     The detector uses weighted keyword matching for personas and a separate
     keyword index for domain ("lord") skills. Results compose a primary persona,

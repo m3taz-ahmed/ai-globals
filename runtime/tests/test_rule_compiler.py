@@ -6,8 +6,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from runtime.rule_compiler import RuleIR, compile_rule_file, compile_rules, to_json
-from runtime.rule_compiler import _code_prefix, _parse_rules, _split_rules_section
+from runtime.rule_compiler import (
+    RuleIR,
+    _code_prefix,
+    _parse_rules,
+    _split_rules_section,
+    compile_rule_file,
+    compile_rules,
+    to_json,
+)
 
 
 def _write_rule_file(tmp_path: Path, name: str, content: str) -> Path:

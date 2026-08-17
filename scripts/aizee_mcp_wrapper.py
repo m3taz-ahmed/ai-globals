@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Wrapper script for the AI Global OS MCP server.
+"""Wrapper script for the aiZee MCP server.
 
 This replaces the inline Python one-liner in MCP config files.
-Sets AGENT_OS_ROOT and launches the MCP server.
+Sets AIZEE_ROOT and launches the MCP server.
 """
 import os
 import pathlib
@@ -11,8 +11,8 @@ import sys
 
 
 def discover_root() -> str:
-    """Discover the AI Global OS root directory."""
-    root = os.environ.get("AGENT_OS_ROOT")
+    """Discover the aiZee root directory."""
+    root = os.environ.get("AIZEE_ROOT")
     if root and pathlib.Path(root).is_dir():
         return root
     cwd = pathlib.Path.cwd()
@@ -23,7 +23,7 @@ def discover_root() -> str:
 
 def main() -> None:
     root = discover_root()
-    os.environ["AGENT_OS_ROOT"] = root
+    os.environ["AIZEE_ROOT"] = root
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
     # Load centralized .env secrets before launching the MCP server
     sys.path.insert(0, os.path.join(root, "scripts"))
@@ -32,7 +32,7 @@ def main() -> None:
         load_env()
     except ImportError:
         pass
-    subprocess.run([sys.executable, "-m", "aios_mcp.aios_server"], cwd=root)
+    subprocess.run([sys.executable, "-m", "aizee_mcp.aizee_server"], cwd=root)
 
 
 if __name__ == "__main__":

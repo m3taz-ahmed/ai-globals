@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""AI Global OS MCP server using FastMCP.
+"""aiZee MCP server using FastMCP.
 
 This is a thin entry point that creates the FastMCP instance and delegates
-tool registration to the modules in ``aios_mcp.tools``.
+tool registration to the modules in ``aizee_mcp.tools``.
 """
 
 from __future__ import annotations
@@ -11,21 +11,21 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from aios_mcp.tools import (
+from aizee_mcp.tools import (
     register_context_tools,
     register_memory_tools,
     register_policy_tools,
     register_workflow_tools,
 )
-from aios_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-exported for tests
+from aizee_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-exported for tests
 
-mcp = FastMCP("ai-global-os")
+mcp = FastMCP("aizee")
 
 
 def _register_plugins() -> None:
     """Load enabled plugins and register their MCP tools/resources."""
     k = kernel()
-    from aios_mcp.tools.common import memory
+    from aizee_mcp.tools.common import memory
 
     k.load_plugins(memory())
     for tool in k.plugins.get_tools():
@@ -42,7 +42,7 @@ register_context_tools(mcp)
 
 _register_plugins()
 
-# Backward-compatible aliases for tests that import directly from aios_server.
+# Backward-compatible aliases for tests that import directly from aizee_server.
 # These reference the functions registered on the mcp instance.
 # The tool functions are closures inside the register_* functions, so we
 # expose them via the tool manager for backward compatibility.
@@ -63,7 +63,7 @@ def get_rule_resource(id: str) -> str:
     # Fallback: look in resource registry
     from pathlib import Path
 
-    from aios_mcp.tools.common import is_safe_name, resolve_path, root
+    from aizee_mcp.tools.common import is_safe_name, resolve_path, root
 
     if not is_safe_name(id):
         return ""
@@ -77,7 +77,7 @@ def get_rule_resource(id: str) -> str:
 def get_workflow_resource(id: str) -> str:
     from pathlib import Path
 
-    from aios_mcp.tools.common import is_safe_name, resolve_path, root
+    from aizee_mcp.tools.common import is_safe_name, resolve_path, root
 
     if not is_safe_name(id):
         return ""

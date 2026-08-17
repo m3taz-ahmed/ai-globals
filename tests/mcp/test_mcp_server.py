@@ -1,10 +1,9 @@
-"""Comprehensive tests for aios_mcp/aios_server.py MCP tools."""
+"""Comprehensive tests for aizee_mcp/aizee_server.py MCP tools."""
 
 from __future__ import annotations
 
 import json
 import os
-import shutil
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -14,8 +13,8 @@ import pytest
 pytestmark = pytest.mark.slow
 
 # Set up isolated root BEFORE importing the server module
-os.environ["AGENT_OS_ROOT"] = tempfile.mkdtemp(prefix="aios_mcp_test_")
-ROOT = Path(os.environ["AGENT_OS_ROOT"])
+os.environ["AIZEE_ROOT"] = tempfile.mkdtemp(prefix="aizee_mcp_test_")
+ROOT = Path(os.environ["AIZEE_ROOT"])
 for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
     (ROOT / sub).mkdir(parents=True, exist_ok=True)
 (ROOT / "runtime/policies/default.yaml").write_text(
@@ -29,14 +28,14 @@ for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "br
     "# Core rules\nThis covers behavioral rules for agents."
 )
 
-from aios_mcp.aios_server import mcp  # noqa: E402
+from aizee_mcp.aizee_server import mcp  # noqa: E402
 
 
 def _call(name: str, arguments: dict) -> str:
-    from aios_mcp import aios_server
+    from aizee_mcp import aizee_server
 
-    os.environ["AGENT_OS_ROOT"] = str(ROOT)
-    aios_server.reset_state()
+    os.environ["AIZEE_ROOT"] = str(ROOT)
+    aizee_server.reset_state()
     return mcp._tool_manager.get_tool(name).fn(**arguments)
 
 
@@ -169,7 +168,7 @@ class TestIngestMemory:
     def test_ingest_memory_second_call_is_idempotent(self):
         result1 = _call("ingest_memory", {})
         result2 = _call("ingest_memory", {})
-        d1 = json.loads(result1)
+        json.loads(result1)
         d2 = json.loads(result2)
         # Second call should ingest 0 (nothing changed)
         assert d2["ingested"] == 0
@@ -282,24 +281,24 @@ class TestExtensions:
         data = json.loads(result)
         assert data["ok"] is True
         mem_id = data["id"]
-        
+
         result2 = _call("invalidate_memory", {"id": mem_id})
         data2 = json.loads(result2)
         assert data2["ok"] is True
         assert data2["id"] == mem_id
-        
+
         result3 = _call("invalidate_memory", {"id": "nonexistent"})
         data3 = json.loads(result3)
         assert data3["ok"] is False
 
     def test_resources_direct_call(self):
-        from aios_mcp.aios_server import get_rule_resource, get_workflow_resource
+        from aizee_mcp.aizee_server import get_rule_resource, get_workflow_resource
         core_rule = get_rule_resource("core")
         assert "Core rules" in core_rule
-        
+
         bad_rule = get_rule_resource("../../etc/passwd")
         assert bad_rule == ""
-        
+
         test_wf = get_workflow_resource("test")
         assert "[WORKFLOW] test" in test_wf
 
@@ -336,7 +335,7 @@ class TestPluginRegistration:
     """Cover _register_plugins when plugins expose tools and resources."""
 
     def test_register_plugins_with_tools_and_resources(self):
-        from aios_mcp import aios_server
+        from aizee_mcp import aizee_server
 
         mock_kernel = MagicMock()
         mock_tool = MagicMock()
@@ -344,11 +343,11 @@ class TestPluginRegistration:
         mock_kernel.plugins.get_tools.return_value = [mock_tool]
         mock_kernel.plugins.get_resources.return_value = [mock_resource]
 
-        with patch.object(aios_server, "kernel", return_value=mock_kernel), \
-             patch("aios_mcp.tools.common.memory", return_value=MagicMock()), \
-             patch.object(aios_server.mcp, "add_tool") as mock_add_tool, \
-             patch.object(aios_server.mcp, "add_resource") as mock_add_resource:
-            aios_server._register_plugins()
+        with patch.object(aizee_server, "kernel", return_value=mock_kernel), \
+             patch("aizee_mcp.tools.common.memory", return_value=MagicMock()), \
+             patch.object(aizee_server.mcp, "add_tool") as mock_add_tool, \
+             patch.object(aizee_server.mcp, "add_resource") as mock_add_resource:
+            aizee_server._register_plugins()
             mock_add_tool.assert_called_once_with(mock_tool)
             mock_add_resource.assert_called_once_with(mock_resource)
 
@@ -358,37 +357,37 @@ class TestResourceFallbacks:
 
     def test_get_rule_resource_via_tool_fn(self):
         """Cover line 62: get_rule_resource returns via registered tool fn."""
-        from aios_mcp import aios_server
+        from aizee_mcp import aizee_server
 
         mock_fn = MagicMock(return_value="tool-content")
         mock_tool = MagicMock()
         mock_tool.fn = mock_fn
-        with patch.object(aios_server._tool_manager, "get_tool", return_value=mock_tool):
-            result = aios_server.get_rule_resource("core")
+        with patch.object(aizee_server._tool_manager, "get_tool", return_value=mock_tool):
+            result = aizee_server.get_rule_resource("core")
             assert result == "tool-content"
             mock_fn.assert_called_once_with("core")
 
     def test_get_rule_resource_fallback_missing_file(self):
         """Cover line 73: fallback path when file does not exist."""
-        from aios_mcp import aios_server
+        from aizee_mcp import aizee_server
 
         # Ensure tool fn is not found so fallback runs
-        with patch.object(aios_server._tool_manager, "get_tool", return_value=None):
-            result = aios_server.get_rule_resource("nonexistent-rule-xyz")
+        with patch.object(aizee_server._tool_manager, "get_tool", return_value=None):
+            result = aizee_server.get_rule_resource("nonexistent-rule-xyz")
             assert result == ""
 
     def test_get_workflow_resource_unsafe_name(self):
         """Cover line 83: get_workflow_resource rejects unsafe name."""
-        from aios_mcp import aios_server
+        from aizee_mcp import aizee_server
 
-        result = aios_server.get_workflow_resource("../../etc/passwd")
+        result = aizee_server.get_workflow_resource("../../etc/passwd")
         assert result == ""
 
     def test_get_workflow_resource_fallback_missing_file(self):
         """Cover line 87: fallback path when workflow file does not exist."""
-        from aios_mcp import aios_server
+        from aizee_mcp import aizee_server
 
-        result = aios_server.get_workflow_resource("nonexistent-wf-xyz")
+        result = aizee_server.get_workflow_resource("nonexistent-wf-xyz")
         assert result == ""
 
 
@@ -396,12 +395,13 @@ class TestMainBlock:
     """Cover the if __name__ == '__main__' block (line 92)."""
 
     def test_main_block_calls_run(self):
-        from aios_mcp import aios_server
         from pathlib import Path
 
-        source = Path(aios_server.__file__).read_text(encoding="utf-8")
+        from aizee_mcp import aizee_server
+
+        source = Path(aizee_server.__file__).read_text(encoding="utf-8")
         with patch("mcp.server.fastmcp.FastMCP.run") as mock_run:
-            code = compile(source, str(aios_server.__file__), "exec")
-            namespace: dict = {"__name__": "__main__", "__file__": str(aios_server.__file__)}
+            code = compile(source, str(aizee_server.__file__), "exec")
+            namespace: dict = {"__name__": "__main__", "__file__": str(aizee_server.__file__)}
             exec(code, namespace)
             mock_run.assert_called_once_with(transport="stdio")

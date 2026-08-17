@@ -1,5 +1,5 @@
 [WORKFLOW] testing-standards
-[OBJ] Testing Standards & Quality Assurance — two-tier strategy for ANY project under AI Global OS.
+[OBJ] Testing Standards & Quality Assurance — two-tier strategy for ANY project under aiZee.
 [TRIGGER] testing-standards
 [RULES]
 1. [REQ] Two-tier testing `[TEST-07]`:

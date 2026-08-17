@@ -185,20 +185,20 @@ The `octopus-linkedin` server supports brand-voice memory. Train it by:
 
 ```bash
 # Profile
-ai-os linkedin profile
+aizee linkedin profile
 
 # Direct post
-ai-os linkedin post "Hello, world!" --visibility PUBLIC
+aizee linkedin post "Hello, world!" --visibility PUBLIC
 
 # Draft workflow
-ai-os linkedin draft "A post to review later"
-ai-os linkedin drafts --status approved
-ai-os linkedin approve drft_abc123 --note "lgtm"
-ai-os linkedin schedule drft_abc123 2026-07-02T09:00:00Z
-ai-os linkedin publish drft_abc123
+aizee linkedin draft "A post to review later"
+aizee linkedin drafts --status approved
+aizee linkedin approve drft_abc123 --note "lgtm"
+aizee linkedin schedule drft_abc123 2026-07-02T09:00:00Z
+aizee linkedin publish drft_abc123
 
 # Analytics
-ai-os linkedin stats urn:li:share:123
+aizee linkedin stats urn:li:share:123
 ```
 
 ## Related Skills

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sovereign capability model for AI Global OS.
+"""Sovereign capability model for aiZee.
 
 Re-implements the Sovereign-OS pattern: pluggable capabilities define what an
 agent is allowed to do. Capabilities are granted, revoked, and checked at

@@ -12,7 +12,7 @@
 ## 2026-08-06 (24) — Integrated all 15 features into runtime, MCP, dashboard
 - Completed the integration follow-up:
   - `runtime/kernel.py` now loads and uses `guardian`, `probity`, `metrics`, `tracer`, `preloop`, `governance`, and `sovereign` on every `Kernel.act()`.
-  - `aios_mcp/aios_server.py` exposes new MCP tools: `get_metrics`, `get_os_status`, `lint_python`, `build_schema_graph`, `compile_rule_files`, `run_guardian_check`, `list_capabilities`, `run_mcp_plan`.
+  - `aios_mcp/aizee_server.py` exposes new MCP tools: `get_metrics`, `get_os_status`, `lint_python`, `build_schema_graph`, `compile_rule_files`, `run_guardian_check`, `list_capabilities`, `run_mcp_plan`.
   - `dashboard/server.py` exposes new HTTP endpoints: `/api/guardian`, `/api/capabilities`, `/api/tracing`, `/api/lint`.
   - Added `tests/integration/test_new_features.py` covering kernel governance modules, metrics, astryx, sovereign, preloop, and probity.
 - Quality gates green: `ruff check .`, `mypy`, `pytest -q` (412 passed), `python eval/harness.py` all_pass true, and `graphify update .`.
@@ -30,7 +30,7 @@
 - Cleaned up the temp test directory.
 - Completed the integration follow-up:
   - `runtime/kernel.py` now loads and uses `guardian`, `probity`, `metrics`, `tracer`, `preloop`, `governance`, and `sovereign` on every `Kernel.act()`.
-  - `aios_mcp/aios_server.py` exposes new MCP tools: `get_metrics`, `get_os_status`, `lint_python`, `build_schema_graph`, `compile_rule_files`, `run_guardian_check`, `list_capabilities`, `run_mcp_plan`.
+  - `aios_mcp/aizee_server.py` exposes new MCP tools: `get_metrics`, `get_os_status`, `lint_python`, `build_schema_graph`, `compile_rule_files`, `run_guardian_check`, `list_capabilities`, `run_mcp_plan`.
   - `dashboard/server.py` exposes new HTTP endpoints: `/api/guardian`, `/api/capabilities`, `/api/tracing`, `/api/lint`.
   - Added `tests/integration/test_new_features.py` covering kernel governance modules, metrics, astryx, sovereign, preloop, and probity.
 - Quality gates green: `ruff check .`, `mypy`, `pytest -q` (412 passed), `python eval/harness.py` all_pass true, and `graphify update .`.
@@ -44,7 +44,7 @@
 - Temp directory retained per user request.
 
 ## 2026-08-06 (21) — Comprehensive project review and all three fix batches
-- Adopted ARCH/PRODUCT/QA/SRE/SEC/DEV/PERF/DOC personas for a full review of AI Global OS v4.22.0.
+- Adopted ARCH/PRODUCT/QA/SRE/SEC/DEV/PERF/DOC personas for a full review of aiZee v4.22.0.
 - Created `.ai/review-findings.md` and `.ai/repos-study.md` (agent meta-prompt + 30+ repos to study).
 - Finished third batch: plugin AST sandbox, dashboard token auth, MCP per-key send lock, Pydantic-specific exception handling, budget `_dirty` flag, `[TRIGGER]` tags for all workflows, new `18-data-migration` and `19-incident-response` workflows, rule duplication cleanup, `.github/dependabot.yml`, `CODEOWNERS`, `security.yml`, `runtime/tests/test_security.py`, `scripts/validate-globals.py` workflow count check.
 - Updated `rules/vocabulary.md` with `[GIT-06]` and `README.md`/`workflows/README.md`/`README-AR.md` counts to 29.
@@ -89,7 +89,7 @@
   added `resolve_with_frontmatter`, `load_with_frontmatter`, and `list_active_skills`.
 - Filtered skill lists in `runtime/persona.py` using runtime context (personas, paths, stack);
   added `_is_active_skill` helper to keep missing skill names while filtering by frontmatter when on disk.
-- Updated `aios_mcp/aios_server.py::query_rules` to accept `context` and return only active rules.
+- Updated `aios_mcp/aizee_server.py::query_rules` to accept `context` and return only active rules.
 - Added 34 tests in `runtime/tests/test_rule_frontmatter.py` covering parsing, glob/persona/stack matching,
   `matches_context` edge cases, and `SkillResolver` frontmatter integration.
 - Normalized `matches_context` to accept `None` context and string `paths`/`stack`/`personas` values.
@@ -107,7 +107,7 @@
 - Memory ingested and `graphify update .` run.
 - Staged 7 files for commit.
 
-## 2026-08-02 (15) — AI Global OS usability fixes
+## 2026-08-02 (15) — aiZee usability fixes
 - Fixed `runtime/policy.py` `NoneType` warning by defaulting `command` to `""` in `PolicyEngine.can()`.
 - Added `ai-os skill` CLI subcommand (`list`, `invoke`, `search`) backed by `SkillResolver`.
 - Extended `SkillResolver` to search both OS root `skills/` and project `.ai/skills/`.
@@ -157,7 +157,7 @@
   - `skills/google-play-warlord/SKILL.md`
   - `skills/mobile-game-producer/SKILL.md`
 - Added `PERSONA_SKILLS` mapping in `runtime/persona.py`; `detect()` now returns `skill` field.
-- Updated `AGENTS.md` and synced all agent config files (`.windsurfrules`, `.cursor/rules/ai-global-os.mdc`, `.claude/CLAUDE.md`) to load the skill returned by persona detection.
+- Updated `AGENTS.md` and synced all agent config files (`.windsurfrules`, `.cursor/rules/aizee.mdc`, `.claude/CLAUDE.md`) to load the skill returned by persona detection.
 - Improved CI/CD workflows:
   - `graphify.yml` creates a Pull Request instead of pushing directly, and fails on PRs if graph is stale.
   - `ci.yml` and `validate.yml` disable `pytest-cov` with `PYTEST_ADDOPTS: --no-cov` for faster matrix runs.
@@ -223,7 +223,7 @@
 
 ## 2026-07-21 (2)
 
-- Completed AI Global OS v4.21.0 full-refactor milestone: P0 audit fixes, P1 enhancements, and P2 strategic features.
+- Completed aiZee v4.21.0 full-refactor milestone: P0 audit fixes, P1 enhancements, and P2 strategic features.
 - Key decisions: removed hardcoded `D:/server/.ai` paths via env-aware installs; dashboard now per-request instances with full CORS; MCP server no longer caches `Kernel`/`MemoryStore` and supports `reset_state`; `validate-globals` prunes stale integrity manifest entries; added Pydantic policy/budget schemas; separated `AGENT_PROJECT_ROOT` from `AGENT_OS_ROOT`.
 - Added CLI commands: `policy test`, `budget list/usage/set`, `project init`. Dashboard gained `/api/workflows`, `/api/workflow/run`, `/api/metrics`, `/api/health`, and a Workflows tab.
 - Workflow engine now dry-runs `[CMD]` steps through policy for `bash:` and `mcp:` directives.

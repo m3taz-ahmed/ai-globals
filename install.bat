@@ -1,5 +1,5 @@
 @echo off
-REM AI Global OS — Double-click GUI Installer Launcher (Windows)
+REM aiZee — Double-click GUI Installer Launcher (Windows)
 REM No terminal needed — just double-click this file.
 
 REM Change to the directory where this .bat lives

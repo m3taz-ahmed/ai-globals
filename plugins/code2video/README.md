@@ -1,11 +1,11 @@
-# Code2Video Plugin for AI Global OS
+# Code2Video Plugin for aiZee
 
 Sandboxed Code2Video integration. Generates educational Manim videos inside an isolated Docker container.
 
 ## Architecture
 
 ```text
-AI Global OS (Windows)
+aiZee (Windows)
   │
   │  generate_video(topic, ...)
   ▼
@@ -51,7 +51,7 @@ docker build -t code2video:latest -f plugins/code2video/Dockerfile plugins/code2
 ## Usage
 
 ```text
-ai-os generate video --topic "Linear transformations and matrices"
+aizee generate video --topic "Linear transformations and matrices"
 ```
 
 ## Files

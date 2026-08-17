@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenTelemetry-compatible trace exporter for AI Global OS.
+"""OpenTelemetry-compatible trace exporter for aiZee.
 
 Exports agent traces in OTLP (OpenTelemetry Protocol) JSON format,
 compatible with any OTel collector (Jaeger, Tempo, Honeycomb, etc.).
@@ -19,7 +19,7 @@ Usage::
     from runtime.otel_exporter import OTelExporter
     exporter = OTelExporter(
         endpoint="http://localhost:4318/v1/traces",
-        service_name="ai-global-os",
+        service_name="aizee",
     )
     exporter.export_span({
         "trace_id": "abc123",
@@ -48,7 +48,7 @@ class OTelConfig:
     """Configuration for the OTel exporter."""
 
     endpoint: str = ""  # OTLP/HTTP endpoint (e.g., http://localhost:4318/v1/traces)
-    service_name: str = "ai-global-os"
+    service_name: str = "aizee"
     service_version: str = "1.0.0"
     environment: str = "development"
     batch_size: int = 50
@@ -119,7 +119,7 @@ class OTelExporter:
                     "resource": {"attributes": self._resource_attributes()},
                     "scopeSpans": [
                         {
-                            "scope": {"name": "ai-global-os", "version": self.config.service_version},
+                            "scope": {"name": "aizee", "version": self.config.service_version},
                             "spans": [self._span_to_otlp(s) for s in spans],
                         }
                     ],

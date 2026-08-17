@@ -8,7 +8,6 @@ from pathlib import Path
 from runtime.budget_anomaly import BudgetAnomalyDetector
 from runtime.diff_review import DiffParser, DiffReviewer
 from runtime.fuzz_testing import PolicyFuzzer
-from runtime.memory_compression import MemoryCompressor
 from runtime.policy_cache import PolicyDecisionCache
 from runtime.semantic_search import SemanticCodeSearch
 from runtime.spec_validation import (

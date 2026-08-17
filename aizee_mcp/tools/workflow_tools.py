@@ -10,7 +10,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from aios_mcp.agent import McpAgent
+from aizee_mcp.agent import McpAgent
 from runtime.mcp_orchestrator import McpOrchestrator, Plan, Step
 from runtime.rule_compiler import compile_rules
 from runtime.rule_frontmatter import matches_context, parse_frontmatter
@@ -32,7 +32,7 @@ def register_workflow_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def query_rules(query: str, context: dict[str, Any] | None = None) -> str:
-        """Query AI Global OS rules by keyword, returning only active rules for the context."""
+        """Query aiZee rules by keyword, returning only active rules for the context."""
         err = validate_query(query)
         if err:
             return err

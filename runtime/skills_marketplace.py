@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Skills marketplace for AI Global OS.
+"""Skills marketplace for aiZee.
 
 Allows installing, publishing, and managing skills from a community
 registry. Every skill is security-scanned before installation using
@@ -84,7 +84,7 @@ class InstallResult:
 
 
 class SkillsMarketplace:
-    """Marketplace for installing, publishing, and managing AI Global OS skills."""
+    """Marketplace for installing, publishing, and managing aiZee skills."""
 
     def __init__(self, root: Path, registry_url: str = "") -> None:
         self.root = root
@@ -111,7 +111,7 @@ class SkillsMarketplace:
 
     def _download(self, url: str) -> str:
         """Download content from a URL."""
-        req = urllib.request.Request(url, headers={"User-Agent": "AI-Global-OS/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "aiZee/1.0"})
         with urllib.request.urlopen(req, timeout=30) as resp:
             content: str = resp.read().decode("utf-8")
             return content
