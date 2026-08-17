@@ -366,9 +366,11 @@ if ($WhatIf) {
 Write-Step "Pre-flight checks"
 
 # Python
-$pythonVersion = $null
-try { $pythonVersion = & python --version 2>&1 } catch {}
-if ($LASTEXITCODE -ne 0) { throw "python is required but not found on PATH" }
+$prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+$pythonVersion = & python --version 2>&1
+$pyExit = $LASTEXITCODE
+$ErrorActionPreference = $prevEAP
+if ($pyExit -ne 0) { throw "python is required but not found on PATH" }
 if ($pythonVersion -notmatch "Python 3\.(1[0-9]|[2-9])") {
     throw "Python 3.10+ is required (found $pythonVersion)"
 }
@@ -498,8 +500,10 @@ if ($CopyMode) {
 
 Write-Step "Checking migrations"
 if (-not $WhatIf) {
-    try { & python (Join-Path $Repo "scripts\migrate.py") --root $Root 2>&1 | ForEach-Object { Write-Host $_ } } catch {}
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & python (Join-Path $Repo "scripts\migrate.py") --root $Root 2>&1 | ForEach-Object { Write-Host $_ }
     $migExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEAP
     if ($migExit -eq 2) {
         throw "Migration failed - see output above"
     }
@@ -520,13 +524,16 @@ if (-not $SkipPip) {
     Write-Step "Checking Python dependencies"
 
     # Uninstall old 'aios' package if it exists (legacy rename cleanup)
-    # Use try/catch because $ErrorActionPreference=Stop turns stderr into terminating errors
-    $oldPkg = $null
-    try { $oldPkg = & python -m pip show aios 2>&1 } catch {}
-    if ($LASTEXITCODE -eq 0 -and $oldPkg) {
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    $null = & python -m pip show aios 2>&1
+    $oldExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEAP
+    if ($oldExit -eq 0) {
         Write-Step "Removing legacy 'aios' package (renamed to 'aizee')"
         if (-not $WhatIf) {
-            try { & python -m pip uninstall aios -y 2>&1 | ForEach-Object { Write-Host $_ } } catch {}
+            $prevEAP2 = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+            & python -m pip uninstall aios -y 2>&1 | ForEach-Object { Write-Host $_ }
+            $ErrorActionPreference = $prevEAP2
         }
     }
 
@@ -538,8 +545,12 @@ if (-not $SkipPip) {
         # install normally to pull in new transitive deps.
         $pipArgs = if ($InstalledVersion -and -not $Update) { @("-e", $PipSpec, "--no-deps") } else { @("-e", $PipSpec) }
         $pipOk = Invoke-WithRetry -Description "pip install aizee" -Script {
-            try { & python -m pip install @pipArgs 2>&1 | ForEach-Object { Write-Host $_ } } catch {}
-            if ($LASTEXITCODE -ne 0) { throw "pip exit $LASTEXITCODE" }
+            $prevEAP = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
+            & python -m pip install @pipArgs 2>&1 | ForEach-Object { Write-Host $_ }
+            $ec = $LASTEXITCODE
+            $ErrorActionPreference = $prevEAP
+            if ($ec -ne 0) { throw "pip exit $ec" }
         } -MaxRetries 3
         if (-not $pipOk) {
             Invoke-Rollback "pip install failed after retries"
@@ -552,14 +563,19 @@ if (-not $SkipPip) {
     Write-Step "Verifying required packages"
     $RequiredPackages = @("yaml", "mcp", "pydantic", "rich", "numpy", "cryptography")
     foreach ($pkg in $RequiredPackages) {
-        $check = $null
-        try { $check = & python -c "import $pkg; print('ok')" 2>&1 } catch {}
-        if ($LASTEXITCODE -ne 0) {
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        $check = & python -c "import $pkg; print('ok')" 2>&1
+        $pkgExit = $LASTEXITCODE
+        $ErrorActionPreference = $prevEAP
+        if ($pkgExit -ne 0) {
             Write-Warn "Missing package: $pkg - attempting install"
             if (-not $WhatIf) {
                 $pkgOk = Invoke-WithRetry -Description "pip install $pkg" -Script {
-                    try { & python -m pip install $pkg 2>&1 | Out-Null } catch {}
-                    if ($LASTEXITCODE -ne 0) { throw "pip exit $LASTEXITCODE" }
+                    $prevEAP2 = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+                    & python -m pip install $pkg 2>&1 | Out-Null
+                    $ec = $LASTEXITCODE
+                    $ErrorActionPreference = $prevEAP2
+                    if ($ec -ne 0) { throw "pip exit $ec" }
                 } -MaxRetries 2
                 if (-not $pkgOk) { Write-Warn "Could not install $pkg" }
             }
@@ -589,8 +605,11 @@ Set-Location $Root
 try {
     Write-Step "Validating globals"
     if (-not $WhatIf) {
-        try { & python scripts\validate-globals.py --fix 2>&1 | ForEach-Object { Write-Host $_ } } catch {}
-        if ($LASTEXITCODE -ne 0) { throw "validate-globals failed" }
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        & python scripts\validate-globals.py --fix 2>&1 | ForEach-Object { Write-Host $_ }
+        $vgExit = $LASTEXITCODE
+        $ErrorActionPreference = $prevEAP
+        if ($vgExit -ne 0) { throw "validate-globals failed" }
     } else {
         Write-Host "WhatIf: python scripts\validate-globals.py --fix"
     }
@@ -598,8 +617,11 @@ try {
     if (-not $SkipGraphify) {
         Write-Step "Building knowledge graph"
         if (-not $WhatIf) {
-            try { & python -m graphify update . 2>&1 | ForEach-Object { Write-Host $_ } } catch {}
-            if ($LASTEXITCODE -ne 0) { throw "graphify update failed" }
+            $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+            & python -m graphify update . 2>&1 | ForEach-Object { Write-Host $_ }
+            $gfExit = $LASTEXITCODE
+            $ErrorActionPreference = $prevEAP
+            if ($gfExit -ne 0) { throw "graphify update failed" }
         } else {
             Write-Host "WhatIf: python -m graphify update ."
         }
@@ -748,9 +770,11 @@ Write-Ok "CLI shim: $Shim"
 
 Write-Step "Global MCP config sync"
 if (-not $WhatIf) {
-    $syncOutput = $null
-    try { $syncOutput = & python (Join-Path $Root "scripts\mcp_global_sync.py") 2>&1 } catch {}
-    if ($LASTEXITCODE -eq 0) {
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    $syncOutput = & python (Join-Path $Root "scripts\mcp_global_sync.py") 2>&1
+    $syncExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEAP
+    if ($syncExit -eq 0) {
         Write-Ok "Global MCP config synced to %APPDATA%\devin\mcp_config.json"
     } else {
         Write-Warn "MCP global sync failed:`n$syncOutput"
@@ -765,7 +789,9 @@ if (-not $WhatIf) {
             $serverCount = @($cfgData.mcpServers.PSObject.Properties).Count
             if ($serverCount -eq 0) {
                 Write-Warn "Global MCP config is empty after sync — re-writing (Devin may have reset it)"
-                try { & python (Join-Path $Root "scripts\mcp_global_sync.py") 2>&1 | ForEach-Object { Write-Host $_ } } catch {}
+                $prevEAP2 = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+                & python (Join-Path $Root "scripts\mcp_global_sync.py") 2>&1 | ForEach-Object { Write-Host $_ }
+                $ErrorActionPreference = $prevEAP2
                 $cfgData = Get-Content $globalCfg -Raw | ConvertFrom-Json
                 $serverCount = @($cfgData.mcpServers.PSObject.Properties).Count
             }
@@ -800,9 +826,11 @@ if (-not $WhatIf) {
 Write-Step "Post-install verification"
 if (-not $WhatIf) {
     # CLI test
-    $testOutput = $null
-    try { $testOutput = & python (Join-Path $Root "aizee_cli.py") status 2>&1 } catch {}
-    if ($LASTEXITCODE -ne 0) {
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    $testOutput = & python (Join-Path $Root "aizee_cli.py") status 2>&1
+    $cliExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEAP
+    if ($cliExit -ne 0) {
         Write-Warn "CLI status check failed:`n$testOutput"
     } else {
         Write-Ok "CLI: aizee status works"
