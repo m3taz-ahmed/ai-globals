@@ -11,7 +11,7 @@ powershell -ExecutionPolicy Bypass -NoProfile -File "%~dp0installer\gui_installe
 REM Keep window open if there was an error
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo [aios] Installer exited with error code %ERRORLEVEL%
-    echo [aios] Check the log in state\install-*.log
+    echo [aizee] Installer exited with error code %ERRORLEVEL%
+    echo [aizee] Check the log in state\install-*.log
     pause
 )

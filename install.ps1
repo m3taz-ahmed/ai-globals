@@ -69,25 +69,25 @@ function Write-Log {
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "[aios] $Message" -ForegroundColor Cyan
+    Write-Host "[aizee] $Message" -ForegroundColor Cyan
     Write-Log "INFO" $Message
 }
 
 function Write-Ok {
     param([string]$Message)
-    Write-Host "[aios] OK: $Message" -ForegroundColor Green
+    Write-Host "[aizee] OK: $Message" -ForegroundColor Green
     Write-Log "OK" $Message
 }
 
 function Write-Warn {
     param([string]$Message)
-    Write-Host "[aios] WARN: $Message" -ForegroundColor Yellow
+    Write-Host "[aizee] WARN: $Message" -ForegroundColor Yellow
     Write-Log "WARN" $Message
 }
 
 function Write-Err {
     param([string]$Message)
-    Write-Host "[aios] ERROR: $Message" -ForegroundColor Red
+    Write-Host "[aizee] ERROR: $Message" -ForegroundColor Red
     Write-Log "ERROR" $Message
 }
 
@@ -523,13 +523,13 @@ if (-not $SkipPip) {
         # Use --no-deps only on first install to avoid clobbering; on update,
         # install normally to pull in new transitive deps.
         $pipArgs = if ($InstalledVersion -and -not $Update) { @("-e", $PipSpec, "--no-deps") } else { @("-e", $PipSpec) }
-        $pipOk = Invoke-WithRetry -Description "pip install aios" -Script {
+        $pipOk = Invoke-WithRetry -Description "pip install aizee" -Script {
             & python -m pip install @pipArgs 2>&1 | ForEach-Object { Write-Host $_ }
             if ($LASTEXITCODE -ne 0) { throw "pip exit $LASTEXITCODE" }
         } -MaxRetries 3
         if (-not $pipOk) {
             Invoke-Rollback "pip install failed after retries"
-            throw "Failed to install aios dependencies after 3 attempts"
+            throw "Failed to install aizee dependencies after 3 attempts"
         }
         Push-Rollback "pip install" { Write-Log "ROLLBACK" "pip install cannot be undone" }
     }

@@ -67,10 +67,10 @@ log() {
 # Helpers
 # ---------------------------------------------------------------------------
 
-step() { echo -e "\033[36m[aios] $1\033[0m"; log "INFO" "$1"; }
-ok()   { echo -e "\033[32m[aios] OK: $1\033[0m"; log "OK" "$1"; }
-warn() { echo -e "\033[33m[aios] WARN: $1\033[0m"; log "WARN" "$1"; }
-err()  { echo -e "\033[31m[aios] ERROR: $1\033[0m"; log "ERROR" "$1"; }
+step() { echo -e "\033[36m[aizee] $1\033[0m"; log "INFO" "$1"; }
+ok()   { echo -e "\033[32m[aizee] OK: $1\033[0m"; log "OK" "$1"; }
+warn() { echo -e "\033[33m[aizee] WARN: $1\033[0m"; log "WARN" "$1"; }
+err()  { echo -e "\033[31m[aizee] ERROR: $1\033[0m"; log "ERROR" "$1"; }
 
 has_cmd() { command -v "$1" >/dev/null 2>&1; }
 
@@ -355,13 +355,13 @@ if ! $SKIP_PIP; then
         echo "WhatIf: python -m pip install -e '.[dev,graphify]'"
     else
         if [[ -n "$INSTALLED_VERSION" && ! $UPDATE ]]; then
-            retry "pip install aios" python -m pip install -e '.[dev,graphify]' --no-deps || {
-                err "Failed to install aios dependencies after retries"
+            retry "pip install aizee" python -m pip install -e '.[dev,graphify]' --no-deps || {
+                err "Failed to install aizee dependencies after retries"
                 exit 1
             }
         else
-            retry "pip install aios" python -m pip install -e '.[dev,graphify]' || {
-                err "Failed to install aios dependencies after retries"
+            retry "pip install aizee" python -m pip install -e '.[dev,graphify]' || {
+                err "Failed to install aizee dependencies after retries"
                 exit 1
             }
         fi
