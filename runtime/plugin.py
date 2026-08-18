@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import ast
+import fnmatch
 import functools
 import importlib.util
 import threading
@@ -30,7 +31,16 @@ _DENYLISTED_MODULES: set[str] = {
     "multiprocessing", "concurrent",
 }
 
-_DANGEROUS_CALLS: set[str] = {"eval", "exec", "compile", "open", "__import__", "getattr", "setattr"}
+# Builtins names that are dangerous when imported/called directly.
+_DENYLISTED_BUILTIN_NAMES: set[str] = {
+    "__import__", "globals", "locals", "vars", "dir", "type",
+    "classmethod", "staticmethod",
+}
+
+_DANGEROUS_CALLS: set[str] = {
+    "eval", "exec", "compile", "open", "__import__", "getattr", "setattr",
+    "literal_eval",
+}
 
 
 def _is_plugin_source_safe(source: str, filename: str) -> tuple[bool, str]:
@@ -49,6 +59,9 @@ def _is_plugin_source_safe(source: str, filename: str) -> tuple[bool, str]:
                 root = name.split(".")[0]
                 if root in _DENYLISTED_MODULES:
                     return False, f"Blocked import of '{name}' in {filename}"
+                # Block importing dangerous builtin names from builtins module.
+                if isinstance(node, ast.ImportFrom) and node.module == "builtins" and name in _DENYLISTED_BUILTIN_NAMES:
+                    return False, f"Blocked import of '{name}' from builtins in {filename}"
         elif isinstance(node, ast.Call):
             func = node.func
             if isinstance(func, ast.Name) and func.id in _DANGEROUS_CALLS:
@@ -98,11 +111,38 @@ class PluginGuard:
     DENIED_DEFAULT: ClassVar[set[str]] = {"Bash", "RunCommand", "Delete", "Eval", "Write", "Shell"}
 
     def __init__(self, permissions: list[str] | None = None) -> None:
-        self.allowed: set[str] = set(permissions) if permissions else set()
+        self.allowed: set[str] = set()
         self.denied: set[str] = set(self.DENIED_DEFAULT)
+        # Resource-based permissions: entries like "Write:/tmp/*" or "Read:/var/log/*"
+        self.resource_patterns: dict[str, list[str]] = {}
+        for perm in (permissions or []):
+            if ":" in perm:
+                action_part, resource_part = perm.split(":", 1)
+                if action_part and resource_part:
+                    self.resource_patterns.setdefault(action_part, []).append(resource_part)
+                else:
+                    self.allowed.add(perm)
+            else:
+                self.allowed.add(perm)
 
     def is_allowed(self, action: str) -> bool:
         return action not in self.denied and (not self.allowed or action in self.allowed)
+
+    def is_resource_allowed(self, action: str, resource: str) -> bool:
+        """Check whether *action* on *resource* is permitted via glob patterns.
+
+        Permissions like ``"Write:/tmp/*"`` or ``"Read:/var/log/*"`` are matched
+        against the resource path using :func:`fnmatch.fnmatch`. Explicit
+        resource-based grants override the default denied set for matching
+        resources. If no resource-based permissions are configured for the
+        action, falls back to :meth:`is_allowed` for plain action-level checks.
+        """
+        patterns = self.resource_patterns.get(action)
+        if patterns:
+            # Explicit resource grant overrides default denial for matching paths.
+            return any(fnmatch.fnmatch(resource, pat) for pat in patterns)
+        # No resource patterns for this action — fall back to action-level check.
+        return self.is_allowed(action)
 
     def wrap(self, fn: Callable[..., Any], plugin_name: str) -> Callable[..., Any]:
         @functools.wraps(fn)
@@ -174,14 +214,23 @@ class PluginManager:
         return module
 
     def _discover_plugins(self) -> list[tuple[str, type[AIOSPlugin]]]:
-        """Return enabled plugin classes from the plugins directory."""
+        """Return enabled plugin classes from the plugins directory.
+
+        If ``plugins.yaml`` exists and lists enabled plugins, only those are
+        loaded (explicit mode). If ``plugins.yaml`` is missing or empty, all
+        subdirectories of ``plugins/`` with a valid ``__init__.py`` are
+        auto-discovered (auto-discovery mode).
+        """
         if not self.plugins_dir.is_dir():
             return []
 
         enabled = self._enabled_plugins()
         discovered: list[tuple[str, type[AIOSPlugin]]] = []
         for candidate in self.plugins_dir.iterdir():
-            if not candidate.is_dir() or candidate.name not in enabled:
+            if not candidate.is_dir() or candidate.name.startswith("_") or candidate.name.startswith("."):
+                continue
+            # In explicit mode, only load plugins listed in plugins.yaml
+            if enabled and candidate.name not in enabled:
                 continue
             module = self._load_plugin_module(candidate.name)
             if module is None:

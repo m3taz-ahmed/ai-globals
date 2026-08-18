@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -99,7 +100,7 @@ class TestMigrationGaps:
         """Cover lines 107-108: when a migration is missing for a version, it warns and breaks."""
         # Manually set the schema version to a value with no registered migration
         import sqlite3
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         with sqlite3.connect(db_path) as conn:
             conn.execute(
@@ -107,7 +108,7 @@ class TestMigrationGaps:
             )
             conn.execute(
                 "INSERT INTO _schema_version (version, applied_at) VALUES (?, ?)",
-                (99, datetime.now(timezone.utc).isoformat()),
+                (99, datetime.now(UTC).isoformat()),
             )
             conn.commit()
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import time
 
+import pytest
+
 from runtime.rate_limiter import RateLimiter, TokenBucket
 
 
@@ -15,7 +17,9 @@ class TestTokenBucket:
     def test_consume_reduces_tokens(self) -> None:
         bucket = TokenBucket(capacity=10, refill_rate=1.0)
         assert bucket.try_consume(3) is True
-        assert bucket.available() == 7.0
+        # Time elapses between try_consume() and available() causing tiny refill;
+        # use approx to tolerate sub-millisecond drift.
+        assert bucket.available() == pytest.approx(7.0, abs=0.01)
 
     def test_consume_more_than_available_fails(self) -> None:
         bucket = TokenBucket(capacity=5, refill_rate=1.0)

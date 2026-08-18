@@ -159,7 +159,7 @@ def test_unsupported_operator_raises_value_error():
 
     evaluator = _PredicateEvaluator({"env": "prod"})
     with pytest.raises(ValueError, match="Unsupported operator"):
-        evaluator.evaluate_predicate({"key": "env", "op": "regex", "value": "prod"})
+        evaluator.evaluate_predicate({"key": "env", "op": "nonexistent_op", "value": "prod"})
 
 
 # ---------------------------------------------------------------------------
@@ -314,11 +314,11 @@ def test_invoke_decorator_async():
     async def delete(env: str) -> str:
         return f"deleted in {env}"
 
-    result = asyncio.get_event_loop().run_until_complete(delete("dev"))
+    result = asyncio.run(delete("dev"))
     assert result == "deleted in dev"
 
     with pytest.raises(PermissionError):
-        asyncio.get_event_loop().run_until_complete(delete("prod"))
+        asyncio.run(delete("prod"))
 
 
 def test_invoke_decorator_async_require_approval():
@@ -332,7 +332,7 @@ def test_invoke_decorator_async_require_approval():
         return amount  # pragma: no cover
 
     with pytest.raises(ApprovalRequiredError):
-        asyncio.get_event_loop().run_until_complete(spend(200))
+        asyncio.run(spend(200))
 
 
 def test_invoke_decorator_async_require_approval_allowed():
@@ -345,7 +345,7 @@ def test_invoke_decorator_async_require_approval_allowed():
     async def spend(amount: int) -> int:
         return amount
 
-    result = asyncio.get_event_loop().run_until_complete(spend(50))
+    result = asyncio.run(spend(50))
     assert result == 50
 
 
@@ -376,7 +376,7 @@ def test_ainvoke_decorator_async():
     async def read(path: str) -> str:
         return f"read {path}"
 
-    result = asyncio.get_event_loop().run_until_complete(read("/tmp"))
+    result = asyncio.run(read("/tmp"))
     assert result == "read /tmp"
 
 

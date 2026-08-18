@@ -16,8 +16,10 @@ import urllib.parse
 import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, ClassVar
+
+from runtime.schemas import AizeeError, ErrorSeverity
 
 # ---------------------------------------------------------------------------
 # Data models
@@ -100,8 +102,11 @@ class Issue:
 # ---------------------------------------------------------------------------
 
 
-class IssueTrackerError(Exception):
+class IssueTrackerError(AizeeError):
     """Raised when a tracker API call fails."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__("ISSUE_TRACKER_ERROR", message, ErrorSeverity.MEDIUM)
 
 
 def _http_request(
@@ -767,4 +772,4 @@ def create_client(config: IssueTrackerConfig) -> IssueTrackerClient:
 
 def _utc_now_iso() -> str:
     """Return current UTC time as ISO 8601 string (helper for callers)."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()

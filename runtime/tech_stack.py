@@ -79,6 +79,7 @@ _TECH_STACK_ALIASES: dict[str, list[str]] = {
     # Python
     "python": ["python"],
     "aios": ["aios"],
+    "aizee": ["aios"],
     "pydantic": ["pydantic"],
     "fastmcp": ["mcp"],
     "mcp": ["mcp"],
@@ -279,6 +280,18 @@ def _parse_pyproject_toml(path: Path) -> dict[str, str]:
     for group in optional.values():
         for dep in group:
             _parse_pep508(dep, versions)
+    # Self-reference: register the project itself (e.g. aios/aizee) so the
+    # OS can detect its own stack. Uses project.name + project.version.
+    proj_name = project.get("name")
+    proj_ver = project.get("version")
+    if proj_name and proj_ver:
+        versions[proj_name] = _clean_version(proj_ver) or proj_ver
+    # Python version from requires-python (e.g. ">=3.10" -> "3.10").
+    requires_python = project.get("requires-python", "")
+    if requires_python:
+        py_ver = _clean_version(requires_python)
+        if py_ver:
+            versions["python"] = py_ver
     return versions
 
 

@@ -1,5 +1,6 @@
 """Shared pytest fixtures and auto-marking for aiZee test suite."""
 
+import gc
 import shutil
 import tempfile
 from pathlib import Path
@@ -72,3 +73,39 @@ def kernel(tmp_root):
 @pytest.fixture
 def store(tmp_root):
     return MemoryStore(tmp_root, db_path=tmp_root / "brain" / "memory.db", enable_vector=False)
+
+
+# ---------------------------------------------------------------------------
+# Global cleanup — close leaked SQLite connections after each test
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _close_sqlite_connections():
+    """Force-close any leaked SQLite connections after each test.
+
+    Prevents ``ResourceWarning: unclosed database`` warnings that occur
+    when tests create ``MemoryStore`` / ``SqliteStorage`` instances without
+    explicit cleanup. Runs garbage collection to trigger ``__del__`` on
+    unreachable connection holders.
+    """
+    yield
+    gc.collect()
+
+
+@pytest.fixture(autouse=True)
+def _mock_time_sleep(request):
+    """Replace time.sleep() with a no-op for fast tests.
+
+    Slow/integration tests (marked with @pytest.mark.slow) keep real sleep.
+    This prevents flaky timing-dependent tests and speeds up the fast tier.
+    """
+    if request.node.get_closest_marker("slow") or request.node.get_closest_marker("integration"):
+        yield
+        return
+    import time as _time
+    original_sleep = _time.sleep
+    _time.sleep = lambda _seconds: None
+    try:
+        yield
+    finally:
+        _time.sleep = original_sleep

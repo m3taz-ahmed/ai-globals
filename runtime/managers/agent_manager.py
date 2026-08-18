@@ -8,6 +8,7 @@ from typing import Any
 
 from runtime.orchestrator import AgentPool
 from runtime.persona import PersonaDetector
+from runtime.self_healing import HealthMonitor
 
 
 class AgentManager:
@@ -17,6 +18,7 @@ class AgentManager:
         self.root = root
         self.persona = persona_detector
         self.pool = AgentPool(root)
+        self.health = HealthMonitor()
 
     def spawn_agent(
         self,
@@ -37,6 +39,7 @@ class AgentManager:
             if not personas:
                 return {"ok": False, "error": "No persona provided"}
         agent = self.pool.register(agent_id, personas, scope, project_root, lords=extra_lords)
+        self.health.register(agent_id)
         return {
             "ok": True,
             "id": agent.id,
@@ -51,3 +54,31 @@ class AgentManager:
 
     def list_agents(self) -> list[dict[str, Any]]:
         return self.pool.list_agents()
+
+    def check_agents_health(self) -> list[str]:
+        """Check all registered agents and return list of crashed agent IDs."""
+        return self.health.check_health()
+
+    def respawn_agent(self, agent_id: str) -> dict[str, Any]:
+        """Re-create a crashed agent using its last known configuration.
+
+        Returns a dict with ``ok`` and either the new agent info or an error.
+        """
+        agent = self.pool.get(agent_id)
+        if agent is None:
+            return {"ok": False, "error": f"Agent '{agent_id}' not found"}
+        if not self.health.can_respawn(agent_id):
+            return {"ok": False, "error": f"Agent '{agent_id}' exceeded respawn limit"}
+        personas = agent.personas
+        scope = agent.scope
+        lords = agent.lords
+        project_root = agent.project_root
+        self.pool.register(agent_id, personas, scope, project_root, lords=lords)
+        self.health.respawn(agent_id)
+        status = self.health.get_status(agent_id)
+        return {
+            "ok": True,
+            "id": agent_id,
+            "persona": personas[0] if personas else "ARCH",
+            "respawn_count": status.respawn_count if status else 0,
+        }

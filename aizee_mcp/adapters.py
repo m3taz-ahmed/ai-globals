@@ -151,7 +151,7 @@ class _CliAdapterBase(AgentAdapter):
             stdout_b, stderr_b = await asyncio.wait_for(
                 proc.communicate(), timeout=self._timeout
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             proc.kill()
             session.status = "timeout"
             self._store_artifact(session, "error", f"Timed out after {self._timeout}s")
@@ -263,7 +263,7 @@ class RemoteA2AAdapter(AgentAdapter):
             method="POST",
         )
         ssl_ctx = self._create_ssl_context()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         try:
             response = await loop.run_in_executor(
                 None, lambda: urllib.request.urlopen(req, context=ssl_ctx)  # nosec B310 - validated HTTPS endpoint
@@ -285,8 +285,8 @@ class RemoteA2AAdapter(AgentAdapter):
     async def poll(self, session: Session) -> Session:
         remote_id = session.artifacts.get("remote_session_id", session.session_id)
         url = f"{self._endpoint}/tasks/{remote_id}"
-        loop = asyncio.get_event_loop()
-        deadline = asyncio.get_event_loop().time() + self._timeout
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + self._timeout
         while True:
             try:
                 response = await loop.run_in_executor(
@@ -302,7 +302,7 @@ class RemoteA2AAdapter(AgentAdapter):
                 session.status = status
                 self._store_artifact(session, "result", body.get("result", {}))
                 return session
-            if asyncio.get_event_loop().time() > deadline:
+            if loop.time() > deadline:
                 session.status = "timeout"
                 self._store_artifact(session, "error", "Polling timed out")
                 return session

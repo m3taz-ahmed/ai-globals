@@ -14,17 +14,28 @@ from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
 
+from runtime.schemas import AizeeError, ErrorSeverity
 
-class MetricNameError(ValueError):
+
+class MetricNameError(AizeeError):
     """Raised when a metric or label name is invalid."""
 
+    def __init__(self, message: str) -> None:
+        super().__init__("METRIC_NAME_ERROR", message, ErrorSeverity.LOW)
 
-class MetricDuplicationError(ValueError):
+
+class MetricDuplicationError(AizeeError):
     """Raised when a metric is registered twice."""
 
+    def __init__(self, message: str) -> None:
+        super().__init__("METRIC_DUPLICATION", message, ErrorSeverity.LOW)
 
-class LabelValueError(ValueError):
+
+class LabelValueError(AizeeError):
     """Raised when a metric is used with missing or unexpected labels."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__("LABEL_VALUE_ERROR", message, ErrorSeverity.LOW)
 
 
 _VALID_NAME = re.compile(r"^[a-zA-Z_:][a-zA-Z0-9_:]*$")

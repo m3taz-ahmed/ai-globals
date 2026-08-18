@@ -381,7 +381,8 @@ class TestSpecEngine:
         old_argv = sys.argv
         sys.argv = ["spec_engine.py", str(engine.specs_dir)]
         try:
-            exec(compile(code, str(source), "exec"), {"__name__": "__main__"})
+            # Provide __file__ in globals so module-level Path(__file__) resolves.
+            exec(compile(code, str(source), "exec"), {"__name__": "__main__", "__file__": str(source)})
         finally:
             sys.argv = old_argv
         out = capsys.readouterr().out

@@ -53,3 +53,156 @@ Every project — Laravel, React, Python, Go, Node — follows two-tier testing 
 - PowerShell equivalents: `;` instead of `&&`, `if ($?) { ... }` instead of `||`, `Test-Path` instead of `ls ... 2>nul`, `Get-ChildItem` instead of `ls`, `Get-Content` instead of `cat`, `Select-String` instead of `grep`.
 - In workflow CMD steps, use `pwsh:` or `ps:` prefix for PowerShell commands on Windows; `bash:` for POSIX shells on Linux/macOS.
 - When using `subprocess` in Python, pass command lists (not shell strings) to stay cross-platform. Use `shell=True` only when absolutely necessary and never with user input.
+
+---
+
+## Architecture
+
+aiZee follows a layered design:
+
+- **CLI / Entry Point** — `aizee_cli.py` parses commands, delegates to kernel.
+- **Kernel (Facade)** — `runtime/kernel.py` routes to managers.
+- **Managers** — `runtime/managers/` (PolicyManager, WorkflowManager, AgentManager, ChatManager).
+- **Runtime Modules** — 60+ governance modules in `runtime/`.
+- **MCP Server** — `aizee_mcp/` exposes 27 tools via FastMCP.
+- **Memory** — `memory/` SQLite + FTS5 + vector store.
+- **Skills / Workflows / Tech-Stack** — declarative `.md` files loaded at runtime.
+
+### Core Infrastructure
+
+| Module | Purpose |
+|--------|---------|
+| `runtime/kernel.py` | Facade delegating to managers |
+| `runtime/policy.py` | Policy evaluation engine |
+| `runtime/budget.py` | Token/cost/call budget tracking |
+| `runtime/audit.py` | Append-only audit log |
+| `runtime/guardian.py` | Pre-action guardian gate |
+| `runtime/probity.py` | Integrity verification |
+| `runtime/persona.py` | Auto persona detection |
+| `runtime/spec_engine.py` | Spec-driven development (4 phases) |
+| `runtime/storage_backend.py` | Pluggable storage abstraction (memory/json/sqlite) |
+| `runtime/service_catalog.py` | Multi-index skill/workflow catalog |
+| `runtime/schemas.py` | Pydantic schemas + AizeeException hierarchy + PaginatedResult |
+
+### Package Layout
+
+```
+aizee/                         # Sovereign root (AIZEE_ROOT)
+├── aizee_cli.py               # CLI entry point
+├── config.py                  # Root discovery + version
+├── runtime/                   # Kernel + 60+ governance modules
+│   ├── kernel.py              # Facade
+│   ├── managers/              # Policy/Workflow/Agent/Chat managers
+│   ├── storage_backend.py     # StorageBackend protocol + factory
+│   ├── service_catalog.py     # ServiceDescriptor + multi-index catalog
+│   ├── schemas.py             # Pydantic + exceptions + pagination
+│   └── ...                    # 60+ governance modules
+├── aizee_mcp/                 # MCP server (27 tools)
+├── memory/                    # SQLite + FTS5 + vector
+├── skills/                    # 31 persona + lord skills
+├── workflows/                 # 36 trigger-based protocols
+├── rules/                     # Compressed behavioral rules
+├── tech-stack/                # 75 version-locked stack references
+│   └── spec-driven-templates/ # SDD templates (spec/plan/tasks/constitution/checklist)
+└── eval/                      # Agent benchmark harness
+```
+
+## First Principles
+
+When making changes, follow these priorities:
+
+1. Preserve policy-governed behavior (never bypass kernel gates)
+2. Match existing aiZee patterns (read neighboring code first)
+3. Reuse existing modules (don't reinvent storage/catalog/exceptions)
+4. Prefer correctness over convenience
+5. Keep changes narrow and testable
+
+## Adding a New Runtime Module
+
+1. Create `runtime/<module>.py`
+2. Add to `runtime/__init__.py` if it needs exports
+3. Wire through `kernel.py` or the relevant manager
+4. Add tests in `tests/test_<module>.py`
+5. Update `Memory.md` if user-facing
+6. Run quality gates: `ruff check .` + `mypy` + `pytest tests/test_<module>.py`
+
+## Adding a New Skill
+
+1. Create `skills/<name>/SKILL.md` (or `skills/<name>.md` for flat)
+2. Add frontmatter with triggers, personas, tech_stack
+3. Register in `PERSONA_SKILLS` mapping in `runtime/persona.py` if persona-linked
+4. Test with `aizee persona detect --multi "<task description>"`
+5. Run `aizee memory ingest` to refresh indexes
+
+## Adding a New Workflow
+
+1. Create `workflows/<NN>-<name>.md` (sequential numbering)
+2. Add trigger keywords in the header
+3. If it uses a runtime engine, document the engine module
+4. Update `workflows/README.md` count
+
+## Error Handling
+
+- Raise `AizeeError` subclasses from `runtime/schemas.py`
+- Use `PolicyDeniedError` for policy gate failures
+- Use `BudgetExceededError` for budget limit hits
+- Use `ValidationError` for input validation
+- Use `StorageError` for storage backend failures
+- All exceptions carry `error_code`, `severity`, and `context` dict
+- Never use bare `Exception` — always an `AizeeError` subclass
+
+## Storage Rules
+
+- Use `StorageFactory` from `runtime/storage_backend.py` for new key-value stores
+- Do not instantiate `InMemoryStorage` / `JsonFileStorage` / `SqliteStorage` directly
+- Existing `MemoryStore` (SQLite) is unchanged — new code opts into the abstraction
+- Backends are cached by path — repeat `create()` returns the same instance
+- Call `factory.shutdown_all()` on process exit to flush + close
+
+## Common Mistakes
+
+- Bypassing `StorageFactory` and instantiating storage directly
+- Using bare `Exception` instead of `AizeeException` subclasses
+- Hardcoding paths instead of using `config.discover_root()`
+- Assuming framework versions without reading lockfiles (`[VER-01]`)
+- Running full test suite during iteration (use FAST tier)
+- `git add .` / `git add -A` (`[GIT-06]`)
+- Forgetting to update `Memory.md` after milestones
+- Writing implementation code without Context7 MCP query first
+
+## Human Handoff
+
+If behavior is unclear:
+
+1. Prefer aiZee spec (`spec.md`) and existing code behavior
+2. Then `Memory.md` for historical context
+3. Then `global-roles.md` / `global-workflow.md` for governance rules
+4. If a task requires broad architectural changes, stop and surface tradeoffs
+
+## Code Style
+
+- Use `from __future__ import annotations` in all Python files
+- Strict typing — no `Any` without justification, no `mixed`/`unknown` abuse
+- Class <300 lines, method <30 lines (`[CODE-03]`)
+- Enums/constants over magic strings (`[CODE-04]`)
+- SOLID & DRY (`[CODE-05]`)
+- Constructor injection (pass dependencies in `__init__`)
+- Self-explanatory code over comments
+- Always use braces in conditionals (for JS/TS projects)
+- Never leave a `catch`/`except` block empty — log with context
+- Follow existing project patterns
+
+## Logging
+
+- Use structured logging (dict-based, not f-strings in hot paths)
+- Avoid noisy logs in performance-critical paths
+- Log error context: error_code, severity, operation, user (if relevant)
+
+## Pull Request Guidelines
+
+- Keep changes focused — avoid unrelated refactors
+- Preserve behavior unless the task explicitly requires change
+- Update docs (`Memory.md`, `CHANGELOG.md`) when user-facing
+- Conventional commits: `feat:`, `fix:`, `perf:`, `docs:`, `chore:`, `refactor:`
+- Stage only files YOU modified (`git add <file>`, never `git add .`)
+- No `git commit` / `git push` without explicit user approval

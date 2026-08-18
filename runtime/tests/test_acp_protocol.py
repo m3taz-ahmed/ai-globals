@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -67,8 +68,8 @@ class TestACPMessage:
 
     def test_is_expired_with_recent_timestamp(self) -> None:
         msg = ACPMessage(ttl=3600)
-        from datetime import datetime, timezone
-        msg.timestamp = datetime.now(timezone.utc).isoformat()
+        from datetime import datetime
+        msg.timestamp = datetime.now(UTC).isoformat()
         assert msg.is_expired is False
 
 

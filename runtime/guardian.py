@@ -11,10 +11,10 @@ Re-implements the core patterns from guardian-angel:
 
 from __future__ import annotations
 
-import asyncio
 import functools
 import inspect
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 import yaml
+
+from runtime.schemas import AizeeError, ErrorSeverity
 
 
 class DecisionStatus(str, Enum):
@@ -32,13 +34,18 @@ class DecisionStatus(str, Enum):
     REQUIRE_APPROVAL = "require_approval"
 
 
-class ApprovalRequiredError(Exception):
+class ApprovalRequiredError(AizeeError):
     """Raised when an action requires explicit approval."""
 
     def __init__(self, rule_name: str, message: str = "") -> None:
         self.rule_name = rule_name
         self.message = message
-        super().__init__(message or f"Action requires approval by rule {rule_name!r}")
+        super().__init__(
+            "APPROVAL_REQUIRED",
+            message or f"Action requires approval by rule {rule_name!r}",
+            ErrorSeverity.MEDIUM,
+            {"rule_name": rule_name},
+        )
 
 
 class GuardConfig:
@@ -83,6 +90,7 @@ class _PredicateEvaluator:
         "in": lambda a, b: a in b,
         "nin": lambda a, b: a not in b,
         "contains": lambda a, b: b in a if isinstance(a, (str, list, tuple)) else False,
+        "regex": lambda a, b: bool(re.search(b, str(a))) if a is not None else False,
     }
 
     def __init__(self, attributes: dict[str, Any]) -> None:
@@ -209,7 +217,7 @@ def invoke(guardian: Guardian, tool: str | None = None) -> Callable[[Callable[..
             guardian.check(request)
             return await fn(*args, **kwargs)
 
-        if asyncio.iscoroutinefunction(fn):
+        if inspect.iscoroutinefunction(fn):
             return async_wrapper
         return wrapper
 

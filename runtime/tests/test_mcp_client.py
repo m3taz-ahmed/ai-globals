@@ -143,24 +143,41 @@ def test_load_secrets_once_loads_env(tmp_path: Path, monkeypatch) -> None:
     env_file.write_text(
         "# comment\n"
         "\n"
-        "export API_KEY=secret123\n"
-        'QUOTED="double_quoted"\n'
-        "SINGLE='single_quoted'\n"
+        "export UPWORK_CLIENT_ID=secret123\n"
+        'UPWORK_CLIENT_SECRET="double_quoted"\n'
+        "SENTRY_DSN='single_quoted'\n"
         "SKIP_ME=your_api_key\n"
         "NOEQUALS\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
-    monkeypatch.delenv("API_KEY", raising=False)
-    monkeypatch.delenv("QUOTED", raising=False)
-    monkeypatch.delenv("SINGLE", raising=False)
+    monkeypatch.delenv("UPWORK_CLIENT_ID", raising=False)
+    monkeypatch.delenv("UPWORK_CLIENT_SECRET", raising=False)
+    monkeypatch.delenv("SENTRY_DSN", raising=False)
     monkeypatch.delenv("SKIP_ME", raising=False)
     mcp_client._SECRETS_LOADED = False
     mcp_client._load_secrets_once()
-    assert os.environ.get("API_KEY") == "secret123"
-    assert os.environ.get("QUOTED") == "double_quoted"
-    assert os.environ.get("SINGLE") == "single_quoted"
+    assert os.environ.get("UPWORK_CLIENT_ID") == "secret123"
+    assert os.environ.get("UPWORK_CLIENT_SECRET") == "double_quoted"
+    assert os.environ.get("SENTRY_DSN") == "single_quoted"
     assert "SKIP_ME" not in os.environ or os.environ.get("SKIP_ME") != "your_api_key"
+
+
+def test_load_secrets_once_rejects_unknown_keys(tmp_path: Path, monkeypatch) -> None:
+    """Unknown keys not in the allowlist should be silently skipped."""
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "UNKNOWN_MALICIOUS_KEY=injected\n"
+        "UPWORK_CLIENT_ID=allowed\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
+    monkeypatch.delenv("UNKNOWN_MALICIOUS_KEY", raising=False)
+    monkeypatch.delenv("UPWORK_CLIENT_ID", raising=False)
+    mcp_client._SECRETS_LOADED = False
+    mcp_client._load_secrets_once()
+    assert os.environ.get("UPWORK_CLIENT_ID") == "allowed"
+    assert os.environ.get("UNKNOWN_MALICIOUS_KEY") is None
 
 
 def test_load_secrets_once_skipped_if_already_loaded(tmp_path: Path, monkeypatch) -> None:
@@ -429,6 +446,7 @@ def test_release_locked_wait_timeout_kills(tmp_path: Path) -> None:
 
 
 def test_call_tool_success(tmp_path: Path) -> None:
+    """_call_tool_sync returns success result from MCP server."""
     _make_config_dir(tmp_path)
     client = McpClient("test", tmp_path)
     mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","result":{"output":"ok"}}\n')
@@ -436,12 +454,13 @@ def test_call_tool_success(tmp_path: Path) -> None:
         with patch("shutil.which", return_value=None):
             with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
                 with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
-                    result = client.call_tool("my_tool", {"x": 1})
+                    result = client._call_tool_sync("my_tool", {"x": 1})
     assert result["ok"] is True
     assert result["result"]["output"] == "ok"
 
 
 def test_call_tool_response_error(tmp_path: Path) -> None:
+    """_call_tool_sync returns error when MCP response contains 'error'."""
     _make_config_dir(tmp_path)
     client = McpClient("test", tmp_path)
     mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","error":"tool failed"}\n')
@@ -449,12 +468,13 @@ def test_call_tool_response_error(tmp_path: Path) -> None:
         with patch("shutil.which", return_value=None):
             with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
                 with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
-                    result = client.call_tool("my_tool", {})
+                    result = client._call_tool_sync("my_tool", {})
     assert result["ok"] is False
     assert result["error"] == "tool failed"
 
 
 def test_call_tool_exception_releases_pool(tmp_path: Path) -> None:
+    """_call_tool_sync releases pool and returns error on exception."""
     _make_config_dir(tmp_path)
     client = McpClient("test", tmp_path)
     mock_proc = MagicMock(spec=subprocess.Popen)
@@ -465,14 +485,37 @@ def test_call_tool_exception_releases_pool(tmp_path: Path) -> None:
         with patch("shutil.which", return_value=None):
             with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
                 with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
-                    result = client.call_tool("my_tool", {})
+                    result = client._call_tool_sync("my_tool", {})
     assert result["ok"] is False
     assert "pipes" in result["error"]
 
 
-# ---------------------------------------------------------------------------
-# async_call_tool
-# ---------------------------------------------------------------------------
+def test_call_tool_delegates_to_async(tmp_path: Path) -> None:
+    """call_tool delegates to async_call_tool via asyncio.run when no loop is running."""
+    _make_config_dir(tmp_path)
+    client = McpClient("test", tmp_path)
+    expected = {"ok": True, "result": {"data": "value"}}
+    with patch.object(client, "async_call_tool", new_callable=AsyncMock, return_value=expected) as mock_async:
+        result = client.call_tool("my_tool", {"x": 1})
+    assert result == expected
+    mock_async.assert_awaited_once_with("my_tool", {"x": 1})
+
+
+def test_call_tool_falls_back_to_sync_in_async_context(tmp_path: Path) -> None:
+    """call_tool falls back to _call_tool_sync when already inside a running event loop."""
+    _make_config_dir(tmp_path)
+    client = McpClient("test", tmp_path)
+    mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","result":{"output":"ok"}}\n')
+    with patch("subprocess.Popen", return_value=mock_proc):
+        with patch("shutil.which", return_value=None):
+            with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
+                with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
+                    # Run inside an existing event loop
+                    async def _run() -> dict:
+                        return client.call_tool("my_tool", {"x": 1})
+                    result = asyncio.run(_run())
+    assert result["ok"] is True
+    assert result["result"]["output"] == "ok"
 
 
 def _make_async_proc(init_resp: bytes | None, call_resp: bytes | None):
@@ -569,7 +612,7 @@ def test_async_call_tool_timeout(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
     client = McpClient("test", tmp_path)
     proc = _make_async_proc(b'{"jsonrpc":"2.0","result":{}}', b'{"jsonrpc":"2.0","result":{}}')
-    proc.stdout.readline.side_effect = asyncio.TimeoutError()
+    proc.stdout.readline.side_effect = TimeoutError()
 
     async def fake_wait_for(coro, timeout=None):
         return await coro
@@ -627,7 +670,7 @@ def test_async_call_tool_wait_timeout_kills(tmp_path: Path) -> None:
     async def fake_wait_for(coro, timeout=None):
         if timeout == 2:
             coro.close()
-            raise asyncio.TimeoutError()
+            raise TimeoutError()
         return await coro
 
     with patch("asyncio.create_subprocess_exec", return_value=proc):
@@ -669,7 +712,7 @@ def test_user_script_dirs_userbase_dir_exists(tmp_path: Path) -> None:
 
 
 def test_call_tool_response_error_after_successful_init(tmp_path: Path) -> None:
-    """Cover line 273: call_tool returns error when response has 'error' after successful init."""
+    """Cover: _call_tool_sync returns error when response has 'error' after successful init."""
     _make_config_dir(tmp_path)
     client = McpClient("test", tmp_path)
     proc = MagicMock(spec=subprocess.Popen)
@@ -684,6 +727,6 @@ def test_call_tool_response_error_after_successful_init(tmp_path: Path) -> None:
     with patch("subprocess.Popen", return_value=proc), patch("shutil.which", return_value=None):
         with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
             with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
-                result = client.call_tool("my_tool", {})
+                result = client._call_tool_sync("my_tool", {})
     assert result["ok"] is False
     assert result["error"] == "tool error"

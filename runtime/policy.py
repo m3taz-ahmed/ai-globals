@@ -14,6 +14,39 @@ import yaml
 
 Action = Literal["allow", "ask", "deny"]
 
+# Action-type classification for smart fallback when no explicit rule matches.
+# This prevents read-only operations from hitting the blanket "ask" default
+# and ensures destructive operations are always denied even if a policy file
+# forgets to cover them. The YAML `default_action` still wins as the final
+# fallback for truly unclassified actions.
+_READ_ACTIONS: frozenset[str] = frozenset({
+    "view", "read", "Read", "grep", "Glob", "graphify query", "graphify explain",
+    "graphify path", "search", "query", "list", "get", "status", "analyze_budget",
+    "get_metrics", "get_os_status", "git status", "git diff", "git log", "ls",
+    "pwd", "detect_persona", "list_workflows", "list_capabilities", "show", "cat",
+    "find", "glob", "head", "tail", "which", "where", "test",
+})
+_WRITE_ACTIONS: frozenset[str] = frozenset({
+    "edit", "write", "apply", "deploy", "Bash", "exec", "install", "pip",
+    "npm", "yarn", "composer", "migrate", "seed",
+})
+_DESTRUCTIVE_ACTIONS: frozenset[str] = frozenset({
+    "rm", "delete", "truncate", "drop", "destroy", "wipe", "purge",
+    "kill", "terminate", "force",
+})
+
+
+def _classify_action(action_type: str) -> Action:
+    """Classify an action type into a default decision (allow/ask/deny)."""
+    at = action_type.strip()
+    if at in _DESTRUCTIVE_ACTIONS or any(d in at for d in ("rm -rf", "drop", "truncate", "destroy")):
+        return "deny"
+    if at in _READ_ACTIONS:
+        return "allow"
+    if at in _WRITE_ACTIONS:
+        return "ask"
+    return "ask"  # unknown → conservative ask
+
 
 @dataclass
 class PolicyRule:
@@ -168,11 +201,24 @@ class PolicyEngine:
                     "approvers": rule.approvers,
                     "requires_approval": rule.action == "ask",
                 }
+        # Smart fallback: classify by action type instead of blanket default.
+        # The YAML `default_action` is the final fallback for unclassified types.
+        action_type = str(action.get("type", ""))
+        classified = _classify_action(action_type)
+        # If the configured default is "deny" (strict mode), honor it over classification.
+        # Otherwise, use the classified decision for known types, fall back to configured default.
+        if self.default_action == "deny":
+            fallback: Action = "deny"
+        elif classified != "ask" or action_type:
+            fallback = classified
+        else:
+            fallback = self.default_action
         return {
-            "decision": self.default_action,
-            "rule": "default",
-            "description": "",
-            "requires_approval": self.default_action == "ask",
+            "decision": fallback,
+            "rule": "default-classified",
+            "description": f"Auto-classified as {fallback} based on action type '{action_type}'",
+            "approvers": [],
+            "requires_approval": fallback == "ask",
         }
 
     def can(self, action_type: str, **kwargs: Any) -> dict[str, Any]:

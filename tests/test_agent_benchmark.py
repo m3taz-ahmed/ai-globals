@@ -267,14 +267,19 @@ class TestBenchmarkEngine:
 class TestBenchmarkMainBlock:
     """Tests for the __main__ block (lines 266-268)."""
 
-    def test_main_block_runs(self) -> None:
+    def test_main_block_runs(self, tmp_path: Path) -> None:
         """Lines 266-268: __main__ block executes run_all and prints summary."""
         import os as _os
         import subprocess
         import sys
+        # Use tmp_path as AIZEE_ROOT to avoid encrypted state files from the real root
+        os_root = tmp_path / "aizee"
+        os_root.mkdir(parents=True, exist_ok=True)
+        (os_root / "state").mkdir(exist_ok=True)
         env = dict(_os.environ)
         env.update({
-            "AIZEE_ROOT": str(Path(__file__).resolve().parent.parent),
+            "AIZEE_ROOT": str(os_root),
+            "AIOS_ENCRYPTION_KEY": "plaintext",
             "PYTHONIOENCODING": "utf-8",
             "PYTHONHASHSEED": "0",
             "PYTHONPATH": str(Path(__file__).resolve().parent.parent),
@@ -291,12 +296,15 @@ class TestBenchmarkMainBlock:
         # The __main__ block should produce JSON output
         assert result.stdout.strip().startswith("{")
 
-    def test_main_block_in_process(self, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    def test_main_block_in_process(self, monkeypatch: pytest.MonkeyPatch, capsys, tmp_path: Path) -> None:
         """Lines 266-268: __main__ block via runpy for in-process coverage."""
         import runpy
 
-        os_root = str(Path(__file__).resolve().parent.parent)
-        monkeypatch.setenv("AIZEE_ROOT", os_root)
+        os_root = tmp_path / "aizee"
+        os_root.mkdir(parents=True, exist_ok=True)
+        (os_root / "state").mkdir(exist_ok=True)
+        monkeypatch.setenv("AIZEE_ROOT", str(os_root))
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
         runpy.run_module("eval.agent_benchmark", run_name="__main__")
         captured = capsys.readouterr()
         assert captured.out.strip().startswith("{")

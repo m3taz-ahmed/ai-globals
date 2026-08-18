@@ -14,20 +14,22 @@ from runtime.audit import _GENESIS_HASH, _SENSITIVE_KEYS, AuditLogger
 class TestRedaction:
     """Tests for _redact() method."""
 
-    def test_redacts_value_containing_token(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("value", ["my_token_value", "token123", "bearer_token"])
+    def test_redacts_value_containing_token(self, tmp_path: Path, value: str) -> None:
         logger = AuditLogger(tmp_path)
-        # Redaction matches against the VALUE string, not the key.
-        result = logger._redact({"field": "my_token_value"})
+        result = logger._redact({"field": value})
         assert result == {"field": "[REDACTED]"}
 
-    def test_redacts_value_containing_secret(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("value", ["mysecret", "secret_key", "top_secret_data"])
+    def test_redacts_value_containing_secret(self, tmp_path: Path, value: str) -> None:
         logger = AuditLogger(tmp_path)
-        result = logger._redact({"field": "mysecret"})
+        result = logger._redact({"field": value})
         assert result == {"field": "[REDACTED]"}
 
-    def test_redacts_value_containing_password(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("value", ["password123", "user_password", "PASSWORD"])
+    def test_redacts_value_containing_password(self, tmp_path: Path, value: str) -> None:
         logger = AuditLogger(tmp_path)
-        result = logger._redact({"field": "password123"})
+        result = logger._redact({"field": value})
         assert result == {"field": "[REDACTED]"}
 
     def test_redacts_value_containing_credential(self, tmp_path: Path) -> None:
@@ -40,11 +42,18 @@ class TestRedaction:
         result = logger._redact({"field": "auth_token"})
         assert result == {"field": "[REDACTED]"}
 
-    def test_redacts_value_containing_api_key(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("key", ["api_key", "api-key", "apikey", "API_KEY"])
+    def test_redacts_value_containing_api_key(self, tmp_path: Path, key: str) -> None:
         logger = AuditLogger(tmp_path)
-        for val in ("api_key", "api-key", "apikey", "API_KEY"):
-            result = logger._redact({"field": val})
-            assert result == {"field": "[REDACTED]"}, f"Failed for value: {val}"
+        result = logger._redact({"field": key})
+        assert result == {"field": "[REDACTED]"}, f"Failed for value: {key}"
+
+    @pytest.mark.parametrize("key", ["token", "password", "secret", "api_key", "credential", "auth"])
+    def test_redacts_by_key_name(self, tmp_path: Path, key: str) -> None:
+        """Key-based redaction: entire value redacted when key name is sensitive."""
+        logger = AuditLogger(tmp_path)
+        result = logger._redact({"data": {key: "normal_value"}})
+        assert result == {"data": {key: "[REDACTED]"}}, f"Failed for key: {key}"
 
     def test_does_not_redact_normal_keys(self, tmp_path: Path) -> None:
         logger = AuditLogger(tmp_path)

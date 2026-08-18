@@ -137,6 +137,37 @@ def cmd_memory(args: argparse.Namespace) -> int:
             ingestor = Ingestor(store, _root(args))
             ids = ingestor.ingest_all()
         console.print(f"[green]Ingested {len(ids)} memories[/green]")
+
+        # Auto-ingest: watch for changes in tech-stack/, rules/, workflows/
+        if getattr(args, "watch", False):
+            import time
+
+            os_root = _root(args)
+            watch_dirs = [os_root / "tech-stack", os_root / "rules", os_root / "workflows"]
+            snapshots = {}
+            for d in watch_dirs:
+                if d.exists():
+                    snapshots[d] = {f.name: f.stat().st_mtime for f in d.rglob("*.md")}
+            console.print("[cyan]Watching tech-stack/, rules/, workflows/ for changes...[/cyan]")
+            console.print("[dim]Press Ctrl+C to stop.[/dim]")
+            try:
+                while True:
+                    changed = False
+                    for d in watch_dirs:
+                        if not d.exists():
+                            continue
+                        current = {f.name: f.stat().st_mtime for f in d.rglob("*.md")}
+                        if current != snapshots.get(d):
+                            changed = True
+                            snapshots[d] = current
+                    if changed:
+                        console.print("[yellow]Change detected — re-ingesting...[/yellow]")
+                        ingestor2 = Ingestor(store, os_root)
+                        new_ids = ingestor2.ingest_all()
+                        console.print(f"[green]Re-ingested {len(new_ids)} memories[/green]")
+                    time.sleep(2)
+            except KeyboardInterrupt:
+                console.print("[cyan]Stopped watching.[/cyan]")
     return 0
 
 
@@ -249,6 +280,87 @@ def cmd_telemetry(args: argparse.Namespace) -> int:
         from runtime.telemetry import system_metrics
 
         print(json.dumps(system_metrics(), indent=2))
+    return 0
+
+
+def cmd_audit(args: argparse.Namespace) -> int:
+    """Audit log commands (show, verify)."""
+    from runtime.audit import AuditLogger
+
+    root = _root(args)
+    logger = AuditLogger(root)
+
+    if args.subcommand == "show":
+        entries = logger.read_entries(
+            event_type=args.type if args.type else None,
+            limit=args.limit,
+        )
+        if not entries:
+            console.print("[yellow]No audit entries found.[/yellow]")
+            return 0
+        table = Table(title=f"Audit Log (last {len(entries)})")
+        table.add_column("Timestamp", style="dim")
+        table.add_column("Type", style="cyan")
+        table.add_column("Details", style="green")
+        for e in entries:
+            ts = e.get("ts", "-")[:19]
+            etype = e.get("type", "-")
+            details = json.dumps(e.get("details", {}), default=str)[:100]
+            table.add_row(ts, etype, details)
+        console.print(table)
+    elif args.subcommand == "verify":
+        result = logger.verify_chain()
+        if result["valid"]:
+            console.print(f"[green]Chain valid — {result['entries_checked']} entries checked[/green]")
+        else:
+            console.print(f"[red]Chain BROKEN at entry {result['broken_at']}[/red]")
+        return 0 if result["valid"] else 1
+    return 0
+
+
+def cmd_spec(args: argparse.Namespace) -> int:
+    """Spec-driven development commands (scaffold, analyze, converge)."""
+    from pathlib import Path
+
+    from runtime.spec_engine import SpecEngine
+
+    os_root = _root(args)
+    specs_dir = os_root / "specs"
+    engine = SpecEngine(specs_dir)
+
+    if args.subcommand == "list":
+        specs = engine.list_specs()
+        if not specs:
+            console.print("[yellow]No specs found.[/yellow]")
+            return 0
+        table = Table(title="Specs")
+        table.add_column("ID", style="cyan")
+        table.add_column("Title", style="green")
+        table.add_column("Phase", style="magenta")
+        for s in specs:
+            table.add_row(s.get("id", "-"), s.get("title", "-"), s.get("phase", "-"))
+        console.print(table)
+    elif args.subcommand == "analyze":
+        report = engine.analyze_artifacts(args.spec_id)
+        print(json.dumps(report, indent=2, default=str))
+    elif args.subcommand == "converge":
+        codebase = Path(args.codebase) if args.codebase else _project_root(args)
+        report = engine.converge_to_code(args.spec_id, codebase)
+        print(json.dumps(report, indent=2, default=str))
+    elif args.subcommand == "scaffold":
+        if not args.template or not args.title:
+            console.print("[red]--template and --title required for scaffold[/red]")
+            return 1
+        if args.template == "spec":
+            result = engine.scaffold_spec(args.spec_id, args.title)
+        elif args.template == "plan":
+            result = engine.scaffold_plan(args.spec_id)
+        elif args.template == "tasks":
+            result = engine.scaffold_tasks(args.spec_id)
+        else:
+            console.print(f"[red]Unknown template: {args.template}[/red]")
+            return 1
+        console.print(f"[green]Scaffolded {args.template}:[/green] {result}")
     return 0
 
 
@@ -489,6 +601,61 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     except Exception:
         checks["global mcp config"] = False
 
+    # --- Guardian policy check ---
+    guardian_path = os_root / "runtime" / "policies" / "guardian.yaml"
+    if guardian_path.exists():
+        try:
+            from runtime.guardian import Guardian
+            g = Guardian.from_yaml(guardian_path)
+            checks[f"guardian.yaml ({len(g.rules)} rules)"] = len(g.rules) > 0
+        except Exception:
+            checks["guardian.yaml (load error)"] = False
+    else:
+        checks["guardian.yaml"] = False
+
+    # --- Probity guardrails check ---
+    probity_path = os_root / "runtime" / "policies" / "probity.yaml"
+    if probity_path.exists():
+        try:
+            import yaml as _yaml
+
+            from runtime.probity import Guardrails
+            data = _yaml.safe_load(probity_path.read_text(encoding="utf-8")) or {}
+            gr = Guardrails(data)
+            checks[f"probity.yaml ({len(gr.rules)} rules)"] = len(gr.rules) > 0
+        except Exception:
+            checks["probity.yaml (load error)"] = False
+    else:
+        checks["probity.yaml"] = False
+
+    # --- Capabilities check ---
+    try:
+        from runtime.sovereign import AgentCapabilities
+        caps = AgentCapabilities()
+        checks[f"capabilities ({len(caps.list())})"] = len(caps.list()) > 0
+    except Exception:
+        checks["capabilities"] = False
+
+    # --- Tech stack detection check ---
+    try:
+        from runtime.kernel import Kernel
+        k = Kernel(os_root)
+        ts = k.detect_tech_stack()
+        checks[f"tech_stack detection ({len(ts)} entries)"] = len(ts) > 0
+    except Exception:
+        checks["tech_stack detection"] = False
+
+    # --- cryptography version match check ---
+    try:
+        from importlib.metadata import version
+        installed = version("cryptography")
+        checks[f"cryptography=={installed} (pyproject <52.0)"] = True
+    except Exception:
+        checks["cryptography version"] = False
+
+    # --- .env.example check ---
+    checks[".env.example template"] = (os_root / ".env.example").exists()
+
     table = Table(title="aiZee Doctor")
     table.add_column("Check", style="cyan")
     table.add_column("Status", style="green")
@@ -594,6 +761,7 @@ def main(argv: list[str] | None = None) -> int:
     p_mem.add_argument("--content", default="")
     p_mem.add_argument("--source", default="")
     p_mem.add_argument("--limit", type=int, default=10)
+    p_mem.add_argument("--watch", action="store_true", help="Auto re-ingest on tech-stack/rules/workflows changes")
 
     p_policy = sub.add_parser("policy", help="Policy commands")
     p_policy.add_argument("subcommand", choices=["test"])
@@ -624,6 +792,18 @@ def main(argv: list[str] | None = None) -> int:
 
     p_stack = sub.add_parser("stack", help="Tech-stack detection")
     p_stack.add_argument("subcommand", choices=["detect", "show"])
+
+    p_spec = sub.add_parser("spec", help="Spec-driven development commands")
+    p_spec.add_argument("subcommand", choices=["list", "analyze", "converge", "scaffold"])
+    p_spec.add_argument("spec_id", nargs="?", default="", help="Spec ID")
+    p_spec.add_argument("--codebase", default="", help="Codebase dir for converge")
+    p_spec.add_argument("--template", default="", help="Template type for scaffold (spec/plan/tasks)")
+    p_spec.add_argument("--title", default="", help="Title for scaffold")
+
+    p_audit = sub.add_parser("audit", help="Audit log commands")
+    p_audit.add_argument("subcommand", choices=["show", "verify"])
+    p_audit.add_argument("--type", default="", help="Filter by event type")
+    p_audit.add_argument("--limit", type=int, default=50, help="Max entries to show")
 
     p_mcp = sub.add_parser("mcp", help="Call an external MCP tool or sync global config")
     p_mcp.add_argument("server", nargs="?", help="MCP server name (or 'sync' to write global config)")
@@ -724,6 +904,8 @@ def main(argv: list[str] | None = None) -> int:
         "saga": cmd_saga,
         "telemetry": cmd_telemetry,
         "stack": cmd_stack,
+        "spec": cmd_spec,
+        "audit": cmd_audit,
         "mcp": cmd_mcp,
         "chat": cmd_chat,
         "ci": cmd_ci,

@@ -12,7 +12,7 @@ import hashlib
 import json
 import re
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -29,18 +29,44 @@ class AuditLogger:
     The first entry's ``prev_hash`` is the genesis hash (64 zeros).
     """
 
+    _MAX_LOG_SIZE = 100 * 1024 * 1024  # 100 MB
+    _MAX_ROTATED = 5
+
     def __init__(self, root: Path) -> None:
         self.root = root
         self.log_file = root / "state" / "audit.log"
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
 
-    def _redact(self, value: Any) -> Any:
-        """Redact likely sensitive strings and recursively process containers."""
+    def _rotate_if_needed(self) -> None:
+        """Rotate the audit log if it exceeds the max size."""
+        try:
+            if self.log_file.exists() and self.log_file.stat().st_size > self._MAX_LOG_SIZE:
+                # Rotate: audit.log -> audit.log.1, audit.log.1 -> audit.log.2, etc.
+                for i in range(self._MAX_ROTATED - 1, 0, -1):
+                    old = self.log_file.with_suffix(f".log.{i}")
+                    new = self.log_file.with_suffix(f".log.{i + 1}")
+                    if old.exists():
+                        old.rename(new)
+                rotated = self.log_file.with_suffix(".log.1")
+                self.log_file.rename(rotated)
+        except OSError:
+            pass  # Best-effort rotation
+
+    def _redact(self, value: Any, key_name: str = "") -> Any:
+        """Redact sensitive values using both key-name and content matching.
+
+        - If the key name matches a sensitive pattern, the entire value is redacted.
+        - If the value (string) contains a sensitive keyword, it is redacted.
+        - Recursively processes dicts and lists.
+        """
+        # Key-based redaction: if the key name looks sensitive, redact entire value
+        if key_name and _SENSITIVE_KEYS.search(key_name):
+            return "[REDACTED]"
         if isinstance(value, dict):
-            return {k: self._redact(v) for k, v in value.items()}
+            return {k: self._redact(v, key_name=k) for k, v in value.items()}
         if isinstance(value, list):
-            return [self._redact(v) for v in value]
+            return [self._redact(v, key_name=key_name) for v in value]
         if isinstance(value, str) and _SENSITIVE_KEYS.search(value):
             return "[REDACTED]"
         return value
@@ -73,9 +99,10 @@ class AuditLogger:
     def log(self, event_type: str, details: dict[str, Any]) -> None:
         """Append a new hash-chained entry to the audit log."""
         with self._lock:
+            self._rotate_if_needed()
             prev_hash = self._last_hash()
             entry: dict[str, Any] = {
-                "ts": datetime.now(timezone.utc).isoformat(),
+                "ts": datetime.now(UTC).isoformat(),
                 "type": event_type,
                 "details": self._redact(details),
                 "prev_hash": prev_hash,
@@ -169,3 +196,35 @@ class AuditLogger:
             "entries_checked": idx,
             "broken_at": broken_at,
         }
+
+    def read_entries(
+        self,
+        event_type: str | None = None,
+        limit: int = 50,
+        since: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Read audit log entries with optional filtering.
+
+        Args:
+            event_type: Filter by event type (e.g., 'policy', 'budget').
+            limit: Maximum number of entries to return (most recent first).
+            since: ISO timestamp — only entries after this time are returned.
+        """
+        if not self.log_file.exists():
+            return []
+        entries: list[dict[str, Any]] = []
+        with self.log_file.open("r", encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    entry = json.loads(stripped)
+                except json.JSONDecodeError:
+                    continue
+                if event_type and entry.get("type") != event_type:
+                    continue
+                if since and entry.get("ts", "") < since:
+                    continue
+                entries.append(entry)
+        return list(reversed(entries[-limit:]))

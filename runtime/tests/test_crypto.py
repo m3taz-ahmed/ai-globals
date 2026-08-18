@@ -28,18 +28,30 @@ class TestEncryptDecrypt:
         decrypted = decrypt_bytes(encrypted)
         assert decrypted == original
 
-    def test_no_key_returns_plaintext(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("AIOS_ENCRYPTION_KEY", raising=False)
+    def test_no_key_returns_plaintext(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        """When AIOS_ENCRYPTION_KEY=plaintext, encryption is explicitly disabled."""
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
+        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
         original = b"hello world"
         result = encrypt_bytes(original)
         assert result == original
         assert decrypt_bytes(result) == original
 
-    def test_decrypt_without_key_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_no_key_auto_generates(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        """When no key is set, one is auto-generated (secure-by-default)."""
+        monkeypatch.delenv("AIOS_ENCRYPTION_KEY", raising=False)
+        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
+        original = b"hello world"
+        result = encrypt_bytes(original)
+        assert result != original  # Should be encrypted
+        assert decrypt_bytes(result) == original
+
+    def test_decrypt_without_key_raises(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         key = Fernet.generate_key().decode()
         monkeypatch.setenv("AIOS_ENCRYPTION_KEY", key)
         encrypted = encrypt_bytes(b"secret")
-        monkeypatch.delenv("AIOS_ENCRYPTION_KEY", raising=False)
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
+        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
         with pytest.raises(ValueError, match="AIOS_ENCRYPTION_KEY"):
             decrypt_bytes(encrypted)
 
@@ -66,7 +78,9 @@ class TestFileEncryption:
         assert content == '{"budget": 100}'
 
     def test_encrypt_file_no_key_is_noop(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.delenv("AIOS_ENCRYPTION_KEY", raising=False)
+        """When AIOS_ENCRYPTION_KEY=plaintext, file encryption is a no-op."""
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
+        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
         f = tmp_path / "data.json"
         f.write_text('{"budget": 100}', encoding="utf-8")
         encrypt_file(f)

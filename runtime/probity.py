@@ -12,14 +12,21 @@ import re
 from pathlib import Path
 from typing import Any
 
+from runtime.schemas import AizeeError, ErrorSeverity
 
-class GuardrailViolationError(Exception):
+
+class GuardrailViolationError(AizeeError):
     """Raised when a coding rule is violated."""
 
     def __init__(self, rule_name: str, message: str) -> None:
         self.rule_name = rule_name
         self.message = message
-        super().__init__(f"Probity: {rule_name} - {message}")
+        super().__init__(
+            "GUARDRAIL_VIOLATION",
+            f"Probity: {rule_name} - {message}",
+            ErrorSeverity.HIGH,
+            {"rule_name": rule_name},
+        )
 
 
 class GuardrailConfig:

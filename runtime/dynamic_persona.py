@@ -17,7 +17,7 @@ import json
 import os
 import threading
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +39,7 @@ LEARNED_PATTERNS_LIMIT = 100
 
 def _utc_now() -> str:
     """Return the current UTC timestamp as an ISO-8601 string."""
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _clamp_score(value: float) -> float:

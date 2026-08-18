@@ -1,6 +1,6 @@
 # aiZee MCP API Reference
 
-**Version:** 4.22.1
+**Version:** 5.1.0
 **Transport:** stdio
 **Server name:** `aizee`
 

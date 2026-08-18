@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v5.0.0
+# AI Globals Validation Script (Python) v5.1.0
 # Source of truth validator — PowerShell wrapper delegates to this script.
 
 import argparse
@@ -283,6 +283,7 @@ IGNORED_FILE_REFS = {
     'rounded.md', 'spacing.md',
     # project-specific placeholder files (referenced conceptually, not tracked)
     'spec.md', 'plan.md', 'implementation_plan.md', 'tasks.md', 'pxx-name.md',
+    'research.md', 'data-model.md', 'quickstart.md',
     # external/generated files (agent config, graphify output, ponytail ledger)
     'claude.md', 'agents.md', 'graph_report.md', 'ponytail-debt.md',
     # GitHub-specific adapters not copied by install.ps1

@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
 # === Stage 1: Builder ===
-# NOTE: Pin to digest in production with: docker pull python:3.11.9-slim@sha256:<real-digest>
-FROM python:3.11.9-slim AS builder
+# NOTE: Pin to digest in production with: docker pull python:3.14-slim@sha256:<real-digest>
+FROM python:3.14-slim AS builder
 
 # Create build user
 RUN groupadd -r aios && useradd -r -g aios -m -d /app aios
@@ -28,7 +28,7 @@ COPY runtime/ ./runtime/
 COPY memory/ ./memory/
 COPY aizee_mcp/ ./aizee_mcp/
 COPY dashboard/ ./dashboard/
-COPY cli.py config.py ./
+COPY aizee_cli.py config.py ./
 COPY plugins.yaml ./
 COPY scripts/validate-globals.py ./scripts/validate-globals.py
 
@@ -36,8 +36,8 @@ COPY scripts/validate-globals.py ./scripts/validate-globals.py
 RUN pip install --no-cache-dir -e .
 
 # === Stage 2: Runtime ===
-# NOTE: Pin to digest in production with: docker pull python:3.11.9-slim@sha256:<real-digest>
-FROM python:3.11.9-slim AS runtime
+# NOTE: Pin to digest in production with: docker pull python:3.14-slim@sha256:<real-digest>
+FROM python:3.14-slim AS runtime
 
 # Create non-root user
 RUN groupadd -r aios && useradd -r -g aios -m -d /app aios
@@ -60,7 +60,7 @@ COPY --from=builder /app/runtime/ ./runtime/
 COPY --from=builder /app/memory/ ./memory/
 COPY --from=builder /app/aizee_mcp/ ./aizee_mcp/
 COPY --from=builder /app/dashboard/ ./dashboard/
-COPY --from=builder /app/cli.py /app/config.py /app/plugins.yaml ./
+COPY --from=builder /app/aizee_cli.py /app/config.py /app/plugins.yaml ./
 COPY --from=builder /app/scripts/validate-globals.py ./scripts/validate-globals.py
 
 # Create state directories

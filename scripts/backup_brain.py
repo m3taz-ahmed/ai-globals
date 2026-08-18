@@ -14,6 +14,9 @@ Usage:
     python scripts/backup_brain.py                    # backup to <root>/backups/
     python scripts/backup_brain.py --dest D:\backups  # custom destination
     python scripts/backup_brain.py --root C:\aizee    # custom aiZee root
+    python scripts/backup_brain.py --schedule daily   # run backup every 24h (Ctrl+C to stop)
+    python scripts/backup_brain.py --schedule hourly  # run backup every 1h (Ctrl+C to stop)
+    python scripts/backup_brain.py --verify <path>    # verify backup integrity
 """
 
 from __future__ import annotations
@@ -21,11 +24,18 @@ from __future__ import annotations
 import argparse
 import contextlib
 import shutil
+import sqlite3
+import time
 from datetime import datetime
 from pathlib import Path
 
 LEARNED_DIRS = ["memory", "state", "brain", "graphify-out"]
 LEARNED_FILES = [".env"]
+
+SCHEDULE_INTERVALS = {
+    "hourly": 3600,
+    "daily": 86400,
+}
 
 
 def _dir_size(path: Path) -> int:
@@ -65,6 +75,80 @@ def _backup_item(src: Path, dst: Path) -> bool:
     except (OSError, shutil.Error) as e:
         print(f"    [WARN] Could not copy {src.name}: {e}")
     return False
+
+
+def verify_backup(backup_folder: Path) -> int:
+    """Verify backup integrity. Returns exit code (0 = OK, 1 = issues found).
+
+    Runs SQLite PRAGMA integrity_check on .db files and checks that all
+    expected items exist in the backup folder.
+    """
+    print("=" * 60)
+    print("  aiZee Brain Backup — Verify integrity")
+    print("=" * 60)
+    print()
+    print(f"  Backup: {backup_folder}")
+    print()
+
+    if not backup_folder.exists():
+        print(f"[ERROR] Backup folder not found: {backup_folder}")
+        return 1
+
+    issues = 0
+    checked = 0
+
+    # Verify expected directories and files exist
+    for dirname in LEARNED_DIRS:
+        dst = backup_folder / dirname
+        if not dst.exists():
+            print(f"  [MISSING] {dirname}/")
+            issues += 1
+        else:
+            print(f"  [OK]      {dirname}/")
+            checked += 1
+
+    for filename in LEARNED_FILES:
+        dst = backup_folder / filename
+        if not dst.exists():
+            print(f"  [MISSING] {filename}")
+            issues += 1
+        else:
+            print(f"  [OK]      {filename}")
+            checked += 1
+
+    # Run SQLite integrity_check on all .db files in the backup
+    print()
+    print("  Checking SQLite databases...")
+    db_files = list(backup_folder.rglob("*.db"))
+    if not db_files:
+        print("  [INFO] No .db files found in backup")
+    for db_file in db_files:
+        rel = db_file.relative_to(backup_folder)
+        try:
+            conn = sqlite3.connect(str(db_file))
+            result = conn.execute("PRAGMA integrity_check").fetchone()
+            conn.close()
+            status = result[0] if result else "no result"
+            if status == "ok":
+                print(f"  [OK]      {rel}")
+                checked += 1
+            else:
+                print(f"  [FAIL]    {rel}: {status}")
+                issues += 1
+        except sqlite3.DatabaseError as e:
+            print(f"  [FAIL]    {rel}: {e}")
+            issues += 1
+
+    # Summary
+    print()
+    print("=" * 60)
+    if issues == 0:
+        print(f"  [PASS] Verification OK — {checked} items checked, no issues")
+    else:
+        print(f"  [FAIL] {issues} issue(s) found, {checked} items checked")
+    print("=" * 60)
+
+    return 0 if issues == 0 else 1
 
 
 def run_backup(root: Path, dest: Path) -> int:
@@ -157,7 +241,22 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="aiZee brain backup — save learned data")
     parser.add_argument("--root", default=None, help="aiZee root directory (default: auto-detect)")
     parser.add_argument("--dest", default=None, help="Backup destination folder (default: <root>/backups/)")
+    parser.add_argument(
+        "--schedule",
+        choices=["daily", "hourly"],
+        default=None,
+        help="Run backups periodically (Ctrl+C to stop)",
+    )
+    parser.add_argument(
+        "--verify",
+        default=None,
+        help="Verify backup integrity (pass backup folder path)",
+    )
     args = parser.parse_args(argv)
+
+    # Verify mode: check an existing backup and exit
+    if args.verify is not None:
+        return verify_backup(Path(args.verify))
 
     # Auto-detect root
     root = Path(args.root) if args.root else Path(__file__).resolve().parent.parent
@@ -166,6 +265,25 @@ def main(argv: list[str] | None = None) -> int:
     dest = Path(args.dest) if args.dest else root / "backups"
 
     dest.mkdir(parents=True, exist_ok=True)
+
+    # Schedule mode: run backups in a loop
+    if args.schedule is not None:
+        interval = SCHEDULE_INTERVALS[args.schedule]
+        print(f"  Scheduled backup mode: every {args.schedule} ({interval}s)")
+        print("  Press Ctrl+C to stop.")
+        print()
+        try:
+            while True:
+                run_backup(root, dest)
+                print()
+                print(f"  Next backup in {interval}s... (Ctrl+C to stop)")
+                print()
+                time.sleep(interval)
+        except KeyboardInterrupt:
+            print()
+            print("  [STOP] Scheduled backups interrupted by user.")
+            return 0
+
     return run_backup(root, dest)
 
 

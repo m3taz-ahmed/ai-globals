@@ -51,7 +51,8 @@ class TestPolicyEvaluation:
         e = _engine(_write_default(tmp_path))
         result = e.can("deploy")
         assert result["decision"] == "ask"
-        assert result["rule"] == "default"
+        # "deploy" is classified as a write action → "ask" via smart fallback.
+        assert result["rule"] in ("default", "default-classified")
         assert result["requires_approval"] is True
 
     def test_requires_approval_on_ask(self, tmp_path: Path):
@@ -63,6 +64,31 @@ class TestPolicyEvaluation:
         e = _engine(_write_default(tmp_path))
         result = e.can("Read")
         assert result["requires_approval"] is False
+
+    def test_smart_fallback_classifies_reads_as_allow(self, tmp_path: Path):
+        """Unknown read-type actions auto-classify as allow (not blanket ask)."""
+        e = _engine(_write_default(tmp_path))
+        # "grep" is in the read actions set but not in default.yaml rules
+        result = e.can("grep")
+        assert result["decision"] == "allow"
+        assert result["rule"] == "default-classified"
+
+    def test_smart_fallback_classifies_destructive_as_deny(self, tmp_path: Path):
+        """Unknown destructive-type actions auto-classify as deny."""
+        e = _engine(_write_default(tmp_path))
+        result = e.can("truncate")
+        assert result["decision"] == "deny"
+
+    def test_smart_fallback_respects_deny_default(self, tmp_path: Path):
+        """When default_action=deny, smart fallback defers to deny for unknown actions."""
+        _write_default(tmp_path)
+        extra = "default_action: deny\nrules: []\n"
+        (tmp_path / "runtime" / "policies" / "zz-override.yaml").write_text(extra)
+        e = _engine(tmp_path)
+        # "find" is a read action (would classify as allow) but not in any
+        # explicit rule, so it falls through. deny default overrides for safety.
+        result = e.can("find")
+        assert result["decision"] == "deny"
 
 
 # ---------------------------------------------------------------------------
@@ -247,7 +273,9 @@ class TestSafeEvaluatorNodes:
         e = _engine(_write_default(tmp_path))
         e.rules[0].condition = "__import__('os').system('echo pwned')"
         result = e.can("Read")
-        assert result["decision"] == "ask"  # falls through to default
+        # Safe evaluator returns False (no code execution) → falls through to
+        # smart fallback which classifies "Read" as a read-only action → "allow".
+        assert result["decision"] == "allow"
 
 
 # ---------------------------------------------------------------------------

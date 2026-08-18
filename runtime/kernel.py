@@ -30,7 +30,9 @@ from .tracing import ConsoleSpanExporter, TracerProvider, with_span
 if TYPE_CHECKING:
     from memory.store import MemoryStore
 
+    from .guardian import Guardian
     from .plugin import PluginManager
+    from .policy import PolicyEngine
 
 
 class ActionSchema(BaseModel):
@@ -272,6 +274,76 @@ class Kernel:
             "guardian_rules": [r.get("name", "unnamed") for r in self.guardian.rules],
             "capabilities": self.capabilities.list(),
         }
+
+
+class KernelBuilder:
+    """Builder for Kernel with custom dependency injection.
+
+    Usage:
+        kernel = (KernelBuilder()
+            .with_root(Path("/custom/root"))
+            .with_budget_manager(BudgetManager(...))
+            .build())
+    """
+
+    def __init__(self) -> None:
+        self._root: Path | None = None
+        self._project_root: Path | None = None
+        self._persona_detector: PersonaDetector | None = None
+        self._skill_resolver: SkillResolver | None = None
+        self._budget_manager: BudgetManager | None = None
+        self._audit_logger: AuditLogger | None = None
+        self._policy_engine: PolicyEngine | None = None
+        self._guardian: Guardian | None = None
+        self._memory: MemoryStore | None = None
+
+    def with_root(self, root: Path) -> KernelBuilder:
+        self._root = root
+        return self
+
+    def with_project_root(self, root: Path) -> KernelBuilder:
+        self._project_root = root
+        return self
+
+    def with_persona_detector(self, pd: PersonaDetector) -> KernelBuilder:
+        self._persona_detector = pd
+        return self
+
+    def with_skill_resolver(self, sr: SkillResolver) -> KernelBuilder:
+        self._skill_resolver = sr
+        return self
+
+    def with_budget_manager(self, bm: BudgetManager) -> KernelBuilder:
+        self._budget_manager = bm
+        return self
+
+    def with_audit_logger(self, al: AuditLogger) -> KernelBuilder:
+        self._audit_logger = al
+        return self
+
+    def with_policy_engine(self, pe: PolicyEngine) -> KernelBuilder:
+        self._policy_engine = pe
+        return self
+
+    def with_guardian(self, g: Guardian) -> KernelBuilder:
+        self._guardian = g
+        return self
+
+    def with_memory(self, m: MemoryStore) -> KernelBuilder:
+        self._memory = m
+        return self
+
+    def build(self) -> Kernel:
+        kwargs: dict[str, Any] = {}
+        if self._root is not None:
+            kwargs["root"] = self._root
+        if self._project_root is not None:
+            kwargs["project_root"] = self._project_root
+        if self._persona_detector is not None:
+            kwargs["persona_detector"] = self._persona_detector
+        if self._skill_resolver is not None:
+            kwargs["skill_resolver"] = self._skill_resolver
+        return Kernel(**kwargs)
 
 
 if __name__ == "__main__":

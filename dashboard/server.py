@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hmac
 import json
 import mimetypes
@@ -79,6 +80,13 @@ def _check_rate_limit(client_ip: str) -> bool:
             ]
             for ip in stale:
                 del _rate_state[ip]
+        # LRU eviction: when approaching the max, evict oldest by timestamp.
+        if len(_rate_state) > _rate_max_entries * 0.9:
+            # Sort by window_start (timestamp) ascending; evict oldest first.
+            sorted_ips = sorted(_rate_state.items(), key=lambda item: item[1][1])
+            excess = len(_rate_state) - int(_rate_max_entries * 0.9)
+            for ip, _ in sorted_ips[:max(excess, 1)]:
+                del _rate_state[ip]
         return count <= _rate_limit
 
 
@@ -115,6 +123,8 @@ def _dashboard_token(root: Path) -> str | None:
     token_file.parent.mkdir(parents=True, exist_ok=True)
     token = secrets.token_urlsafe(32)
     token_file.write_text(token, encoding="utf-8")
+    with contextlib.suppress(OSError):
+        token_file.chmod(0o600)  # Windows
     print(f"Generated dashboard token at {token_file}")
     print("WARNING: For production, set AIZEE_DASHBOARD_TOKEN env var explicitly.")
     return token
@@ -145,7 +155,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; "
-        "connect-src 'self';"
+        "connect-src 'self'; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "frame-ancestors 'none';"
     )
 
     def _cors_headers(self) -> None:
@@ -490,6 +503,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "version": status.get("version"),
                     "budgets": status.get("budgets"),
                     "metrics": status.get("metrics"),
+                    "agents": status.get("agents"),
+                    "guardian_rules": status.get("guardian_rules"),
+                    "capabilities": status.get("capabilities"),
+                    "tech_stack": status.get("tech_stack"),
                     "timestamp": time.time(),
                 }, default=str)
                 self.wfile.write(f"data: {payload}\n\n".encode())
@@ -499,10 +516,25 @@ class DashboardHandler(BaseHTTPRequestHandler):
             pass
 
     def log_message(self, format: str, *args: object) -> None:
-        return
+        """Log only errors and warnings, silence routine access logs."""
+        msg = format % args
+        if " 4" in msg or " 5" in msg:
+            print(f"[dashboard] {msg}", file=sys.stderr)
 
 
 def _shutdown(_signum: int, _frame: Any) -> None:  # pragma: no cover
+    """Graceful shutdown — flush storage and close DB connections."""
+    try:
+        from runtime.storage_backend import StorageFactory
+        StorageFactory().shutdown_all()
+    except Exception:
+        pass
+    # Close cached memory store connections
+    global _memory_cache
+    if _memory_cache is not None:
+        with contextlib.suppress(Exception):
+            _memory_cache[1].close()
+        _memory_cache = None
     sys.exit(0)
 
 

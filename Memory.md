@@ -4,6 +4,60 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
+[UPDATED] 2026-08-18
+[NOTES]
+- **Third comprehensive audit + fixes (P0-P3, all personas) — v5.1.0**:
+  - **P0 (critical)**: Dockerfile `cli.py`→`aizee_cli.py` + Python 3.14. Exception hierarchy unified (6 exceptions now inherit `AizeeError`). aizee shim PATH fix in `update.py`.
+  - **P1 (high)**: CI matrix +3.13/3.14. Secure-by-default encryption (auto-generate key). Dashboard token `chmod 0o600`. Graceful shutdown (storage flush + DB close). Log rotation (100MB, 5 rotated). test_chat_manager (23 tests). Mock time in tests. Self-healing ↔ AgentManager.
+  - **P2 (medium)**: StorageBackend explicit conformance. .env allowlist. Audit key-based redaction. CSP strengthened. NumPy tightened. KernelBuilder. MCP async/sync unified. Test organization moved. Weak assertions fixed. DB connection pooling. DB backup automation. Operational docs (3 files).
+  - **P3 (low)**: Rate limit LRU. Plugin sandbox strengthened. Plugin resource-based permissions. MCP tool auto-discovery. Parametrized tests. Dashboard HTTP logging. K8s secret warning. Migration rollback.
+  - **Gate**: ruff ✅, mypy ✅ (187 files), pytest ✅ (0 failed, 1 skipped tkinter, 96% cov), eval/harness ✅ all_pass, validate-globals ✅ 0 errors.
+  - **Version**: 5.1.0 across pyproject.toml, manifest.json, .aizee-version, README.md, README-AR.md, aizee_mcp/API.md, validate-globals.py, validate-globals.ps1.
+
+- **Second comprehensive audit + fixes (P0-P2, all personas)**:
+  - **P0 (critical fixes)**:
+    - **P0.1**: `cryptography` upper bound raised `<46.0` → `<52.0` (installed 50.0.0). Added Python 3.13/3.14 classifiers. `ruff target-version` → `py314`, `mypy python_version` → `3.14`.
+    - **P0.2**: Created `runtime/policies/guardian.yaml` (10 rules: deny rm -rf, force push, reset --hard, DROP TABLE, eval/exec, require approval for deploy/git push/curl/pip install, deny secret exfil). Added `regex` op to `_PredicateEvaluator`. Guardian gate now active from day 1.
+    - **P0.3**: `AgentCapabilities` now grants 5 default capabilities (read, write, exec, deploy, destructive) on init. `kernel.status()` reports 5 capabilities instead of `[]`. Added `revoke()` method + `defaults=False` option.
+    - **P0.4**: Created `runtime/policies/probity.yaml` (13 rules: block rm -rf/force-push/reset-hard/dd/mkfs/chmod-777/curl-pipe-bash, block hardcoded secrets/eval/pickle/shell=True/f-string SQL, enforce kebab-case). Probity integrity layer now active.
+  - **P1 (medium fixes)**:
+    - **P1.5+P1.6**: `ruff target-version` → `py314`, `mypy python_version` → `3.14`, added 3.13/3.14 classifiers (with P0.1).
+    - **P1.7**: Added `count()`, `list_all()`, `delete_hard()` public methods to `MemoryStore`. Refactored `MemoryStoreAdapter` to use public API only (no more `_conn()`/`_row_to_memory()` private access).
+    - **P1.8**: Added `gc.collect()` autouse fixture in `conftest.py` to close leaked SQLite connections. Added `close()` method to `BaseRepository`.
+    - **P1.9**: Created `.env.example` with all env vars (AIZEE_ROOT, AIOS_ENCRYPTION_KEY, dashboard, Sentry, Upwork, Freelancer, LinkedIn, Graphify).
+  - **P2 (developments)**:
+    - **P2.10**: `aizee doctor` expanded with 7 new checks: guardian.yaml (10 rules), probity.yaml (13 rules), capabilities (5), tech_stack detection (7 entries), cryptography version match, .env.example template. 33 total checks.
+    - **P2.11**: `aizee memory ingest --watch` flag — auto re-ingests when tech-stack/, rules/, or workflows/ files change (polling every 2s).
+    - **P2.12**: `aizee spec` CLI command — `list`, `analyze`, `converge`, `scaffold` subcommands. Exposes SpecEngine from terminal.
+    - **P2.13**: Plugin auto-discovery — `PluginManager._discover_plugins()` now auto-loads all `plugins/*/` with valid `__init__.py` when `plugins.yaml` is missing or empty (was: only explicit mode).
+    - **P2.14**: `aizee audit` CLI command — `show` (filtered by type/limit) + `verify` (hash chain integrity). Added `read_entries()` method to `AuditLogger`.
+    - **P2.15**: Dashboard SSE stream expanded — now includes agents, guardian_rules, capabilities, tech_stack (was: version/budgets/metrics only).
+  - **Gate**: ruff ✅, mypy ✅ (174 files), pytest ✅ (2544 passed, 0 failed, 1 skipped tkinter, 96.42% cov), eval/harness ✅ all_pass, validate-globals ✅ 0 errors.
+  - **Counts**: 2544 tests (was 2542), 96.42% cov, 7 tech_stack entries, 10 guardian rules, 13 probity rules, 5 capabilities, 33 doctor checks.
+
+- **Self-compatibility audit + fixes (P0-P2, all personas)**:
+  - **P0 (test fixes)**: 3 failing tests fixed for Python 3.14 compat.
+    - `test_guardian.py`: `asyncio.get_event_loop().run_until_complete()` → `asyncio.run()` (get_event_loop removed in 3.14).
+    - `test_rate_limiter.py`: `== 7.0` → `pytest.approx(7.0, abs=0.01)` (time drift flakiness).
+    - `test_spec_engine.py`: exec globals now includes `__file__`; `spec_engine.py` has `__file__` guard at module level.
+    - `test_uninstaller_gui.py`: `pytest.importorskip("tkinter")` prevents collection break on headless/3.14.
+  - **P1.1 (dogfooding tech-stack)**: Added 7 internal tech-stack refs (`python-3.md`, `aios-5.md`, `pydantic-2.md`, `mcp-1.md`, `pytest-7.md`, `pytest-8.md`, `pyyaml-6.md`, `rich-13.md`). Upgraded `_parse_pyproject_toml` to register project self-name + `requires-python` version. `get_os_status` now returns 7 tech_stack entries instead of `{}`.
+  - **P1.2 (smart policy fallback)**: `PolicyEngine.evaluate()` now classifies unmatched actions by type (read→allow, write→ask, destructive→deny) instead of blanket `default_action=ask`. YAML `default_action=deny` still wins as strict override. 4 new tests in `test_policy.py`.
+  - **P1.3 (asyncio 3.14 compat)**: `aizee_mcp/adapters.py` — `asyncio.get_event_loop()` → `asyncio.get_running_loop()` (4 occurrences). `runtime/guardian.py` — `asyncio.iscoroutinefunction()` → `inspect.iscoroutinefunction()` (deprecated 3.14, removed 3.16). Updated 9 test mocks in `test_adapters.py`.
+  - **P1.4 (StorageBackend ↔ MemoryStore bridge)**: Added `MemoryStoreAdapter` in `storage_backend.py` — wraps `MemoryStore` to implement `StorageBackend` protocol (put/get/delete/scan/keys/flush/load/clear/count). 12 new tests in `test_storage_backend.py`.
+  - **P2.1 (__file__ robustness)**: 3 runtime `__main__` blocks (`tree_sitter_provider.py`, `semantic_search.py`, `codegraph.py`) now guard `Path(__file__)` with `"__file__" in globals()` fallback.
+  - **Gate**: ruff ✅, mypy ✅, pytest ✅ (2527+ passed, 0 failed, 1 skipped tkinter). tech_stack detection returns 7 entries.
+  - **Counts**: 83 tech-stack refs (was 76), 114 test files, 2527+ tests.
+
+[UPDATED] 2026-08-17
+[NOTES]
+- Integrated architecture patterns from two open-source repos (spec-kit + Floci):
+  - **spec-kit (P0)**: 5 SDD templates in `tech-stack/spec-driven-templates/` (spec/plan/tasks/constitution/checklist). `SpecEngine` gained `scaffold_spec/plan/tasks/checklist()`, `set_constitution()`, `validate_checklist()`, `analyze_artifacts()` (cross-artifact consistency: coverage/ambiguity/underspecification/constitution violations), `converge_to_code()` (codebase gap analysis: missing/partial/contradicts + suggested tasks). Workflows 22-spec-analyze + 23-spec-converge. 29 tests in `test_spec_engine_templates.py`.
+  - **Floci (P0-P1)**: `runtime/storage_backend.py` (StorageBackend protocol + InMemory/JSON/SQLite + StorageFactory with path-caching + lifecycle mgmt). `runtime/service_catalog.py` (ServiceDescriptor frozen dataclass + ServiceCatalog 6-index lookup + match_trigger/match_tech_stack + build_catalog_from_directory). `runtime/schemas.py` gained AizeeError hierarchy (PolicyDeniedError/BudgetExceededError/ValidationError/StorageError) + PaginatedResult + ErrorSeverity enum. AGENTS.md expanded with Floci-style sections (Architecture, Package Layout, First Principles, Error Handling, Storage Rules, Common Mistakes, Human Handoff). 69 tests (41 storage + 28 catalog).
+- Gates green: ruff ✅, mypy ✅ (3 new files), pytest ✅ (2526 total, 170 backward-compat passed). No regressions in existing MemoryStore/SkillResolver/spec_engine.
+- Counts: 78 skills, 38 workflows, 81 tech-stack refs, 37 test files, 2526 tests.
+- Domain gap note: Floci is Java/Quarkus AWS emulator — no code copied, only architectural patterns adapted. spec-kit is same domain (SDD) — templates + analyze/converge logic adapted.
+
 [UPDATED] 2026-08-15
 [NOTES]
 - Flutter skills suite added: 3 skills (`flutter-architect` combined, `flutter-design` UX, `flutter-developer` MOBILE) + `tech-stack/flutter.md` (Flutter 3.47 / Dart 3.13). personas.yaml: MOBILE lords += flutter-architect/flutter-developer, UX lords += flutter-design, new lord_skills with Arabic keywords. mobile-game-producer updated to route Flutter games. manifest.json triggers added. Persona detect verified (MOBILE 0.814 + UX, lords include flutter-*). Gates green: ruff, mypy (54), pytest 1121 passed / 91.19% cov.

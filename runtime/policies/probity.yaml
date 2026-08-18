@@ -1,0 +1,73 @@
+# aiZee Probity Guardrails — Integrity verification layer
+# Evaluated by Guardrails.check() on write/command events.
+# Rule kinds: forbidCommandPattern, requireCommand, forbidContentPattern,
+#              enforceFilenameCasing, enforceTdd
+
+rules:
+  # --- Block dangerous shell commands ---
+  - kind: forbidCommandPattern
+    name: block-rm-rf
+    pattern: "rm\\s+-rf\\s+/"
+    message: "rm -rf on root filesystem is forbidden"
+
+  - kind: forbidCommandPattern
+    name: block-force-push
+    pattern: "git\\s+push\\s+(-f|--force)"
+    message: "Force push is forbidden by probity guardrail"
+
+  - kind: forbidCommandPattern
+    name: block-reset-hard
+    pattern: "git\\s+reset\\s+--hard"
+    message: "git reset --hard is forbidden by probity guardrail"
+
+  - kind: forbidCommandPattern
+    name: block-dd
+    pattern: "\\bdd\\s+if="
+    message: "dd disk operations are forbidden by probity guardrail"
+
+  - kind: forbidCommandPattern
+    name: block-mkfs
+    pattern: "mkfs\\."
+    message: "Filesystem formatting is forbidden by probity guardrail"
+
+  - kind: forbidCommandPattern
+    name: block-chmod-777
+    pattern: "chmod\\s+777"
+    message: "chmod 777 is forbidden — use least-privilege permissions"
+
+  - kind: forbidCommandPattern
+    name: block-curl-pipe-bash
+    pattern: "curl\\s+.*\\|\\s*(bash|sh|zsh)"
+    message: "curl | bash pattern is forbidden — download and inspect first"
+
+  # --- Block dangerous content in file writes ---
+  - kind: forbidContentPattern
+    name: block-hardcoded-secrets
+    pattern: "(password|secret|api_key|token)\\s*=\\s*['\"][^'\"]{8,}['\"]"
+    message: "Hardcoded secrets detected — use environment variables instead"
+
+  - kind: forbidContentPattern
+    name: block-eval-exec
+    pattern: "\\beval\\s*\\("
+    message: "eval() is forbidden — use ast.literal_eval or proper parsing"
+
+  - kind: forbidContentPattern
+    name: block-pickle-loads
+    pattern: "pickle\\.loads?"
+    message: "pickle is unsafe for untrusted data — use JSON or msgpack"
+
+  - kind: forbidContentPattern
+    name: block-subprocess-shell-true
+    pattern: "shell\\s*=\\s*True"
+    message: "shell=True is forbidden — pass command lists instead"
+
+  - kind: forbidContentPattern
+    name: block-sql-injection
+    pattern: "execute\\s*\\(\\s*f['\"]"
+    message: "f-string SQL queries are forbidden — use parameterized queries"
+
+  # --- Enforce filename casing for tech-stack files ---
+  - kind: enforceFilenameCasing
+    name: tech-stack-kebab-case
+    style: kebab-case
+    message: "tech-stack files must use kebab-case filenames"

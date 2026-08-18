@@ -41,7 +41,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -64,7 +64,7 @@ class ACPMessage:
         if not self.id:
             self.id = str(uuid.uuid4())
         if not self.timestamp:
-            self.timestamp = datetime.now(timezone.utc).isoformat()
+            self.timestamp = datetime.now(UTC).isoformat()
         if not self.correlation_id and self.msg_type == "request":
             self.correlation_id = self.id
 
@@ -102,7 +102,7 @@ class ACPMessage:
             return False
         try:
             created = datetime.fromisoformat(self.timestamp)
-            elapsed = (datetime.now(timezone.utc) - created).total_seconds()
+            elapsed = (datetime.now(UTC) - created).total_seconds()
             return elapsed > self.ttl
         except (ValueError, TypeError):
             return False
@@ -155,7 +155,7 @@ class ACPBroker:
 
     def register(self, agent_id: str, capabilities: list[str] | None = None, metadata: dict[str, Any] | None = None) -> AgentInfo:
         """Register an agent in the broker."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         if agent_id in self._agents:
             # Update existing
             info = self._agents[agent_id]
@@ -262,7 +262,7 @@ class ACPBroker:
         # Remove received messages from queue
         self._queues[agent_id] = valid[max_messages:]
         # Update last_seen
-        self._agents[agent_id].last_seen = datetime.now(timezone.utc).isoformat()
+        self._agents[agent_id].last_seen = datetime.now(UTC).isoformat()
         self._save_state()
         return messages
 

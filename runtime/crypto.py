@@ -16,6 +16,7 @@ Usage::
 
 from __future__ import annotations
 
+import contextlib
 import os
 from pathlib import Path
 
@@ -25,11 +26,33 @@ _MAGIC = b"AIOS_ENC:"  # 9-byte magic prefix to detect encrypted files
 
 
 def _get_fernet() -> Fernet | None:
-    """Return a Fernet instance if AIOS_ENCRYPTION_KEY is set, None otherwise."""
+    """Return a Fernet instance. Auto-generates a key if none is set (secure-by-default).
+
+    Set AIOS_ENCRYPTION_KEY=plaintext to explicitly disable encryption.
+    """
     key = os.environ.get("AIOS_ENCRYPTION_KEY")
-    if not key:
-        return None
-    return Fernet(key.encode() if isinstance(key, str) else key)
+    if key == "plaintext":
+        return None  # Explicit opt-out for development
+    if key:
+        return Fernet(key.encode() if isinstance(key, str) else key)
+    # Auto-generate key on first run
+    root = Path(os.environ.get("AIZEE_ROOT", "."))
+    key_file = root / "state" / ".encryption_key"
+    key_file.parent.mkdir(parents=True, exist_ok=True)
+    if key_file.exists():
+        stored = key_file.read_bytes().strip()
+        if stored:
+            return Fernet(stored)
+    import logging
+    generated = Fernet.generate_key()
+    key_file.write_bytes(generated)
+    with contextlib.suppress(OSError):
+        key_file.chmod(0o600)  # Windows doesn't support chmod the same way
+    logging.getLogger(__name__).warning(
+        "No AIOS_ENCRYPTION_KEY set — auto-generated key stored at %s. "
+        "Set AIOS_ENCRYPTION_KEY env var for production.", key_file
+    )
+    return Fernet(generated)
 
 
 def is_encrypted(path: Path) -> bool:

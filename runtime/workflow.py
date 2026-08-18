@@ -7,7 +7,7 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -102,8 +102,8 @@ class WorkflowRunner(BaseRepository):
         return {"ok": True, "workflow": workflow_id, "run_id": run_id, "context": context, "steps": results}
 
     def _start_run(self, workflow_id: str, context: dict[str, Any]) -> str:
-        run_id = f"{workflow_id}-{datetime.now(timezone.utc).isoformat()}"
-        now = datetime.now(timezone.utc).isoformat()
+        run_id = f"{workflow_id}-{datetime.now(UTC).isoformat()}"
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             conn.execute(
                 "INSERT INTO workflow_state (id, workflow_id, context, steps, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -112,7 +112,7 @@ class WorkflowRunner(BaseRepository):
         return run_id
 
     def _checkpoint(self, run_id: str, step: int, result: dict[str, Any]) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             row = conn.execute("SELECT steps FROM workflow_state WHERE id = ?", (run_id,)).fetchone()
             steps = json.loads(row["steps"]) if row else []
@@ -123,7 +123,7 @@ class WorkflowRunner(BaseRepository):
             )
 
     def _finish_run(self, run_id: str) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             conn.execute("UPDATE workflow_state SET updated_at = ? WHERE id = ?", (now, run_id))
 

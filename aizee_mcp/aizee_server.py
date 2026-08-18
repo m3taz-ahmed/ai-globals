@@ -7,6 +7,8 @@ tool registration to the modules in ``aizee_mcp.tools``.
 
 from __future__ import annotations
 
+import importlib
+import pkgutil
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -34,11 +36,54 @@ def _register_plugins() -> None:
         mcp.add_resource(resource)
 
 
-# Register all tool modules
-register_memory_tools(mcp)
-register_workflow_tools(mcp)
-register_policy_tools(mcp)
-register_context_tools(mcp)
+def _auto_discover_tools() -> bool:
+    """Scan ``aizee_mcp/tools/`` for ``*_tools.py`` modules and register them.
+
+    Each module must expose a ``register`` callable (or a ``register_*_tools``
+    function) that accepts the FastMCP instance. Returns True if at least one
+    module was registered successfully, False otherwise.
+    """
+    import aizee_mcp.tools as tools_pkg
+
+    registered = 0
+    for module_info in pkgutil.iter_modules(tools_pkg.__path__):
+        name = module_info.name
+        if not name.endswith("_tools"):
+            continue
+        try:
+            mod = importlib.import_module(f"aizee_mcp.tools.{name}")
+        except Exception:
+            continue
+        # Prefer a no-arg ``register`` alias; fall back to ``register_*_tools``.
+        register_fn = getattr(mod, "register", None)
+        if register_fn is None:
+            # Find a function matching register_*_tools pattern.
+            for attr_name in dir(mod):
+                if attr_name.startswith("register_") and attr_name.endswith("_tools"):
+                    candidate = getattr(mod, attr_name)
+                    if callable(candidate):
+                        register_fn = candidate
+                        break
+        if register_fn is not None and callable(register_fn):
+            try:
+                register_fn(mcp)
+                registered += 1
+            except Exception:
+                continue
+    return registered > 0
+
+
+def _register_tools_fallback() -> None:
+    """Manual registration fallback when auto-discovery fails."""
+    register_memory_tools(mcp)
+    register_workflow_tools(mcp)
+    register_policy_tools(mcp)
+    register_context_tools(mcp)
+
+
+# Auto-discover and register all tool modules; fall back to manual registration.
+if not _auto_discover_tools():
+    _register_tools_fallback()
 
 _register_plugins()
 
@@ -88,5 +133,18 @@ def get_workflow_resource(id: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _graceful_shutdown(signum: int, frame: Any) -> None:
+    try:
+        from runtime.storage_backend import StorageFactory
+        StorageFactory().shutdown_all()
+    except Exception:
+        pass
+    raise SystemExit(0)
+
+
 if __name__ == "__main__":
+    import signal
+
+    signal.signal(signal.SIGTERM, _graceful_shutdown)
+    signal.signal(signal.SIGINT, _graceful_shutdown)
     mcp.run(transport="stdio")

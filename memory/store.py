@@ -8,7 +8,7 @@ import re
 import sqlite3
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -102,7 +102,7 @@ class MemoryStore(BaseRepository):
         meta: dict[str, Any] | None = None,
         valid_to: str | None = None,
     ) -> Memory:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         mem = Memory(
             id=str(uuid.uuid4()),
             kind=kind,
@@ -159,7 +159,7 @@ class MemoryStore(BaseRepository):
     def search(self, query: str, kind: str | None = None, limit: int = 10) -> list[Memory]:
         """Search memory using FTS5 and optional kind filter; excludes invalidated memories."""
         q = self._fts_query(query)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             if kind:
                 rows = conn.execute(
@@ -203,7 +203,7 @@ class MemoryStore(BaseRepository):
             return []
         ids: list[str] | None = None
         if kind or source:
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             # Build WHERE from whitelisted condition templates only — no f-string interpolation
             # of user values into SQL. All values passed as parameterized placeholders.
             conditions: list[str] = ["(valid_to IS NULL OR valid_to > ?)"]
@@ -237,7 +237,7 @@ class MemoryStore(BaseRepository):
             query, k=k, kind=kind, source=source, explain=explain)
 
     def relate(self, source_id: str, target_id: str, relation: str) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             conn.execute(
                 "INSERT INTO relations (id, source_id, target_id, relation, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -304,8 +304,38 @@ class MemoryStore(BaseRepository):
         return mem_ids
 
     def invalidate(self, mem_id: str) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             conn.execute("UPDATE memories SET valid_to = ? WHERE id = ?", (now, mem_id))
         if self.vector and self.vector.is_available():
             self.vector.remove(mem_id)
+
+    def count(self) -> int:
+        """Return total number of memories (including invalidated)."""
+        with self._conn() as conn:
+            row = conn.execute("SELECT COUNT(*) as cnt FROM memories").fetchone()
+        return int(row["cnt"]) if row else 0
+
+    def list_all(self, kind: str | None = None, limit: int = 1000) -> list[Memory]:
+        """List memories, optionally filtered by kind, most recent first."""
+        with self._conn() as conn:
+            if kind:
+                rows = conn.execute(
+                    "SELECT * FROM memories WHERE kind = ? ORDER BY created_at DESC LIMIT ?",
+                    (kind, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM memories ORDER BY created_at DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+        return [self._row_to_memory(row) for row in rows]
+
+    def delete_hard(self, mem_id: str) -> bool:
+        """Hard-delete a memory by ID (removes row + vector). Returns True if existed."""
+        with self._conn() as conn:
+            cur = conn.execute("DELETE FROM memories WHERE id = ?", (mem_id,))
+            existed = cur.rowcount > 0
+        if existed and self.vector and self.vector.is_available():
+            self.vector.remove(mem_id)
+        return existed

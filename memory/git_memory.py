@@ -36,7 +36,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -116,7 +116,7 @@ class GitMemoryStore:
         cat_dir = self.repo_path / category
         cat_dir.mkdir(parents=True, exist_ok=True)
         file_path = cat_dir / f"{entry_id}.json"
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         existing = ""
         if file_path.exists():
             existing = file_path.read_text(encoding="utf-8")

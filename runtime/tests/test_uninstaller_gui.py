@@ -7,11 +7,15 @@ without launching the actual tkinter mainloop, which requires a display.
 from __future__ import annotations
 
 import importlib
-import tkinter as tk
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
+# tkinter is optional on headless/Python 3.14 Windows installs; skip the
+# whole module gracefully if it's unavailable so collection never breaks.
+pytest.importorskip("tkinter")
+import tkinter as tk
 
 
 def _make_tmp_root(tmp_path: Path) -> Path:

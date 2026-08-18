@@ -4,16 +4,16 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.0.0">
-    <img src="https://img.shields.io/badge/Tests-2343%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 2343 passed">
+    <img src="https://img.shields.io/badge/Version-5.1.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.1.0">
+    <img src="https://img.shields.io/badge/Tests-2526%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 2526 passed">
     <img src="https://img.shields.io/badge/Coverage-91%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 91%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-19-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 Personas">
-    <img src="https://img.shields.io/badge/Skills-66-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="66 Skills">
-    <img src="https://img.shields.io/badge/Workflows-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 Workflows">
-    <img src="https://img.shields.io/badge/Features-63%20total-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="63 total features">
+    <img src="https://img.shields.io/badge/Skills-78-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="78 Skills">
+    <img src="https://img.shields.io/badge/Workflows-38-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="38 Workflows">
+    <img src="https://img.shields.io/badge/Tech--Stack-81-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="81 Tech-Stack refs">
   </p>
 </div>
 
@@ -149,6 +149,35 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 
 ---
 
+## What's New in v5.1.0
+
+### Hardening & Polish (P0-P3)
+- **Dockerfile fixed**: `cli.py` → `aizee_cli.py`, Python 3.14
+- **Exception hierarchy unified**: All custom exceptions now inherit from `AizeeError`
+- **Secure-by-default encryption**: Auto-generated key when `AIOS_ENCRYPTION_KEY` not set
+- **Dashboard token hardened**: `chmod 0o600` on token file
+- **Graceful shutdown**: Storage flush + DB close on SIGTERM/SIGINT
+- **Log rotation**: audit.log + telemetry.jsonl rotate at 100MB (5 rotated logs)
+- **CSP strengthened**: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`
+- **.env allowlist**: Only known env vars loaded from `.env` files
+- **Audit redaction**: Key-based redaction (not just value-based)
+- **Plugin sandbox strengthened**: Blocked dangerous builtins, `literal_eval`
+- **Plugin resource-based permissions**: Glob patterns (`Write:/tmp/*`)
+- **MCP tool auto-discovery**: Scans `aizee_mcp/tools/*_tools.py`
+- **Migration rollback**: `MigrationRunner.rollback(version)`
+- **KernelBuilder**: Fluent builder for dependency injection
+- **DB connection pooling**: `BaseRepository` pools SQLite connections
+- **DB backup automation**: `--schedule daily/hourly` + `--verify`
+- **Self-healing integrated**: `AgentManager.check_agents_health()` + `respawn_agent()`
+- **Operational docs**: `docs/OPERATIONS.md`, `docs/DEPLOYMENT.md`, `docs/ONBOARDING_SRE.md`
+- **Test organization**: Tests moved from `tests/runtime/` to `runtime/tests/`
+- **Parametrized tests**: Added more `@pytest.mark.parametrize` coverage
+- **Mock time in tests**: `time.sleep()` is no-op in fast tier
+- **CI matrix**: Python 3.13 + 3.14 added
+- **NumPy range tightened**: `>=1.26.0,<2.0`
+- **API.md version synced**: 5.1.0
+- **K8s secret warning**: Comment added to placeholder
+
 ## What's New in v5.0.0
 
 ### 18 Original Features
@@ -230,6 +259,17 @@ Deep analysis of 22 GitHub repositories (agent-governance-toolkit, OpenMemory, m
 | Policy decision caching (TTL) | `runtime/policy_cache.py` | agent-policy-engine |
 | Memory decay scheduler | `memory/decay_scheduler.py` | OpenMemory |
 | Semantic code search (TF-IDF) | `runtime/semantic_search.py` | metis |
+
+#### Phase 4 — Architecture Patterns from spec-kit + Floci (6 features)
+
+| Feature | Module | Source |
+| :--- | :--- | :--- |
+| Spec-driven templates (spec/plan/tasks/constitution/checklist) | `tech-stack/spec-driven-templates/` | spec-kit |
+| Spec cross-artifact analysis (coverage/ambiguity/constitution) | `runtime/spec_engine.py` | spec-kit |
+| Spec-to-code convergence (gap analysis) | `runtime/spec_engine.py` | spec-kit |
+| Pluggable storage backend abstraction (memory/json/sqlite) | `runtime/storage_backend.py` | Floci |
+| Multi-index service/skill catalog | `runtime/service_catalog.py` | Floci |
+| AizeeError hierarchy + PaginatedResult | `runtime/schemas.py` | Floci |
 
 ---
 

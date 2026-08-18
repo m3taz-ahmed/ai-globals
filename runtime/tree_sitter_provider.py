@@ -138,7 +138,8 @@ class SymbolProvider:
 
 
 if __name__ == "__main__":
+    _self_path = Path(__file__) if "__file__" in globals() else Path("tree_sitter_provider.py")
     provider = SymbolProvider()
-    symbols = provider.extract_symbols(Path(__file__))
+    symbols = provider.extract_symbols(_self_path)
     for s in symbols:
         print(f"{s.kind} {s.name}{s.signature} at line {s.line}")

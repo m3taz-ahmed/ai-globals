@@ -1,6 +1,136 @@
 # Changelog
 
+## [5.1.0] — 2026-08-18 (Third Audit — Hardening & Polish)
+
+### P0 — Critical
+- **Dockerfile fixed**: `cli.py` → `aizee_cli.py` (file didn't exist), Python 3.11 → 3.14
+- **Exception hierarchy unified**: `GuardrailViolationError`, `ApprovalRequiredError`, `IssueTrackerError`, `MetricNameError`, `MetricDuplicationError`, `LabelValueError` now all inherit from `AizeeError`
+- **aizee shim PATH fix**: `update.py` now adds user Scripts dir to PATH on Windows
+
+### P1 — High Priority
+- **CI matrix**: Python 3.13 + 3.14 added to test matrix
+- **aizee_mcp/API.md version**: Synced to 5.1.0
+- **Secure-by-default encryption**: `_get_fernet()` auto-generates key if none set; `AIOS_ENCRYPTION_KEY=plaintext` for explicit opt-out
+- **Dashboard token hardened**: `chmod 0o600` on token file
+- **Graceful shutdown**: Dashboard + MCP server flush storage + close DB on SIGTERM/SIGINT
+- **Log rotation**: `audit.log` + `telemetry.jsonl` rotate at 100MB (5 rotated logs kept)
+- **test_chat_manager.py**: 23 new tests for ChatManager
+- **Mock time in tests**: `time.sleep()` is no-op in fast tier (autouse fixture)
+- **Self-healing integrated**: `AgentManager.check_agents_health()` + `respawn_agent()`
+
+### P2 — Medium
+- **StorageBackend explicit conformance**: `InMemoryStorage`, `JsonFileStorage`, `SqliteStorage`, `MemoryStoreAdapter` explicitly inherit `StorageBackend`
+- **.env allowlist**: Only known env vars loaded from `.env` files (security)
+- **Audit redaction**: Key-based redaction added (not just value-based)
+- **CSP strengthened**: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`
+- **NumPy range tightened**: `>=1.26.0,<2.0`
+- **KernelBuilder**: Fluent builder for dependency injection
+- **MCP client async/sync unified**: `call_tool` delegates to `async_call_tool` via `asyncio.run()`
+- **Test organization**: 10 test files moved from `tests/runtime/` to `runtime/tests/`
+- **Weak assertions fixed**: `test_p3_features.py` + `test_dynamic_persona.py`
+- **DB connection pooling**: `BaseRepository` pools SQLite connections (pool size 5)
+- **DB backup automation**: `--schedule daily/hourly` + `--verify` flag
+- **Operational docs**: `docs/OPERATIONS.md`, `docs/DEPLOYMENT.md`, `docs/ONBOARDING_SRE.md`
+
+### P3 — Low
+- **Rate limit LRU eviction**: Evict oldest entries when approaching max
+- **Plugin sandbox strengthened**: Blocked `__import__`, `globals`, `locals`, `vars`, `dir`, `type`, `classmethod`, `staticmethod`, `literal_eval`
+- **Plugin resource-based permissions**: Glob patterns (`Write:/tmp/*`)
+- **MCP tool auto-discovery**: Scans `aizee_mcp/tools/*_tools.py`
+- **Parametrized tests**: Added more `@pytest.mark.parametrize` coverage
+- **Dashboard HTTP logging**: 4xx/5xx logged to stderr
+- **K8s secret warning**: Comment added to placeholder
+- **Migration rollback**: `MigrationRunner.rollback(version)` with rollback functions
+
+### Version
+- Version bumped to 5.1.0 across `pyproject.toml`, `manifest.json`, `.aizee-version`, `README.md`, `README-AR.md`, `aizee_mcp/API.md`, `validate-globals.py`, `validate-globals.ps1`.
+
+## [Unreleased] — 2026-08-18 (Second Audit)
+
+### Fixed — Critical Issues (P0)
+- **`cryptography` version mismatch**: Upper bound raised `<46.0` → `<52.0` to accommodate installed 50.0.0. `pip check` no longer warns.
+- **`guardian.yaml` missing**: Created `runtime/policies/guardian.yaml` with 10 rules (deny rm -rf, force push, reset --hard, DROP TABLE, eval/exec; require approval for deploy, git push, curl, pip install; deny secret exfil). Guardian gate now active from day 1. Added `regex` operator to `_PredicateEvaluator`.
+- **`capabilities: []` empty**: `AgentCapabilities.__init__` now grants 5 default capabilities (read, write, exec, deploy, destructive). `kernel.status()` reports meaningful capabilities. Added `revoke()` method + `defaults=False` option for empty init.
+- **`probity.yaml` missing**: Created `runtime/policies/probity.yaml` with 13 rules (block rm -rf, force push, reset --hard, dd, mkfs, chmod 777, curl|bash; block hardcoded secrets, eval, pickle, shell=True, f-string SQL; enforce kebab-case). Probity integrity layer now active.
+
+### Changed — Python 3.14 Targets (P1)
+- **`ruff target-version`**: `py310` → `py314`. Enables 3.14-specific linting.
+- **`mypy python_version`**: `3.12` → `3.14`. Enables 3.14-specific type checking.
+- **`pyproject.toml` classifiers**: Added `Programming Language :: Python :: 3.13` and `3.14`.
+- **`ruff` ignore list**: Added `UP042` (str+Enum → StrEnum, needs refactoring) and `UP046` (Generic class type params).
+
+### Added — MemoryStore Public API (P1)
+- **`MemoryStore.count()`**: Returns total memory count (public method).
+- **`MemoryStore.list_all(kind=None, limit=1000)`**: Lists memories, optionally filtered by kind, most recent first.
+- **`MemoryStore.delete_hard(mem_id)`**: Hard-deletes a memory (row + vector). Returns True if existed.
+- **`MemoryStoreAdapter` refactored**: Now uses public API only — no more `_conn()`/`_row_to_memory()` private access.
+
+### Added — Test Cleanup + Env Template (P1)
+- **`conftest.py` autouse fixture**: `gc.collect()` after each test to close leaked SQLite connections. Reduces `ResourceWarning: unclosed database` warnings.
+- **`BaseRepository.close()`**: Added no-op `close()` method for resource cleanup interface.
+- **`.env.example`**: Template with all env vars (AIZEE_ROOT, AIOS_ENCRYPTION_KEY, dashboard, Sentry, Upwork, Freelancer, LinkedIn, Graphify).
+
+### Added — CLI Commands + Dashboard (P2)
+- **`aizee doctor` expanded**: 7 new checks — guardian.yaml (10 rules), probity.yaml (13 rules), capabilities (5), tech_stack detection (7 entries), cryptography version match, .env.example template. 33 total checks.
+- **`aizee memory ingest --watch`**: Auto re-ingests when tech-stack/, rules/, or workflows/ files change. Polls every 2s, Ctrl+C to stop.
+- **`aizee spec` CLI**: New command with `list`, `analyze`, `converge`, `scaffold` subcommands. Exposes SpecEngine from terminal (was MCP-only).
+- **Plugin auto-discovery**: `PluginManager._discover_plugins()` now auto-loads all `plugins/*/` with valid `__init__.py` when `plugins.yaml` is missing or empty. Previously required explicit listing.
+- **`aizee audit` CLI**: New command with `show` (filtered by type/limit) + `verify` (hash chain integrity). Added `AuditLogger.read_entries()` method.
+- **Dashboard SSE stream expanded**: Now includes agents, guardian_rules, capabilities, tech_stack (was: version/budgets/metrics only).
+
+### Quality Gate
+- ruff ✅, mypy ✅ (174 source files), pytest ✅ (2544 passed, 0 failed, 1 skipped tkinter, 96.42% cov), eval/harness ✅ `all_pass: true`, validate-globals ✅ 0 errors.
+
+## [Unreleased] — 2026-08-18
+
+### Fixed — Python 3.14 Compatibility (P0)
+- **`test_guardian.py`**: Replaced `asyncio.get_event_loop().run_until_complete()` with `asyncio.run()` (4 tests). `get_event_loop()` removed in Python 3.14.
+- **`test_rate_limiter.py`**: Changed `== 7.0` to `pytest.approx(7.0, abs=0.01)` for float comparison (time drift caused flaky failure: `7.000004053115845 != 7.0`).
+- **`test_spec_engine.py`**: exec globals now includes `__file__` to prevent `NameError` when module-level code references `Path(__file__)`.
+- **`test_uninstaller_gui.py`**: Added `pytest.importorskip("tkinter")` to prevent collection break on headless/Python 3.14 Windows where tkinter is unavailable.
+
+### Added — Internal Tech-Stack References (P1.1, Dogfooding)
+- 7 new `tech-stack/*.md` files for aiZee's own stack: `python-3.md`, `aios-5.md`, `pydantic-2.md`, `mcp-1.md`, `pytest-7.md`, `pytest-8.md`, `pyyaml-6.md`, `rich-13.md`.
+- **`runtime/tech_stack.py`**: `_parse_pyproject_toml()` now registers the project self-name + version and extracts `requires-python` version. Added `aizee` → `aios` alias.
+- **Result**: `get_os_status` MCP tool and `kernel.detect_tech_stack()` now return 7 tech_stack entries instead of empty `{}`. aiZee now satisfies `[VER-01]` for itself.
+
+### Changed — Smart Policy Fallback (P1.2)
+- **`runtime/policy.py`**: `PolicyEngine.evaluate()` now classifies unmatched actions by type instead of using blanket `default_action`:
+  - Read actions (view, read, grep, search, status, etc.) → `allow`
+  - Write actions (edit, write, deploy, exec, etc.) → `ask`
+  - Destructive actions (rm, delete, truncate, drop, etc.) → `deny`
+  - Unknown actions → `ask` (conservative)
+  - YAML `default_action=deny` still wins as strict override.
+- 4 new tests in `test_policy.py` for classification logic.
+
+### Changed — asyncio 3.14 Compatibility (P1.3)
+- **`aizee_mcp/adapters.py`**: `asyncio.get_event_loop()` → `asyncio.get_running_loop()` (4 occurrences in `RemoteA2AAdapter.launch/poll`). Correct API for use inside async functions.
+- **`runtime/guardian.py`**: `asyncio.iscoroutinefunction()` → `inspect.iscoroutinefunction()` (deprecated in 3.14, removed in 3.16).
+- **`tests/mcp/test_adapters.py`**: Updated 9 mock patches from `asyncio.get_event_loop` to `asyncio.get_running_loop`.
+
+### Added — StorageBackend ↔ MemoryStore Bridge (P1.4)
+- **`runtime/storage_backend.py`**: New `MemoryStoreAdapter` class that wraps `MemoryStore` to implement the `StorageBackend` protocol. Enables new code using `StorageFactory` to access the rich `MemoryStore` (SQLite + FTS5 + vector) through the uniform interface. Supports `put` (dict or Memory), `get`, `delete` (soft via invalidate), `scan` (optionally filtered by kind), `keys`, `count`, `clear`, and no-op `flush`/`load`.
+- 12 new tests in `test_storage_backend.py` (`TestMemoryStoreAdapter`).
+
+### Fixed — `__file__` Robustness in `__main__` Blocks (P2.1)
+- 3 runtime modules (`tree_sitter_provider.py`, `semantic_search.py`, `codegraph.py`) now guard `Path(__file__)` in `__main__` blocks with `"__file__" in globals()` fallback. Prevents `NameError` when exec'd without `__file__` in globals.
+- `spec_engine.py` already fixed in P0.3 with module-level guard.
+
+### Quality Gate
+- ruff ✅, mypy ✅, pytest ✅ (2527+ passed, 0 failed, 1 skipped tkinter), tech_stack detection returns 7 entries.
+
 ## [Unreleased] — 2026-08-17
+
+### Added — Architecture Patterns from spec-kit + Floci
+- **Spec-driven templates** (`tech-stack/spec-driven-templates/`): 5 templates (spec, plan, tasks, constitution, checklist) adapted from GitHub spec-kit. Used by `SpecEngine.scaffold_spec/plan/tasks/checklist()`.
+- **Spec cross-artifact analysis** (`SpecEngine.analyze_artifacts()`): detects coverage gaps, ambiguity (vague terms without measurable criteria), underspecification ([NEEDS CLARIFICATION]/TODO markers), and constitution violations. Read-only. Workflow `22-spec-analyze.md`.
+- **Spec-to-code convergence** (`SpecEngine.converge_to_code()`): assesses codebase against spec/plan/tasks, classifies gaps as missing/partial/contradicts, suggests remediation tasks. Read-only. Workflow `23-spec-converge.md`.
+- **Constitution system** (`SpecEngine.set_constitution()` + `validate_checklist()`): per-spec governing principles with MUST/SHOULD enforcement.
+- **Pluggable storage backend** (`runtime/storage_backend.py`): `StorageBackend` protocol + 3 implementations (InMemoryStorage, JsonFileStorage, SqliteStorage) + `StorageFactory` with path-based caching and lifecycle management (load/flush/shutdown). Inspired by Floci's `StorageBackend<K,V>` + `StorageFactory`. 41 tests.
+- **Multi-index service catalog** (`runtime/service_catalog.py`): `ServiceDescriptor` (frozen dataclass) + `ServiceCatalog` with 6 indexes (by_name, by_kind, by_persona, by_trigger, by_tech_stack, by_lord) + `match_trigger()`/`match_tech_stack()` for ranked text matching + `build_catalog_from_directory()`. Inspired by Floci's `ServiceCatalog`. 28 tests.
+- **AizeeError hierarchy** (`runtime/schemas.py`): `AizeeError` base + `PolicyDeniedError`, `BudgetExceededError`, `ValidationError`, `StorageError` subclasses. Each carries `error_code`, `severity`, `context` dict. `to_dict()` for structured logging. Inspired by Floci's `AwsException`.
+- **PaginatedResult** (`runtime/schemas.py`): `items` + `next_token` + `total` dataclass for paginated list operations. `to_dict()` + `has_more` property. Inspired by Floci's `PaginatedResult<T>`.
+- **AGENTS.md expanded** with Floci-style sections: Architecture, Package Layout, First Principles, Adding a New Runtime Module/Skill/Workflow, Error Handling, Storage Rules, Common Mistakes, Human Handoff, Code Style, Logging, PR Guidelines.
 
 ### Branding — Renamed to aiZee
 - **Project renamed**: AI Global OS → **aiZee** ("The policy layer for AI coding.").

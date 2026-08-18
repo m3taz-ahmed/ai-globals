@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -103,8 +103,8 @@ class SagaOrchestrator(BaseRepository):
         return {"ok": True, "saga_id": saga_id, "status": SagaStatus.COMPLETED.value, "steps": completed}
 
     def _start_saga(self, saga: Saga, context: dict[str, Any]) -> str:
-        saga_id = f"{saga.id}-{datetime.now(timezone.utc).isoformat()}"
-        now = datetime.now(timezone.utc).isoformat()
+        saga_id = f"{saga.id}-{datetime.now(UTC).isoformat()}"
+        now = datetime.now(UTC).isoformat()
         steps_json = json.dumps([s.to_dict() for s in saga.steps])
         with self._conn() as conn:
             conn.execute(
@@ -114,7 +114,7 @@ class SagaOrchestrator(BaseRepository):
         return saga_id
 
     def _checkpoint(self, saga_id: str, step: int, result: dict[str, Any]) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             conn.execute(
                 "UPDATE saga_state SET updated_at = ? WHERE id = ?",
@@ -122,7 +122,7 @@ class SagaOrchestrator(BaseRepository):
             )
 
     def _finish_saga(self, saga_id: str, status: str) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._conn() as conn:
             conn.execute(
                 "UPDATE saga_state SET status = ?, updated_at = ? WHERE id = ?",

@@ -28,9 +28,34 @@ _SEND_LOCKS: dict[tuple[str, Path], threading.Lock] = {}
 _DEFAULT_TIMEOUT = 30.0
 _SECRETS_LOADED = False
 
+# Allowlist of env vars that .env files are permitted to set.
+# Prevents injection of unexpected env vars via malicious .env files.
+_ENV_ALLOWLIST: frozenset[str] = frozenset({
+    # Core
+    "AIZEE_ROOT", "AGENT_PROJECT_ROOT", "AIOS_ENCRYPTION_KEY", "AIOS_VERSION",
+    # Dashboard
+    "AIZEE_DASHBOARD_TOKEN", "AIZEE_DASHBOARD_ALLOW_NO_TOKEN",
+    "AIZEE_DASHBOARD_ORIGIN", "AGENT_OS_DASHBOARD_TOKEN",
+    "AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "AGENT_OS_DASHBOARD_ORIGIN",
+    "AGENT_OS_DASHBOARD_MAX_BODY_SIZE", "AGENT_OS_DASHBOARD_RATE_LIMIT",
+    "AGENT_OS_DASHBOARD_RATE_WINDOW", "AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES",
+    "AGENT_OS_DASHBOARD_TRUSTED_PROXIES", "AGENT_OS_HOST",
+    # Sentry
+    "SENTRY_DSN", "SENTRY_TRACES_SAMPLE_RATE", "SENTRY_ENVIRONMENT",
+    # Plugins
+    "UPWORK_CLIENT_ID", "UPWORK_CLIENT_SECRET",
+    "FREELANCER_OAUTH_TOKEN", "FREELANCER_ACCOUNTS",
+    "LINKEDIN_ACCESS_TOKEN", "LINKEDIN_MCP_TOKEN_PATH",
+    "GRAPHIFY_WRAPPER_LOG",
+})
+
 
 def _load_secrets_once() -> None:
-    """Load ``.env`` from the OS root into ``os.environ`` (once per process)."""
+    """Load ``.env`` from the OS root into ``os.environ`` (once per process).
+
+    Only known environment variable names (allowlist) are accepted — unknown
+    keys are silently skipped to prevent injection of unexpected env vars.
+    """
     global _SECRETS_LOADED
     if _SECRETS_LOADED:
         return
@@ -53,6 +78,8 @@ def _load_secrets_once() -> None:
         if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
             value = value[1:-1]
         if not key or value.startswith("your_"):
+            continue
+        if key not in _ENV_ALLOWLIST:
             continue
         os.environ.setdefault(key, value)
 
@@ -248,7 +275,24 @@ class McpClient:
                 proc.kill()
 
     def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Call a tool on the configured MCP server."""
+        """Synchronous wrapper around async_call_tool."""
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        if loop is not None:
+            # Already in an async context — can't use asyncio.run
+            # Fall back to the original sync implementation
+            return self._call_tool_sync(tool_name, arguments)
+        return asyncio.run(self.async_call_tool(tool_name, arguments))
+
+    def _call_tool_sync(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Synchronous (threading-based) call_tool implementation.
+
+        Used as a fallback when ``call_tool`` is invoked from within a
+        running asyncio event loop (where ``asyncio.run`` cannot be used).
+        """
         if not self.config:
             return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
         try:
@@ -341,7 +385,7 @@ class McpClient:
             if not resp_line:
                 return {"ok": False, "error": "MCP server closed stdout"}
             resp = json.loads(resp_line.decode())
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return {"ok": False, "error": f"MCP server '{self.server_name}' timed out"}
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
@@ -349,7 +393,7 @@ class McpClient:
             proc.terminate()
             try:
                 await asyncio.wait_for(proc.wait(), timeout=2)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
         if "error" in resp:
             return {"ok": False, "error": resp["error"]}

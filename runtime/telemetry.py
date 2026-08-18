@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -26,10 +26,28 @@ class TelemetryEvent:
 class TelemetryCollector:
     """Collects and persists runtime telemetry events."""
 
+    _MAX_LOG_SIZE = 100 * 1024 * 1024  # 100 MB
+    _MAX_ROTATED = 5
+
     def __init__(self, project_root: Path) -> None:
         self.project_root = project_root
         self.log_path = project_root / "state" / "telemetry.jsonl"
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def _rotate_if_needed(self) -> None:
+        """Rotate the telemetry log if it exceeds the max size."""
+        try:
+            if self.log_path.exists() and self.log_path.stat().st_size > self._MAX_LOG_SIZE:
+                # Rotate: telemetry.jsonl -> telemetry.jsonl.1, .1 -> .2, etc.
+                for i in range(self._MAX_ROTATED - 1, 0, -1):
+                    old = self.log_path.with_suffix(f".jsonl.{i}")
+                    new = self.log_path.with_suffix(f".jsonl.{i + 1}")
+                    if old.exists():
+                        old.rename(new)
+                rotated = self.log_path.with_suffix(".jsonl.1")
+                self.log_path.rename(rotated)
+        except OSError:
+            pass  # Best-effort rotation
 
     def record(
         self,
@@ -41,7 +59,7 @@ class TelemetryCollector:
         metadata: dict[str, Any] | None = None,
     ) -> None:
         event = TelemetryEvent(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             type=event_type,
             action=action,
             project=str(self.project_root),
@@ -50,6 +68,7 @@ class TelemetryCollector:
             cost=cost,
             metadata=metadata or {},
         )
+        self._rotate_if_needed()
         with self.log_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(asdict(event), default=str) + "\n")
 

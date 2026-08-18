@@ -1,0 +1,91 @@
+# aiZee Guardian Policy — Pre-action guardian gate
+# Evaluated BEFORE the policy engine. Blocks dangerous tools outright,
+# requires approval for sensitive operations.
+# Attributes passed: {"action": action_data, "args": action_data}
+# Predicates resolve keys against attributes (dot-notation supported).
+# Decisions: allow, deny, require_approval
+
+rules:
+  # --- Deny destructive tools outright ---
+  - name: deny-rm-rf
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "rm -rf"}
+      - {key: "args.command", op: "contains", value: "rm -fr"}
+    decision: deny
+    description: "rm -rf is blocked by guardian — use explicit file removal"
+
+  - name: deny-force-push
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "git push -f"}
+      - {key: "args.command", op: "contains", value: "git push --force"}
+    decision: deny
+    description: "Force push is blocked by guardian"
+
+  - name: deny-git-reset-hard
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "git reset --hard"}
+      - {key: "args.command", op: "contains", value: "git checkout ."}
+      - {key: "args.command", op: "contains", value: "git clean -fd"}
+    decision: deny
+    description: "Destructive git operations blocked by guardian"
+
+  - name: deny-drop-table
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "DROP TABLE"}
+      - {key: "args.command", op: "contains", value: "DROP DATABASE"}
+      - {key: "args.command", op: "contains", value: "TRUNCATE"}
+    decision: deny
+    description: "Destructive SQL operations blocked by guardian"
+
+  - name: deny-eval-exec
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "eval("}
+      - {key: "args.command", op: "contains", value: "exec("}
+    decision: deny
+    description: "eval()/exec() in shell commands blocked by guardian"
+
+  # --- Require approval for production deployments ---
+  - name: require-approval-deploy
+    tool: deploy
+    decision: require_approval
+    description: "Deployments require explicit approval"
+
+  - name: require-approval-git-push
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "git push"}
+      - {key: "args.command", op: "contains", value: "git commit"}
+    decision: require_approval
+    description: "Git commits and pushes require approval"
+
+  - name: require-approval-curl
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "curl "}
+      - {key: "args.command", op: "contains", value: "wget "}
+    decision: require_approval
+    description: "Network requests require approval"
+
+  - name: require-approval-pip-install
+    tool: Bash
+    any:
+      - {key: "args.command", op: "contains", value: "pip install"}
+      - {key: "args.command", op: "contains", value: "npm install"}
+      - {key: "args.command", op: "contains", value: "yarn add"}
+    decision: require_approval
+    description: "Package installations require approval"
+
+  # --- Deny secret exfiltration patterns ---
+  - name: deny-secret-exfil
+    tool: Bash
+    any:
+      - {key: "args.command", op: "regex", value: "curl.*\\$.*KEY"}
+      - {key: "args.command", op: "regex", value: "curl.*\\$.*TOKEN"}
+      - {key: "args.command", op: "regex", value: "curl.*\\$.*SECRET"}
+    decision: deny
+    description: "Secret exfiltration via curl blocked by guardian"

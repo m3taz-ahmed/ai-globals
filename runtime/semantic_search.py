@@ -127,8 +127,9 @@ class SemanticCodeSearch:
 
 
 if __name__ == "__main__":
+    _self_path = Path(__file__) if "__file__" in globals() else Path("semantic_search.py")
     search = SemanticCodeSearch()
-    search.index_file(Path(__file__))
+    search.index_file(_self_path)
     results = search.search("fuzz testing policy")
     for r in results:
         print(f"{r.function.name}: {r.score:.2f}")

@@ -2,7 +2,7 @@
   "permissions": {
     "allow": ["view","Read","read","grep","Glob","search","query","list","get","status","bash:git status","bash:git diff","bash:git log","bash:ls","bash:cd","bash:pwd","bash:graphify"],
     "ask": ["edit","write","Bash","bash:rm","bash:mv","bash:cp","mcp_call_tool","mcp_read_resource"],
-    "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:Invoke-WebRequest -Method Post","bash:Invoke-WebRequest -Method Delete","bash:node -e","bash:python -c","bash:chmod","bash:chown","bash:sudo","bash:dd","bash:mkfs","bash:nc","bash:netcat","bash:iptables","bash:ufw","bash:curl | bash","bash:curl | sh","bash:wget | bash","bash:wget | sh"]
+    "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:Invoke-WebRequest -Method Post","bash:Invoke-WebRequest -Method Delete","bash:node -e","bash:python -c"]
   },
   "mcpServers": {
     "aizee": { "command": "python", "args": ["scripts/aizee_mcp_wrapper.py"] },

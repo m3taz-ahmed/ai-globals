@@ -151,6 +151,8 @@ metadata:
   namespace: aizee
 type: Opaque
 stringData:
+          # WARNING: Replace with a real secret from a sealed-secrets manager before deploying to production.
+          # Run: aizee doctor --root D:\.ai to generate a secure token.
   token: CHANGE_ME_IN_PRODUCTION
 ---
 apiVersion: networking.k8s.io/v1

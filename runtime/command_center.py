@@ -15,7 +15,7 @@ import tempfile
 import threading
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -134,7 +134,7 @@ class CommandCenter:
             self.agents[agent_id] = AgentStatus(
                 agent_id=agent_id,
                 persona=persona,
-                started_at=datetime.now(timezone.utc).isoformat(),
+                started_at=datetime.now(UTC).isoformat(),
             )
             self._save()
             return {"ok": True, "agent_id": agent_id}

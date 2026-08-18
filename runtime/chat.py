@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,13 +23,13 @@ class ChatSession:
 
     def __init__(self, project_root: Path, session_id: str | None = None) -> None:
         self.project_root = project_root
-        self.session_id = session_id or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+        self.session_id = session_id or datetime.now(UTC).strftime("%Y%m%d-%H%M%S-%f")
         self.log_path = project_root / "state" / "chat_sessions.jsonl"
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
 
     def add(self, role: str, content: str, metadata: dict[str, Any] | None = None) -> ChatMessage:
         msg = ChatMessage(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             session_id=self.session_id,
             role=role,
             content=content,

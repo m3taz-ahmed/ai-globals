@@ -44,10 +44,27 @@ class CapabilityStore:
 
 
 class AgentCapabilities:
-    """Capability set attached to an agent or session."""
+    """Capability set attached to an agent or session.
 
-    def __init__(self, store: CapabilityStore | None = None) -> None:
+    By default, a standard set of capabilities is granted (read, write, exec,
+    deploy, destructive) so that ``kernel.status()`` reports meaningful
+    capabilities and agents can be constrained by revoking specific ones.
+    """
+
+    # Standard capability set granted on initialization.
+    _DEFAULT_CAPABILITIES: tuple[Capability, ...] = (
+        Capability("read", "*"),
+        Capability("write", "*"),
+        Capability("exec", "*"),
+        Capability("deploy", "*"),
+        Capability("destructive", "*"),
+    )
+
+    def __init__(self, store: CapabilityStore | None = None, defaults: bool = True) -> None:
         self.store = store or CapabilityStore()
+        if defaults:
+            for cap in self._DEFAULT_CAPABILITIES:
+                self.store.grant(cap)
 
     def require(self, capability: Capability) -> None:
         if not self.store.has(capability):
@@ -55,6 +72,9 @@ class AgentCapabilities:
 
     def grant(self, capability: Capability) -> None:
         self.store.grant(capability)
+
+    def revoke(self, capability: Capability) -> None:
+        self.store.revoke(capability)
 
     def list(self) -> list[str]:
         return self.store.list()

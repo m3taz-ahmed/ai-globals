@@ -4,16 +4,16 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.0.0">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-2343%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="2343 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.1.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.1.0">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-2526%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="2526 اختبار ناجح">
     <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-91%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 91%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-20-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="20 شخصية">
-    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-66-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="66 مهارة">
-    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-31-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="31 سير عمل">
-    <img src="https://img.shields.io/badge/%D9%85%D9%8A%D8%B2%D8%A7%D8%AA-63%20%D8%A5%D8%AC%D9%85%D8%A7%D9%84%D9%8A-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="63 ميزة إجمالي">
+    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-78-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="78 مهارة">
+    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-38-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="38 سير عمل">
+    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-81-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="81 مرجع تقنية">
   </p>
 </div>
 
@@ -37,7 +37,7 @@
 | حزم قديمة وديون تقنية صامتة | تثبيت إصدار دقيق عبر MCP حي |
 | SQL خام، XSS مفقود، أسرار ضعيفة | OWASP و zero-trust و RBAC مفروضة |
 | إعادة هيكلة عشوائية | تغييرات جراحية عبر بوابات policy + budget + audit |
-| إجابات واحدة-للجميع | 20 شخصية + 66 مهارة تُختار تلقائيًا |
+| إجابات واحدة-للجميع | 19 شخصية + 78 مهارة تُختار تلقائيًا |
 
 ---
 
@@ -114,7 +114,7 @@ SQLite + FTS5 + فهرسة متجهة اختيارية. طبقات: عرضية،
 ```bash
 ruff check .          # 0 تحذيرات
 mypy                  # 0 أخطاء (90+ ملف، strict)
-pytest -q             # 2343 اختبار، 91% تغطية
+pytest -q             # 2526 اختبار، 91% تغطية
 python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 ```
 
@@ -122,6 +122,35 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 كشف الشخصيات محلي (Python خالص، صفر tokens). فقط أسماء المهارات relevant تُرجع — ليس الملفات كاملة.
 
 ---
+
+## الجديد في v5.1.0
+
+### تقوية وتلميع (P0-P3)
+- **إصلاح Dockerfile**: `cli.py` → `aizee_cli.py`، Python 3.14
+- **توحيد هرم الاستثناءات**: كل الاستثناءات ترث من `AizeeError`
+- **تشفير آمن افتراضياً**: توليد مفتاح تلقائي عند عدم وجود `AIOS_ENCRYPTION_KEY`
+- **تقوية token الداشبورد**: `chmod 0o600` على ملف الـ token
+- **إيقاف آمن**: flush التخزين + إغلاق DB عند SIGTERM/SIGINT
+- **تدوير السجلات**: audit.log + telemetry.jsonl يتدورون عند 100MB
+- **تقوية CSP**: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`
+- **قائمة بيضاء لـ .env**: فقط المتغيرات المعروفة تُحمّل
+- **تنقيح audit**: تنقيح يعتمد على اسم المفتاح وليس القيمة فقط
+- **تقوية sandbox الإضافات**: حظر builtins خطرة، `literal_eval`
+- **صلاحيات الإضافات قائمة على الموارد**: أنماط glob (`Write:/tmp/*`)
+- **اكتشاف تلقائي لأدوات MCP**: مسح `aizee_mcp/tools/*_tools.py`
+- **rollback للهجرات**: `MigrationRunner.rollback(version)`
+- **KernelBuilder**: builder fluent لحقن التبعيات
+- **تجميع اتصالات DB**: `BaseRepository` يجمع اتصالات SQLite
+- **أتمتة نسخ DB احتياطية**: `--schedule daily/hourly` + `--verify`
+- **تكامل Self-healing**: `AgentManager.check_agents_health()` + `respawn_agent()`
+- **وثائق تشغيلية**: `docs/OPERATIONS.md`, `docs/DEPLOYMENT.md`, `docs/ONBOARDING_SRE.md`
+- **تنظيم الاختبارات**: نقل من `tests/runtime/` إلى `runtime/tests/`
+- **اختبارات parameterized**: المزيد من `@pytest.mark.parametrize`
+- **mock time في الاختبارات**: `time.sleep()` no-op في الطبقة السريعة
+- **مصفوفة CI**: Python 3.13 + 3.14
+- **تضييق NumPy**: `>=1.26.0,<2.0`
+- **مزامنة API.md**: 5.1.0
+- **تحذير K8s secret**: تعليق على placeholder
 
 ## الجديد في v5.0.0
 
@@ -205,6 +234,17 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 | مجدول اضمحلال الذاكرة | `memory/decay_scheduler.py` | OpenMemory |
 | بحث دلالي في الكود (TF-IDF) | `runtime/semantic_search.py` | metis |
 
+#### المرحلة 4 — أنماط معمارية من spec-kit + Floci (6 ميزات)
+
+| الميزة | الوحدة | المصدر |
+| :--- | :--- | :--- |
+| قوالب SDD (spec/plan/tasks/constitution/checklist) | `tech-stack/spec-driven-templates/` | spec-kit |
+| تحليل اتساق المواصفات (تغطية/غموض/دستور) | `runtime/spec_engine.py` | spec-kit |
+| تقارب المواصفات مع الكود (تحليل الفجوات) | `runtime/spec_engine.py` | spec-kit |
+| تجريد تخزين قابل للتبديل (memory/json/sqlite) | `runtime/storage_backend.py` | Floci |
+| فهرس متعدد الخدمات/المهارات | `runtime/service_catalog.py` | Floci |
+| هرم AizeeError + PaginatedResult | `runtime/schemas.py` | Floci |
+
 راجع [IMPLEMENTATION-REPORT.md](IMPLEMENTATION-REPORT.md) للتفاصيل الكاملة.
 
 ---
@@ -272,7 +312,7 @@ python dashboard/server.py 8080
 | :--- | :--- | :--- |
 | Lint | `ruff check .` | 0 تحذيرات |
 | الأنواع | `mypy` | 0 أخطاء (90+ ملف) |
-| الاختبارات | `pytest -q` | 2343 ناجح، 91% تغطية |
+| الاختبارات | `pytest -q` | 2526 ناجح، 91% تغطية |
 | السلامة | `validate-globals.py` | 0 أخطاء |
 | E2E | `eval/harness.py` | all_pass: true |
 

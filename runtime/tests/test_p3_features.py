@@ -124,7 +124,7 @@ class TestDiffReviewer:
 """
         reviewer = DiffReviewer()
         summary = reviewer.review_diff_summary(diff)
-        assert summary["files_reviewed"] >= 0  # May be 0 if no file path
+        assert summary["files_reviewed"] >= 1  # May be 0 if no file path
 
 
 class TestConstitutionValidator:

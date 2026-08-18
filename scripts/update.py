@@ -147,12 +147,35 @@ def _post_install_hooks(root: Path) -> list[str]:
     """Re-run post-install steps. Returns list of actions taken."""
     actions: list[str] = []
 
-    # 1. pip install -e . (refresh package)
+    # 1. pip install -e . (refresh package + CLI shim)
     rc, _out, _ = _run(
         [sys.executable, "-m", "pip", "install", "-e", ".", "--quiet"],
         cwd=root, check=False,
     )
     actions.append(f"pip install -e .: {'OK' if rc == 0 else 'skipped'}")
+
+    # 1b. Ensure user Scripts dir is on PATH (Windows)
+    if sys.platform == "win32":
+        import sysconfig
+        user_scripts = sysconfig.get_path("scripts", "nt_user")
+        if user_scripts and Path(user_scripts).is_dir():
+            ps_get = "[Environment]::GetEnvironmentVariable('PATH', 'User')"
+            path_env = subprocess.run(
+                ["powershell", "-Command", ps_get],
+                capture_output=True, text=True, shell=False,
+            ).stdout.strip()
+            if user_scripts.lower() not in path_env.lower():
+                ps_set = (
+                    "[Environment]::SetEnvironmentVariable('PATH', '"
+                    + user_scripts + ";' + [Environment]::GetEnvironmentVariable('PATH', 'User'), 'User')"
+                )
+                subprocess.run(
+                    ["powershell", "-Command", ps_set],
+                    shell=False, capture_output=True,
+                )
+                actions.append(f"PATH update (user Scripts): added {user_scripts}")
+            else:
+                actions.append("PATH update: user Scripts already on PATH")
 
     # 2. MCP config sync
     sync_script = root / "scripts" / "mcp_global_sync.py"
@@ -163,7 +186,7 @@ def _post_install_hooks(root: Path) -> list[str]:
         )
         actions.append(f"MCP config sync: {'OK' if rc == 0 else 'skipped'}")
 
-    # 3. CLI shim refresh
+    # 3. CLI shim refresh (legacy script, if present)
     cli_script = root / "scripts" / "install_cli_shim.py"
     if cli_script.exists():
         rc, _, _ = _run(

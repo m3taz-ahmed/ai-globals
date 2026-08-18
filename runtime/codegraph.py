@@ -210,6 +210,7 @@ class ReachabilityAnalyzer:
 
 
 if __name__ == "__main__":
+    _self_path = Path(__file__) if "__file__" in globals() else Path("codegraph.py")
     builder = CodeGraphBuilder()
-    graph = builder.build_from_file(Path(__file__))
+    graph = builder.build_from_file(_self_path)
     print(f"Functions: {len(graph.functions)}, Calls: {len(graph.calls)}")

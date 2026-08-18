@@ -28,11 +28,29 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
+
+# Template directory — discovered relative to aiZee root (tech-stack/spec-driven-templates/)
+# Falls back gracefully if templates absent (scaffold methods return empty string).
+# Robust against exec()/runpy contexts where __file__ may be undefined.
+_THIS_FILE = Path(__file__).resolve() if "__file__" in globals() else Path.cwd() / "spec_engine.py"
+_TEMPLATE_DIR_CANDIDATES = [
+    _THIS_FILE.parent.parent / "tech-stack" / "spec-driven-templates",
+    Path("tech-stack") / "spec-driven-templates",
+]
+
+
+def _resolve_template_dir() -> Path | None:
+    """Resolve the spec-driven templates directory (aiZee root-relative)."""
+    for candidate in _TEMPLATE_DIR_CANDIDATES:
+        if candidate.is_dir():
+            return candidate
+    return None
 
 
 class SpecPhase(str, Enum):
@@ -222,7 +240,7 @@ class SpecEngine:
         """Initialize a new specification."""
         if self._spec_path(spec_id).exists():
             raise ValueError(f"Spec already exists: {spec_id}")
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         spec = Spec(
             id=spec_id,
             title=title,
@@ -244,7 +262,7 @@ class SpecEngine:
 
     def _save(self, spec: Spec) -> None:
         """Save a spec to disk."""
-        spec.updated_at = datetime.now(timezone.utc).isoformat()
+        spec.updated_at = datetime.now(UTC).isoformat()
         self._spec_path(spec.id).write_text(
             json.dumps(spec.to_dict(), indent=2), encoding="utf-8",
         )
@@ -496,6 +514,360 @@ class SpecEngine:
         if not path.exists():
             return True
         return manifest.is_modified(path.name, path.read_text(encoding="utf-8"))
+
+    # -- Spec-Kit-inspired additions (P0) -------------------------------------
+
+    def _render_template(self, template_name: str, context: dict[str, str]) -> str:
+        """Render a spec-driven template by replacing {{PLACEHOLDER}} tokens.
+
+        Returns empty string if template directory or file is absent
+        (graceful fallback — never raises on missing templates).
+        """
+        template_dir = _resolve_template_dir()
+        if template_dir is None:
+            return ""
+        template_path = template_dir / template_name
+        if not template_path.exists():
+            return ""
+        content = template_path.read_text(encoding="utf-8")
+        for key, value in context.items():
+            content = content.replace(f"{{{{{key}}}}}", value)
+        return content
+
+    def _spec_context(self, spec: Spec) -> dict[str, str]:
+        """Build template context dict from a Spec."""
+        date_str = spec.created_at[:10] if spec.created_at else datetime.now(UTC).strftime("%Y-%m-%d")
+        return {
+            "TITLE": spec.title,
+            "SPEC_ID": spec.id,
+            "FEATURE_BRANCH": f"{spec.id}-{spec.title.lower().replace(' ', '-')[:30]}",
+            "DATE": date_str,
+            "DESCRIPTION": spec.description,
+            "PROJECT_NAME": spec.title,
+        }
+
+    def scaffold_spec(self, spec_id: str, title: str, description: str = "") -> str:
+        """Scaffold a spec markdown artifact from the spec-template.
+
+        Writes ``{spec_id}.spec.md`` (scaffold for human/AI editing).
+        Does NOT overwrite the auto-rendered ``{spec_id}.md``.
+        Returns the scaffold content (empty string if templates absent).
+        """
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            spec = Spec(id=spec_id, title=title, description=description)
+        context = self._spec_context(spec)
+        content = self._render_template("spec-template.md", context)
+        if content:
+            scaffold_path = self.specs_dir / f"{spec_id}.spec.md"
+            scaffold_path.write_text(content, encoding="utf-8")
+        return content
+
+    def scaffold_plan(self, spec_id: str) -> str:
+        """Scaffold a plan markdown artifact from the plan-template."""
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            return ""
+        context = self._spec_context(spec)
+        content = self._render_template("plan-template.md", context)
+        if content:
+            scaffold_path = self.specs_dir / f"{spec_id}.plan.md"
+            scaffold_path.write_text(content, encoding="utf-8")
+        return content
+
+    def scaffold_tasks(self, spec_id: str) -> str:
+        """Scaffold a tasks markdown artifact from the tasks-template."""
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            return ""
+        context = self._spec_context(spec)
+        content = self._render_template("tasks-template.md", context)
+        if content:
+            scaffold_path = self.specs_dir / f"{spec_id}.tasks.md"
+            scaffold_path.write_text(content, encoding="utf-8")
+        return content
+
+    def scaffold_checklist(self, spec_id: str) -> str:
+        """Scaffold a quality checklist markdown artifact from the checklist-template."""
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            return ""
+        context = self._spec_context(spec)
+        content = self._render_template("checklist-template.md", context)
+        if content:
+            checklist_path = self.specs_dir / f"{spec_id}.checklist.md"
+            checklist_path.write_text(content, encoding="utf-8")
+        return content
+
+    def set_constitution(self, spec_id: str, constitution: str) -> None:
+        """Set the constitution (governing principles) for a spec."""
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            raise ValueError(f"Spec not found: {spec_id}")
+        spec.constitution = constitution
+        self._save(spec)
+
+    def validate_checklist(self, spec_id: str) -> dict[str, Any]:
+        """Validate a spec against quality checklist criteria.
+
+        Returns a dict with pass/fail counts and failing items.
+        Reads the scaffolded ``{spec_id}.checklist.md`` if present,
+        otherwise validates against built-in criteria.
+        """
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            return {"error": f"Spec not found: {spec_id}"}
+        spec_md = self._spec_md_path(spec_id).read_text(encoding="utf-8") if self._spec_md_path(spec_id).exists() else ""
+        results: dict[str, Any] = {
+            "spec_id": spec_id,
+            "total_checks": 0,
+            "passed": 0,
+            "failed": 0,
+            "failing_items": [],
+        }
+        checks = [
+            ("no_implementation_details", "No implementation details" in spec_md or "NEEDS CLARIFICATION" not in spec_md),
+            ("has_user_scenarios", "User Story" in spec_md or len(spec.requirements) > 0),
+            ("has_requirements", len(spec.requirements) > 0),
+            ("has_success_criteria", "Success Criteria" in spec_md or "SC-" in spec_md),
+            ("no_unresolved_clarifications", "[NEEDS CLARIFICATION" not in spec_md),
+            ("has_edge_cases", "Edge Cases" in spec_md),
+            ("has_assumptions", "Assumptions" in spec_md),
+        ]
+        for name, passed in checks:
+            results["total_checks"] += 1
+            if passed:
+                results["passed"] += 1
+            else:
+                results["failed"] += 1
+                results["failing_items"].append(name)
+        return results
+
+    def analyze_artifacts(self, spec_id: str) -> dict[str, Any]:
+        """Cross-artifact consistency analysis (spec ↔ plan ↔ tasks).
+
+        Non-destructive read-only analysis inspired by spec-kit's analyze command.
+        Detects: coverage gaps, duplication, ambiguity, underspecification,
+        constitution violations, terminology drift.
+
+        Returns a structured report dict with findings + metrics.
+        """
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            return {"error": f"Spec not found: {spec_id}"}
+        spec_md = self._spec_md_path(spec_id).read_text(encoding="utf-8") if self._spec_md_path(spec_id).exists() else ""
+        plan_md = ""
+        plan_path = self.specs_dir / f"{spec_id}.plan.md"
+        if plan_path.exists():
+            plan_md = plan_path.read_text(encoding="utf-8")
+        tasks_md = ""
+        tasks_path = self.specs_dir / f"{spec_id}.tasks.md"
+        if tasks_path.exists():
+            tasks_md = tasks_path.read_text(encoding="utf-8")
+
+        # Extract requirement IDs from spec state
+        req_ids = {r.id for r in spec.requirements}
+        # Task IDs from spec state (authoritative) + tasks.md scaffold (if present)
+        task_ids = {t.id for t in spec.tasks}
+        task_ids.update(re.findall(r"\bT\d{3}\b", tasks_md))
+        # Extract FR-### and SC-### from spec
+        fr_ids = set(re.findall(r"\bFR-\d{3}\b", spec_md))
+        sc_ids = set(re.findall(r"\bSC-\d{3}\b", spec_md))
+
+        # Coverage: requirements with no task reference
+        uncovered_reqs = []
+        for req in spec.requirements:
+            if not any(req.id in tasks_md or req.description[:20] in tasks_md for _ in [True]):
+                uncovered_reqs.append(req.id)
+
+        # Ambiguity: vague adjectives without measurable criteria
+        vague_terms = ["fast", "scalable", "secure", "intuitive", "robust", "efficient"]
+        ambiguity_findings = []
+        for term in vague_terms:
+            pattern = rf"\b{term}\b"
+            if re.search(pattern, spec_md, re.IGNORECASE):
+                # Check if a measurable metric follows within 100 chars
+                for match in re.finditer(pattern, spec_md, re.IGNORECASE):
+                    context_window = spec_md[match.start():match.start() + 100]
+                    if not re.search(r"\d+\s*(ms|s|sec|second|%|user|concurrent|minute|hour)", context_window, re.IGNORECASE):
+                        ambiguity_findings.append({"term": term, "position": match.start()})
+
+        # Unresolved placeholders
+        unresolved = re.findall(r"\[NEEDS CLARIFICATION[^\]]*\]", spec_md)
+        todo_markers = re.findall(r"\b(TODO|TKTK|FIXME|\?\?\?)\b", spec_md + plan_md + tasks_md)
+
+        # Constitution violations (if constitution set and not template-only)
+        constitution_violations: list[str] = []
+        if spec.constitution and "{{" not in spec.constitution:
+            must_principles = re.findall(r"MUST\s+(.+?)(?:\.|$)", spec.constitution, re.IGNORECASE)
+            for principle in must_principles[:10]:  # Limit to first 10
+                # Heuristic: check if principle keyword appears in spec/plan
+                keyword = principle.split()[0].lower() if principle.split() else ""
+                if keyword and len(keyword) > 3 and keyword not in spec_md.lower() and keyword not in plan_md.lower():
+                    constitution_violations.append(principle.strip()[:80])
+
+        findings: list[dict[str, str]] = []
+        for req_id in uncovered_reqs:
+            findings.append({
+                "id": f"COV-{req_id}",
+                "category": "coverage_gap",
+                "severity": "HIGH",
+                "location": "tasks.md",
+                "summary": f"Requirement {req_id} has no associated task",
+            })
+        for amb in ambiguity_findings[:10]:
+            findings.append({
+                "id": f"AMB-{amb['term']}",
+                "category": "ambiguity",
+                "severity": "MEDIUM",
+                "location": f"spec.md:{amb['position']}",
+                "summary": f"Vague term '{amb['term']}' lacks measurable criteria",
+            })
+        for marker in unresolved:
+            findings.append({
+                "id": f"UNC-{hashlib.md5(marker.encode()).hexdigest()[:6]}",
+                "category": "underspecification",
+                "severity": "HIGH",
+                "location": "spec.md",
+                "summary": f"Unresolved: {marker[:60]}",
+            })
+        for marker in todo_markers[:5]:
+            findings.append({
+                "id": f"TODO-{hashlib.md5(marker.encode()).hexdigest()[:6]}",
+                "category": "underspecification",
+                "severity": "MEDIUM",
+                "location": "artifacts",
+                "summary": f"Unresolved placeholder: {marker}",
+            })
+        for violation in constitution_violations:
+            findings.append({
+                "id": f"CON-{hashlib.md5(violation.encode()).hexdigest()[:6]}",
+                "category": "constitution_violation",
+                "severity": "CRITICAL",
+                "location": "constitution",
+                "summary": f"MUST principle not reflected: {violation}",
+            })
+
+        coverage_pct = round((len(req_ids) - len(uncovered_reqs)) / max(len(req_ids), 1) * 100, 1)
+        return {
+            "spec_id": spec_id,
+            "metrics": {
+                "total_requirements": len(req_ids),
+                "total_tasks": len(task_ids),
+                "total_fr": len(fr_ids),
+                "total_sc": len(sc_ids),
+                "coverage_pct": coverage_pct,
+                "ambiguity_count": len(ambiguity_findings),
+                "unresolved_count": len(unresolved),
+                "todo_count": len(todo_markers),
+                "constitution_violations": len(constitution_violations),
+            },
+            "findings": findings,
+            "critical_count": sum(1 for f in findings if f["severity"] == "CRITICAL"),
+            "high_count": sum(1 for f in findings if f["severity"] == "HIGH"),
+            "medium_count": sum(1 for f in findings if f["severity"] == "MEDIUM"),
+        }
+
+    def converge_to_code(self, spec_id: str, codebase_dir: Path) -> dict[str, Any]:
+        """Assess codebase against spec/plan/tasks; identify remaining work.
+
+        Inspired by spec-kit's converge command. Read-only — does NOT modify
+        any files. Returns a structured report of gaps (missing/partial/
+        contradicts/unrequested) with suggested remediation tasks.
+
+        Args:
+            spec_id: The spec to converge against.
+            codebase_dir: Root directory of the codebase to assess.
+        """
+        spec = self.load_spec(spec_id)
+        if spec is None:
+            return {"error": f"Spec not found: {spec_id}"}
+        if not codebase_dir.is_dir():
+            return {"error": f"Codebase dir not found: {codebase_dir}"}
+
+        # Gather source files (limit to common code extensions)
+        code_extensions = {".py", ".php", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java", ".kt", ".swift"}
+        source_files: list[Path] = []
+        for ext in code_extensions:
+            source_files.extend(codebase_dir.rglob(f"*{ext}"))
+        # Exclude common ignore dirs
+        ignore_dirs = {".git", "__pycache__", "node_modules", "vendor", ".venv", "venv", "dist", "build"}
+        source_files = [f for f in source_files if not any(part in ignore_dirs for part in f.parts)]
+        source_files = source_files[:500]  # Cap for performance
+
+        # Build a keyword index from requirements
+        all_code_text = ""
+        for f in source_files[:100]:  # Sample first 100 files for text search
+            try:
+                all_code_text += f.read_text(encoding="utf-8", errors="ignore").lower() + "\n"
+            except OSError:
+                continue
+
+        findings: list[dict[str, str]] = []
+        for req in spec.requirements:
+            # Extract keywords from requirement description
+            words = re.findall(r"\b[a-z]{4,}\b", req.description.lower())
+            keywords = [w for w in words if w not in {"system", "must", "should", "user", "users", "shall", "able"}]
+            if not keywords:
+                continue
+            # Check if any keyword appears in code
+            matched = sum(1 for kw in keywords[:5] if kw in all_code_text)
+            if matched == 0:
+                findings.append({
+                    "id": f"MISS-{req.id}",
+                    "gap_type": "missing",
+                    "severity": "HIGH",
+                    "source_ref": req.id,
+                    "summary": f"Requirement {req.id} keywords not found in codebase: {', '.join(keywords[:3])}",
+                })
+            elif matched < len(keywords[:5]) / 2:
+                findings.append({
+                    "id": f"PART-{req.id}",
+                    "gap_type": "partial",
+                    "severity": "MEDIUM",
+                    "source_ref": req.id,
+                    "summary": f"Requirement {req.id} partially implemented ({matched}/{min(5, len(keywords))} keywords found)",
+                })
+
+        # Check task completion vs code
+        incomplete_tasks = [t for t in spec.tasks if t.status != "done"]
+        for task in incomplete_tasks:
+            findings.append({
+                "id": f"TASK-{task.id}",
+                "gap_type": "missing" if task.status == "pending" else "partial",
+                "severity": "HIGH" if task.status == "pending" else "MEDIUM",
+                "source_ref": task.id,
+                "summary": f"Task {task.id} not done (status: {task.status}): {task.description[:60]}",
+            })
+
+        # Suggest remediation tasks (append-only style, like spec-kit converge)
+        suggested_tasks: list[dict[str, str]] = []
+        existing_max = len(spec.tasks)
+        for i, finding in enumerate(findings, start=1):
+            task_id = f"T{existing_max + i:03d}"
+            suggested_tasks.append({
+                "id": task_id,
+                "description": finding["summary"],
+                "source_ref": finding["source_ref"],
+                "gap_type": finding["gap_type"],
+                "severity": finding["severity"],
+            })
+
+        return {
+            "spec_id": spec_id,
+            "codebase_dir": str(codebase_dir),
+            "files_scanned": len(source_files),
+            "metrics": {
+                "requirements_checked": len(spec.requirements),
+                "tasks_incomplete": len(incomplete_tasks),
+                "findings_total": len(findings),
+                "missing_count": sum(1 for f in findings if f["gap_type"] == "missing"),
+                "partial_count": sum(1 for f in findings if f["gap_type"] == "partial"),
+            },
+            "findings": findings,
+            "suggested_tasks": suggested_tasks,
+            "converged": len(findings) == 0,
+        }
 
 
 if __name__ == "__main__":

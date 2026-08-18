@@ -336,7 +336,7 @@ def test_remote_a2a_launch_success():
     mock_loop = MagicMock()
     mock_loop.run_in_executor = AsyncMock(return_value=mock_response)
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         session = asyncio.run(adapter.launch("do task", profile="dev"))
         assert session.status == "running"
         assert session.session_id == "remote-123"
@@ -354,7 +354,7 @@ def test_remote_a2a_launch_url_error():
         side_effect=urllib.error.URLError("connection refused")
     )
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         with pytest.raises(AdapterError, match="A2A launch failed"):
             asyncio.run(adapter.launch("do task"))
 
@@ -368,7 +368,7 @@ def test_remote_a2a_launch_default_session_id():
     mock_loop = MagicMock()
     mock_loop.run_in_executor = AsyncMock(return_value=mock_response)
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         session = asyncio.run(adapter.launch("do task"))
         assert session.session_id == "a2a-1"
 
@@ -394,7 +394,7 @@ def test_remote_a2a_poll_completed():
     session.status = "running"
     session.artifacts["remote_session_id"] = "remote-123"
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         result = asyncio.run(adapter.poll(session))
         assert result.status == "completed"
         assert result.artifacts["result"] == {"output": "done"}
@@ -413,7 +413,7 @@ def test_remote_a2a_poll_failed():
     session = Session(session_id="a2a-1", backend=Backend.REMOTE_A2A, profile="default")
     session.status = "running"
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         result = asyncio.run(adapter.poll(session))
         assert result.status == "failed"
 
@@ -431,7 +431,7 @@ def test_remote_a2a_poll_url_error():
     session = Session(session_id="a2a-1", backend=Backend.REMOTE_A2A, profile="default")
     session.status = "running"
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         result = asyncio.run(adapter.poll(session))
         assert result.status == "failed"
         assert "connection lost" in result.artifacts["error"]
@@ -455,7 +455,7 @@ def test_remote_a2a_poll_timeout():
     session = Session(session_id="a2a-1", backend=Backend.REMOTE_A2A, profile="default")
     session.status = "running"
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         result = asyncio.run(adapter.poll(session))
         assert result.status == "timeout"
         assert "Polling timed out" in result.artifacts["error"]
@@ -475,7 +475,7 @@ def test_remote_a2a_poll_uses_session_id_fallback():
     session.status = "running"
     # No remote_session_id in artifacts
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         result = asyncio.run(adapter.poll(session))
         assert result.status == "completed"
 
@@ -499,7 +499,7 @@ def test_remote_a2a_poll_sleeps_then_completes():
     session = Session(session_id="a2a-1", backend=Backend.REMOTE_A2A, profile="default")
     session.status = "running"
 
-    with patch("asyncio.get_event_loop", return_value=mock_loop):
+    with patch("asyncio.get_running_loop", return_value=mock_loop):
         result = asyncio.run(adapter.poll(session))
         assert result.status == "completed"
         assert result.artifacts["result"] == {"output": "done"}
