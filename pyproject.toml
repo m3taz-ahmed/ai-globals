@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "5.0.0"
+version = "5.1.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -19,17 +19,19 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
     "pyyaml>=6.0,<7.0",
     "mcp>=1.0,<2.0",
-    "turbovec>=0.1,<0.8",
+    "turbovec>=0.1,<0.9",
     "numpy>=1.24,<3.0",
     "pydantic>=2.0,<3.0",
     "rich>=13.0,<14.0",
-    "cryptography>=42.0,<46.0",
+    "cryptography>=42.0,<52.0",
 ]
 
 [project.optional-dependencies]
@@ -70,7 +72,7 @@ exclude = ["runtime.tests*", "memory.tests*", "tests*"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py314"
 exclude = [
     "tmp",
     "scratch",
@@ -91,7 +93,7 @@ exclude = [
 select = [
     "E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "TID", "RUF"
 ]
-ignore = ["E501"]
+ignore = ["E501", "UP042", "UP046"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
@@ -103,7 +105,7 @@ ignore = ["E501"]
 convention = "google"
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
