@@ -12,7 +12,7 @@ import hashlib
 import json
 import re
 import threading
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -102,7 +102,7 @@ class AuditLogger:
             self._rotate_if_needed()
             prev_hash = self._last_hash()
             entry: dict[str, Any] = {
-                "ts": datetime.now(UTC).isoformat(),
+                "ts": datetime.now(timezone.utc).isoformat(),
                 "type": event_type,
                 "details": self._redact(details),
                 "prev_hash": prev_hash,
@@ -208,7 +208,7 @@ class AuditLogger:
         Args:
             event_type: Filter by event type (e.g., 'policy', 'budget').
             limit: Maximum number of entries to return (most recent first).
-            since: ISO timestamp — only entries after this time are returned.
+            since: ISO timestamp â€” only entries after this time are returned.
         """
         if not self.log_file.exists():
             return []

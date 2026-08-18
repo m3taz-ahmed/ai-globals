@@ -31,7 +31,7 @@ import os
 import subprocess
 import time
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -130,11 +130,11 @@ class StallDetector:
         now = time.time()
         output_hash = hashlib.sha256(current_output.encode("utf-8")).hexdigest()[:16]
         if wt.last_output_hash == output_hash:
-            # Output unchanged — check if enough time has passed
+            # Output unchanged â€” check if enough time has passed
             if wt.last_check_time > 0 and (now - wt.last_check_time) >= self.stall_timeout_seconds:
                 return True
         else:
-            # Output changed — update hash and reset timer
+            # Output changed â€” update hash and reset timer
             wt.last_output_hash = output_hash
             wt.last_check_time = now
         return False
@@ -209,7 +209,7 @@ class WorktreePool:
             agent_id=agent_id,
             branch=branch,
             path=wt_path,
-            created_at=datetime.now(UTC).isoformat(),
+            created_at=datetime.now(timezone.utc).isoformat(),
         )
         # Write tether file for crash recovery
         if self.tether:
@@ -277,7 +277,7 @@ class WorktreePool:
             if result.returncode == 0:
                 wt.status = "merged"
                 return True
-            # Merge conflict — abort
+            # Merge conflict â€” abort
             self._git("merge", "--abort", check=False)
             return False
         except RuntimeError:

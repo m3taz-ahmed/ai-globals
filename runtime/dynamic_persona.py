@@ -2,9 +2,9 @@
 
 Personas accumulate experience over time across three evolutionary layers:
 
-1. **Core Identity** (0-10 interactions) — the persona's baseline skill set.
-2. **Accumulation** (11-50 interactions) — patterns and expertise start to form.
-3. **Deep Personality** (51+ interactions) — refined expertise and learned
+1. **Core Identity** (0-10 interactions) â€” the persona's baseline skill set.
+2. **Accumulation** (11-50 interactions) â€” patterns and expertise start to form.
+3. **Deep Personality** (51+ interactions) â€” refined expertise and learned
    patterns that bias persona selection toward proven performers.
 
 The system is intentionally stdlib-only and persists state to
@@ -17,7 +17,7 @@ import json
 import os
 import threading
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +39,7 @@ LEARNED_PATTERNS_LIMIT = 100
 
 def _utc_now() -> str:
     """Return the current UTC timestamp as an ISO-8601 string."""
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _clamp_score(value: float) -> float:

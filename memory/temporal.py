@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Temporal Knowledge Graph — point-in-time truth tracking (from OpenMemory).
+"""Temporal Knowledge Graph â€” point-in-time truth tracking (from OpenMemory).
 
 Stores facts with validity windows (valid_from / valid_to). When a
 fact changes, the previous version's valid_to is closed and a new
@@ -20,7 +20,7 @@ Usage::
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -59,7 +59,7 @@ class TemporalFactStore:
         valid_from: str | None = None,
     ) -> TemporalFact:
         """Set a new fact, closing any currently-valid fact with same s+p."""
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         vf = valid_from or now
         # Close any currently-valid fact with same subject+predicate
         for fact in self._facts:
@@ -80,7 +80,7 @@ class TemporalFactStore:
         at: str | None = None,
     ) -> str | None:
         """Query the value of a fact at a specific point in time."""
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         query_time = at or now
         for fact in reversed(self._facts):  # Most recent first
             if (fact.subject == subject and fact.predicate == predicate
@@ -94,7 +94,7 @@ class TemporalFactStore:
         at: str | None = None,
     ) -> list[TemporalFact]:
         """Query all facts, optionally filtered by subject and time."""
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         query_time = at or now
         results = []
         for fact in self._facts:

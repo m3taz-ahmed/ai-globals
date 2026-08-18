@@ -11,15 +11,15 @@ Manages agent memory as a git repository, providing:
 Memory entries are stored as JSON files in a directory structure::
 
     memory_repo/
-    ├── facts/
-    │   ├── 001.json
-    │   └── 002.json
-    ├── preferences/
-    │   └── 001.json
-    ├── corrections/
-    │   └── 001.json
-    └── sessions/
-        └── 2026-01-01.json
+    â”œâ”€â”€ facts/
+    â”‚   â”œâ”€â”€ 001.json
+    â”‚   â””â”€â”€ 002.json
+    â”œâ”€â”€ preferences/
+    â”‚   â””â”€â”€ 001.json
+    â”œâ”€â”€ corrections/
+    â”‚   â””â”€â”€ 001.json
+    â””â”€â”€ sessions/
+        â””â”€â”€ 2026-01-01.json
 
 Usage::
 
@@ -36,7 +36,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -116,7 +116,7 @@ class GitMemoryStore:
         cat_dir = self.repo_path / category
         cat_dir.mkdir(parents=True, exist_ok=True)
         file_path = cat_dir / f"{entry_id}.json"
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         existing = ""
         if file_path.exists():
             existing = file_path.read_text(encoding="utf-8")

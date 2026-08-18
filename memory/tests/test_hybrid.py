@@ -7,7 +7,7 @@ import shutil
 import sqlite3
 import tempfile
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -31,7 +31,7 @@ def _store(tmp: Path) -> MemoryStore:
 
 
 def _mem(kind: str = "factual", content: str = "test", source: str = "") -> Memory:
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     return Memory(
         id=str(uuid.uuid4()),
         kind=kind,
@@ -221,7 +221,7 @@ class TestMemHelper:
 
 
 # ---------------------------------------------------------------------------
-# HybridSearcher — edge cases
+# HybridSearcher â€” edge cases
 # ---------------------------------------------------------------------------
 
 class TestHybridSearcherEdgeCases:

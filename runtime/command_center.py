@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent Command Center — fleet management dashboard for aiZee.
+"""Agent Command Center â€” fleet management dashboard for aiZee.
 
 Provides a Kanban-style task board and agent fleet tracking layer that
 complements the existing ``AgentManager``.  All state is persisted to
@@ -15,7 +15,7 @@ import tempfile
 import threading
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
@@ -134,7 +134,7 @@ class CommandCenter:
             self.agents[agent_id] = AgentStatus(
                 agent_id=agent_id,
                 persona=persona,
-                started_at=datetime.now(UTC).isoformat(),
+                started_at=datetime.now(timezone.utc).isoformat(),
             )
             self._save()
             return {"ok": True, "agent_id": agent_id}

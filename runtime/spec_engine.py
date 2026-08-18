@@ -2,13 +2,13 @@
 """Spec-driven development engine for aiZee.
 
 Implements a structured 4-phase development process:
-1. **Specify** — Define what to build (user stories, requirements)
-2. **Plan** — Technical design (architecture, stack, constraints)
-3. **Tasks** — Break down into actionable tasks
-4. **Implement** — Execute tasks with validation checkpoints
+1. **Specify** â€” Define what to build (user stories, requirements)
+2. **Plan** â€” Technical design (architecture, stack, constraints)
+3. **Tasks** â€” Break down into actionable tasks
+4. **Implement** â€” Execute tasks with validation checkpoints
 
 Each phase produces a Markdown artifact that feeds the next phase.
-Phases have validation gates — you don't advance until the current
+Phases have validation gates â€” you don't advance until the current
 phase passes its checks.
 
 Usage::
@@ -30,12 +30,12 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-# Template directory — discovered relative to aiZee root (tech-stack/spec-driven-templates/)
+# Template directory â€” discovered relative to aiZee root (tech-stack/spec-driven-templates/)
 # Falls back gracefully if templates absent (scaffold methods return empty string).
 # Robust against exec()/runpy contexts where __file__ may be undefined.
 _THIS_FILE = Path(__file__).resolve() if "__file__" in globals() else Path.cwd() / "spec_engine.py"
@@ -98,7 +98,7 @@ class SpecManifest:
     and prevent accidental overwriting of user modifications.
     """
 
-    files: dict[str, str] = field(default_factory=dict)  # rel_path → sha256
+    files: dict[str, str] = field(default_factory=dict)  # rel_path â†’ sha256
 
     def record_file(self, rel_path: str, content: str) -> None:
         """Record a file's hash."""
@@ -240,7 +240,7 @@ class SpecEngine:
         """Initialize a new specification."""
         if self._spec_path(spec_id).exists():
             raise ValueError(f"Spec already exists: {spec_id}")
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         spec = Spec(
             id=spec_id,
             title=title,
@@ -262,7 +262,7 @@ class SpecEngine:
 
     def _save(self, spec: Spec) -> None:
         """Save a spec to disk."""
-        spec.updated_at = datetime.now(UTC).isoformat()
+        spec.updated_at = datetime.now(timezone.utc).isoformat()
         self._spec_path(spec.id).write_text(
             json.dumps(spec.to_dict(), indent=2), encoding="utf-8",
         )
@@ -521,7 +521,7 @@ class SpecEngine:
         """Render a spec-driven template by replacing {{PLACEHOLDER}} tokens.
 
         Returns empty string if template directory or file is absent
-        (graceful fallback — never raises on missing templates).
+        (graceful fallback â€” never raises on missing templates).
         """
         template_dir = _resolve_template_dir()
         if template_dir is None:
@@ -536,7 +536,7 @@ class SpecEngine:
 
     def _spec_context(self, spec: Spec) -> dict[str, str]:
         """Build template context dict from a Spec."""
-        date_str = spec.created_at[:10] if spec.created_at else datetime.now(UTC).strftime("%Y-%m-%d")
+        date_str = spec.created_at[:10] if spec.created_at else datetime.now(timezone.utc).strftime("%Y-%m-%d")
         return {
             "TITLE": spec.title,
             "SPEC_ID": spec.id,
@@ -644,7 +644,7 @@ class SpecEngine:
         return results
 
     def analyze_artifacts(self, spec_id: str) -> dict[str, Any]:
-        """Cross-artifact consistency analysis (spec ↔ plan ↔ tasks).
+        """Cross-artifact consistency analysis (spec â†” plan â†” tasks).
 
         Non-destructive read-only analysis inspired by spec-kit's analyze command.
         Detects: coverage gaps, duplication, ambiguity, underspecification,
@@ -771,7 +771,7 @@ class SpecEngine:
     def converge_to_code(self, spec_id: str, codebase_dir: Path) -> dict[str, Any]:
         """Assess codebase against spec/plan/tasks; identify remaining work.
 
-        Inspired by spec-kit's converge command. Read-only — does NOT modify
+        Inspired by spec-kit's converge command. Read-only â€” does NOT modify
         any files. Returns a structured report of gaps (missing/partial/
         contradicts/unrequested) with suggested remediation tasks.
 

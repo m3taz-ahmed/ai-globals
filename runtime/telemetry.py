@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -59,7 +59,7 @@ class TelemetryCollector:
         metadata: dict[str, Any] | None = None,
     ) -> None:
         event = TelemetryEvent(
-            timestamp=datetime.now(UTC).isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             type=event_type,
             action=action,
             project=str(self.project_root),

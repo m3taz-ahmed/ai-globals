@@ -2,7 +2,7 @@
 
 Provides automated task management by syncing issues from external trackers and
 pushing OS-generated tasks back to them. Uses stdlib only (urllib, json,
-dataclasses, abc). API keys are read from environment variables — never
+dataclasses, abc). API keys are read from environment variables â€” never
 hardcoded.
 """
 
@@ -16,7 +16,7 @@ import urllib.parse
 import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, ClassVar
 
 from runtime.schemas import AizeeError, ErrorSeverity
@@ -45,7 +45,7 @@ class IssueTrackerConfig:
     project_id: str
     api_key_env: str
     base_url: str | None = None
-    # Optional explicit key — mainly for tests. When set it overrides the env
+    # Optional explicit key â€” mainly for tests. When set it overrides the env
     # var lookup. Production code should leave this ``None``.
     api_key: str | None = None
 
@@ -504,7 +504,7 @@ class JiraClient(IssueTrackerClient):
             self._url(f"/rest/api/3/issue/{urllib.parse.quote(issue_id)}/transitions"),
             method="POST",
             headers=self._headers(),
-            body={"transition": {"id": "31"}},  # 31 is commonly "Closed" — varies per instance
+            body={"transition": {"id": "31"}},  # 31 is commonly "Closed" â€” varies per instance
         )
         return self.get_issue(issue_id)
 
@@ -772,4 +772,4 @@ def create_client(config: IssueTrackerConfig) -> IssueTrackerClient:
 
 def _utc_now_iso() -> str:
     """Return current UTC time as ISO 8601 string (helper for callers)."""
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()

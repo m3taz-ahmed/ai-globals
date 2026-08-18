@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -143,7 +143,7 @@ class HybridSearcher:
         kind: str | None,
         source: str | None,
     ) -> list[sqlite3.Row]:
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         with self.memory_store._conn() as conn:
             try:
                 return self._run_fts_score_query(

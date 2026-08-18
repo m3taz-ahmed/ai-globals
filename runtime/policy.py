@@ -153,7 +153,12 @@ class PolicyEngine:
             if not policy_dir.exists():
                 continue
             default = policy_dir / "default.yaml"
-            others = sorted(p for p in policy_dir.rglob("*.yaml") if p.name != "default.yaml")
+            # guardian.yaml and probity.yaml use separate schemas loaded by
+            # Guardian.from_yaml / Guardrails (see PolicyManager). Exclude them
+            # from the generic policy loader to avoid spurious "invalid action"
+            # warnings.
+            _excluded = {"default.yaml", "guardian.yaml", "probity.yaml"}
+            others = sorted(p for p in policy_dir.rglob("*.yaml") if p.name not in _excluded)
             if default.exists():
                 self._load_file(default)
             for path in others:

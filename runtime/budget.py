@@ -9,7 +9,7 @@ import tempfile
 import threading
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
@@ -114,7 +114,7 @@ class BudgetManager:
     def _reset_if_needed(
         self, scope: str, budget: Budget, session_id: str | None = None
     ) -> None:
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         current_pid = os.getpid()
         u = self.usage.setdefault(scope, {"tokens": 0, "cost": 0, "calls": 0})
         current_key = self._period_key(scope, budget, now, session_id)

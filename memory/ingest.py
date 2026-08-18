@@ -7,7 +7,7 @@ import hashlib
 import json
 import uuid
 import warnings
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
 
@@ -71,7 +71,7 @@ class Ingestor:
         return True
 
     def _memory(self, source: str, kind: str, content: str) -> Memory:
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         return Memory(
             id=str(uuid.uuid4()),
             kind=kind,

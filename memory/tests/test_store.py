@@ -6,7 +6,7 @@ import json
 import shutil
 import tempfile
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -27,7 +27,7 @@ def _tmp() -> Path:
 
 
 def _mem(kind: str = "factual", content: str = "test", source: str = "") -> Memory:
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     return Memory(
         id=str(uuid.uuid4()),
         kind=kind,
