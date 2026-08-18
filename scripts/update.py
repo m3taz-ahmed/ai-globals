@@ -101,6 +101,46 @@ def _check_remote(root: Path, branch: str) -> dict[str, Any]:
     return info
 
 
+def _has_local_changes(root: Path) -> bool:
+    """Check if there are uncommitted local changes (tracked files only)."""
+    rc, out, _ = _run(["git", "status", "--porcelain"], cwd=root, check=False)
+    if rc != 0:
+        return False
+    # Filter out untracked files (?? prefix) — those don't conflict with pull
+    for line in out.strip().splitlines():
+        if not line.startswith("??"):
+            return True
+    return False
+
+
+def _stash_local_changes(root: Path) -> dict[str, Any]:
+    """Stash local changes before pull so the update writes over them.
+
+    The stashed changes are NOT restored after pull — the new remote version
+    becomes the working tree. Users can recover stashed changes manually with
+    `git stash pop` if needed.
+
+    Returns dict with:
+      - stashed: bool (whether a stash entry was created)
+      - message: str (human-readable status)
+    """
+    result: dict[str, Any] = {"stashed": False, "message": ""}
+    if not _has_local_changes(root):
+        result["message"] = "no local changes"
+        return result
+
+    rc, out, err = _run(
+        ["git", "stash", "push", "-u", "-m", "aizee-update: local changes before pull"],
+        cwd=root, check=False,
+    )
+    if rc == 0 and "No local changes to save" not in out:
+        result["stashed"] = True
+        result["message"] = "local changes stashed (recover with: git stash pop)"
+    else:
+        result["message"] = f"stash skipped: {out.strip() or err.strip()}"
+    return result
+
+
 def _git_pull(root: Path, branch: str) -> dict[str, Any]:
     """Pull latest from remote. Returns dict with result info."""
     result: dict[str, Any] = {"success": False, "output": "", "error": ""}
@@ -255,6 +295,13 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
 
     # Step 4: Get current HEAD for diff
     _, old_head, _ = _run(["git", "rev-parse", "HEAD"], cwd=root, check=False)
+
+    # Step 4b: Stash local changes so pull writes over them cleanly
+    stash_result = _stash_local_changes(root)
+    if stash_result["stashed"]:
+        print(f"  [STASH] {stash_result['message']}")
+    elif stash_result["message"] and stash_result["message"] != "no local changes":
+        print(f"  [STASH] {stash_result['message']}")
 
     # Step 5: Git pull
     print("\n  Pulling updates...")
