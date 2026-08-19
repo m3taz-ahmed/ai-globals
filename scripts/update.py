@@ -107,10 +107,7 @@ def _has_local_changes(root: Path) -> bool:
     if rc != 0:
         return False
     # Filter out untracked files (?? prefix) — those don't conflict with pull
-    for line in out.strip().splitlines():
-        if not line.startswith("??"):
-            return True
-    return False
+    return any(not line.startswith("??") for line in out.strip().splitlines())
 
 
 def _stash_local_changes(root: Path) -> dict[str, Any]:
@@ -298,9 +295,7 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
 
     # Step 4b: Stash local changes so pull writes over them cleanly
     stash_result = _stash_local_changes(root)
-    if stash_result["stashed"]:
-        print(f"  [STASH] {stash_result['message']}")
-    elif stash_result["message"] and stash_result["message"] != "no local changes":
+    if stash_result["stashed"] or (stash_result["message"] and stash_result["message"] != "no local changes"):
         print(f"  [STASH] {stash_result['message']}")
 
     # Step 5: Git pull

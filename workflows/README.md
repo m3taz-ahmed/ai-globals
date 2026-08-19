@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **31 execution workflows** plus reference/standards files. Each activates when the AI detects a specific task type.
+This directory contains **27 execution workflows** plus reference/standards files. Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 
@@ -45,6 +45,13 @@ This directory contains **31 execution workflows** plus reference/standards file
 | Milestone / memory sync | `17-memory-sync.md` | State handoff and memory sync on milestones |
 | Data migration | `18-data-migration.md` | Database migrations, schema changes, transformations |
 | Incident response | `19-incident-response.md` | Production incidents, outages, hotfixes |
+| Freelance pipeline | `20-freelance-pipeline.md` | Freelance project lifecycle, client management |
+| Spec-driven development | `21-spec-driven.md` | Spec-driven development workflow |
+| Spec analysis | `22-spec-analyze.md` | Spec analysis and validation |
+| Spec convergence | `23-spec-converge.md` | Spec convergence and finalization |
+| Laravel architecture setup | `24-laravel-architecture-setup.md` | Service/Repository/DTO/DDD scaffolding by complexity |
+| Filament plugin development | `25-filament-plugin-development.md` | Custom Filament plugin with register/boot lifecycle |
+| Laravel API versioning | `26-laravel-api-versioning.md` | Header-based API versioning with structure constants |
 
 ## Standards & Reference Files
 

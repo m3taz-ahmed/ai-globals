@@ -12,7 +12,6 @@ import pkgutil
 from typing import Any
 
 from aizee_mcp._compat import FastMCP
-
 from aizee_mcp.tools import (
     register_context_tools,
     register_memory_tools,

@@ -127,7 +127,9 @@ class EvalHarness:
         self.root = root
 
     def _run(self, name: str, cmd: list[str]) -> dict[str, Any]:
-        p = subprocess.run(cmd, cwd=self.root, capture_output=True, text=True)
+        p = subprocess.run(
+            cmd, cwd=self.root, capture_output=True, text=True, encoding="utf-8", errors="replace"
+        )
         return {"returncode": p.returncode, "output": (p.stdout + "\n" + p.stderr)[-4000:]}
 
     def run(self) -> dict[str, Any]:

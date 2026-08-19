@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "5.2.0"
+version = "5.3.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -93,7 +93,7 @@ exclude = [
 select = [
     "E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "TID", "RUF"
 ]
-ignore = ["E501", "UP042", "UP046"]
+ignore = ["E501", "UP042", "UP046", "UP017"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
@@ -143,6 +143,18 @@ module = ["scripts.*"]
 strict = false
 disallow_untyped_defs = false
 warn_return_any = false
+
+# MCP tools: FastMCP's @mcp.tool() decorator is untyped in the SDK.
+# These modules register tools via that decorator, so we relax the
+# untyped-decorator check for them only.
+[[tool.mypy.overrides]]
+module = [
+    "aizee_mcp.tools.workflow_tools",
+    "aizee_mcp.tools.policy_tools",
+    "aizee_mcp.tools.memory_tools",
+    "aizee_mcp.tools.context_tools",
+]
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
 testpaths = ["runtime/tests", "memory/tests", "eval/tests", "tests"]

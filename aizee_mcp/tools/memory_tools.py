@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from aizee_mcp._compat import FastMCP
-
 from memory.graph import SchemaGraph
 from memory.ingest import Ingestor
 

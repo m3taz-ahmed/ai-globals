@@ -15,13 +15,26 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import yaml
-from aizee_mcp._compat import Resource
 
 import config
+from aizee_mcp._compat import Resource  # pyright: ignore[reportAttributeAccessIssue]
+from runtime.schemas import AizeeError, ErrorSeverity
 
 if TYPE_CHECKING:
     from memory.store import MemoryStore
     from runtime.kernel import Kernel
+
+
+class PluginSandboxError(AizeeError):
+    """Raised when a plugin action is blocked by the sandbox."""
+
+    def __init__(self, plugin_name: str, action: str) -> None:
+        super().__init__(
+            "PLUGIN_SANDBOX_BLOCKED",
+            f"Plugin '{plugin_name}' action '{action}' blocked by sandbox",
+            ErrorSeverity.MEDIUM,
+            {"plugin_name": plugin_name, "action": action},
+        )
 
 
 _DENYLISTED_MODULES: set[str] = {
@@ -83,10 +96,21 @@ class AIOSPlugin(ABC):
 
     Plugins are loaded by the kernel after the runtime is initialized and may
     expose MCP tools and resources.
+
+    Two-phase lifecycle (inspired by Filament's Plugin interface):
+    1. ``register()`` — called during registration phase (before any plugin boots).
+       Register resources, pages, widgets, livewire components here.
+    2. ``boot()`` — called after ALL plugins are registered.
+       Add authorization gates, configure global defaults, register assets here.
+
+    Legacy single-phase ``on_load()`` is still supported: if a plugin does not
+    override ``register()``/``boot()``, ``on_load()`` is called during the
+    registration phase for backward compatibility.
     """
 
     name: str = ""
     version: str = "0.1.0"
+    loaded: bool = False
 
     def __init__(self, kernel: Kernel, memory: MemoryStore | None = None) -> None:
         self.kernel = kernel
@@ -94,7 +118,23 @@ class AIOSPlugin(ABC):
 
     @abstractmethod
     def on_load(self) -> None:
-        """Called once when the plugin is loaded."""
+        """Called once when the plugin is loaded (legacy single-phase)."""
+
+    def register(self) -> None:
+        """Registration phase: register components BEFORE any plugin boots.
+
+        Override for two-phase lifecycle. Default: calls ``on_load()`` for
+        backward compatibility with legacy plugins.
+        """
+        self.on_load()
+
+    def boot(self) -> None:
+        """Boot phase: called after ALL plugins are registered.
+
+        Override for two-phase lifecycle. Default: no-op.
+        Add authorization gates, configure global defaults, register assets.
+        """
+        return None
 
     def register_mcp_tools(self) -> list[Callable[..., Any]]:
         """Return a list of callable tools to register with the MCP server."""
@@ -149,7 +189,7 @@ class PluginGuard:
         def guarded(*args: Any, **kwargs: Any) -> Any:
             action = kwargs.get("action") or (args[0] if args else "unknown")
             if not self.is_allowed(str(action)):
-                raise RuntimeError(f"Plugin '{plugin_name}' action '{action}' blocked by sandbox")
+                raise PluginSandboxError(plugin_name, str(action))
             return fn(*args, **kwargs)
 
         return guarded
@@ -242,20 +282,42 @@ class PluginManager:
             discovered.append((candidate.name, plugin_cls))
         return discovered
 
+    def _register_phase(self, memory: MemoryStore | None = None) -> None:
+        """Phase 1: instantiate and register all discovered plugins."""
+        for name, cls in self._discover_plugins():
+            guard = self._guard_for(name)
+            try:
+                plugin = cls(self.kernel, memory)
+                plugin.register()
+                self._plugins[name] = plugin
+                self._guards[name] = guard
+            except Exception as exc:
+                warnings.warn(
+                    f"Plugin '{name}' failed to register: {exc}", stacklevel=2
+                )
+
+    def _boot_phase(self) -> None:
+        """Phase 2: boot all registered plugins."""
+        for name, plugin in self._plugins.items():
+            try:
+                plugin.boot()
+            except Exception as exc:
+                warnings.warn(
+                    f"Plugin '{name}' failed to boot: {exc}", stacklevel=2
+                )
+
     def load_all(self, memory: MemoryStore | None = None) -> None:
-        """Load all enabled plugins and call their on_load hooks."""
+        """Load all enabled plugins using two-phase register/boot lifecycle.
+
+        Phase 1 (register): instantiate each plugin and call ``register()``.
+        Phase 2 (boot): call ``boot()`` on all successfully registered plugins.
+        This ensures no plugin assumes another is booted during registration.
+        """
         with self._lock:
             if self._loaded:
                 return
-            for name, cls in self._discover_plugins():
-                guard = self._guard_for(name)
-                try:
-                    plugin = cls(self.kernel, memory)
-                    plugin.on_load()
-                    self._plugins[name] = plugin
-                    self._guards[name] = guard
-                except Exception as exc:
-                    warnings.warn(f"Plugin '{name}' failed to initialize: {exc}", stacklevel=2)
+            self._register_phase(memory)
+            self._boot_phase()
             self._loaded = True
 
     def get_tools(self) -> list[Callable[..., Any]]:

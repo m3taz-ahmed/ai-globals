@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "5.2.0",
+    "version": "5.3.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
-    "updated": "2026-08-07"
+    "updated": "2026-08-19"
   },
   "triggers": {
     "/prompt": "workflows/00-prompt-architecting.md",
@@ -56,6 +56,14 @@
     "execute": "workflows/02-execution.md",
     "spec-driven": "workflows/21-spec-driven.md",
     "spec": "workflows/21-spec-driven.md",
+    "spec-analyze": "workflows/22-spec-analyze.md",
+    "spec-converge": "workflows/23-spec-converge.md",
+    "/laravel-architecture": "workflows/24-laravel-architecture-setup.md",
+    "laravel-architecture": "workflows/24-laravel-architecture-setup.md",
+    "/filament-plugin": "workflows/25-filament-plugin-development.md",
+    "filament-plugin": "workflows/25-filament-plugin-development.md",
+    "/api-versioning": "workflows/26-laravel-api-versioning.md",
+    "api-versioning": "workflows/26-laravel-api-versioning.md",
     "flutter": "skills/flutter-architect/SKILL.md",
     "flutter design": "skills/flutter-design/SKILL.md",
     "flutter develop": "skills/flutter-developer/SKILL.md",
@@ -104,7 +112,9 @@
     "temporal": "memory/temporal.py",
     "decay_scheduler": "memory/decay_scheduler.py",
     "evidence_gates": "eval/harness.py",
-    "eval_stages": "eval/stages.py"
+    "eval_stages": "eval/stages.py",
+    "closure_evaluator": "runtime/closure_evaluator.py",
+    "mcp_schemas": "aizee_mcp/tools/schemas.py"
   },
   "standards": {
     "git": "workflows/git-standards.md",

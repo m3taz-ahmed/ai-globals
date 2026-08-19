@@ -4,8 +4,50 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-08-18
+[UPDATED] 2026-08-19
 [NOTES]
+- **v5.3.0 release — Laravel/Filament tech-stack enrichment + runtime improvements + bug fixes**:
+  - **Version bump**: 5.2.0 → 5.3.0 across 8 files (pyproject.toml, manifest.json, .aizee-version, README.md, README-AR.md, aizee_mcp/API.md, validate-globals.py, validate-globals.ps1) + test_dashboard.py assertions.
+  - **CHANGELOG.md**: Added v5.3.0 section with full summary (6 phases + bug fixes + tests + 3-persona review).
+  - **README.md + README-AR.md**: Updated badges (Version 5.3.0, Tests 2773, Coverage 97%, Skills 59, Workflows 27, Tech-Stack 87) + added "What's New in v5.3.0" section.
+  - **manifest.json**: Added triggers for workflows 22-26 (spec-analyze, spec-converge, laravel-architecture, filament-plugin, api-versioning) + 2 new features (closure_evaluator, mcp_schemas) + updated date.
+  - **workflows/README.md**: Fixed count from 34 → 27 (actual workflows 00-26).
+  - **Final quality gates**: ruff ✅ (0 errors), mypy ✅ (0 errors, 204 files), pytest ✅ (2773 passed, 2 skipped, 0 failed, 96.88% coverage). All new/modified files at 100% coverage.
+  - **3-persona final review**: ARCH 14/14 ✅, DEV 18/18 ✅, QA-SEC 12/12 ✅ (after adding 5 authorize() auto-validation tests + fixing workflows count).
+
+- **GitHub repos study + Laravel/Filament tech-stack enrichment — v5.2.0**:
+  - **Analysis**: Analyzed 10 leading GitHub repos (5 Laravel + 5 Filament) cloned to `D:\server\temp\github-study\`. 5 parallel subagents (ARCH/DEV/PRODUCT/UX) read real files (composer.json, Models, Controllers, Services, Resources, tests). Full report at `D:\server\temp\github-study\REPOS_ANALYSIS_REPORT.md` (627 lines).
+  - **Repos analyzed**: bagisto (eCommerce/Concord), monica (CRM/DDD), krayin-crm (Modular/MagicAI), bookstack (Wiki/Activity), koel (Music/Repository+DTO+API), filament (framework/Plugin system), superduper-starter-kit (Clusters/12 plugins), lara-zeus-sky (CMS/Status enum), mvpable (SaaS/DDD+Actions), filament-blog (Faceless/trait-based).
+  - **Phase 1 — tech-stack updates** (4 files):
+    - `tech-stack/laravel-12.md`: +7 rules (Repository Pattern, Service Layer with permission dependencies, DTO/Value Objects, Three-Component Model, Activity Logging, UUID keys, Domain-Driven Structure).
+    - `tech-stack/laravel-13.md`: +7 rules (Custom Eloquent Builders, Custom Casts, API Resources + Structure Constants, API Versioning header-based, Cursor Pagination, Contracts/Interfaces, License/Feature Gating).
+    - `tech-stack/filament-4.md`: +13 rules (Tab-based Forms, Status Enum System, Upload/URL Toggle, Configurable Content Editor, Create Option Forms, Navigation Badges, Custom Permission Prefixes, Role-based Field Visibility, Dynamic Branding, Discovery Pattern, Authorization via Plugin, Action Groups, Search Highlighting).
+    - `tech-stack/filament-5.md`: +12 rules (Schema Pattern, Plugin System, Cluster Pattern, ComponentManager, EvaluatesClosures, Macroable, Registry Pattern, NavigationManager, Asset Management, Multi-DB Testing, Spatie Media Library, Spatie Tags with Types).
+  - **Phase 2 — new tech-stack files** (3 files):
+    - `tech-stack/laravel-testing.md`: 18 rules (Pest 3+, Two-Tier testing, Factories, Helper Traits, Custom Assertions, Security Tests, License Mocking, Translation Consistency, E2E Playwright, Multi-DB, Parallel+Serial, Browser Testing, API Structure Tests, Cursor Pagination Tests, Bus Faking, AAA Pattern, Coverage).
+    - `tech-stack/laravel-security.md`: 25 rules (Auth/Sanctum/WebAuthn, 2FA, ACL, Multi-Tenancy, Content Filtering, SVG Sanitization, Rate Limiting, Security Headers, ForceHttps, Installer Lockdown, Disposable Email, GDPR, Impersonation, UUID, License Gating, FormRequest, Parameterized Queries, $fillable, No PII logs, RBAC, HTML Sanitization, DTO Projections, Encrypt at Rest, API Throttling, JWT HttpOnly).
+    - `tech-stack/filament-plugins.md`: 14 rules (Plugin Interface, Registration, Boot Order, Authorization via Plugin, 20 Recommended Plugins, Custom Plugin Development, Discovery, Configuration, Testing, Theming, Assets, Navigation, Multi-Tenancy, Compatibility).
+  - **Phase 3 — skills updates** (3 files):
+    - `skills/backend-frameworks-lord/SKILL.md`: +12 rules (Architecture Patterns ranked by complexity, Pattern Selection Matrix, Service Layer Rules, Repository Rules, DTO Rules, API Design Rules, Multi-Tenancy Rules, Three-Component Model, Activity Logging, AI Integration, Testing, Security).
+    - `skills/page-sections-lord/SKILL.md`: +19 rules (Status Enum, Tab-based Forms, Upload/URL Toggle, Configurable Editor, Navigation Builder, Search Highlighting, Spatie Media Library, Spatie Tags with Types, Password Protection, Sticky/Scheduling, Parent-Child Pages, FAQ/Breadcrumb/Article/Organization Schema, Action Groups, Navigation Badges, Create Option Forms, Auto-slug Generation).
+    - `tech-stack/useful-repos.md`: +10 repos (bagisto, monica, krayin, bookstack, koel, filament, superduper, sky, mvpable, filament-blog) with detailed descriptions.
+  - **Phase 4 — new workflows** (3 files):
+    - `workflows/24-laravel-architecture-setup.md`: 22 rules (complexity detection, Service/Repository/DTO/Actions/DDD scaffolding, Context7 MCP query, two-tier testing, security).
+    - `workflows/25-filament-plugin-development.md`: 22 rules (Plugin interface, register/boot lifecycle, config file, authorization, configureUsing, Asset management, Multi-tenancy, Navigation, Theming, Context7 MCP, testing, compatibility, documentation).
+    - `workflows/26-laravel-api-versioning.md`: 24 rules (header-based versioning, route files, API Resources with structure constants, cursor pagination, deprecation headers, OpenAPI docs, Context7 MCP, backward compatibility).
+  - **Phase 5 — aiZee runtime improvements** (4 files):
+    - `runtime/plugin.py`: Enhanced `AIOSPlugin` with two-phase lifecycle `register()` + `boot()` (Filament pattern). `register()` default calls `on_load()` for backward compat. `PluginManager.load_all()` now runs Phase 1 (register all) then Phase 2 (boot all).
+    - `runtime/closure_evaluator.py` (NEW): `ClosureEvaluator` with automatic dependency injection for closures (Filament EvaluatesClosures pattern). Resolution order: named → typed → default-by-name → default-by-type → evaluation_identifier → default value → None → error. `GuardianClosureEvaluator` subclass with action/attributes/context defaults. `ClosureResolutionError` exception.
+    - `runtime/guardian.py`: Added `permission_dependencies` system (Monica BaseService pattern). `DEFAULT_PERMISSION_DEPENDENCIES` class var. `validate_permission_dependencies()` method checks prerequisites.
+    - `aizee_mcp/tools/schemas.py` (NEW): JSON_STRUCTURE constants for MCP tool responses (Koel pattern). 7 schema classes (Rule, Skill, Workflow, TechStack, PolicyDecision, Plugin, MemoryEntry) + PaginatedResultSchema with cursor/offset structures. `ALL_SCHEMAS` registry.
+  - **Gate**: ruff ✅ (new/modified files), mypy ✅ (4 files clean), pytest ✅ (2717 passed, 1 skipped, 96.37% cov — 1 test fixed for new plugin message, 2 pre-existing failures unrelated), eval/harness ✅ (validate-globals PASS all new files), memory ingest ✅ (47 memories), graphify update ✅ (9573 nodes, 19889 edges).
+  - **Review fixes (3-persona audit: ARCH/DEV/QA-SEC)**:
+    - **Code quality fixes**: Split `load_all` into `_register_phase` + `_boot_phase` (CODE-03). Split `_resolve_single_param` into 5 helper methods (CODE-03). Added `PluginSandboxError(AizeeError)` replacing `RuntimeError` in plugin guard. Replaced `PermissionError` with `PolicyDeniedError` in guardian. Added `EVALUATION_ERROR_REASON`/`NO_MATCHING_RULE_REASON`/`DEFAULT_RULE_NAME` constants (CODE-04).
+    - **Exports**: Added `ClosureEvaluator` + `GuardianClosureEvaluator` to `runtime/__init__.py`. Added all 9 schema classes + `ALL_SCHEMAS` to `aizee_mcp/tools/__init__.py`.
+    - **New tests**: `test_closure_evaluator.py` (23 tests, 100% cov), `test_mcp_schemas.py` (14 tests, 100% cov). Added 4 tests for two-phase lifecycle (boot/register exceptions) + 8 tests for `validate_permission_dependencies` + magic string constants. Fixed `test_plugin_guard.py` for `PluginSandboxError`.
+    - **Docs**: Updated `workflows/README.md` count 31→34 + added workflows 20-26 to table.
+    - **Post-fix gate**: ruff ✅, mypy ✅ (4 files clean), pytest ✅ (2767 passed, 1 skipped, 97.00% cov — 2 pre-existing failures unrelated), memory ingest ✅ (1 new), graphify ✅ (9656 nodes, 20141 edges).
+
 - **Fourth audit + improvements (P0-P4, external research-driven) — v5.2.0**:
   - **P0 (critical startup fixes)**:
     - **P0.1**: `state/budget.json` encryption corruption — `BudgetManager._load()` now catches `InvalidToken` + JSON errors, quarantines the corrupt file to `.corrupt.bak`, and falls back to default budgets. System stays usable after key rotation.

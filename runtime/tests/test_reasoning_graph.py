@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from runtime.reasoning_graph import Edge, Node, NodeKind, ReasoningGraph
+from runtime.reasoning_graph import NodeKind, ReasoningGraph
 
 
 class TestReasoningGraph:

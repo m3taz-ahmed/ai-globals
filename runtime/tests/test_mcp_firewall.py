@@ -9,7 +9,6 @@ import yaml
 
 from runtime.mcp_firewall import (
     FirewallAction,
-    FirewallVerdict,
     McpFirewall,
     ToolAccessRule,
     _eval_node,

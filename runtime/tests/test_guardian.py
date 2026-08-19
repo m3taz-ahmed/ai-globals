@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Tests for runtime.guardian."""
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from runtime.guardian import (
     ainvoke,
     invoke,
 )
+from runtime.schemas import PolicyDeniedError
 
 
 def test_allow_default():
@@ -101,7 +102,7 @@ def test_invoke_decorator():
         return f"deleted in {env}"
 
     assert delete("dev") == "deleted in dev"
-    with pytest.raises(PermissionError):
+    with pytest.raises(PolicyDeniedError):
         delete("prod")
 
 
@@ -111,7 +112,7 @@ def test_default_action_config():
 
 
 # ---------------------------------------------------------------------------
-# _PredicateEvaluator._resolve — line 98 (non-dict traversal returns None)
+# _PredicateEvaluator._resolve -€” line 98 (non-dict traversal returns None)
 # ---------------------------------------------------------------------------
 
 def test_resolve_returns_none_for_non_dict_traversal():
@@ -125,13 +126,13 @@ def test_resolve_returns_none_for_non_dict_traversal():
             }
         ]
     )
-    # 'resource' is a string, not a dict — _resolve should return None
+    # 'resource' is a string, not a dict -€” _resolve should return None
     d = g.authorize(ActionRequest(tool="x", attributes={"resource": "not-a-dict"}))
     assert d.status == DecisionStatus.ALLOW  # no match because None != "prod"
 
 
 # ---------------------------------------------------------------------------
-# evaluate_predicate — line 106 (key is None returns False)
+# evaluate_predicate -€” line 106 (key is None returns False)
 # ---------------------------------------------------------------------------
 
 def test_predicate_with_none_key_returns_false():
@@ -150,7 +151,7 @@ def test_predicate_with_none_key_returns_false():
 
 
 # ---------------------------------------------------------------------------
-# evaluate_predicate — line 110 (unsupported operator raises ValueError)
+# evaluate_predicate -€” line 110 (unsupported operator raises ValueError)
 # ---------------------------------------------------------------------------
 
 def test_unsupported_operator_raises_value_error():
@@ -163,7 +164,7 @@ def test_unsupported_operator_raises_value_error():
 
 
 # ---------------------------------------------------------------------------
-# from_yaml — lines 129-130
+# from_yaml -€” lines 129-130
 # ---------------------------------------------------------------------------
 
 def test_from_yaml(tmp_path):
@@ -190,7 +191,7 @@ def test_from_yaml_empty_file(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# from_json — lines 134-135
+# from_json -€” lines 134-135
 # ---------------------------------------------------------------------------
 
 def test_from_json(tmp_path):
@@ -209,7 +210,7 @@ def test_from_json(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Tool mismatch continues to next rule — line 143
+# Tool mismatch continues to next rule -€” line 143
 # ---------------------------------------------------------------------------
 
 def test_tool_mismatch_continues_to_next_rule():
@@ -226,7 +227,7 @@ def test_tool_mismatch_continues_to_next_rule():
 
 
 # ---------------------------------------------------------------------------
-# Single predicate rule — line 152
+# Single predicate rule -€” line 152
 # ---------------------------------------------------------------------------
 
 def test_single_predicate_rule():
@@ -249,7 +250,7 @@ def test_single_predicate_rule():
 
 
 # ---------------------------------------------------------------------------
-# Rule with no predicate/all/any — line 154 (matched=True)
+# Rule with no predicate/all/any -€” line 154 (matched=True)
 # ---------------------------------------------------------------------------
 
 def test_rule_with_no_matcher_always_matches():
@@ -261,7 +262,7 @@ def test_rule_with_no_matcher_always_matches():
 
 
 # ---------------------------------------------------------------------------
-# Evaluation error handling — lines 155-160
+# Evaluation error handling -€” lines 155-160
 # ---------------------------------------------------------------------------
 
 def test_evaluation_error_denies():
@@ -301,7 +302,7 @@ def test_evaluation_error_allow_continues():
 
 
 # ---------------------------------------------------------------------------
-# Async invoke decorator — lines 202-210, 213
+# Async invoke decorator -€” lines 202-210, 213
 # ---------------------------------------------------------------------------
 
 def test_invoke_decorator_async():
@@ -317,7 +318,8 @@ def test_invoke_decorator_async():
     result = asyncio.run(delete("dev"))
     assert result == "deleted in dev"
 
-    with pytest.raises(PermissionError):
+    from runtime.schemas import PolicyDeniedError
+    with pytest.raises(PolicyDeniedError):
         asyncio.run(delete("prod"))
 
 
@@ -350,7 +352,7 @@ def test_invoke_decorator_async_require_approval_allowed():
 
 
 # ---------------------------------------------------------------------------
-# ainvoke — line 221
+# ainvoke -€” line 221
 # ---------------------------------------------------------------------------
 
 def test_ainvoke_decorator():
@@ -364,7 +366,7 @@ def test_ainvoke_decorator():
         return f"deleted in {env}"
 
     assert delete("dev") == "deleted in dev"
-    with pytest.raises(PermissionError):
+    with pytest.raises(PolicyDeniedError):
         delete("prod")
 
 
@@ -381,13 +383,13 @@ def test_ainvoke_decorator_async():
 
 
 # ---------------------------------------------------------------------------
-# check() raises PermissionError on deny — line 177
+# check() raises PermissionError on deny -€” line 177
 # ---------------------------------------------------------------------------
 
 def test_check_raises_permission_error_on_deny():
     """check() raises PermissionError when decision is DENY."""
     g = Guardian([{"name": "deny_all", "tool": "x", "decision": "deny"}])
-    with pytest.raises(PermissionError, match="Policy denied"):
+    with pytest.raises(PolicyDeniedError, match="Policy denied"):
         g.check(ActionRequest(tool="x"))
 
 
@@ -403,7 +405,7 @@ def test_invoke_with_explicit_tool_name():
     def my_func(x: int) -> int:
         return x  # pragma: no cover
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(PolicyDeniedError):
         my_func(1)
 
 
@@ -417,5 +419,136 @@ def test_invoke_with_explicit_tool_name_allowed():
     def my_func(x: int) -> int:
         return x
 
-    # No attributes → no match → allowed
+    # No attributes - no match - allowed
     assert my_func(42) == 42
+
+
+# ---------------------------------------------------------------------------
+# validate_permission_dependencies
+# ---------------------------------------------------------------------------
+
+
+def test_validate_permission_dependencies_all_satisfied():
+    g = Guardian([], permission_dependencies={'perm_a': ['perm_b']})
+    is_valid, missing = g.validate_permission_dependencies(['perm_a', 'perm_b'])
+    assert is_valid is True
+    assert missing == []
+
+
+def test_validate_permission_dependencies_missing():
+    g = Guardian([], permission_dependencies={'perm_a': ['perm_b']})
+    is_valid, missing = g.validate_permission_dependencies(['perm_a'])
+    assert is_valid is False
+    assert 'perm_a requires perm_b' in missing
+
+
+def test_validate_permission_dependencies_with_context():
+    g = Guardian([], permission_dependencies={'perm_a': ['perm_b']})
+    is_valid, missing = g.validate_permission_dependencies(
+        ['perm_a'], context={'perm_b': True}
+    )
+    assert is_valid is True
+    assert missing == []
+
+
+def test_validate_permission_dependencies_multiple_deps():
+    g = Guardian([], permission_dependencies={'admin': ['member', 'verified']})
+    is_valid, missing = g.validate_permission_dependencies(['admin', 'member'])
+    assert is_valid is False
+    assert 'admin requires verified' in missing
+
+
+def test_validate_permission_dependencies_no_deps():
+    g = Guardian([], permission_dependencies={'simple': []})
+    is_valid, missing = g.validate_permission_dependencies(['simple'])
+    assert is_valid is True
+    assert missing == []
+
+
+def test_validate_permission_dependencies_default_deps():
+    g = Guardian([])
+    is_valid, missing = g.validate_permission_dependencies([
+        'author_must_be_vault_manager',
+        'vault_must_belong_to_account',
+        'author_must_belong_to_account',
+    ])
+    assert is_valid is True
+    assert missing == []
+
+
+def test_validate_permission_dependencies_default_deps_missing():
+    g = Guardian([])
+    is_valid, missing = g.validate_permission_dependencies(
+        ['author_must_be_vault_manager']
+    )
+    assert is_valid is False
+    assert len(missing) == 2
+
+
+def test_guardian_magic_string_constants():
+    assert Guardian.EVALUATION_ERROR_REASON == 'evaluation error'
+    assert Guardian.NO_MATCHING_RULE_REASON == 'no matching rule'
+    assert Guardian.DEFAULT_RULE_NAME == 'default'
+
+
+# ---------------------------------------------------------------------------
+# authorize() auto-validation of permission dependencies
+# ---------------------------------------------------------------------------
+
+
+def test_authorize_auto_validates_permission_dependencies_deny_on_missing():
+    """authorize() calls validate_permission_dependencies() automatically and returns DENY if missing."""
+    g = Guardian(
+        [{"name": "allow_perm_a", "tool": "x", "decision": "allow"}],
+        permission_dependencies={"perm_a": ["perm_b"]},
+    )
+    # Request with permissions attribute, but missing dependency
+    d = g.authorize(ActionRequest(tool="x", attributes={"permissions": ["perm_a"]}))
+    assert d.status == DecisionStatus.DENY
+    assert d.rule_name == "permission_dependencies"
+    assert "Missing dependencies" in d.reason
+
+
+def test_authorize_auto_validates_permission_dependencies_allow_when_satisfied():
+    """authorize() allows when all permission dependencies are satisfied."""
+    g = Guardian(
+        [{"name": "allow_perm_a", "tool": "x", "decision": "allow"}],
+        permission_dependencies={"perm_a": ["perm_b"]},
+    )
+    # Request with all dependencies satisfied
+    d = g.authorize(
+        ActionRequest(tool="x", attributes={"permissions": ["perm_a", "perm_b"]})
+    )
+    assert d.status == DecisionStatus.ALLOW
+    assert d.rule_name == "allow_perm_a"
+
+
+def test_authorize_no_auto_validation_without_permissions_attribute():
+    """authorize() skips auto-validation when request has no permissions attribute."""
+    g = Guardian(
+        [{"name": "allow_all", "tool": "x", "decision": "allow"}],
+        permission_dependencies={"perm_a": ["perm_b"]},
+    )
+    # No permissions attribute -> no auto-validation
+    d = g.authorize(ActionRequest(tool="x", attributes={"env": "dev"}))
+    assert d.status == DecisionStatus.ALLOW
+
+
+def test_authorize_no_auto_validation_without_permission_dependencies():
+    """authorize() skips auto-validation when guardian has no permission_dependencies."""
+    g = Guardian([{"name": "allow_all", "tool": "x", "decision": "allow"}])
+    # No permission_dependencies -> no auto-validation even with permissions attribute
+    d = g.authorize(ActionRequest(tool="x", attributes={"permissions": ["perm_a"]}))
+    assert d.status == DecisionStatus.ALLOW
+
+
+def test_authorize_no_auto_validation_on_deny_decision():
+    """authorize() skips auto-validation when decision is DENY (not ALLOW)."""
+    g = Guardian(
+        [{"name": "deny_all", "tool": "x", "decision": "deny"}],
+        permission_dependencies={"perm_a": ["perm_b"]},
+    )
+    # DENY decision -> no auto-validation needed
+    d = g.authorize(ActionRequest(tool="x", attributes={"permissions": ["perm_a"]}))
+    assert d.status == DecisionStatus.DENY
+    assert d.rule_name == "deny_all"

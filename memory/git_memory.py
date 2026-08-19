@@ -11,15 +11,15 @@ Manages agent memory as a git repository, providing:
 Memory entries are stored as JSON files in a directory structure::
 
     memory_repo/
-    â”œâ”€â”€ facts/
-    â”‚   â”œâ”€â”€ 001.json
-    â”‚   â””â”€â”€ 002.json
-    â”œâ”€â”€ preferences/
-    â”‚   â””â”€â”€ 001.json
-    â”œâ”€â”€ corrections/
-    â”‚   â””â”€â”€ 001.json
-    â””â”€â”€ sessions/
-        â””â”€â”€ 2026-01-01.json
+    |-- facts/
+    |   |-- 001.json
+    |   `-- 002.json
+    |-- preferences/
+    |   `-- 001.json
+    |-- corrections/
+    |   `-- 001.json
+    `-- sessions/
+        `-- 2026-01-01.json
 
 Usage::
 

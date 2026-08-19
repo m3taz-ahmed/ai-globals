@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import runpy
 import subprocess
@@ -42,7 +42,7 @@ def test_dashboard_status():
         with urlopen(f"http://127.0.0.1:{port}/api/status") as resp:
             body = resp.read().decode()
             data = json.loads(body)
-            assert data["version"] == "5.2.0"
+            assert data["version"] == "5.3.0"
     finally:
         server.shutdown()
 
@@ -55,7 +55,7 @@ def test_dashboard_health():
         with urlopen(f"http://127.0.0.1:{port}/api/health") as resp:
             data = json.loads(resp.read().decode())
             assert data["ok"] is True
-            assert data["version"] == "5.2.0"
+            assert data["version"] == "5.3.0"
     finally:
         server.shutdown()
 
@@ -1294,7 +1294,7 @@ def test_dashboard_main_block():
         time.sleep(2.0)
         rc = proc.poll()
         if rc is not None:  # pragma: no cover
-            # Process exited — capture stderr for debugging
+            # Process exited â€” capture stderr for debugging
             stderr = proc.stderr.read() if proc.stderr else ""
             # On Windows, signal.SIGTERM handler may cause issues
             # but the __main__ block should still execute
@@ -1548,13 +1548,13 @@ def test_dashboard_sse_broken_pipe():
     handler.headers.get.return_value = ""
     handler.wfile.write.side_effect = BrokenPipeError()
     handler.kernel = MagicMock()
-    handler.kernel.status.return_value = {"version": "5.2.0", "budgets": 0, "metrics": {}}
+    handler.kernel.status.return_value = {"version": "5.3.0", "budgets": 0, "metrics": {}}
     # Should not raise
     dash_server.DashboardHandler._send_sse_events(handler)
 
 
 # ---------------------------------------------------------------------------
-# __main__ block — in-process (lines 485-491)
+# __main__ block â€” in-process (lines 485-491)
 # ---------------------------------------------------------------------------
 
 def test_dashboard_main_block_in_process():
@@ -1582,3 +1582,4 @@ def test_dashboard_main_block_in_process():
         mock_server.serve_forever.assert_called_once()
     finally:
         sys.argv = original_argv
+

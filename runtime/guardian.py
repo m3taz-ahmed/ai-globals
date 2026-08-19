@@ -23,7 +23,7 @@ from typing import Any, ClassVar
 
 import yaml
 
-from runtime.schemas import AizeeError, ErrorSeverity
+from runtime.schemas import AizeeError, ErrorSeverity, PolicyDeniedError
 
 
 class DecisionStatus(str, Enum):
@@ -126,11 +126,45 @@ class _PredicateEvaluator:
 
 
 class Guardian:
-    """Policy engine for agent tool execution."""
+    """Policy engine for agent tool execution.
 
-    def __init__(self, rules: list[dict[str, Any]], config: GuardConfig | None = None) -> None:
+    Supports permission dependencies (inspired by Monica's BaseService):
+    each permission can declare required prerequisite permissions. If a
+    rule grants a permission that has dependencies, all dependencies must
+    also be granted (or present in the context) for the rule to match.
+    """
+
+    # Permission dependencies: permission -> list of required prerequisites.
+    # Inspired by Monica's BaseService::$permissionDependencies.
+    DEFAULT_PERMISSION_DEPENDENCIES: ClassVar[dict[str, list[str]]] = {
+        "author_must_be_vault_manager": [
+            "vault_must_belong_to_account",
+            "author_must_belong_to_account",
+        ],
+        "author_must_be_account_administrator": [
+            "author_must_belong_to_account",
+        ],
+        "author_must_be_vault_editor": [
+            "vault_must_belong_to_account",
+            "author_must_belong_to_account",
+        ],
+    }
+
+    EVALUATION_ERROR_REASON: ClassVar[str] = "evaluation error"
+    NO_MATCHING_RULE_REASON: ClassVar[str] = "no matching rule"
+    DEFAULT_RULE_NAME: ClassVar[str] = "default"
+
+    def __init__(
+        self,
+        rules: list[dict[str, Any]],
+        config: GuardConfig | None = None,
+        permission_dependencies: dict[str, list[str]] | None = None,
+    ) -> None:
         self.rules = rules
         self.config = config or GuardConfig()
+        self.permission_dependencies = permission_dependencies or dict(
+            self.DEFAULT_PERMISSION_DEPENDENCIES
+        )
 
     @classmethod
     def from_yaml(cls, path: str | Path, config: GuardConfig | None = None) -> Guardian:
@@ -162,9 +196,9 @@ class Guardian:
                     matched = True
             except Exception:
                 if self.config.on_evaluation_error == DecisionStatus.DENY:
-                    return Decision(DecisionStatus.DENY, name, "evaluation error")
+                    return Decision(DecisionStatus.DENY, name, self.EVALUATION_ERROR_REASON)
                 if self.config.on_evaluation_error == DecisionStatus.REQUIRE_APPROVAL:
-                    return Decision(DecisionStatus.REQUIRE_APPROVAL, name, "evaluation error")
+                    return Decision(DecisionStatus.REQUIRE_APPROVAL, name, self.EVALUATION_ERROR_REASON)
                 continue
 
             if matched:
@@ -176,13 +210,60 @@ class Guardian:
     def authorize(self, request: ActionRequest) -> Decision:
         decision = self._match_rule(request)
         if decision is not None:
+            # If ALLOW decision and request carries permissions, validate deps.
+            if (
+                decision.status == DecisionStatus.ALLOW
+                and self.permission_dependencies
+                and isinstance(request.attributes.get("permissions"), list)
+            ):
+                is_valid, missing = self.validate_permission_dependencies(
+                    request.attributes["permissions"],
+                    request.attributes,
+                )
+                if not is_valid:
+                    return Decision(
+                        DecisionStatus.DENY,
+                        "permission_dependencies",
+                        f"Missing dependencies: {', '.join(missing)}",
+                    )
             return decision
-        return Decision(self.config.default_decision, "default", "no matching rule")
+        return Decision(self.config.default_decision, self.DEFAULT_RULE_NAME, self.NO_MATCHING_RULE_REASON)
+
+    def validate_permission_dependencies(
+        self, permissions: list[str], context: dict[str, Any] | None = None
+    ) -> tuple[bool, list[str]]:
+        """Check that all permission dependencies are satisfied.
+
+        Inspired by Monica's BaseService::validateRules(): each permission
+        may declare prerequisite permissions. All prerequisites must be
+        present in the ``permissions`` list (or satisfied by ``context``)
+        for the permission to be valid.
+
+        Args:
+            permissions: List of permission names to validate.
+            context: Optional runtime context for additional checks.
+
+        Returns:
+            Tuple of (is_valid, missing_dependencies). ``is_valid`` is True
+            if all dependencies are satisfied. ``missing_dependencies``
+            contains the names of unsatisfied prerequisites.
+        """
+        perm_set = set(permissions)
+        ctx = context or {}
+        missing: list[str] = []
+
+        for perm in permissions:
+            deps = self.permission_dependencies.get(perm, [])
+            for dep in deps:
+                if dep not in perm_set and not ctx.get(dep, False):
+                    missing.append(f"{perm} requires {dep}")
+
+        return (len(missing) == 0, missing)
 
     def check(self, request: ActionRequest) -> None:
         decision = self.authorize(request)
         if decision.status == DecisionStatus.DENY:
-            raise PermissionError(f"Policy denied by rule {decision.rule_name!r}")
+            raise PolicyDeniedError(f"Policy denied by rule {decision.rule_name!r}")
         if decision.status == DecisionStatus.REQUIRE_APPROVAL:
             raise ApprovalRequiredError(decision.rule_name, decision.reason)
 

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import time
 
-import pytest
-
 from runtime.approval_service import (
     ApprovalRequest,
     ApprovalService,

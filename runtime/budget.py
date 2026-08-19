@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
@@ -74,10 +75,8 @@ class BudgetManager:
             import logging
 
             quarantine = self.state_file.with_suffix(".json.corrupt.bak")
-            try:
+            with contextlib.suppress(OSError):
                 self.state_file.replace(quarantine)
-            except OSError:
-                pass
             logging.getLogger(__name__).warning(
                 "budget.json unreadable (%s); quarantined to %s, using defaults",
                 exc, quarantine,

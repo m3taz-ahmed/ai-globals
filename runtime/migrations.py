@@ -59,7 +59,7 @@ def rollback(to_version: int) -> Callable[[_RollbackFn], _RollbackFn]:
 
 @migration(0)
 def _migrate_0_to_1(conn: sqlite3.Connection) -> None:
-    """v0 â†’ v1: Add indexes for performance."""
+    """v0 -> v1: Add indexes for performance."""
     conn.executescript("""
         CREATE INDEX IF NOT EXISTS idx_mem_kind ON memories(kind);
         CREATE INDEX IF NOT EXISTS idx_mem_source ON memories(source);
@@ -69,7 +69,7 @@ def _migrate_0_to_1(conn: sqlite3.Connection) -> None:
 
 @migration(1)
 def _migrate_1_to_2(conn: sqlite3.Connection) -> None:
-    """v1 â†’ v2: Add relations table if not exists."""
+    """v1 -> v2: Add relations table if not exists."""
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS relations (
             id TEXT PRIMARY KEY,
@@ -87,7 +87,7 @@ def _migrate_1_to_2(conn: sqlite3.Connection) -> None:
 
 @rollback(0)
 def _rollback_1_to_0(conn: sqlite3.Connection) -> None:
-    """v1 â†’ v0: Remove performance indexes added in migration 0."""
+    """v1 -> v0: Remove performance indexes added in migration 0."""
     conn.executescript("""
         DROP INDEX IF EXISTS idx_mem_kind;
         DROP INDEX IF EXISTS idx_mem_source;
@@ -98,7 +98,7 @@ def _rollback_1_to_0(conn: sqlite3.Connection) -> None:
 
 @rollback(1)
 def _rollback_2_to_1(conn: sqlite3.Connection) -> None:
-    """v2 â†’ v1: Remove relations table added in migration 1."""
+    """v2 -> v1: Remove relations table added in migration 1."""
     conn.executescript("""
         DROP INDEX IF EXISTS idx_rel_source;
         DROP INDEX IF EXISTS idx_rel_target;
@@ -144,7 +144,7 @@ class MigrationRunner:
                 if fn is None:
                     logger.warning("No migration from version %d", v)
                     break
-                logger.info("Migrating schema %d â†’ %d", v, v + 1)
+                logger.info("Migrating schema %d -> %d", v, v + 1)
                 fn(conn)
                 self._set_version(conn, v + 1)
             return self._get_version(conn)
@@ -166,9 +166,9 @@ class MigrationRunner:
                 if fn is None:
                     raise ValueError(
                         f"No rollback registered for migration to version {v} "
-                        f"(cannot reverse {v} â†’ {v - 1})"
+                        f"(cannot reverse {v} -> {v - 1})"
                     )
-                logger.info("Rolling back schema %d â†’ %d", v, v - 1)
+                logger.info("Rolling back schema %d -> %d", v, v - 1)
                 fn(conn)
                 self._set_version(conn, v - 1)
             return self._get_version(conn)

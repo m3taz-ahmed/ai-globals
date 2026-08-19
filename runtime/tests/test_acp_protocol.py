@@ -68,7 +68,6 @@ class TestACPMessage:
 
     def test_is_expired_with_recent_timestamp(self) -> None:
         msg = ACPMessage(ttl=3600)
-        from datetime import datetime
         msg.timestamp = datetime.now(timezone.utc).isoformat()
         assert msg.is_expired is False
 

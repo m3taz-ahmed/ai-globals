@@ -4,16 +4,16 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.2.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.2.0">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-2526%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="2526 اختبار ناجح">
-    <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-91%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 91%">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.3.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.3.0">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-2773%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="2773 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-97%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 97%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-20-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="20 شخصية">
-    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-78-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="78 مهارة">
-    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-38-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="38 سير عمل">
-    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-81-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="81 مرجع تقنية">
+    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-59-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="59 مهارة">
+    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-27-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="27 سير عمل">
+    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-87-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="87 مرجع تقنية">
   </p>
 </div>
 
@@ -122,6 +122,37 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 كشف الشخصيات محلي (Python خالص، صفر tokens). فقط أسماء المهارات relevant تُرجع — ليس الملفات كاملة.
 
 ---
+
+## الجديد في v5.3.0
+
+### إثراء المراجع التقنية لـ Laravel/Filament (دراسة 10 مشاريع)
+تحليل عميق لـ 10 مشاريع GitHub رائدة (Bagisto, Monica, Krayin, BookStack, Koel, Filament, SuperDuper, Sky, MVPable, Filament-Blog):
+
+- **7 ملفات مراجع تقنية** (4 محدّثة + 3 جديدة): `laravel-12`, `laravel-13`, `filament-4`, `filament-5`, `laravel-testing` (جديد), `laravel-security` (جديد), `filament-plugins` (جديد)
+- **2 مهارة محدّثة**: `backend-frameworks-lord` (20 قاعدة), `page-sections-lord` (32 قاعدة)
+- **3 سير عمل جديد**: `24-laravel-architecture-setup`, `25-filament-plugin-development`, `26-laravel-api-versioning`
+- **`useful-repos.md`**: 10 مشاريع Laravel + Filament جديدة
+
+### تحسينات Runtime (أنماط مستوحاة من Filament)
+- **دورة حياة البلوجين ذات الطورين**: `register()` + `boot()` (نمط Filament Plugin)
+- **مُقيّم الإغلاقات**: حقن تلقائي لتبعيات الإغلاقات (نمط Filament EvaluatesClosures)
+- **تبعيات الصلاحيات**: التحقق من المتطلبات المسبقة في Guardian (نمط Monica BaseService)
+- **مخططات استجابة MCP**: ثوابت JSON_STRUCTURE لاستجابات أدوات متناسقة (نمط Koel)
+- **التحقق التلقائي في authorize()**: Guardian يتحقق تلقائياً من تبعيات الصلاحيات عند ALLOW
+
+### إصلاحات الأخطاء + تنظيف Lint (52 → 0 خطأ)
+- إصلاح 52 خطأ ruff عبر `runtime/`, `aizee_mcp/`, `memory/`, `scripts/`, `eval/`
+- إصلاح 30 خطأ mypy `untyped-decorator` عبر `pyproject.toml` override
+- إصلاح `asyncio.TimeoutError` غير مُلتقط في `adapters.py` (توافق Python 3.10)
+- إصلاح أحرف unicode مشوهة في `migrations.py`, `spec_engine.py`, `git_memory.py`
+- إضافة `UP017` لقائمة تجاهل ruff (توافق Python 3.10 — `datetime.UTC` يتطلب 3.11+)
+
+### الاختبارات
+- **45 اختبار جديد** (مُقيّم الإغلاقات، مخططات MCP، دورة حياة الطورين، تبعيات الصلاحيات)
+- **2773 اختبار ناجح**، تغطية 97%، 0 فشل
+
+### مراجعة 3 شخصيات
+كل التغييرات تمت مراجعتها بواسطة شخصيات ARCH + DEV + QA-SEC — 44/44 نقطة مُتحققة.
 
 ## الجديد في v5.2.0
 

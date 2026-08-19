@@ -1,5 +1,63 @@
 # Changelog
 
+## [5.3.0] — 2026-08-19 (Laravel/Filament Tech-Stack Enrichment + Runtime Improvements)
+
+### GitHub Repos Study (10 repos analyzed)
+Deep analysis of 10 leading GitHub repositories (5 Laravel + 5 Filament) cloned to `temp/github-study/`. Full report at `temp/github-study/REPOS_ANALYSIS_REPORT.md` (627 lines).
+- **Laravel repos**: Bagisto (eCommerce/Concord), Monica (CRM/DDD), Krayin (Modular/MagicAI), BookStack (Wiki/Activity), Koel (Music/Repository+DTO+API)
+- **Filament repos**: Filament (framework/Plugin system), SuperDuper Starter Kit (Clusters/12 plugins), Lara-Zeus Sky (CMS/Status enum), MVPable (SaaS/DDD+Actions), Filament-Blog (Faceless/trait-based)
+
+### Phase 1 — Tech-Stack Updates (4 files)
+- **`laravel-12.md`**: 10 rules (Repository, Service Layer, DTO, Three-Component Model, Activity Logging, UUID, DDD)
+- **`laravel-13.md`**: 12 rules (PHP 8.4 asymmetric visibility, Context API, AI vector search, Custom Builders/Casts, API Resources + Structure Constants, Header-based Versioning, Cursor Pagination, Contracts, License Gating)
+- **`filament-4.md`**: 17 rules (Tab-based Forms, Status Enum, Upload/URL Toggle, Configurable Editor, Navigation Badges, Custom Permission Prefixes, Role-based Visibility, Dynamic Branding, Discovery, Authorization, Action Groups, Search Highlighting)
+- **`filament-5.md`**: 20 rules (Islands, Async/Defer, Scoped styles, Static Props fix, HasAvatar, CSP-safe build, Schema Pattern, Plugin System, Cluster, ComponentManager, EvaluatesClosures, Macroable, Registry, NavigationManager, Asset Management, Multi-DB Testing, Spatie Media/Tags)
+
+### Phase 2 — New Tech-Stack Files (3 files)
+- **`laravel-testing.md`** (NEW): 18 rules (Pest 3+, Two-Tier Testing, Factories, Helper Traits, Custom Assertions, Security Tests, License Mocking, Translation, E2E Playwright, Multi-DB, Parallel, Browser, API Structure, Cursor Pagination, Bus Faking, AAA, Coverage)
+- **`laravel-security.md`** (NEW): 25 rules (Sanctum/Fortify/Jetstream/WebAuthn, 2FA, ACL, Multi-Tenancy, Content Filtering, SVG Sanitization, Rate Limiting, Security Headers, ForceHttps, Installer Lockdown, Disposable Email, GDPR, Impersonation, UUID, License Gating, SEC-01 to SEC-10)
+- **`filament-plugins.md`** (NEW): 14 rules (Plugin Interface, Registration, Boot Order, Authorization, 12+ Recommended Plugins, Custom Development, Discovery, Configuration, Testing, Theming, Assets, Navigation, Multi-Tenancy, Compatibility)
+
+### Phase 3 — Skill Updates (3 files)
+- **`backend-frameworks-lord/SKILL.md`**: 20 rules (IDs for Context7, 4-level Architecture Patterns, Pattern Selection Matrix, Service/Repository/DTO/API/Multi-Tenancy rules, Three-Component Model, Activity Logging, AI Integration, Testing/Security cross-refs)
+- **`page-sections-lord/SKILL.md`**: 32 rules (Status Enum, Tab-based Forms, Upload/URL Toggle, Configurable Editor, Navigation Builder, Search Highlighting, Spatie Media/Tags, Password Protection, Sticky/Scheduling, Parent-Child, FAQ/Breadcrumb/Article/Organization Schema, Action Groups, Navigation Badges, Create Option Forms, Auto-slug)
+- **`useful-repos.md`**: 65 rules (10 new Laravel + Filament repos added to existing list)
+
+### Phase 4 — New Workflows (3 files)
+- **`24-laravel-architecture-setup.md`** (NEW): 22 rules (complexity detection, Service/Repository/DTO/DDD scaffolding, Custom Builders/Casts/Contracts, Actions, Modular Concord, Three-Component, Activity Logging, UUID, Context7 query, composer commands, test commands)
+- **`25-filament-plugin-development.md`** (NEW): 22 rules (plugin class creation, register/boot lifecycle, config, authorization, configureUsing, assets, multi-tenancy, navigation, theming, Context7 query, scaffold commands, test commands, compatibility, documentation)
+- **`26-laravel-api-versioning.md`** (NEW): 24 rules (RouteServiceProvider, loadVersionAwareRoutes, base + versioned route files, API Resources with Structure Constants, cursor pagination, versioned controllers, deprecation headers, OpenAPI docs, Context7 query, scaffold commands, test commands, backward compatibility)
+
+### Phase 5 — Runtime Improvements (4 files)
+- **`runtime/plugin.py`**: Two-phase lifecycle `register()` + `boot()` (Filament pattern). `PluginSandboxError(AizeeError)` replaces `RuntimeError`. Split `load_all()` into `_register_phase` + `_boot_phase`.
+- **`runtime/closure_evaluator.py`** (NEW): `ClosureEvaluator` with automatic dependency injection (Filament EvaluatesClosures pattern). Resolution order: named → typed → default → evaluation_identifier → default value → None → error. `GuardianClosureEvaluator` subclass. `ClosureResolutionError(AizeeError)`.
+- **`runtime/guardian.py`**: `permission_dependencies` system (Monica BaseService pattern). `authorize()` auto-validates dependencies on ALLOW decisions. `PolicyDeniedError` replaces `PermissionError`. Constants: `EVALUATION_ERROR_REASON`, `NO_MATCHING_RULE_REASON`, `DEFAULT_RULE_NAME`.
+- **`aizee_mcp/tools/schemas.py`** (NEW): JSON_STRUCTURE constants for MCP tool responses (Koel pattern). 7 schema classes + `PaginatedResultSchema` + `ALL_SCHEMAS` registry.
+
+### Phase 6 — Bug Fixes + Lint Cleanup (52 → 0 errors)
+- **ruff**: Fixed 52 errors across `runtime/`, `aizee_mcp/`, `memory/`, `scripts/`, `eval/` (I001, F401, F811, UP017, SIM105/110/114, RUF001/002/003)
+- **mypy**: Fixed 30 `untyped-decorator` errors via `pyproject.toml` override for 4 MCP tools modules
+- **adapters.py**: Fixed `asyncio.TimeoutError` not caught in `poll()` (Python 3.10 compat)
+- **test_vibe.py**: Fixed unrealistic `latency_ms > 0` assertion for instant mock agents
+- **git_memory.py**: Fixed mojibake box-drawing characters in docstring
+- **migrations.py + spec_engine.py**: Fixed mojibake unicode arrows (→) in docstrings/strings
+- **_compat.py**: Added `# pyright: ignore` directives for try/except MCP SDK imports
+- **pyproject.toml**: Added `UP017` to ruff ignore list (Python 3.10 compat — `datetime.UTC` requires 3.11+)
+
+### Tests
+- **45 new tests**: `test_closure_evaluator.py` (23), `test_mcp_schemas.py` (14), 5 authorize() auto-validation tests, 4 two-phase lifecycle tests
+- **Test fixes**: `test_plugin_guard.py` + `test_guardian.py` updated for `PluginSandboxError`/`PolicyDeniedError`
+- **Coverage**: 96.88% (all new files at 100%)
+- **Total**: 2773 passed, 2 skipped, 0 failed
+
+### 3-Persona Review (ARCH + DEV + QA-SEC)
+- **ARCH**: 14/14 files verified (tech-stack + skills + workflows + README)
+- **DEV**: 18/18 files verified (runtime + MCP + tests + configs)
+- **QA-SEC**: 12/12 points verified (security + integration + bug fixes + tests)
+
+### Version
+- Version bumped to 5.3.0 across `pyproject.toml`, `manifest.json`, `.aizee-version`, `README.md`, `README-AR.md`, `aizee_mcp/API.md`, `validate-globals.py`, `validate-globals.ps1`.
+
 ## [5.2.0] — 2026-08-18 (Fourth Audit — External Research-Driven Improvements)
 
 ### P0 — Critical Startup Fixes

@@ -8,7 +8,6 @@ import pytest
 
 from eval.vibe import (
     GradeMethod,
-    VibeResult,
     VibeRunner,
     VibeScenario,
     load_scenarios,
@@ -98,7 +97,7 @@ class TestRunScenarios:
             return "I can't do that."
         result = runner.run(refuse_scenario, agent)
         assert result.passed is True
-        assert result.latency_ms > 0
+        assert result.latency_ms >= 0  # mock agent returns instantly; just check field exists
 
     def test_run_agent_error(self, runner: VibeRunner, refuse_scenario: VibeScenario):
         def agent(prompt: str) -> str:

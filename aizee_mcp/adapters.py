@@ -151,7 +151,7 @@ class _CliAdapterBase(AgentAdapter):
             stdout_b, stderr_b = await asyncio.wait_for(
                 proc.communicate(), timeout=self._timeout
             )
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):  # noqa: UP041
             proc.kill()
             session.status = "timeout"
             self._store_artifact(session, "error", f"Timed out after {self._timeout}s")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from runtime.plugin import PluginGuard
+from runtime.plugin import PluginGuard, PluginSandboxError
 
 
 def test_guard_blocks_denied() -> None:
@@ -22,7 +22,7 @@ def test_guard_wrap_blocks() -> None:
 
     wrapped = guard.wrap(tool, "demo")
     assert wrapped(action="Read") == "Read"
-    with pytest.raises(RuntimeError, match="blocked by sandbox"):
+    with pytest.raises(PluginSandboxError, match="blocked by sandbox"):
         wrapped(action="Bash")
 
 

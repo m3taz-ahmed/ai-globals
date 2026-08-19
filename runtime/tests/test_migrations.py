@@ -100,7 +100,6 @@ class TestMigrationGaps:
         """Cover lines 107-108: when a migration is missing for a version, it warns and breaks."""
         # Manually set the schema version to a value with no registered migration
         import sqlite3
-        from datetime import datetime
 
         with sqlite3.connect(db_path) as conn:
             conn.execute(

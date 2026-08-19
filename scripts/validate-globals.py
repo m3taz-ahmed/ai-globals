@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v5.2.0
+# AI Globals Validation Script (Python) v5.3.0
 # Source of truth validator — PowerShell wrapper delegates to this script.
 
 import argparse

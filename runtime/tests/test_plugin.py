@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from unittest.mock import patch
 
@@ -90,7 +92,7 @@ def test_kernel_load_plugins_wires_manager(tmp_path):
 def test_stub_plugin_on_load_sets_loaded():
     """Cover line 12 (name), 15 (on_load), 18 (register_mcp_tools) of StubPlugin."""
     plugin = StubPlugin.__new__(StubPlugin)
-    plugin.kernel = None
+    plugin.kernel = None  # type: ignore[assignment]
     plugin.memory = None
     plugin.on_load()
     assert plugin.loaded is True
@@ -179,7 +181,8 @@ def test_plugin_guard_wrap_blocks() -> None:
         return "ok"
 
     wrapped = guard.wrap(fn, "test-plugin")
-    with pytest.raises(RuntimeError, match="blocked by sandbox"):
+    from runtime.plugin import PluginSandboxError
+    with pytest.raises(PluginSandboxError, match="blocked by sandbox"):
         wrapped(action="Bash")
     assert wrapped(action="Read") == "ok"
 
@@ -269,7 +272,7 @@ def test_load_all_on_load_exception(tmp_path, recwarn):
     manager = PluginManager(kernel, tmp_path)
     manager.load_all()
     assert "failinit" not in manager._plugins
-    assert any("failed to initialize" in str(w.message) for w in recwarn)
+    assert any("failed to register" in str(w.message) for w in recwarn)
 
 
 def test_get_resources_aggregates(tmp_path):
@@ -312,3 +315,79 @@ def test_load_config_returns_empty_when_no_file(tmp_path):
     kernel = Kernel(tmp_path)
     manager = PluginManager(kernel, tmp_path)
     assert manager._load_config() == {}
+
+
+# ---------------------------------------------------------------------------
+# Two-phase lifecycle: register + boot
+# ---------------------------------------------------------------------------
+
+
+def test_plugin_boot_called_after_register(tmp_path):
+    """Test that boot() is called on all plugins after register() completes."""
+    _setup_root(tmp_path)
+    (tmp_path / "plugins" / "boottrack").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "plugins" / "boottrack" / "__init__.py").write_text(
+        "from runtime.plugin import AIOSPlugin\n"
+        "class BootTrackPlugin(AIOSPlugin):\n"
+        "    name = 'boottrack'\n"
+        "    def on_load(self): pass\n"
+        "    def boot(self): self.booted = True\n"
+        "Plugin = BootTrackPlugin\n"
+    )
+    (tmp_path / "plugins.yaml").write_text("plugins:\n  boottrack:\n    enabled: true\n")
+    kernel = Kernel(tmp_path)
+    manager = PluginManager(kernel, tmp_path)
+    manager.load_all()
+    assert "boottrack" in manager._plugins
+    assert manager._plugins["boottrack"].booted is True  # type: ignore[attr-defined]
+
+
+def test_plugin_register_exception_does_not_prevent_others(tmp_path, recwarn):
+    """Test that a plugin failing to register doesn't prevent other plugins."""
+    _setup_root(tmp_path)
+    (tmp_path / "plugins" / "badreg").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "plugins" / "badreg" / "__init__.py").write_text(
+        "from runtime.plugin import AIOSPlugin\n"
+        "class BadRegPlugin(AIOSPlugin):\n"
+        "    name = 'badreg'\n"
+        "    def on_load(self): pass\n"
+        "    def register(self): raise RuntimeError('register fail')\n"
+        "Plugin = BadRegPlugin\n"
+    )
+    (tmp_path / "plugins.yaml").write_text(
+        "plugins:\n  stub:\n    enabled: true\n  badreg:\n    enabled: true\n"
+    )
+    kernel = Kernel(tmp_path)
+    manager = PluginManager(kernel, tmp_path)
+    manager.load_all()
+    assert "badreg" not in manager._plugins
+    assert "stub" in manager._plugins
+    assert any("failed to register" in str(w.message) for w in recwarn)
+
+
+def test_plugin_boot_exception_logged_but_plugin_remains(tmp_path, recwarn):
+    """Test that boot() exception is logged but plugin remains loaded."""
+    _setup_root(tmp_path)
+    (tmp_path / "plugins" / "badboot").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "plugins" / "badboot" / "__init__.py").write_text(
+        "from runtime.plugin import AIOSPlugin\n"
+        "class BadBootPlugin(AIOSPlugin):\n"
+        "    name = 'badboot'\n"
+        "    def on_load(self): pass\n"
+        "    def boot(self): raise RuntimeError('boot fail')\n"
+        "Plugin = BadBootPlugin\n"
+    )
+    (tmp_path / "plugins.yaml").write_text("plugins:\n  badboot:\n    enabled: true\n")
+    kernel = Kernel(tmp_path)
+    manager = PluginManager(kernel, tmp_path)
+    manager.load_all()
+    assert "badboot" in manager._plugins
+    assert any("failed to boot" in str(w.message) for w in recwarn)
+
+
+def test_plugin_sandbox_error_is_aizee_error():
+    """PluginSandboxError should inherit from AizeeError."""
+    from runtime.plugin import PluginSandboxError
+    from runtime.schemas import AizeeError
+
+    assert issubclass(PluginSandboxError, AizeeError)

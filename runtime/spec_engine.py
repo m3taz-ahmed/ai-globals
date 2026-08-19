@@ -98,7 +98,7 @@ class SpecManifest:
     and prevent accidental overwriting of user modifications.
     """
 
-    files: dict[str, str] = field(default_factory=dict)  # rel_path â†’ sha256
+    files: dict[str, str] = field(default_factory=dict)  # rel_path -> sha256
 
     def record_file(self, rel_path: str, content: str) -> None:
         """Record a file's hash."""
