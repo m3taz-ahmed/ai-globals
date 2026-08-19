@@ -61,6 +61,28 @@ class TestBudgetManagerDefaults:
         assert result["ok"] is True
         assert result["action"] == "allow"
 
+    def test_corrupt_state_falls_back_to_defaults(self, tmp_path: Path):
+        # Simulate an undecryptable budget.json (e.g. rotated encryption key).
+        state = tmp_path / "state"
+        state.mkdir()
+        (state / "budget.json").write_bytes(b"AIOS_ENC:garbage-not-a-valid-fernet-token")
+        bm = BudgetManager(tmp_path)
+        # Defaults restored, OS stays usable.
+        assert "global" in bm.budgets
+        assert "session" in bm.budgets
+        # Corrupt file quarantined.
+        assert not (state / "budget.json").exists()
+        assert (state / "budget.json.corrupt.bak").exists()
+
+    def test_invalid_json_falls_back_to_defaults(self, tmp_path: Path):
+        state = tmp_path / "state"
+        state.mkdir()
+        # Unencrypted but invalid JSON — decrypt_file returns it as-is, json.loads fails.
+        (state / "budget.json").write_text("{not valid json")
+        bm = BudgetManager(tmp_path)
+        assert "global" in bm.budgets
+        assert "session" in bm.budgets
+
 
 # ---------------------------------------------------------------------------
 # BudgetManager.check — token / cost / calls limits

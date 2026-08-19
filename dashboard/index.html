@@ -732,6 +732,33 @@
     // Init
     loadStatus();
     setInterval(loadStatus, 15000);
+
+    // --- Theme toggle (light/dark/auto) ---
+    (function() {
+      const saved = localStorage.getItem('aizee-theme') || 'auto';
+      if (saved !== 'auto') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+      const btn = document.createElement('button');
+      btn.id = 'theme-toggle';
+      btn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-elevated);color:var(--text-main);cursor:pointer;font-size:12px;';
+      btn.textContent = '◐';
+      btn.title = 'Toggle theme (auto/light/dark)';
+      const cycle = ['auto', 'light', 'dark'];
+      btn.addEventListener('click', () => {
+        const current = localStorage.getItem('aizee-theme') || 'auto';
+        const next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
+        localStorage.setItem('aizee-theme', next);
+        if (next === 'auto') {
+          document.documentElement.removeAttribute('data-theme');
+        } else {
+          document.documentElement.setAttribute('data-theme', next);
+        }
+        btn.textContent = next === 'auto' ? '◐' : next === 'light' ? '☀' : '☾';
+      });
+      btn.textContent = saved === 'auto' ? '◐' : saved === 'light' ? '☀' : '☾';
+      document.body.appendChild(btn);
+    })();
   </script>
 </body>
 </html>

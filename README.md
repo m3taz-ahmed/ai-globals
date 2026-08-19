@@ -4,7 +4,7 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.1.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.1.0">
+    <img src="https://img.shields.io/badge/Version-5.2.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.2.0">
     <img src="https://img.shields.io/badge/Tests-2526%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 2526 passed">
     <img src="https://img.shields.io/badge/Coverage-91%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 91%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -149,7 +149,7 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 
 ---
 
-## What's New in v5.1.0
+## What's New in v5.2.0
 
 ### Hardening & Polish (P0-P3)
 - **Dockerfile fixed**: `cli.py` → `aizee_cli.py`, Python 3.14
@@ -175,7 +175,7 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 - **Mock time in tests**: `time.sleep()` is no-op in fast tier
 - **CI matrix**: Python 3.13 + 3.14 added
 - **NumPy range tightened**: `>=1.26.0,<2.0`
-- **API.md version synced**: 5.1.0
+- **API.md version synced**: 5.2.0
 - **K8s secret warning**: Comment added to placeholder
 
 ## What's New in v5.0.0

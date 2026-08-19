@@ -1,5 +1,34 @@
 # Changelog
 
+## [5.2.0] — 2026-08-18 (Fourth Audit — External Research-Driven Improvements)
+
+### P0 — Critical Startup Fixes
+- **budget.json encryption corruption**: `BudgetManager._load()` catches `InvalidToken` + JSON errors, quarantines corrupt file to `.corrupt.bak`, falls back to defaults
+- **mcp FastMCP→MCPServer shim**: `aizee_mcp/_compat.py` re-exports `FastMCP`/`Resource` from new locations after upstream rename
+
+### P1 — New Safety Layers
+- **MCP Firewall** (`runtime/mcp_firewall.py`): per-tool-call access control with `allow`/`deny`/`require_approval`, priority-ordered rules, safe AST condition evaluation
+- **Loop Detector** (`runtime/loop_detector.py`): hash-based loop detection with sliding window, integrated into `Kernel.act()`
+
+### P2 — Pre-inference + Lifecycle Safety
+- **Prompt Gate** (`runtime/prompt_gate.py`): deterministic pre-inference prompt safety scanner (injection, system-override, destructive, exfil, privilege)
+- **Trajectory Tracker** (`runtime/trajectory.py`): run-level trajectory tracking with stall detection
+- **Approval Service** (`runtime/approval_service.py`): persistent approval lifecycle + multi-channel notifications
+
+### P3 — Tooling + Observability
+- **Reasoning Graph** (`runtime/reasoning_graph.py`): directed graph for multi-step governance escalation chains
+- **Context Manager** (`runtime/context_manager.py`): 3-level context trimming with atomic group preservation
+- **Agent Discovery** + `aizee agents discover` CLI + `aizee skill eject` CLI
+- **Guard Invariants** (`scripts/guard_invariants.py`): mechanical code-invariant checks
+
+### P4 — Polish
+- **Dashboard theming**: light/dark/auto theme toggle with localStorage persistence
+- **4-tier testing**: `workflows/testing-tiers.md` upgraded to FAST/SMOKE/FULL/VIBE
+- **Vibe testing** (`eval/vibe.py` + 9 scenarios): LLM-graded behavioral scenarios
+
+### Version
+- Version bumped to 5.2.0 across `pyproject.toml`, `manifest.json`, `.aizee-version`, `README.md`, `README-AR.md`, `aizee_mcp/API.md`, `validate-globals.py`, `validate-globals.ps1`.
+
 ## [5.1.0] — 2026-08-18 (Third Audit — Hardening & Polish)
 
 ### P0 — Critical
@@ -9,7 +38,7 @@
 
 ### P1 — High Priority
 - **CI matrix**: Python 3.13 + 3.14 added to test matrix
-- **aizee_mcp/API.md version**: Synced to 5.1.0
+- **aizee_mcp/API.md version**: Synced to 5.2.0
 - **Secure-by-default encryption**: `_get_fernet()` auto-generates key if none set; `AIOS_ENCRYPTION_KEY=plaintext` for explicit opt-out
 - **Dashboard token hardened**: `chmod 0o600` on token file
 - **Graceful shutdown**: Dashboard + MCP server flush storage + close DB on SIGTERM/SIGINT
@@ -43,7 +72,7 @@
 - **Migration rollback**: `MigrationRunner.rollback(version)` with rollback functions
 
 ### Version
-- Version bumped to 5.1.0 across `pyproject.toml`, `manifest.json`, `.aizee-version`, `README.md`, `README-AR.md`, `aizee_mcp/API.md`, `validate-globals.py`, `validate-globals.ps1`.
+- Version bumped to 5.2.0 across `pyproject.toml`, `manifest.json`, `.aizee-version`, `README.md`, `README-AR.md`, `aizee_mcp/API.md`, `validate-globals.py`, `validate-globals.ps1`.
 
 ## [Unreleased] — 2026-08-18 (Second Audit)
 

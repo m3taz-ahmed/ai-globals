@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from mcp.server.fastmcp import FastMCP
+from aizee_mcp._compat import FastMCP, FunctionResource
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aios_ctx_test_")
@@ -62,7 +62,9 @@ register_context_tools(_mcp)
 def _call(name: str, arguments: dict) -> str:
     os.environ["AIZEE_ROOT"] = _ROOT
     reset_state()
-    return _mcp._tool_manager.get_tool(name).fn(**arguments)
+    tool = _mcp._tool_manager.get_tool(name)
+    assert tool is not None
+    return tool.fn(**arguments)
 
 
 class TestGetTechStack:
@@ -137,7 +139,9 @@ class TestSearchSkills:
         tmp_root = tempfile.mkdtemp(prefix="aios_no_skills_")
         os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
-        result = _mcp._tool_manager.get_tool("search_skills").fn(query="anything")
+        search_tool = _mcp._tool_manager.get_tool("search_skills")
+        assert search_tool is not None
+        result = search_tool.fn(query="anything")
         data = json.loads(result)
         assert data == []
         # Restore
@@ -188,7 +192,9 @@ class TestGetChangelog:
         tmp_root = tempfile.mkdtemp(prefix="aios_no_cl_")
         os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
-        result = _mcp._tool_manager.get_tool("get_changelog").fn(section="unreleased")
+        cl_tool = _mcp._tool_manager.get_tool("get_changelog")
+        assert cl_tool is not None
+        result = cl_tool.fn(section="unreleased")
         data = json.loads(result)
         assert data["ok"] is False
         assert "not found" in data["error"]
@@ -219,7 +225,9 @@ class TestGetActiveContext:
         tmp_root = tempfile.mkdtemp(prefix="aios_no_ac_")
         os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
-        result = _mcp._tool_manager.get_tool("get_active_context").fn()
+        ac_tool = _mcp._tool_manager.get_tool("get_active_context")
+        assert ac_tool is not None
+        result = ac_tool.fn()
         data = json.loads(result)
         assert data["ok"] is False
         assert "not found" in data["error"]
@@ -236,7 +244,7 @@ class TestGetAgents:
         resources = _mcp._resource_manager._resources
         agents_fn = None
         for r in resources.values():
-            if "AGENTS" in str(r.uri):
+            if "AGENTS" in str(r.uri) and isinstance(r, FunctionResource):
                 agents_fn = r.fn
                 break
         assert agents_fn is not None
@@ -251,7 +259,7 @@ class TestGetAgents:
         resources = _mcp._resource_manager._resources
         agents_fn = None
         for r in resources.values():
-            if "AGENTS" in str(r.uri):
+            if "AGENTS" in str(r.uri) and isinstance(r, FunctionResource):
                 agents_fn = r.fn
                 break
         assert agents_fn is not None

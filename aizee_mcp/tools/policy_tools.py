@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from aizee_mcp._compat import FastMCP
 
 from runtime.astryx import AstryxLinter
 from runtime.guardian import ActionRequest

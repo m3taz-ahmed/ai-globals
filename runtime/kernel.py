@@ -17,7 +17,9 @@ from .audit import AuditLogger
 from .budget import BudgetManager
 from .enums import Decision
 from .governance import GovernanceHooks
+from .loop_detector import LoopDetector
 from .managers import AgentManager, ChatManager, PolicyManager, WorkflowManager
+from .mcp_firewall import McpFirewall
 from .metrics import CollectorRegistry, Counter, Gauge
 from .persona import PersonaDetector
 from .preloop import FeedbackLoop
@@ -83,6 +85,8 @@ class Kernel:
         self.metrics = self._build_metrics()
         self.tracer = self._build_tracer()
         self.governance = GovernanceHooks(self.audit, self.telemetry)
+        self.mcp_firewall = self._build_mcp_firewall()
+        self.loop_detector = LoopDetector(window=20, threshold=5)
 
         # Managers
         self.policy_mgr = PolicyManager(
@@ -142,6 +146,18 @@ class Kernel:
         provider.add_span_processor(ConsoleSpanExporter(self.project_root / "state" / "spans.jsonl"))
         return provider
 
+    def _build_mcp_firewall(self) -> McpFirewall:
+        """Load MCP firewall rules from OS + project policy files."""
+        from runtime.mcp_firewall import McpFirewall
+
+        os_rules = self.root / "runtime" / "policies" / "mcp_firewall.yaml"
+        fw = McpFirewall.from_yaml(os_rules)
+        project_rules = self.project_root / ".aizee" / "mcp_firewall.yaml"
+        if project_rules.exists():
+            for rule in McpFirewall.from_yaml(project_rules).rules:
+                fw.add_rule(rule)
+        return fw
+
     # --- Persona ---
     def detect_persona(self, text: str) -> dict[str, Any]:
         """Detect the best persona for a user prompt."""
@@ -175,6 +191,22 @@ class Kernel:
                 return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
 
             self.policy_mgr.check_probity(action_type, action_data, self.probity)
+
+            # Loop detection — block repeated identical actions before guardian.
+            # A fresh context starts a new session, so reset the detector.
+            # Dry-run actions are not executed, so skip detection for them.
+            if fresh_context:
+                self.loop_detector.reset()
+            loop_hit = None if dry_run else self.loop_detector.check_and_record(action_type, action_data)
+            if loop_hit is not None:
+                self._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+                return {
+                    "ok": False,
+                    "decision": Decision.DENY.value,
+                    "reason": f"loop detected: {loop_hit.tool} repeated {loop_hit.repeat_count}x in window {loop_hit.window}",
+                    "loop": True,
+                    "repeat_count": loop_hit.repeat_count,
+                }
 
             guard = self.policy_mgr.check_guardian(action_type, action_data, self.guardian)
             if guard:
@@ -257,6 +289,15 @@ class Kernel:
             self._tech_stack_cache: dict[str, dict[str, object]] = detect_stack(self.project_root, self.root)
         return self._tech_stack_cache
 
+    def check_mcp_tool(self, tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
+        """Evaluate an MCP tool call through the firewall.
+
+        Returns a decision dict (``decision``/``rule``/``reason``/``tool``)
+        compatible with the policy pipeline. Callers should block on
+        ``decision == "deny"`` and request approval on ``"ask"``.
+        """
+        return self.mcp_firewall.check(tool_name, args)
+
     def status(self) -> dict[str, Any]:
         return {
             "version": config.VERSION,
@@ -273,6 +314,8 @@ class Kernel:
             "metrics": self.metrics.names(),
             "guardian_rules": [r.get("name", "unnamed") for r in self.guardian.rules],
             "capabilities": self.capabilities.list(),
+            "mcp_firewall_rules": len(self.mcp_firewall.rules),
+            "loop_detector": self.loop_detector.stats(),
         }
 
 

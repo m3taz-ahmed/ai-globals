@@ -6,13 +6,37 @@
 3. [REQ] Keep under 500 lines.
 [UPDATED] 2026-08-18
 [NOTES]
+- **Fourth audit + improvements (P0-P4, external research-driven) — v5.2.0**:
+  - **P0 (critical startup fixes)**:
+    - **P0.1**: `state/budget.json` encryption corruption — `BudgetManager._load()` now catches `InvalidToken` + JSON errors, quarantines the corrupt file to `.corrupt.bak`, and falls back to default budgets. System stays usable after key rotation.
+    - **P0.2**: `mcp` library breaking change (`FastMCP`→`MCPServer`, `Resource` moved to `mcp.types`) — created `aizee_mcp/_compat.py` shim re-exporting `FastMCP`/`Resource` from new locations. Updated 11 import sites (6 source + 5 test files) to use the shim. No direct edits to upstream-dependent code.
+  - **P1 (high — new safety layers)**:
+    - **P1.1**: `runtime/mcp_firewall.py` — per-tool-call access control with `allow`/`deny`/`require_approval` actions, priority-ordered rules, restricted Python condition expressions (safe AST eval, no `eval()`). OS-level defaults in `runtime/policies/mcp_firewall.yaml` (5 rules: deny destructive, deny secret search, require approval for deploy/git-push, allow reads). Integrated into `Kernel` as `check_mcp_tool()`. 29 tests.
+    - **P1.2**: `runtime/loop_detector.py` — hash-based loop detection with sliding window. Blocks repeated identical actions before guardian. Integrated into `Kernel.act()`. Thread-safe. 14 tests.
+  - **P2 (medium — pre-inference + lifecycle safety)**:
+    - **P2.1**: `runtime/prompt_gate.py` — deterministic pre-inference prompt safety scanner (no LLM). Detects injection, system-override, destructive, exfil, privilege patterns. Score-based (BLOCK ≥30, SUSPICIOUS ≥10). Integrated into `ChatManager.chat_message`. 12 tests.
+    - **P2.2**: `runtime/trajectory.py` — run-level trajectory tracking with stall detection (contiguous failures ≥ threshold). Records steps, inspected/modified files, assumptions. Auto-marks runs as STALLED. 13 tests.
+    - **P2.3**: `runtime/approval_service.py` — persistent approval request lifecycle (PENDING→APPROVED/DENIED/EXPIRED/CANCELLED). Multi-channel notifications (Console, Webhook, custom). TTL-based expiry. Sits on top of existing `ApprovalCache`. 14 tests.
+  - **P3 (low — tooling + observability)**:
+    - **P3.1**: `runtime/reasoning_graph.py` — directed graph for multi-step governance escalation chains. Node activation + propagation + longest-path computation. 11 tests.
+    - **P3.2**: `runtime/context_manager.py` — 3-level context trimming (preserve system, compress middle, keep recent). Atomic group preservation (assistant+tool pairs never split). 11 tests.
+    - **P3.3**: `runtime/agent_discovery.py` + `aizee agents discover` CLI — scans home + project for AI agent configs (Claude Code, Cursor, Cline, Windsurf, Aider, Devin, AGENTS.md). Read-only. 8 tests. Also added `aizee skill eject` to copy skills into project for customization.
+    - **P3.4**: `scripts/guard_invariants.py` — mechanical code-invariant checks (future_annotations, no bare Exception, skills frontmatter, kernel facade, policy actions). CI-ready. Excludes `mcp_firewall.yaml` from generic policy loader.
+  - **P4 (polish)**:
+    - **P4.1**: Dashboard CSS theming — light theme via `[data-theme="light"]` + `prefers-color-scheme`. Theme toggle button (auto/light/dark) with localStorage persistence.
+    - **P4.2**: `workflows/testing-tiers.md` upgraded from 2-tier to 4-tier (FAST/SMOKE/FULL/VIBE) with aiZee-specific commands and vibe scenario structure.
+    - **P4.3**: `eval/vibe.py` + `eval/scenarios/` — LLM-graded behavioral scenarios (regex/exact/contains/refuse/llm grading). 9 shipped scenarios (security + persona). 15 tests. `python eval/vibe.py` CLI for smoke testing.
+  - **New modules**: mcp_firewall, loop_detector, prompt_gate, trajectory, approval_service, reasoning_graph, context_manager, agent_discovery (8 modules, 127 tests total).
+  - **Integration**: `runtime/__init__.py` re-exports all 8 new modules. `aizee doctor` checks 11 new module files. `aizee status` shows MCP firewall rules + loop detector stats. `aizee agents discover` + `aizee skill eject` CLI commands. Loop detector threshold=5 (allows natural retries, blocks true loops). Dry-run + fresh-context actions bypass loop detection.
+  - **Gate**: ruff ✅ (new modules), mypy ✅ (10 source files), pytest ✅ (2714 passed, 1 skipped tkinter, 95.91% cov), eval/vibe ✅ (7/9 with dummy agent).
+
 - **Third comprehensive audit + fixes (P0-P3, all personas) — v5.1.0**:
   - **P0 (critical)**: Dockerfile `cli.py`→`aizee_cli.py` + Python 3.14. Exception hierarchy unified (6 exceptions now inherit `AizeeError`). aizee shim PATH fix in `update.py`.
   - **P1 (high)**: CI matrix +3.13/3.14. Secure-by-default encryption (auto-generate key). Dashboard token `chmod 0o600`. Graceful shutdown (storage flush + DB close). Log rotation (100MB, 5 rotated). test_chat_manager (23 tests). Mock time in tests. Self-healing ↔ AgentManager.
   - **P2 (medium)**: StorageBackend explicit conformance. .env allowlist. Audit key-based redaction. CSP strengthened. NumPy tightened. KernelBuilder. MCP async/sync unified. Test organization moved. Weak assertions fixed. DB connection pooling. DB backup automation. Operational docs (3 files).
   - **P3 (low)**: Rate limit LRU. Plugin sandbox strengthened. Plugin resource-based permissions. MCP tool auto-discovery. Parametrized tests. Dashboard HTTP logging. K8s secret warning. Migration rollback.
   - **Gate**: ruff ✅, mypy ✅ (187 files), pytest ✅ (0 failed, 1 skipped tkinter, 96% cov), eval/harness ✅ all_pass, validate-globals ✅ 0 errors.
-  - **Version**: 5.1.0 across pyproject.toml, manifest.json, .aizee-version, README.md, README-AR.md, aizee_mcp/API.md, validate-globals.py, validate-globals.ps1.
+  - **Version**: 5.2.0 across pyproject.toml, manifest.json, .aizee-version, README.md, README-AR.md, aizee_mcp/API.md, validate-globals.py, validate-globals.ps1.
 
 - **Second comprehensive audit + fixes (P0-P2, all personas)**:
   - **P0 (critical fixes)**:

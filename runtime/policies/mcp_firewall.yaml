@@ -1,0 +1,40 @@
+# MCP Firewall — default OS-level rules.
+# First match wins (highest priority first). Conditions are restricted
+# Python expressions evaluated against the tool call arguments dict.
+# Missing names evaluate to None; conditions must tolerate that.
+# Actions: allow | deny | require_approval
+default_action: allow
+rules:
+  - name: deny-destructive-command
+    tool: "*"
+    action: deny
+    condition: 'command and ("rm -rf /" in command or "DROP TABLE" in command)'
+    priority: 100
+    description: Block tool calls whose command attempts destructive operations
+
+  - name: deny-secret-search
+    tool: "search_*"
+    action: deny
+    condition: 'query and query in ["secret", "password", "api_key", "token"]'
+    priority: 90
+    description: Block searches that look like secret harvesting
+
+  - name: require-approval-deploy
+    tool: "deploy_*"
+    action: require_approval
+    priority: 50
+    description: Deployments require explicit human approval
+
+  - name: require-approval-git-push
+    tool: "git_*"
+    action: require_approval
+    condition: 'action and ("push" in action or "force" in action)'
+    priority: 50
+    description: Git push/force operations require approval
+
+  - name: allow-read-actions
+    tool: "*"
+    action: allow
+    condition: 'action and (action == "read" or action == "search" or action == "query")'
+    priority: 10
+    description: Read-only tool calls are allowed by default

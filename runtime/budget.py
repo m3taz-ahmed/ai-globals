@@ -52,20 +52,42 @@ class BudgetManager:
         self._dirty = False
         self._load()
 
-    def _load(self) -> None:
-        if self.state_file.exists():
-            from runtime.crypto import decrypt_file
+    def _default_budgets(self) -> dict[str, Budget]:
+        return {
+            "global": Budget(max_tokens=1_000_000, max_cost_usd=50.0, period="daily"),
+            "session": Budget(max_tokens=100_000, max_cost_usd=5.0),
+        }
 
-            data = json.loads(decrypt_file(self.state_file))
-            self.usage = data.get("usage", {})
-            for k, v in data.get("budgets", {}).items():
-                self.budgets[k] = Budget(**v)
-        else:
-            self.budgets = {
-                "global": Budget(max_tokens=1_000_000, max_cost_usd=50.0, period="daily"),
-                "session": Budget(max_tokens=100_000, max_cost_usd=5.0),
-            }
+    def _load(self) -> None:
+        if not self.state_file.exists():
+            self.budgets = self._default_budgets()
             self._dirty = True
+            return
+        from runtime.crypto import decrypt_file
+
+        try:
+            data = json.loads(decrypt_file(self.state_file))
+        except (ValueError, json.JSONDecodeError) as exc:
+            # Corrupted or undecryptable state (e.g. encryption key rotated).
+            # Quarantine the bad file and fall back to defaults so the OS
+            # stays usable instead of crashing every CLI command.
+            import logging
+
+            quarantine = self.state_file.with_suffix(".json.corrupt.bak")
+            try:
+                self.state_file.replace(quarantine)
+            except OSError:
+                pass
+            logging.getLogger(__name__).warning(
+                "budget.json unreadable (%s); quarantined to %s, using defaults",
+                exc, quarantine,
+            )
+            self.budgets = self._default_budgets()
+            self._dirty = True
+            return
+        self.usage = data.get("usage", {})
+        for k, v in data.get("budgets", {}).items():
+            self.budgets[k] = Budget(**v)
 
     def save(self) -> None:
         with self._lock:
@@ -272,6 +294,7 @@ class BudgetManager:
                     }
                 return {"ok": False, "reason": f"Budget exceeded: {exceeded}", "action": "block"}
 
+            rollout_result: dict[str, Any] | None = None
             if rollout_id:
                 rollout_result = self.check_rollout(rollout_id, effective_tokens, cost, dry_run, budget)
                 if not rollout_result["ok"]:
@@ -288,7 +311,7 @@ class BudgetManager:
                 self._dirty = True
 
             result: dict[str, Any] = {"ok": True, "reason": None, "action": "allow"}
-            if rollout_id:
+            if rollout_id and rollout_result is not None:
                 result["rollout"] = rollout_result
                 result["reminder"] = rollout_result["reminder"]
             return result

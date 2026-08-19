@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import yaml
-from mcp.server.fastmcp.resources import Resource
+from aizee_mcp._compat import Resource
 
 import config
 

@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from mcp.server.fastmcp import FastMCP
+from aizee_mcp._compat import FastMCP
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aios_pol_test_")
@@ -30,7 +30,9 @@ register_policy_tools(_mcp)
 def _call(name: str, arguments: dict) -> str:
     os.environ["AIZEE_ROOT"] = _ROOT
     reset_state()
-    return _mcp._tool_manager.get_tool(name).fn(**arguments)
+    tool = _mcp._tool_manager.get_tool(name)
+    assert tool is not None
+    return tool.fn(**arguments)
 
 
 def _mock_kernel():

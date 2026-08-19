@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from runtime.chat import ChatSession
+from runtime.prompt_gate import PromptGate, PromptRisk
 
 
 class ChatManager:
@@ -16,6 +17,7 @@ class ChatManager:
     def __init__(self, project_root: Path) -> None:
         self.project_root = project_root
         self.default_session = ChatSession(project_root)
+        self.prompt_gate = PromptGate()
 
     def chat_message(
         self,
@@ -32,6 +34,17 @@ class ChatManager:
             fresh_context: If True, create a new isolated session.
             act_fn: Callable for action evaluation (typically kernel.act).
         """
+        # Pre-inference prompt safety gate — block before any processing.
+        verdict = self.prompt_gate.evaluate(message)
+        if verdict.risk is PromptRisk.BLOCKED:
+            return {
+                "ok": False,
+                "decision": "deny",
+                "reason": verdict.reason,
+                "prompt_risk": verdict.risk.value,
+                "matched_patterns": verdict.matched_patterns,
+                "score": verdict.score,
+            }
         if fresh_context:
             session_id = session_id or uuid.uuid4().hex
             session = ChatSession(self.project_root, session_id)

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from aizee_mcp._compat import FastMCP
 
 from .common import (
     _MAX_RESULTS,

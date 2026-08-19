@@ -36,7 +36,9 @@ def _call(name: str, arguments: dict) -> str:
 
     os.environ["AIZEE_ROOT"] = str(ROOT)
     aizee_server.reset_state()
-    return mcp._tool_manager.get_tool(name).fn(**arguments)
+    tool = mcp._tool_manager.get_tool(name)
+    assert tool is not None
+    return tool.fn(**arguments)
 
 
 # Ingest initial content so search/query tests have data to match.
@@ -400,7 +402,7 @@ class TestMainBlock:
         from aizee_mcp import aizee_server
 
         source = Path(aizee_server.__file__).read_text(encoding="utf-8")
-        with patch("mcp.server.fastmcp.FastMCP.run") as mock_run:
+        with patch("aizee_mcp._compat.FastMCP.run") as mock_run:
             code = compile(source, str(aizee_server.__file__), "exec")
             namespace: dict = {"__name__": "__main__", "__file__": str(aizee_server.__file__)}
             exec(code, namespace)

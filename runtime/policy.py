@@ -157,7 +157,7 @@ class PolicyEngine:
             # Guardian.from_yaml / Guardrails (see PolicyManager). Exclude them
             # from the generic policy loader to avoid spurious "invalid action"
             # warnings.
-            _excluded = {"default.yaml", "guardian.yaml", "probity.yaml"}
+            _excluded = {"default.yaml", "guardian.yaml", "probity.yaml", "mcp_firewall.yaml"}
             others = sorted(p for p in policy_dir.rglob("*.yaml") if p.name not in _excluded)
             if default.exists():
                 self._load_file(default)

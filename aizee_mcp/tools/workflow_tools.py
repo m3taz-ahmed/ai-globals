@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from aizee_mcp._compat import FastMCP
 
 from aizee_mcp.agent import McpAgent
 from runtime.mcp_orchestrator import McpOrchestrator, Plan, Step

@@ -54,6 +54,12 @@ def cmd_status(args: argparse.Namespace) -> int:
     table.add_row("Budgets", str(len(status["budgets"])))
     table.add_row("Rules", str(len(status["rules"])))
 
+    # New governance stats (P1-P3)
+    fw_rules = status.get("mcp_firewall_rules", 0)
+    loop = status.get("loop_detector", {})
+    table.add_row("MCP Firewall Rules", str(fw_rules))
+    table.add_row("Loop Detector", f"window={loop.get('window', '?')}, blocks={loop.get('blocks', 0)}")
+
     console.print(table)
     return 0
 
@@ -520,6 +526,27 @@ def cmd_skill(args: argparse.Namespace) -> int:
         for name in resolver.list_skills():
             if query in name.lower():
                 console.print(f"[cyan]{name}[/cyan]")
+    elif args.skill_subcommand == "eject":
+        # Copy a skill's source into the project for deep customization.
+        content = resolver.load(args.name)
+        if content is None:
+            console.print(f"[red]Skill '{args.name}' not found[/red]")
+            return 1
+        dest_dir = _project_root(args) / ".aizee" / "skills"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / f"{args.name}.md"
+        dest.write_text(content, encoding="utf-8")
+        console.print(f"[green]Ejected[/green] {args.name} -> {dest}")
+    return 0
+
+
+def cmd_agents(args: argparse.Namespace) -> int:
+    """Discover local AI agent configurations (read-only)."""
+    from runtime.agent_discovery import AgentDiscovery
+
+    discovery = AgentDiscovery(project_root=_project_root(args))
+    if args.agents_subcommand == "discover":
+        console.print(discovery.report())
     return 0
 
 
@@ -545,6 +572,18 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "LICENSE": (os_root / "LICENSE").exists(),
         "CODEOWNERS": (os_root / ".github" / "CODEOWNERS").exists(),
         "API.md": (os_root / "aizee_mcp" / "API.md").exists(),
+        # New governance modules (P1-P3)
+        "mcp firewall": (os_root / "runtime" / "mcp_firewall.py").exists(),
+        "mcp firewall policy": (os_root / "runtime" / "policies" / "mcp_firewall.yaml").exists(),
+        "loop detector": (os_root / "runtime" / "loop_detector.py").exists(),
+        "prompt gate": (os_root / "runtime" / "prompt_gate.py").exists(),
+        "trajectory tracker": (os_root / "runtime" / "trajectory.py").exists(),
+        "approval service": (os_root / "runtime" / "approval_service.py").exists(),
+        "reasoning graph": (os_root / "runtime" / "reasoning_graph.py").exists(),
+        "context manager": (os_root / "runtime" / "context_manager.py").exists(),
+        "agent discovery": (os_root / "runtime" / "agent_discovery.py").exists(),
+        "guard invariants": (os_root / "scripts" / "guard_invariants.py").exists(),
+        "vibe scenarios": (os_root / "eval" / "scenarios").is_dir(),
     }
 
     # Version check
@@ -854,6 +893,13 @@ def main(argv: list[str] | None = None) -> int:
     p_skill_invoke.add_argument("name", help="Skill name")
     p_skill_search = sp_skill.add_parser("search", help="Search skills by name keyword")
     p_skill_search.add_argument("query", help="Search keyword")
+    p_skill_eject = sp_skill.add_parser("eject", help="Copy a skill into the project for customization")
+    p_skill_eject.add_argument("name", help="Skill name to eject")
+
+    # --- agents ---
+    p_agents = sub.add_parser("agents", help="Discover local AI agent configurations")
+    sp_agents = p_agents.add_subparsers(dest="agents_subcommand", required=True)
+    sp_agents.add_parser("discover", help="Scan for installed AI agents (read-only)")
 
     # --- linkedin ---
     p_linkedin = sub.add_parser("linkedin", help="LinkedIn content automation")
@@ -913,6 +959,7 @@ def main(argv: list[str] | None = None) -> int:
         "agent": cmd_agent,
         "persona": cmd_persona,
         "skill": cmd_skill,
+        "agents": cmd_agents,
         "linkedin": cmd_linkedin,
         "sync": cmd_sync,
         "graphify": cmd_graphify,
