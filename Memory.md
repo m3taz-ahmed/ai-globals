@@ -4,8 +4,18 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-08-19
+[UPDATED] 2026-08-20
 [NOTES]
+- **NativePHP support added — governance for native desktop/mobile Laravel apps**:
+  - **Research**: Deep-read NativePHP docs (homepage + Desktop v2 intro/installation/configuration/databases + Mobile v4 SuperNative architecture). Understood: Desktop = Electron + static PHP + Chromium; Mobile v4 = SuperNative (Blade → binary → SwiftUI/Compose, NO web view, 240fps+, shared memory).
+  - **New tech-stack** (2 files):
+    - `tech-stack/nativephp-desktop-2.md`: 50 rules — Electron shell, NativeAppServiceProvider, SQLite-only, updater (github/s3/spaces), cleanup_env_keys, publishing (code-sign/notarize), testing, security, bundle size, cross-platform.
+    - `tech-stack/nativephp-mobile-4.md`: 50 rules — SuperNative architecture (3 pillars: shared memory, Livewire-like components, Blade EDGE), `Route::native()`, 40+ EDGE components, plugins (Biometrics/Camera/Firebase/SecureStorage/etc.), permissions, testing, publishing (AAB/IPA), opt-out web view, Bifrost cloud build.
+  - **New workflow**: `workflows/27-nativephp-app-development.md` — 40 rules, full lifecycle: detect target from composer.lock, scaffold, develop, test, publish. Triggers: /nativephp, /native-app, /desktop-app, /mobile-app, /supernative, /electron-laravel, /blade-native.
+  - **Skill update**: `skills/backend-frameworks-lord/SKILL.md` +1 rule (#21) — NativePHP section with target detection, SQLite-only, SecureStorage, code-sign.
+  - **Persona triggers**: `runtime/personas.yaml` — added `nativephp`, `native php`, `supernative`, `edge component`, `desktop app`, `native app`, `electron laravel`, `blade native` to MOBILE/GAME/PLAY personas + `backend-frameworks-lord` lord skill. Verified: `aizee persona detect --multi "build a native mobile app with nativephp supernative edge components"` → MOBILE (0.48) + GAME (0.26) + PLAY (0.26) + backend-frameworks-lord.
+  - **Manifest**: `manifest.json` +13 triggers for nativephp workflow + tech-stack refs. `workflows/README.md` count 27→28.
+
 - **v5.3.0 release — Laravel/Filament tech-stack enrichment + runtime improvements + bug fixes**:
   - **Version bump**: 5.2.0 → 5.3.0 across 8 files (pyproject.toml, manifest.json, .aizee-version, README.md, README-AR.md, aizee_mcp/API.md, validate-globals.py, validate-globals.ps1) + test_dashboard.py assertions.
   - **CHANGELOG.md**: Added v5.3.0 section with full summary (6 phases + bug fixes + tests + 3-persona review).

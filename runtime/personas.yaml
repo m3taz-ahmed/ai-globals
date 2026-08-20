@@ -186,6 +186,10 @@ personas:
     - shader
     - physics engine
     - collision
+    - nativephp
+    - native php
+    - supernative
+    - edge component
   PLAY:
     name: Google Play Ecosystem Warlord & Android Publishing Expert
     weight: 1.3
@@ -208,6 +212,9 @@ personas:
     - targetsdk
     - app bundle
     - rollout
+    - nativephp
+    - native php
+    - supernative
   MOBILE:
     name: Elite Mobile Game Producer & Full-Stack Innovator
     weight: 1.2
@@ -240,6 +247,14 @@ personas:
     - widget
     - pubspec
     - pub.dev
+    - nativephp
+    - native php
+    - supernative
+    - edge component
+    - desktop app
+    - native app
+    - electron laravel
+    - blade native
   DATA:
     name: Data Engineer & DBA
     weight: 1.2
@@ -672,6 +687,12 @@ lord_skills:
   - orm
   - middleware
   - auth
+  - nativephp
+  - native php
+  - supernative
+  - electron
+  - edge component
+  - native app
   language-lord:
   - python
   - javascript
