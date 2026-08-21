@@ -4,16 +4,16 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.3.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.3.0">
-    <img src="https://img.shields.io/badge/Tests-2773%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 2773 passed">
+    <img src="https://img.shields.io/badge/Version-5.4.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.4.0">
+    <img src="https://img.shields.io/badge/Tests-893%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 893 passed">
     <img src="https://img.shields.io/badge/Coverage-97%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 97%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-19-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 Personas">
-    <img src="https://img.shields.io/badge/Skills-59-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="59 Skills">
-    <img src="https://img.shields.io/badge/Workflows-27-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="27 Workflows">
-    <img src="https://img.shields.io/badge/Tech--Stack-87-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="87 Tech-Stack refs">
+    <img src="https://img.shields.io/badge/Skills-63-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 Skills">
+    <img src="https://img.shields.io/badge/Workflows-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 Workflows">
+    <img src="https://img.shields.io/badge/Tech--Stack-88-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="88 Tech-Stack refs">
   </p>
 </div>
 
@@ -140,12 +140,43 @@ aizee memory search "docker" # Full-text + vector search
 ```bash
 ruff check .                 # 0 warnings
 mypy                         # Strict typing, 90+ files
-pytest -q                    # 2343 tests, 91% coverage
+pytest -q                    # 893 tests, 97% coverage
 python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 ```
 
 ### 6. Token Efficiency
 Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
+
+---
+
+## What's New in v5.4.0
+
+### SEO Integration (5 GitHub repos + 5 tools studied → aiZee)
+Deep analysis of top 5 SEO GitHub repositories (claude-seo, open-seo, crawlseo, SEOmator, rustyseo) + 5 SEO building blocks (GSC API, DataForSEO, Playwright, Common Crawl, Lighthouse/PSI) yielded:
+
+- **`seo-lord` skill** (NEW, directory layout): SKILL.md (20 rules) + 7 references (technical-seo, content-eeat, schema-types, geo-aeo, cwv-thresholds, audit-rules 251 rules, health-scoring) + 2 templates (seo-audit-report, content-brief)
+- **`tech-stack/seo-1.md`** (NEW): 35 technical SEO rules
+- **`workflows/27-seo-audit.md`** (NEW): 21-step SEO audit protocol
+- **8 MCP SEO tools** (NEW, stdlib only, free): `seo_audit_page`, `seo_audit_site`, `seo_check_cwv`, `seo_validate_schema`, `seo_analyze_content`, `seo_check_geo`, `seo_get_gsc_data`, `seo_find_opportunities`
+- **`useful-repos.md`**: +10 entries (5 SEO repos + 5 building blocks)
+- **`personas.yaml`**: seo-lord registered (40 keywords incl. Arabic) + linked to ARCH/DEV/UX/DOC personas
+
+### 5-Persona Review (4 rounds: ARCH + DEV + QA + SEC + DOC)
+All critical issues fixed:
+- URL validation: explicit rejection of `javascript:`/`data:`/`file:`/`ftp:`/`mailto:` schemes
+- SSRF protection: private IP blocking + DNS rebinding check + redirect target validation (`_SsrfSafeRedirectHandler`)
+- HTML parser: anchor text capture, tag stack for nested tags, malformed HTML handling
+- `_strip_html`: CDATA + HTML comments + conditional comments handling + compiled regexes
+- `_classify_schema`: `@graph` container support (list + dict + empty)
+- `seo_audit_site`: URL normalization + deque BFS + case-insensitive link filtering
+- `seo_audit_page`: nofollow + viewport meta checks
+- `seo_analyze_content`: paragraph splitting by sentence boundaries
+- `seo_find_opportunities`: empty rows → success, position≤0 skipped, cannibalization dedup
+- Schema contract: `SeoAuditSchema` updated to match actual response
+
+### Tests
+- **132 new SEO tests** added (edge cases, all 8 tools, SSRF, malformed HTML, @graph, URL normalization, paragraph splitting, nofollow/viewport, cannibalization)
+- **893 tests passed**, 97% coverage, 0 failures
 
 ---
 

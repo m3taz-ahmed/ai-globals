@@ -4,16 +4,16 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.3.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.3.0">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-2773%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="2773 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.4.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.4.0">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-893%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="893 اختبار ناجح">
     <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-97%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 97%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-20-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="20 شخصية">
-    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-59-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="59 مهارة">
-    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-27-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="27 سير عمل">
-    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-87-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="87 مرجع تقنية">
+    <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-19-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 شخصية">
+    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-63-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 مهارة">
+    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 سير عمل">
+    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-88-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="88 مرجع تقنية">
   </p>
 </div>
 
@@ -120,6 +120,37 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 
 ### 6. كفاءة Tokens
 كشف الشخصيات محلي (Python خالص، صفر tokens). فقط أسماء المهارات relevant تُرجع — ليس الملفات كاملة.
+
+---
+
+## الجديد في v5.4.0
+
+### تكامل SEO (دراسة 5 ريوهات + 5 أدوات → aiZee)
+تحليل عميق لأفضل 5 ريوهات SEO على GitHub (claude-seo, open-seo, crawlseo, SEOmator, rustyseo) + 5 أدوات بناء SEO (GSC API, DataForSEO, Playwright, Common Crawl, Lighthouse/PSI):
+
+- **مهارة `seo-lord`** (جديد، هيكل مجلد): SKILL.md (20 قاعدة) + 7 مراجع (technical-seo, content-eeat, schema-types, geo-aeo, cwv-thresholds, audit-rules 251 قاعدة, health-scoring) + 2 قوالب (seo-audit-report, content-brief)
+- **`tech-stack/seo-1.md`** (جديد): 35 قاعدة SEO تقنية
+- **`workflows/27-seo-audit.md`** (جديد): بروتوكول تدقيق SEO من 21 خطوة
+- **8 أدوات MCP SEO** (جديد، stdlib فقط، مجانية): `seo_audit_page`, `seo_audit_site`, `seo_check_cwv`, `seo_validate_schema`, `seo_analyze_content`, `seo_check_geo`, `seo_get_gsc_data`, `seo_find_opportunities`
+- **`useful-repos.md`**: +10 إدخالات (5 ريوهات SEO + 5 أدوات بناء)
+- **`personas.yaml`**: تسجيل seo-lord (40 كلمة مفتاحية بما فيها العربية) + ربط بشخصيات ARCH/DEV/UX/DOC
+
+### مراجعة 5 شخصيات (4 جولات: ARCH + DEV + QA + SEC + DOC)
+إصلاح كل المشاكل الحرجة:
+- التحقق من URL: رفض صريح لمخططات `javascript:`/`data:`/`file:`/`ftp:`/`mailto:`
+- حماية SSRF: حظر IP الخاص + فحص DNS rebinding + التحقق من redirect targets (`_SsrfSafeRedirectHandler`)
+- محلل HTML: التقاط نص الرابط، tag stack للوسوم المتداخلة، معالجة HTML المشوه
+- `_strip_html`: معالجة CDATA + تعليقات HTML + التعليقات الشرطية + regexes مُجمّعة
+- `_classify_schema`: دعم حاويات `@graph` (list + dict + empty)
+- `seo_audit_site`: تطبيع URL + deque BFS + تصفية روابط case-insensitive
+- `seo_audit_page`: فحص nofollow + viewport meta
+- `seo_analyze_content`: تقسيم الفقرات بحدود الجمل
+- `seo_find_opportunities`: empty rows → نجاح، تخطي position≤0، إزالة تكرار cannibalization
+- عقد Schema: تحديث `SeoAuditSchema` لمطابقة الاستجابة الفعلية
+
+### الاختبارات
+- **132 اختبار SEO جديد** (حالات حدية، كل الـ 8 أدوات، SSRF، HTML مشوه، @graph، تطبيع URL، تقسيم فقرات، nofollow/viewport، cannibalization)
+- **893 اختبار ناجح**، تغطية 97%، 0 فشل
 
 ---
 

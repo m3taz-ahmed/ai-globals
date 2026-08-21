@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "5.3.0",
+    "version": "5.4.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
-    "updated": "2026-08-19"
+    "updated": "2026-08-21"
   },
   "triggers": {
     "/prompt": "workflows/00-prompt-architecting.md",
@@ -64,19 +64,13 @@
     "filament-plugin": "workflows/25-filament-plugin-development.md",
     "/api-versioning": "workflows/26-laravel-api-versioning.md",
     "api-versioning": "workflows/26-laravel-api-versioning.md",
-    "/nativephp": "workflows/27-nativephp-app-development.md",
-    "nativephp": "workflows/27-nativephp-app-development.md",
-    "/native-php": "workflows/27-nativephp-app-development.md",
-    "native-php": "workflows/27-nativephp-app-development.md",
-    "/native-app": "workflows/27-nativephp-app-development.md",
-    "native-app": "workflows/27-nativephp-app-development.md",
-    "/desktop-app": "workflows/27-nativephp-app-development.md",
-    "/mobile-app": "workflows/27-nativephp-app-development.md",
-    "supernative": "workflows/27-nativephp-app-development.md",
-    "electron-laravel": "workflows/27-nativephp-app-development.md",
-    "blade-native": "workflows/27-nativephp-app-development.md",
-    "nativephp-desktop": "tech-stack/nativephp-desktop-2.md",
-    "nativephp-mobile": "tech-stack/nativephp-mobile-4.md",
+    "/seo-audit": "workflows/28-seo-audit.md",
+    "seo audit": "workflows/28-seo-audit.md",
+    "seo analysis": "workflows/28-seo-audit.md",
+    "search optimization": "workflows/28-seo-audit.md",
+    "seo": "workflows/28-seo-audit.md",
+    "تحسين محركات البحث": "workflows/28-seo-audit.md",
+    "سيو": "workflows/28-seo-audit.md",
     "flutter": "skills/flutter-architect/SKILL.md",
     "flutter design": "skills/flutter-design/SKILL.md",
     "flutter develop": "skills/flutter-developer/SKILL.md",

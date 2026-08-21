@@ -5,6 +5,7 @@ Organized by responsibility:
 - workflow_tools: workflow, rules, MCP plan
 - policy_tools: policy, budget, guardian, metrics
 - context_tools: tech-stack, skills, changelog, active context
+- seo_tools: SEO audit, CWV, schema, content, GEO, GSC, opportunities
 - schemas: JSON structure constants for MCP tool responses
 """
 
@@ -18,10 +19,14 @@ from .schemas import (
     PluginSchema,
     PolicyDecisionSchema,
     RuleSchema,
+    SeoAuditSchema,
+    SeoCwvSchema,
+    SeoSchemaSchema,
     SkillSchema,
     TechStackSchema,
     WorkflowSchema,
 )
+from .seo_tools import register_seo_tools
 from .workflow_tools import register_workflow_tools
 
 __all__ = [
@@ -31,11 +36,15 @@ __all__ = [
     "PluginSchema",
     "PolicyDecisionSchema",
     "RuleSchema",
+    "SeoAuditSchema",
+    "SeoCwvSchema",
+    "SeoSchemaSchema",
     "SkillSchema",
     "TechStackSchema",
     "WorkflowSchema",
     "register_context_tools",
     "register_memory_tools",
     "register_policy_tools",
+    "register_seo_tools",
     "register_workflow_tools",
 ]

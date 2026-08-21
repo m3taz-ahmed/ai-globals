@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **28 execution workflows** plus reference/standards files. Each activates when the AI detects a specific task type.
+This directory contains **36 execution workflows** (29 numbered protocols 00-28 + 7 standards protocols) plus 6 reference files (cheat-sheet, commands-reference, update-me, spec-driven series). Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 
@@ -52,7 +52,7 @@ This directory contains **28 execution workflows** plus reference/standards file
 | Laravel architecture setup | `24-laravel-architecture-setup.md` | Service/Repository/DTO/DDD scaffolding by complexity |
 | Filament plugin development | `25-filament-plugin-development.md` | Custom Filament plugin with register/boot lifecycle |
 | Laravel API versioning | `26-laravel-api-versioning.md` | Header-based API versioning with structure constants |
-| NativePHP app development | `27-nativephp-app-development.md` | Build native desktop/mobile apps with NativePHP (Laravel + Electron/SuperNative) |
+| SEO audit / optimization | `28-seo-audit.md` | Comprehensive SEO audit (technical, content, schema, GEO/AEO, CWV, links, images) |
 
 ## Standards & Reference Files
 

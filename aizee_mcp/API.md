@@ -1,6 +1,6 @@
 # aiZee MCP API Reference
 
-**Version:** 5.3.0
+**Version:** 5.4.0
 **Transport:** stdio
 **Server name:** `aizee`
 
@@ -250,6 +250,83 @@ Return the changelog.
 Return the ACTIVE_CONTEXT.md handoff file.
 
 **Returns:** `{ok, content}`.
+
+### SEO Tools
+
+#### `seo_audit_page`
+Audit a single page for SEO issues (meta, headings, schema, canonical, images, content).
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | string | Yes | - | Page URL to audit |
+
+**Returns:** `{ok, url, status, score, title, description, canonical, h1_count, word_count, image_count, link_count, json_ld_count, issues, issue_count}`.
+
+#### `seo_audit_site`
+Crawl and audit a website (up to max_pages). Returns aggregate health score + per-page issues.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `start_url` | string | Yes | - | Starting URL |
+| `max_pages` | int | No | 100 | Max pages to crawl (1-2000) |
+
+**Returns:** `{ok, start_url, pages_crawled, overall_score, total_issues, critical, warnings, info, pages}`.
+
+#### `seo_check_cwv`
+Check Core Web Vitals via Google PageSpeed Insights API (free, no key required).
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | string | Yes | - | Page URL |
+| `strategy` | string | No | `mobile` | `mobile` or `desktop` |
+
+**Returns:** `{ok, url, strategy, metrics: {lcp, cls, fcp, ttfb, inp}, all_good, note}`. INP replaced FID March 2024.
+
+#### `seo_validate_schema`
+Extract and validate JSON-LD structured data from a page.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | string | Yes | - | Page URL |
+
+**Returns:** `{ok, url, schema_count, active, deprecated, schemas, note}`. Flags deprecated types (HowTo, FAQPage, SpecialAnnouncement).
+
+#### `seo_analyze_content`
+Analyze page content for E-E-A-T signals, readability, word count, and citability.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | string | Yes | - | Page URL |
+
+**Returns:** `{ok, url, word_count, flesch_reading_ease, question_headings, has_author_signal, has_date_signal, citability_score, issues}`.
+
+#### `seo_check_geo`
+Check AI Search / GEO readiness (AI crawler access, citability, semantic HTML, llms.txt).
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `url` | string | Yes | - | Page URL |
+
+**Returns:** `{ok, url, geo_score, ai_crawler_access, has_llms_txt, has_semantic_html, has_schema, recommendation}`.
+
+#### `seo_get_gsc_data`
+Get Google Search Console performance data. Requires GSC OAuth credentials configured externally.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `site_url` | string | Yes | - | GSC site URL |
+| `days` | int | No | 28 | Days of data (1-90) |
+
+**Returns:** `{ok, error, instructions}` if no credentials, or GSC performance data if configured.
+
+#### `seo_find_opportunities`
+Find SEO opportunities from GSC data: striking distance, low CTR, content decay, cannibalization.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `gsc_data` | string | Yes | - | JSON string of GSC rows |
+
+**Returns:** `{ok, total_queries, striking_distance, low_ctr, cannibalization, note}`.
 
 ## Resources
 

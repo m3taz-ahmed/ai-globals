@@ -5,6 +5,7 @@ personas:
     skill: ai-agents-architect
     lords:
     - subagent-driven-development
+    - seo-lord
     keywords:
     - architecture
     - scalability
@@ -56,6 +57,7 @@ personas:
     - gsap-animated-frontend
     - page-sections-lord
     - flutter-design
+    - seo-lord
     keywords:
     - ui
     - ux
@@ -86,6 +88,7 @@ personas:
     - clean-code-guard
     - language-lord
     - page-sections-lord
+    - seo-lord
     keywords:
     - backend
     - api
@@ -186,10 +189,6 @@ personas:
     - shader
     - physics engine
     - collision
-    - nativephp
-    - native php
-    - supernative
-    - edge component
   PLAY:
     name: Google Play Ecosystem Warlord & Android Publishing Expert
     weight: 1.3
@@ -212,9 +211,6 @@ personas:
     - targetsdk
     - app bundle
     - rollout
-    - nativephp
-    - native php
-    - supernative
   MOBILE:
     name: Elite Mobile Game Producer & Full-Stack Innovator
     weight: 1.2
@@ -247,14 +243,6 @@ personas:
     - widget
     - pubspec
     - pub.dev
-    - nativephp
-    - native php
-    - supernative
-    - edge component
-    - desktop app
-    - native app
-    - electron laravel
-    - blade native
   DATA:
     name: Data Engineer & DBA
     weight: 1.2
@@ -405,6 +393,7 @@ personas:
     skill: technical-writer
     lords:
     - docs-guard
+    - seo-lord
     keywords:
     - documentation
     - readme
@@ -687,12 +676,6 @@ lord_skills:
   - orm
   - middleware
   - auth
-  - nativephp
-  - native php
-  - supernative
-  - electron
-  - edge component
-  - native app
   language-lord:
   - python
   - javascript
@@ -911,5 +894,46 @@ lord_skills:
   - تطوير flutter
   - ديفلوب flutter
   - برمجة flutter
+  seo-lord:
+  - seo
+  - search engine optimization
+  - seo audit
+  - seo analysis
+  - meta tags
+  - structured data
+  - schema markup
+  - json-ld
+  - core web vitals
+  - cwv
+  - lighthouse
+  - pagespeed
+  - sitemap
+  - robots.txt
+  - hreflang
+  - backlinks
+  - keyword research
+  - rank tracking
+  - serp
+  - geo
+  - aeo
+  - ai search
+  - ai overviews
+  - ai visibility
+  - e-e-a-t
+  - ee at
+  - crawlability
+  - indexability
+  - crawl budget
+  - citability
+  - llms.txt
+  - gptbot
+  - claudebot
+  - perplexitybot
+  - google search console
+  - gsc
+  - search console
+  - تحسين محركات البحث
+  - سيو
+  - تهيئة الموقع
 default: ARCH
 persona_lord_bonus: 0.5

@@ -4,17 +4,53 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-08-20
+[UPDATED] 2026-08-21
 [NOTES]
-- **NativePHP support added — governance for native desktop/mobile Laravel apps**:
-  - **Research**: Deep-read NativePHP docs (homepage + Desktop v2 intro/installation/configuration/databases + Mobile v4 SuperNative architecture). Understood: Desktop = Electron + static PHP + Chromium; Mobile v4 = SuperNative (Blade → binary → SwiftUI/Compose, NO web view, 240fps+, shared memory).
-  - **New tech-stack** (2 files):
-    - `tech-stack/nativephp-desktop-2.md`: 50 rules — Electron shell, NativeAppServiceProvider, SQLite-only, updater (github/s3/spaces), cleanup_env_keys, publishing (code-sign/notarize), testing, security, bundle size, cross-platform.
-    - `tech-stack/nativephp-mobile-4.md`: 50 rules — SuperNative architecture (3 pillars: shared memory, Livewire-like components, Blade EDGE), `Route::native()`, 40+ EDGE components, plugins (Biometrics/Camera/Firebase/SecureStorage/etc.), permissions, testing, publishing (AAB/IPA), opt-out web view, Bifrost cloud build.
-  - **New workflow**: `workflows/27-nativephp-app-development.md` — 40 rules, full lifecycle: detect target from composer.lock, scaffold, develop, test, publish. Triggers: /nativephp, /native-app, /desktop-app, /mobile-app, /supernative, /electron-laravel, /blade-native.
-  - **Skill update**: `skills/backend-frameworks-lord/SKILL.md` +1 rule (#21) — NativePHP section with target detection, SQLite-only, SecureStorage, code-sign.
-  - **Persona triggers**: `runtime/personas.yaml` — added `nativephp`, `native php`, `supernative`, `edge component`, `desktop app`, `native app`, `electron laravel`, `blade native` to MOBILE/GAME/PLAY personas + `backend-frameworks-lord` lord skill. Verified: `aizee persona detect --multi "build a native mobile app with nativephp supernative edge components"` → MOBILE (0.48) + GAME (0.26) + PLAY (0.26) + backend-frameworks-lord.
-  - **Manifest**: `manifest.json` +13 triggers for nativephp workflow + tech-stack refs. `workflows/README.md` count 27→28.
+- **SEO integration — 2026-08-21 (5 GitHub repos + 5 tools study → aiZee integration)**:
+  - **Study**: Analyzed top 5 SEO GitHub repos (claude-seo 14K stars, open-seo 12K stars, crawlseo 495 stars, seo-audit-skill/SEOmator 377 stars, rustyseo 312 stars) + 5 SEO building blocks (GSC API, DataForSEO, Playwright, Common Crawl, Lighthouse/PSI). Full report at `D:\server\temp\seo-study\SEO_REPORT.md` + integration plan at `D:\server\temp\seo-study\SEO_INTEGRATION_REPORT.md`.
+  - **Phase 1 — seo-lord skill** (NEW, directory layout):
+    - `skills/seo-lord/SKILL.md`: 20 rules (grounding, progressive disclosure, parallel analysis, falsifiability-first, confidence-weighted, health score, 251 audit rules, CWV, schema active/deprecated, GEO/AEO, crawl budget, LLM-safe output, free APIs first).
+    - `skills/seo-lord/references/`: 7 files (technical-seo 9 categories, content-eeat E-E-A-T framework, schema-types active/deprecated/keep, geo-aeo AI search optimization, cwv-thresholds LCP/INP/CLS, audit-rules 251 rules/20 categories, health-scoring 0-100 algorithm).
+    - `skills/seo-lord/templates/`: 2 files (seo-audit-report, content-brief).
+    - Registered in `personas.yaml` as lord skill (40 keywords incl. Arabic سيو/تحسين محركات البحث). Linked to ARCH, DEV, UX, DOC personas.
+  - **Phase 1 — tech-stack/seo-1.md** (NEW): 35 rules (meta, canonical, sitemap, robots.txt, hreflang, schema JSON-LD, CWV, URL, mobile, security, redirects, images, content quality, E-E-A-T, internal links, GEO/AEO, crawl budget, indexing, IndexNow, social meta, HTML validation, accessibility, JS SEO, health score, audit rules, opportunities, local SEO, e-commerce, international, output formats, falsifiability, prohibitions, free APIs, paid APIs optional).
+  - **Phase 1 — useful-repos.md**: +10 entries (5 SEO repos + 5 SEO building blocks).
+  - **Phase 1 — runtime/tech_stack.py**: +10 SEO package aliases (seo, laravel-filament-seo, spatie/laravel-sitemap, etc.).
+  - **Phase 2 — workflows/28-seo-audit.md** (NEW): 21 rules (detect, scope, crawl, technical SEO, CWV, content E-E-A-T, schema, GEO/AEO, links, images, score, audit rules, GSC data, opportunities, output, falsifiability, grounding, LLM-safe, prohibitions, quality gate, MCP tools). Triggers: seo audit, seo analysis, search optimization, seo, سيو, تحسين محركات البحث.
+  - **Phase 2 — manifest.json**: +7 trigger entries for workflow 27.
+  - **Phase 2 — workflows/README.md**: Updated count 27 → 28, added SEO audit row.
+  - **Phase 3 — aizee_mcp/tools/seo_tools.py** (NEW, 8 tools, stdlib only):
+    - `seo_audit_page`: Single page audit (meta, headings, schema, canonical, images, content, health score).
+    - `seo_audit_site`: Full site crawl (up to 2000 pages, batch crawler, aggregate score).
+    - `seo_check_cwv`: Core Web Vitals via PageSpeed Insights API (free, no key).
+    - `seo_validate_schema`: JSON-LD extraction + active/deprecated classification.
+    - `seo_analyze_content`: E-E-A-T + readability (Flesch) + citability + word count.
+    - `seo_check_geo`: AI search readiness (AI crawler access, semantic HTML, llms.txt, schema).
+    - `seo_get_gsc_data`: GSC data (returns OAuth setup instructions if no credentials).
+    - `seo_find_opportunities`: Striking distance, low CTR, cannibalization from GSC data.
+  - **Phase 3 — schemas.py**: +3 schemas (SeoAuditSchema, SeoCwvSchema, SeoSchemaSchema) + ALL_SCHEMAS entries.
+  - **Phase 3 — __init__.py**: Added register_seo_tools export + 3 schema exports.
+  - **Phase 3 — API.md**: Added "SEO Tools" section (8 tool docs).
+  - **Phase 3 — pyproject.toml**: Added seo_tools to mypy untyped-decorator override.
+  - **Phase 3 — tests/mcp/test_seo_tools.py** (NEW): 132 tests (URL validation, SSRF protection incl 0.0.0.0/IPv6/DNS rebinding/redirect validation, HTML parser with tag stack, text helpers, issue+scoring, CWV status, schema classification incl @graph+empty+dict, tool registration, audit page incl nofollow+viewport, schema validation incl invalid JSON + multiple schemas, content analysis incl thin content + paragraph splitting, opportunities incl empty rows + position=0 + cannibalization dedup, GSC instructions + days clamping, seo_audit_site crawl + tel/MAILTO filtering, seo_check_cwv mocked API + empty lighthouseResult, seo_check_geo + empty body, anchor text, tag reset, malformed HTML, CDATA/comments, normalize_url, _content_hash, nested tags). All passing.
+  - **5-persona review rounds 3+4 (ARCH + DEV + QA + SEC + DOC)**: Fixed all critical issues:
+    - URL validation: explicit rejection of javascript:/data:/file:/ftp:/mailto: schemes.
+    - SSRF protection: private IP blocking (127.0.0.1, 10.x, 172.16.x, 192.168.x, 169.254.x, ::1, 0.0.0.0) + DNS rebinding check (_resolves_to_private_ip) + redirect target validation (_SsrfSafeRedirectHandler with relative URL resolution).
+    - _strip_html: now handles CDATA + HTML comments + conditional comments + compiled regexes.
+    - HTML parser: captures anchor text, tag stack handles nested identical tags, refactored handle_starttag <30 lines.
+    - _classify_schema: handles @graph containers (CONTAINER) + empty @graph (EMPTY) + @graph as dict (recurses).
+    - _count_syllables: returns 0 for numbers/symbols, 1 for fly/my/crypt.
+    - SeoAuditSchema: added missing fields (h1s, h2_count, content_hash, og_tags).
+    - seo_audit_page: now checks nofollow + viewport meta (mobile-friendly).
+    - seo_audit_site: URL normalization + deque for O(1) BFS + case-insensitive link filtering (tel:/MAILTO:).
+    - seo_check_cwv: validates lighthouseResult exists + TTFB returns int.
+    - seo_check_geo: returns error on empty body + robots.txt regex handles \r\n line endings.
+    - seo_find_opportunities: empty rows returns success + skips position<=0 + cannibalization deduplicates pages.
+    - seo_analyze_content: paragraph splitting by sentence boundaries (was broken by _strip_html whitespace collapse).
+    - _fetch: charset handling + cached SSRF-safe opener (_get_opener) for performance.
+    - _parse_html: try/except for malformed HTML.
+    - Deleted old `skills/seo-content-generator.md` (superseded by `seo-lord/`).
+  - **Quality gates**: ruff ✅ (0 errors), mypy ✅ (0 errors), pytest ✅ (132/132 SEO tests + 893/893 total tests passed). MCP server auto-discovery ✅ (8 SEO tools registered). test_mcp_server.py updated with SEO tools in expected set.
 
 - **v5.3.0 release — Laravel/Filament tech-stack enrichment + runtime improvements + bug fixes**:
   - **Version bump**: 5.2.0 → 5.3.0 across 8 files (pyproject.toml, manifest.json, .aizee-version, README.md, README-AR.md, aizee_mcp/API.md, validate-globals.py, validate-globals.ps1) + test_dashboard.py assertions.

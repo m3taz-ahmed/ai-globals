@@ -91,6 +91,18 @@ _TECH_STACK_ALIASES: dict[str, list[str]] = {
     "turbovec": ["turbovec"],
     "graphifyy": ["graphify"],
     "sentence-transformers": ["sentence-transformers"],
+    # SEO
+    "seo": ["seo"],
+    "seo-content-generator": ["seo"],
+    "ralphjsmit/laravel-filament-seo": ["seo"],
+    "ralphjsmit-laravel-filament-seo": ["seo"],
+    "laravel-filament-seo": ["seo"],
+    "laravel-seo": ["seo"],
+    "artesaos/seotools": ["seo"],
+    "artesaos-seotools": ["seo"],
+    "spatie/laravel-sitemap": ["seo"],
+    "spatie-laravel-sitemap": ["seo"],
+    "laravel-sitemap": ["seo"],
 }
 
 
@@ -262,7 +274,7 @@ def _parse_composer_json(path: Path) -> dict[str, str]:
 def _parse_pyproject_toml(path: Path) -> dict[str, str]:
     """Parse pyproject.toml and return package names with cleaned versions."""
     try:
-        import tomllib
+        import tomllib  # pyright: ignore[reportMissingImports]
     except ImportError:
         try:
             import tomli as tomllib  # type: ignore[no-redef]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v5.3.0
+# AI Globals Validation Script (Python) v5.4.0
 # Source of truth validator — PowerShell wrapper delegates to this script.
 
 import argparse
@@ -290,6 +290,10 @@ IGNORED_FILE_REFS = {
     'copilot-instructions.md',
     # dead/renamed historical references in CHANGELOG
     '09-memory-sync.md',
+    # external temp study reports (live in D:\server\temp\, not aizee root)
+    'seo_report.md', 'seo_integration_report.md', 'repos_analysis_report.md',
+    # deleted superseded skill
+    'seo-content-generator.md',
 }
 
 def check_file_references(content: str, rel_name: str, ctx: ValidationContext, global_path: str) -> bool:

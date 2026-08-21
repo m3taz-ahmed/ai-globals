@@ -1,9 +1,54 @@
 # Changelog
 
+## [5.4.0] — 2026-08-21 (SEO Integration: 5 Repos + 5 Tools Study → aiZee)
+
+### SEO Study (5 GitHub repos + 5 building blocks analyzed)
+Deep analysis of top 5 SEO GitHub repositories + 5 SEO tools/building blocks. Full reports at `D:\server\temp\seo-study\SEO_REPORT.md` + `D:\server\temp\seo-study\SEO_INTEGRATION_REPORT.md`.
+- **Repos**: claude-seo (14K stars, parallel agent delegation), open-seo (12K stars, 46 MCP tools), crawlseo (495 stars, GSC+crawler), seo-audit-skill/SEOmator (377 stars, 251 rules), rustyseo (312 stars, Rust log analysis).
+- **Building blocks**: GSC API (free official), DataForSEO (paid SERP), Playwright (JS rendering), Common Crawl (free backlinks), Lighthouse/PSI API (free CWV).
+
+### Phase 1 — seo-lord Skill (NEW, directory layout with 7 references + 2 templates)
+- **`skills/seo-lord/SKILL.md`**: 20 rules (grounding in Google primary sources, progressive disclosure, parallel analysis, falsifiability-first recommendations, confidence-weighted aggregation, health score 0-100, 251 audit rules, CWV INP-not-FID, schema active/deprecated, GEO/AEO citability, crawl budget, LLM-safe output, free APIs first).
+- **`skills/seo-lord/references/`**: 7 files — technical-seo (9 categories), content-eeat (E-E-A-T framework), schema-types (active/deprecated/keep), geo-aeo (AI search optimization), cwv-thresholds (LCP/INP/CLS + measurement), audit-rules (251 rules/20 categories), health-scoring (0-100 algorithm).
+- **`skills/seo-lord/templates/`**: 2 files — seo-audit-report, content-brief.
+- **`personas.yaml`**: Registered seo-lord as lord skill (40 keywords incl. Arabic). Linked to ARCH, DEV, UX, DOC personas.
+
+### Phase 1 — tech-stack/seo-1.md (NEW)
+- 35 rules covering: meta tags, canonical, sitemap, robots.txt, hreflang, JSON-LD schema (active/deprecated), Core Web Vitals (INP replaced FID), URL structure, mobile, security, redirects, images, content quality, E-E-A-T, internal links, GEO/AEO, crawl budget, indexing, IndexNow, social meta, HTML validation, accessibility, JS SEO, health score, audit rules, SEO opportunities, local SEO, e-commerce, international, output formats, falsifiability, prohibitions, free/paid APIs.
+
+### Phase 1 — useful-repos.md + tech_stack.py
+- **`useful-repos.md`**: +10 entries (5 SEO repos + 5 SEO building blocks).
+- **`runtime/tech_stack.py`**: +10 SEO package aliases (seo, laravel-filament-seo, spatie/laravel-sitemap, artesaos/seotools, etc.).
+
+### Phase 2 — Workflow 27 (NEW)
+- **`workflows/28-seo-audit.md`**: 21 rules (detect business type, scope, batch crawl, technical SEO, CWV via PageSpeed API, content E-E-A-T, schema validation, GEO/AEO readiness, links, images, health score, 251 audit rules, GSC data, opportunities, Markdown output, falsifiability, primary-source grounding, LLM-safe output, prohibitions, quality gate, MCP tools).
+- **`manifest.json`**: +7 trigger entries (seo audit, seo analysis, search optimization, seo, سيو, تحسين محركات البحث, /seo-audit).
+- **`workflows/README.md`**: Updated count 27 → 28, added SEO audit row.
+
+### Phase 3 — MCP SEO Tools (NEW, 8 tools, stdlib only)
+- **`aizee_mcp/tools/seo_tools.py`**: 8 tools using only Python stdlib (urllib, html.parser, re, json):
+  - `seo_audit_page`: Single page audit (meta, headings, schema, canonical, images, content, health score).
+  - `seo_audit_site`: Full site crawl (up to 2000 pages, batch crawler 15 concurrent, aggregate score).
+  - `seo_check_cwv`: Core Web Vitals via PageSpeed Insights API (free, no key required).
+  - `seo_validate_schema`: JSON-LD extraction + active/deprecated classification.
+  - `seo_analyze_content`: E-E-A-T + Flesch readability + citability + word count.
+  - `seo_check_geo`: AI search readiness (AI crawler access, semantic HTML, llms.txt, schema).
+  - `seo_get_gsc_data`: GSC data (returns OAuth setup instructions if no credentials).
+  - `seo_find_opportunities`: Striking distance, low CTR, cannibalization from GSC data.
+- **`aizee_mcp/tools/schemas.py`**: +3 schemas (SeoAuditSchema, SeoCwvSchema, SeoSchemaSchema).
+- **`aizee_mcp/tools/__init__.py`**: Added register_seo_tools + 3 schema exports.
+- **`aizee_mcp/API.md`**: Added "SEO Tools" section (8 tool docs).
+- **`pyproject.toml`**: Added seo_tools to mypy untyped-decorator override.
+- **`tests/mcp/test_seo_tools.py`** (NEW): 132 tests — all passing.
+
+### Quality Gates
+- ruff ✅ (0 errors), mypy ✅ (0 errors), pytest ✅ (132/132 SEO tests + 893/893 total tests passed), MCP auto-discovery ✅ (8 SEO tools registered).
+- 5-persona review rounds 3+4 (ARCH + DEV + QA + SEC + DOC): all issues fixed (SSRF via redirects, DNS rebinding, 0.0.0.0, empty @graph, @graph as dict, empty lighthouseResult, empty body, empty rows, charset handling, nested tags, syllables, position=0, deque, compiled regexes, paragraph splitting, nofollow+viewport checks, tel/MAILTO filtering, robots.txt \r\n, cannibalization dedup, TTFB int, cached opener, relative redirect resolution).
+
 ## [5.3.0] — 2026-08-19 (Laravel/Filament Tech-Stack Enrichment + Runtime Improvements)
 
 ### GitHub Repos Study (10 repos analyzed)
-Deep analysis of 10 leading GitHub repositories (5 Laravel + 5 Filament) cloned to `temp/github-study/`. Full report at `temp/github-study/REPOS_ANALYSIS_REPORT.md` (627 lines).
+Deep analysis of 10 leading GitHub repositories (5 Laravel + 5 Filament) cloned to `D:\server\temp\github-study\`. Full report at `D:\server\temp\github-study\REPOS_ANALYSIS_REPORT.md` (627 lines).
 - **Laravel repos**: Bagisto (eCommerce/Concord), Monica (CRM/DDD), Krayin (Modular/MagicAI), BookStack (Wiki/Activity), Koel (Music/Repository+DTO+API)
 - **Filament repos**: Filament (framework/Plugin system), SuperDuper Starter Kit (Clusters/12 plugins), Lara-Zeus Sky (CMS/Status enum), MVPable (SaaS/DDD+Actions), Filament-Blog (Faceless/trait-based)
 

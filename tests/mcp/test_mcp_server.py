@@ -67,6 +67,15 @@ class TestToolsList:
             "get_workflow",
             "run_workflow",
             "query_rules",
+            # SEO tools (v5.4.0)
+            "seo_audit_page",
+            "seo_audit_site",
+            "seo_check_cwv",
+            "seo_validate_schema",
+            "seo_analyze_content",
+            "seo_check_geo",
+            "seo_get_gsc_data",
+            "seo_find_opportunities",
         }
         assert expected.issubset(names), f"Missing tools: {expected - names}"
 

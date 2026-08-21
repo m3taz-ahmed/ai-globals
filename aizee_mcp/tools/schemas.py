@@ -216,6 +216,58 @@ class MemoryEntrySchema:
         }
 
 
+class SeoAuditSchema:
+    """JSON structure for an SEO audit page response (MCP tool: seo_audit_page)."""
+
+    JSON_STRUCTURE: ClassVar[list[str]] = [
+        "ok",
+        "url",
+        "status",
+        "score",
+        "title",
+        "description",
+        "canonical",
+        "h1_count",
+        "h1s",
+        "h2_count",
+        "word_count",
+        "content_hash",
+        "image_count",
+        "link_count",
+        "json_ld_count",
+        "og_tags",
+        "issues",
+        "issue_count",
+    ]
+
+
+class SeoCwvSchema:
+    """JSON structure for a Core Web Vitals response (MCP tool: seo_check_cwv)."""
+
+    JSON_STRUCTURE: ClassVar[list[str]] = [
+        "ok",
+        "url",
+        "strategy",
+        "metrics",
+        "all_good",
+        "note",
+    ]
+
+
+class SeoSchemaSchema:
+    """JSON structure for a schema validation response (MCP tool: seo_validate_schema)."""
+
+    JSON_STRUCTURE: ClassVar[list[str]] = [
+        "ok",
+        "url",
+        "schema_count",
+        "active",
+        "deprecated",
+        "schemas",
+        "note",
+    ]
+
+
 ALL_SCHEMAS: dict[str, list[str]] = {
     "rule": RuleSchema.JSON_STRUCTURE,
     "skill": SkillSchema.JSON_STRUCTURE,
@@ -224,6 +276,9 @@ ALL_SCHEMAS: dict[str, list[str]] = {
     "policy_decision": PolicyDecisionSchema.JSON_STRUCTURE,
     "plugin": PluginSchema.JSON_STRUCTURE,
     "memory_entry": MemoryEntrySchema.JSON_STRUCTURE,
+    "seo_audit": SeoAuditSchema.JSON_STRUCTURE,
+    "seo_cwv": SeoCwvSchema.JSON_STRUCTURE,
+    "seo_schema": SeoSchemaSchema.JSON_STRUCTURE,
 }
 
 

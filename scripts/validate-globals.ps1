@@ -1,4 +1,4 @@
-# AI Globals Validation Script (PowerShell) v5.3.0
+# AI Globals Validation Script (PowerShell) v5.4.0
 # Thin wrapper — delegates all logic to validate-globals.py (source of truth).
 
 [CmdletBinding()]
