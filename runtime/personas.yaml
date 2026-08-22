@@ -536,6 +536,80 @@ personas:
       - contract
       - milestone
       - escrow
+  DEVX:
+    name: Developer Experience Engineer
+    weight: 1.1
+    skill: context-compressor
+    lords:
+    - clean-code-guard
+    - docs-guard
+    - fullstack-optimizer
+    keywords:
+    - developer experience
+    - dx
+    - cli
+    - tooling
+    - devtools
+    - onboarding
+    - ergonomics
+    - api design
+    - sdk
+    - developer portal
+    - documentation
+    - playground
+    - sandbox
+    - boilerplate
+    - scaffolding
+  MLOPS:
+    name: ML Operations Engineer
+    weight: 1.3
+    skill: ml-engineer
+    lords:
+    - ai-ml-lord
+    - devops-lord
+    - search-vector-lord
+    keywords:
+    - mlops
+    - model deployment
+    - model registry
+    - feature store
+    - model serving
+    - model monitoring
+    - drift detection
+    - a/b testing models
+    - ml pipeline
+    - mlflow
+    - weights biases
+    - kubeflow
+    - model versioning
+    - inference
+    - batch prediction
+  FINOPS:
+    name: Cloud Cost Optimization Engineer
+    weight: 1.2
+    skill: performance-engineer
+    lords:
+    - cloud-platforms-lord
+    - devops-lord
+    - fullstack-optimizer
+    keywords:
+    - finops
+    - cloud cost
+    - cost optimization
+    - billing
+    - budget
+    - reserved instances
+    - spot instances
+    - cost allocation
+    - cost anomaly
+    - savings plan
+    - ri
+    - utilization
+    - right sizing
+    - cost dashboard
+    - aws cost
+    - gcp cost
+    - azure cost
 lord_skills:
   freelance-platforms:
     - freelance

@@ -26,6 +26,11 @@ from runtime.layers import Layer as Layer
 from runtime.layers import LayerManifest as LayerManifest
 from runtime.loop_detector import LoopDetector as LoopDetector
 from runtime.mcp_firewall import McpFirewall as McpFirewall
+from runtime.middleware import ActionContext as ActionContext
+from runtime.middleware import CompiledPipeline as CompiledPipeline
+from runtime.middleware import EnhancerType as EnhancerType
+from runtime.middleware import MiddlewarePipeline as MiddlewarePipeline
+from runtime.middleware import MiddlewareResult as MiddlewareResult
 from runtime.prompt_gate import PromptGate as PromptGate
 from runtime.reasoning_graph import ReasoningGraph as ReasoningGraph
 from runtime.scoped_manager import ScopedManager as ScopedManager
@@ -34,6 +39,7 @@ from runtime.scoped_manager import scoped_factory as scoped_factory
 from runtime.trajectory import TrajectoryTracker as TrajectoryTracker
 
 __all__ = [
+    "ActionContext",
     "AgentDiscovery",
     "ApprovalService",
     "ClosureEvaluator",
@@ -41,8 +47,10 @@ __all__ = [
     "CommandBus",
     "CommandResult",
     "CommandStatus",
+    "CompiledPipeline",
     "ContextManager",
     "ContractArtifact",
+    "EnhancerType",
     "GuardianClosureEvaluator",
     "HookContext",
     "HookPhase",
@@ -51,6 +59,8 @@ __all__ = [
     "LayerManifest",
     "LoopDetector",
     "McpFirewall",
+    "MiddlewarePipeline",
+    "MiddlewareResult",
     "PromptGate",
     "ReasoningGraph",
     "ScopedManager",

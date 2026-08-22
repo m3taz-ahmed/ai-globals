@@ -78,8 +78,8 @@ _TECH_STACK_ALIASES: dict[str, list[str]] = {
     "nodejs": ["nodejs"],
     # Python
     "python": ["python"],
-    "aios": ["aios"],
-    "aizee": ["aios"],
+    "aios": ["aizee"],
+    "aizee": ["aizee"],
     "pydantic": ["pydantic"],
     "fastmcp": ["mcp"],
     "mcp": ["mcp"],

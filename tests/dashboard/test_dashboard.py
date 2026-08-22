@@ -36,7 +36,7 @@ def _serve(tmp_root: Path):
 
 
 def test_dashboard_status():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -49,7 +49,7 @@ def test_dashboard_status():
 
 
 def test_dashboard_health():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_health_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_health_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -62,7 +62,7 @@ def test_dashboard_health():
 
 
 def test_dashboard_cors_preflight():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_cors_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_cors_"))
     os.environ["AGENT_OS_DASHBOARD_ORIGIN"] = "http://example.com"
     server, port = _serve(tmp)
     try:
@@ -79,7 +79,7 @@ def test_dashboard_cors_preflight():
 
 
 def test_dashboard_memory_search():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_mem_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_mem_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -91,7 +91,7 @@ def test_dashboard_memory_search():
 
 
 def test_dashboard_policy_test():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_pol_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_pol_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -110,7 +110,7 @@ def test_dashboard_policy_test():
 
 
 def test_dashboard_post_requires_csrf_header():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_csrf_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_csrf_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -128,7 +128,7 @@ def test_dashboard_post_requires_csrf_header():
 
 
 def test_dashboard_denies_untrusted_origin():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_origin_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_origin_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -141,7 +141,7 @@ def test_dashboard_denies_untrusted_origin():
 
 
 def test_dashboard_enforces_bearer_token():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_auth_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_auth_"))
     os.environ["AGENT_OS_DASHBOARD_TOKEN"] = "secret-token"
     server, port = _serve(tmp)
     try:
@@ -161,7 +161,7 @@ def test_dashboard_enforces_bearer_token():
 
 
 def test_dashboard_payload_size_limit():
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_size_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_size_"))
     import dashboard.server as dash_server
     original_max = dash_server._MAX_BODY_SIZE
     dash_server._MAX_BODY_SIZE = 64
@@ -195,7 +195,7 @@ def test_dashboard_payload_size_limit():
 
 def test_dashboard_rate_limit_exceeded():
     """Lines 186-187: 429 when rate limit exceeded."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_rl_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_rl_"))
     import dashboard.server as dash_server
     original_limit = dash_server._rate_limit
     dash_server._rate_limit = 2
@@ -222,7 +222,7 @@ def test_dashboard_rate_limit_exceeded():
 
 def test_dashboard_rate_limit_disabled():
     """Line 66: rate limit disabled when _rate_limit <= 0."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_rld_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_rld_"))
     import dashboard.server as dash_server
     original_limit = dash_server._rate_limit
     dash_server._rate_limit = 0
@@ -328,7 +328,7 @@ def test_dashboard_client_ip_no_trusted_proxy():
 
 def test_dashboard_token_file_generation():
     """Lines 101-108: token file is generated when no env token and no allow-no-token."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_tok_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tok_"))
     import dashboard.server as dash_server
     # Clear caches
     dash_server._kernel_cache = None
@@ -348,7 +348,7 @@ def test_dashboard_token_file_generation():
 
 def test_dashboard_token_from_env():
     """Lines 96-98: token from env var takes priority."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_toke_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_toke_"))
     os.environ["AGENT_OS_DASHBOARD_TOKEN"] = "env-secret"
     try:
         import dashboard.server as dash_server
@@ -360,7 +360,7 @@ def test_dashboard_token_from_env():
 
 def test_dashboard_token_allow_no_token():
     """Lines 99-100: returns None when AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN=1."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_tokn_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tokn_"))
     os.environ.pop("AGENT_OS_DASHBOARD_TOKEN", None)
     os.environ["AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN"] = "1"
     try:
@@ -377,7 +377,7 @@ def test_dashboard_token_allow_no_token():
 
 def test_dashboard_origin_from_allowed_origins():
     """Line 127: _origin returns request_origin when in _ALLOWED_ORIGINS."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_orig_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_orig_"))
     os.environ.pop("AGENT_OS_DASHBOARD_ORIGIN", None)
     server, port = _serve(tmp)
     try:
@@ -396,7 +396,7 @@ def test_dashboard_origin_from_allowed_origins():
 
 def test_dashboard_check_endpoint():
     """Line 200: /api/check endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_chk_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chk_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -409,7 +409,7 @@ def test_dashboard_check_endpoint():
 
 def test_dashboard_check_invalid_action():
     """Line 275: /api/check with invalid action format."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_chki_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chki_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -422,7 +422,7 @@ def test_dashboard_check_invalid_action():
 
 def test_dashboard_check_with_approve():
     """Line 277: /api/check with approve=1."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_chka_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chka_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -439,7 +439,7 @@ def test_dashboard_check_with_approve():
 
 def test_dashboard_metrics_endpoint():
     """Line 201-202: /api/metrics endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_met_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_met_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -456,7 +456,7 @@ def test_dashboard_metrics_endpoint():
 
 def test_dashboard_telemetry_endpoint():
     """Line 203-204: /api/telemetry endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_tel_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tel_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -469,7 +469,7 @@ def test_dashboard_telemetry_endpoint():
 
 def test_dashboard_telemetry_with_type():
     """Line 203-204: /api/telemetry with type filter."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_telt_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_telt_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -486,7 +486,7 @@ def test_dashboard_telemetry_with_type():
 
 def test_dashboard_system_endpoint():
     """Line 205-206: /api/system endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sys_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sys_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -504,7 +504,7 @@ def test_dashboard_system_endpoint():
 
 def test_dashboard_audit_endpoint():
     """Line 207-208: /api/audit endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_aud_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_aud_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -517,7 +517,7 @@ def test_dashboard_audit_endpoint():
 
 def test_dashboard_audit_with_log_file():
     """Line 207-208: /api/audit with actual audit log entries."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_audl_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_audl_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -548,7 +548,7 @@ def test_dashboard_audit_with_log_file():
 
 def test_dashboard_guardian_endpoint():
     """Line 209-210: /api/guardian endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_grd_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_grd_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -566,7 +566,7 @@ def test_dashboard_guardian_endpoint():
 
 def test_dashboard_capabilities_endpoint():
     """Line 211-212: /api/capabilities endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_cap_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_cap_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -583,7 +583,7 @@ def test_dashboard_capabilities_endpoint():
 
 def test_dashboard_tracing_endpoint():
     """Line 213-214: /api/tracing endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_trc_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_trc_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -596,7 +596,7 @@ def test_dashboard_tracing_endpoint():
 
 def test_dashboard_tracing_with_spans():
     """Line 213-214: /api/tracing with actual span entries."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_trcs_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_trcs_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -627,7 +627,7 @@ def test_dashboard_tracing_with_spans():
 
 def test_dashboard_lint_endpoint():
     """Line 215-216: /api/lint endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_lnt_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_lnt_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -648,7 +648,7 @@ def test_dashboard_lint_endpoint():
 
 def test_dashboard_lint_invalid_code():
     """Line 401-402: /api/lint with non-string code."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_lnti_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_lnti_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -672,7 +672,7 @@ def test_dashboard_lint_invalid_code():
 
 def test_dashboard_workflows_endpoint():
     """Line 221-222: /api/workflows endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_wkf_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_wkf_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -703,7 +703,7 @@ def test_dashboard_workflows_endpoint():
 
 def test_dashboard_workflow_run_endpoint():
     """Line 223-224: /api/workflow/run endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_wfr_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_wfr_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -737,7 +737,7 @@ def test_dashboard_workflow_run_endpoint():
 
 def test_dashboard_workflow_run_invalid_id():
     """Line 310-312: /api/workflow/run with missing workflow_id."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_wfri_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_wfri_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -761,7 +761,7 @@ def test_dashboard_workflow_run_invalid_id():
 
 def test_dashboard_saga_run_endpoint():
     """Line 225-226: /api/saga/run endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sag_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sag_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -785,7 +785,7 @@ def test_dashboard_saga_run_endpoint():
 
 def test_dashboard_saga_run_invalid_id():
     """Line 322-323: /api/saga/run with missing saga_id."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sagi_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sagi_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -805,7 +805,7 @@ def test_dashboard_saga_run_invalid_id():
 
 def test_dashboard_saga_run_invalid_steps():
     """Line 326-327: /api/saga/run with non-list steps."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sags_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sags_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -829,7 +829,7 @@ def test_dashboard_saga_run_invalid_steps():
 
 def test_dashboard_saga_get_not_found():
     """Line 227-228, 335-336: /api/saga/{id} not found."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sagg_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sagg_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -846,7 +846,7 @@ def test_dashboard_saga_get_not_found():
 
 def test_dashboard_chat_endpoint():
     """Line 229-230: /api/chat endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_cht_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_cht_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -866,7 +866,7 @@ def test_dashboard_chat_endpoint():
 
 def test_dashboard_chat_missing_message():
     """Line 345-346: /api/chat with missing message."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_chtm_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chtm_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -886,7 +886,7 @@ def test_dashboard_chat_missing_message():
 
 def test_dashboard_chat_invalid_session_id():
     """Line 349-350: /api/chat with invalid session_id."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_chts_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chts_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -910,7 +910,7 @@ def test_dashboard_chat_invalid_session_id():
 
 def test_dashboard_graph_endpoint_missing():
     """Line 231-232: /api/graph when graph.json not found."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_grph_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_grph_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -924,7 +924,7 @@ def test_dashboard_graph_endpoint_missing():
 
 def test_dashboard_graph_endpoint_with_data():
     """Line 231-232, 424-428: /api/graph with graph data."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_grphd_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_grphd_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -955,7 +955,7 @@ def test_dashboard_graph_endpoint_with_data():
 
 def test_dashboard_graph_stats_missing():
     """Line 233-234: /api/graph/stats when graph.json not found."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_gst_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_gst_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -968,7 +968,7 @@ def test_dashboard_graph_stats_missing():
 
 def test_dashboard_graph_stats_with_data():
     """Line 233-234, 436-446: /api/graph/stats with graph data."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_gstd_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_gstd_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -1002,7 +1002,7 @@ def test_dashboard_graph_stats_with_data():
 
 def test_dashboard_graph_stats_invalid_json():
     """Line 447-448: /api/graph/stats with invalid JSON."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_gsti_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_gsti_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -1033,7 +1033,7 @@ def test_dashboard_graph_stats_invalid_json():
 
 def test_dashboard_serves_index_html():
     """Line 237-238: serves dashboard/index.html."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_idx_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_idx_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -1060,7 +1060,7 @@ def test_dashboard_serves_index_html():
 
 def test_dashboard_serves_index_css():
     """Line 239-240: serves dashboard/index.css."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_css_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_css_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -1087,7 +1087,7 @@ def test_dashboard_serves_index_css():
 
 def test_dashboard_serve_file_not_found():
     """Line 413-414: _serve_file returns 404 when file doesn't exist."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_404f_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_404f_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1104,7 +1104,7 @@ def test_dashboard_serve_file_not_found():
 
 def test_dashboard_404_for_unknown_path():
     """Line 242: unknown path returns 404."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_404_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_404_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1121,7 +1121,7 @@ def test_dashboard_404_for_unknown_path():
 
 def test_dashboard_invalid_json_body():
     """Line 260-261: invalid JSON body returns 400."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_json_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_json_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1145,7 +1145,7 @@ def test_dashboard_invalid_json_body():
 
 def test_dashboard_empty_post_body():
     """Line 252-253: empty POST body returns {} (handled as empty dict)."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_empty_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_empty_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1174,7 +1174,7 @@ def test_dashboard_empty_post_body():
 
 def test_dashboard_policy_test_invalid_action():
     """Line 294-295: policy test with invalid action format."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_pti_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_pti_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1198,7 +1198,7 @@ def test_dashboard_policy_test_invalid_action():
 
 def test_dashboard_sse_events():
     """Line 235-236, 450-474: /api/events SSE endpoint."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sse_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sse_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1223,7 +1223,7 @@ def test_dashboard_sse_events():
 
 def test_dashboard_unauthorized_without_token():
     """Lines 188-189: 401 when token required and not provided."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_unauth_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_unauth_"))
     os.environ.pop("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", None)
     os.environ["AGENT_OS_DASHBOARD_TOKEN"] = "required-token"
     import dashboard.server as dash_server
@@ -1268,7 +1268,7 @@ def _terminate_proc(proc):
 
 def test_dashboard_main_block():
     """Lines 485-491: __main__ block starts the server."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_main_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_main_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -1340,7 +1340,7 @@ def test_dashboard_main_block_poll_assert_mocked():
 
 def test_dashboard_token_from_existing_file():
     """Line 103: token read from existing token file."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_tokf_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tokf_"))
     import dashboard.server as dash_server
     os.environ.pop("AGENT_OS_DASHBOARD_TOKEN", None)
     os.environ.pop("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", None)
@@ -1359,7 +1359,7 @@ def test_dashboard_token_from_existing_file():
 
 def test_dashboard_workflow_run_invalid_json():
     """Line 308: _send_workflow_run returns when body is None (invalid JSON)."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_wfrij_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_wfrij_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1383,7 +1383,7 @@ def test_dashboard_workflow_run_invalid_json():
 
 def test_dashboard_saga_run_invalid_json():
     """Line 320: _send_saga_run returns when body is None (invalid JSON)."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sagrij_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sagrij_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1407,7 +1407,7 @@ def test_dashboard_saga_run_invalid_json():
 
 def test_dashboard_chat_invalid_json():
     """Line 343: _send_chat returns when body is None (invalid JSON)."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_chtij_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chtij_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1431,7 +1431,7 @@ def test_dashboard_chat_invalid_json():
 
 def test_dashboard_lint_invalid_json():
     """Line 399: _send_lint returns when body is None (invalid JSON)."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_lntij_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_lntij_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1460,7 +1460,7 @@ def test_dashboard_lint_invalid_json():
 def test_dashboard_saga_get_found():
     """Line 338: /api/saga/{id} returns 200 when saga exists."""
     from runtime.saga import SagaOrchestrator
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sagf_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sagf_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1488,7 +1488,7 @@ def test_dashboard_saga_get_found():
 
 def test_dashboard_graph_too_large():
     """Lines 426-427: /api/graph returns error when graph is too large."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_grphl_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_grphl_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(
@@ -1522,7 +1522,7 @@ def test_dashboard_graph_too_large():
 
 def test_dashboard_sse_with_allowed_origin():
     """Line 459: SSE sets Access-Control-Allow-Origin for allowed origins."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_sseo_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_sseo_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
@@ -1560,7 +1560,7 @@ def test_dashboard_sse_broken_pipe():
 
 def test_dashboard_main_block_in_process():
     """Lines 485-491: __main__ block starts server in-process."""
-    tmp = Path(tempfile.mkdtemp(prefix="aios_dash_mainip_"))
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_mainip_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp / sub).mkdir(parents=True, exist_ok=True)
     (tmp / "runtime/policies/default.yaml").write_text(

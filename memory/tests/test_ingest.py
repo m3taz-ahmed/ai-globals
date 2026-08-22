@@ -17,7 +17,7 @@ from memory.store import MemoryStore
 # ---------------------------------------------------------------------------
 
 def _tmp() -> Path:
-    return Path(tempfile.mkdtemp(prefix="aios_ingest_"))
+    return Path(tempfile.mkdtemp(prefix="aizee_ingest_"))
 
 
 def _store(tmp: Path) -> MemoryStore:

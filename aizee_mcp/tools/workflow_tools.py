@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,8 @@ from .common import (
     truncate,
     validate_query,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def register_workflow_tools(mcp: FastMCP) -> None:
@@ -50,6 +53,7 @@ def register_workflow_tools(mcp: FastMCP) -> None:
                     {"file": mem.source, "match": query, "content": truncate(mem.content, 200), "score": "fts"}
                 )
         except Exception:
+            logger.debug("FTS search failed in workflow query", exc_info=True)
             fts_results = []
 
         results: list[dict[str, Any]] = fts_results

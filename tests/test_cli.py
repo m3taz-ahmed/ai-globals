@@ -311,7 +311,7 @@ class TestCliBudget:
 
 class TestCliProject:
     def test_project_init(self):
-        tmp = Path(tempfile.mkdtemp(prefix="aios_project_test_"))
+        tmp = Path(tempfile.mkdtemp(prefix="aizee_project_test_"))
         try:
             rc = main(["project", "init", "--path", str(tmp)])
             assert rc == 0
@@ -1276,7 +1276,7 @@ class TestCliDoctorGlobalMcp:
     def test_doctor_global_mcp_not_found(self, capsys):
         """Line 479: global mcp config file doesn't exist."""
         tmp = _tmp_root()
-        tmp_appdata = Path(tempfile.mkdtemp(prefix="aios_appdata_"))
+        tmp_appdata = Path(tempfile.mkdtemp(prefix="aizee_appdata_"))
         try:
             with patch.dict(os.environ, {"APPDATA": str(tmp_appdata)}):
                 main(["--root", str(tmp), "doctor"])
@@ -1289,7 +1289,7 @@ class TestCliDoctorGlobalMcp:
     def test_doctor_global_mcp_exception(self, capsys):
         """Lines 480-481: exception during global mcp config check."""
         tmp = _tmp_root()
-        tmp_appdata = Path(tempfile.mkdtemp(prefix="aios_appdata_exc_"))
+        tmp_appdata = Path(tempfile.mkdtemp(prefix="aizee_appdata_exc_"))
         g_dir = tmp_appdata / "devin"
         g_dir.mkdir(parents=True)
         (g_dir / "mcp_config.json").write_text("invalid json{{{", encoding="utf-8")

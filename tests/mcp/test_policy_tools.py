@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 from aizee_mcp._compat import FastMCP
 
 # Set up isolated root BEFORE importing
-_ROOT = tempfile.mkdtemp(prefix="aios_pol_test_")
+_ROOT = tempfile.mkdtemp(prefix="aizee_pol_test_")
 os.environ["AIZEE_ROOT"] = _ROOT
 ROOT = Path(_ROOT)
 for sub in ("runtime/policies", "state", "brain"):

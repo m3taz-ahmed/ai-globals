@@ -25,4 +25,4 @@
     - FULL tier (before declaring done): run the project's complete test suite + coverage. Must pass green.
     - NEVER run the full suite on every change. NEVER skip the full suite before done.
     - If no test framework exists, write the first test for touched code before done `[TEST-09]`.
-20. [CMD] Cleanup Gate `[OS-CLEAN-01]`: Before handoff, run `workflows/16-cleanup-and-scm.md` to remove temporary files and stage only relevant changes.
+21. [CMD] Cleanup Gate `[OS-CLEAN-01]`: Before handoff, run `workflows/16-cleanup-and-scm.md` to remove temporary files and stage only relevant changes.

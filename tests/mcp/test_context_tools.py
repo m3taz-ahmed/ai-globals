@@ -11,7 +11,7 @@ from unittest.mock import patch
 from aizee_mcp._compat import FastMCP, FunctionResource
 
 # Set up isolated root BEFORE importing
-_ROOT = tempfile.mkdtemp(prefix="aios_ctx_test_")
+_ROOT = tempfile.mkdtemp(prefix="aizee_ctx_test_")
 os.environ["AIZEE_ROOT"] = _ROOT
 ROOT = Path(_ROOT)
 for sub in ("tech-stack", "skills", "skills/python", "state", "brain"):
@@ -136,7 +136,7 @@ class TestSearchSkills:
     def test_search_no_skills_dir(self):
         """Cover line 50: return empty list when skills dir missing."""
         # Point root to a temp dir without skills/
-        tmp_root = tempfile.mkdtemp(prefix="aios_no_skills_")
+        tmp_root = tempfile.mkdtemp(prefix="aizee_no_skills_")
         os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         search_tool = _mcp._tool_manager.get_tool("search_skills")
@@ -189,7 +189,7 @@ class TestGetChangelog:
 
     def test_changelog_not_found(self):
         """Cover line 77: CHANGELOG.md missing."""
-        tmp_root = tempfile.mkdtemp(prefix="aios_no_cl_")
+        tmp_root = tempfile.mkdtemp(prefix="aizee_no_cl_")
         os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         cl_tool = _mcp._tool_manager.get_tool("get_changelog")
@@ -222,7 +222,7 @@ class TestGetActiveContext:
 
     def test_missing_active_context(self):
         """Cover line 108: ACTIVE_CONTEXT.md not found."""
-        tmp_root = tempfile.mkdtemp(prefix="aios_no_ac_")
+        tmp_root = tempfile.mkdtemp(prefix="aizee_no_ac_")
         os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         ac_tool = _mcp._tool_manager.get_tool("get_active_context")
@@ -253,7 +253,7 @@ class TestGetAgents:
 
     def test_missing_agents(self):
         """Cover line 115: get_agents returns empty string when file missing."""
-        tmp_root = tempfile.mkdtemp(prefix="aios_no_agents_")
+        tmp_root = tempfile.mkdtemp(prefix="aizee_no_agents_")
         os.environ["AIZEE_ROOT"] = tmp_root
         reset_state()
         resources = _mcp._resource_manager._resources

@@ -136,7 +136,7 @@ class TestDiscoverProjectRootCwdFallback:
         monkeypatch.delenv("AIZEE_ROOT", raising=False)
         # Use a temp dir that has no .ai/active-context.md
         import tempfile
-        tmp = Path(tempfile.mkdtemp(prefix="aios_cfg_test_"))
+        tmp = Path(tempfile.mkdtemp(prefix="aizee_cfg_test_"))
         monkeypatch.chdir(tmp)
         result = config_mod.discover_project_root()
         # Should fall back to discover_root() which is the config.py parent

@@ -493,29 +493,29 @@ def format_metrics(k: Kernel) -> str:
     """Return Prometheus exposition text for key runtime metrics (dashboard)."""
     status = k.status()
     lines: list[str] = [
-        "# HELP aios_workflows_total Total number of registered workflows",
-        "# TYPE aios_workflows_total gauge",
-        f"aios_workflows_total {len(status['workflows'])}",
+        "# HELP aizee_workflows_total Total number of registered workflows",
+        "# TYPE aizee_workflows_total gauge",
+        f"aizee_workflows_total {len(status['workflows'])}",
         "",
-        "# HELP aios_rules_total Total number of loaded policy rules",
-        "# TYPE aios_rules_total gauge",
-        f"aios_rules_total {len(status['rules'])}",
+        "# HELP aizee_rules_total Total number of loaded policy rules",
+        "# TYPE aizee_rules_total gauge",
+        f"aizee_rules_total {len(status['rules'])}",
         "",
-        "# HELP aios_budgets_total Total number of configured budgets",
-        "# TYPE aios_budgets_total gauge",
-        f"aios_budgets_total {len(status['budgets'])}",
+        "# HELP aizee_budgets_total Total number of configured budgets",
+        "# TYPE aizee_budgets_total gauge",
+        f"aizee_budgets_total {len(status['budgets'])}",
         "",
     ]
 
     for scope, usage in k.budget.usage.items():
         labels = f'scope="{scope}"'
-        lines.append(f"# HELP aios_budget_tokens_total Total tokens used for scope {scope}")
-        lines.append("# TYPE aios_budget_tokens_total counter")
-        lines.append(f"aios_budget_tokens_total{{{labels}}} {usage.get('tokens', 0)}")
+        lines.append(f"# HELP aizee_budget_tokens_total Total tokens used for scope {scope}")
+        lines.append("# TYPE aizee_budget_tokens_total counter")
+        lines.append(f"aizee_budget_tokens_total{{{labels}}} {usage.get('tokens', 0)}")
         lines.append("")
-        lines.append(f"# HELP aios_budget_calls_total Total calls for scope {scope}")
-        lines.append("# TYPE aios_budget_calls_total counter")
-        lines.append(f"aios_budget_calls_total{{{labels}}} {usage.get('calls', 0)}")
+        lines.append(f"# HELP aizee_budget_calls_total Total calls for scope {scope}")
+        lines.append("# TYPE aizee_budget_calls_total counter")
+        lines.append(f"aizee_budget_calls_total{{{labels}}} {usage.get('calls', 0)}")
         lines.append("")
 
     return "\n".join(lines)

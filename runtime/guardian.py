@@ -23,6 +23,7 @@ from typing import Any, ClassVar
 
 import yaml
 
+from runtime.policy import GuardrailRegistry, default_guardrail_registry
 from runtime.schemas import AizeeError, ErrorSeverity, PolicyDeniedError
 
 
@@ -159,12 +160,18 @@ class Guardian:
         rules: list[dict[str, Any]],
         config: GuardConfig | None = None,
         permission_dependencies: dict[str, list[str]] | None = None,
+        guardrail_registry: GuardrailRegistry | None = None,
     ) -> None:
         self.rules = rules
         self.config = config or GuardConfig()
         self.permission_dependencies = permission_dependencies or dict(
             self.DEFAULT_PERMISSION_DEPENDENCIES
         )
+        # Guardrail tripwire layer (additional to the predicate rule engine).
+        # Defaults to the module-level registry populated by @input_guardrail
+        # / @output_guardrail decorators. Pass a custom registry for isolation
+        # in tests or for per-agent guardrail sets.
+        self.guardrail_registry = guardrail_registry or default_guardrail_registry
 
     @classmethod
     def from_yaml(cls, path: str | Path, config: GuardConfig | None = None) -> Guardian:
@@ -208,6 +215,15 @@ class Guardian:
         return None
 
     def authorize(self, request: ActionRequest) -> Decision:
+        # Guardrail tripwire layer (input phase): runs before the predicate
+        # rule engine. Any tripwire_triggered=True blocks the action.
+        guardrail_context: dict[str, Any] = {"tool": request.tool, **request.attributes}
+        gr_result = self.guardrail_registry.run_guardrails("input", guardrail_context)
+        if gr_result.tripwire_triggered:
+            gr_name = str(gr_result.output_info.get("guardrail", "input_guardrail"))
+            reason = str(gr_result.output_info.get("reason", "guardrail tripwire triggered"))
+            return Decision(DecisionStatus.DENY, f"guardrail:{gr_name}", reason)
+
         decision = self._match_rule(request)
         if decision is not None:
             # If ALLOW decision and request carries permissions, validate deps.
@@ -266,6 +282,20 @@ class Guardian:
             raise PolicyDeniedError(f"Policy denied by rule {decision.rule_name!r}")
         if decision.status == DecisionStatus.REQUIRE_APPROVAL:
             raise ApprovalRequiredError(decision.rule_name, decision.reason)
+
+    def check_output_guardrails(self, context: dict[str, Any]) -> Decision:
+        """Run output-phase guardrails after action execution.
+
+        Returns a DENY decision if any output guardrail tripwire triggers,
+        otherwise an ALLOW decision. This is the post-execution counterpart
+        to the input guardrails run inside ``authorize``.
+        """
+        gr_result = self.guardrail_registry.run_guardrails("output", context)
+        if gr_result.tripwire_triggered:
+            gr_name = str(gr_result.output_info.get("guardrail", "output_guardrail"))
+            reason = str(gr_result.output_info.get("reason", "guardrail tripwire triggered"))
+            return Decision(DecisionStatus.DENY, f"guardrail:{gr_name}", reason)
+        return Decision(DecisionStatus.ALLOW, "output_guardrails", "no tripwire")
 
 
 def invoke(guardian: Guardian, tool: str | None = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:

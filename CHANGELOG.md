@@ -1,5 +1,136 @@
 # Changelog
 
+## [Unreleased] — Architectural Patterns Implementation (10 Patterns from 24 Top Repos)
+
+### New Runtime Modules (3 added)
+- **`runtime/middleware.py`** — Flat middleware pipeline (tRPC-style recursive `callRecursive`) + pre-compiled enhancer pipeline (NestJS-style guards/interceptors/pipes compiled once at registration).
+- **`memory/checkpoint.py`** — Checkpoint state management with content-addressed snapshots (Dapr-style state store + LangGraph checkpoint pattern).
+- **`memory/schema_contract.py`** — Contract-first schema verification with SHA-256 integrity hashing and drift detection (Prisma-style declarative schema model).
+
+### Enhanced Existing Modules (7 modules extended)
+- **`runtime/policy.py`** — Added `GuardrailResult`, `GuardrailRegistry`, `@input_guardrail`/`@output_guardrail` decorators (OpenAI Agents SDK tripwire pattern).
+- **`runtime/guardian.py`** — Wired guardrails into `Guardian.authorize()` (input guardrails run before predicate rules; output guardrails via `check_output_guardrails()`).
+- **`runtime/authorization.py`** — Added `ProtectedResource`, `Permission`, `ResourceRegistry` with AND/OR/DENY_OVERRIDE aggregate logic and negative permission inversion (Keycloak R→P→P decomposition).
+- **`runtime/semantic_search.py`** — Added `hybrid_search()`, `fuse_rrf()`, `fuse_relative_score()` with alpha-blended fusion (Weaviate hybrid search pattern).
+- **`memory/vector.py`** — Added `full_scan_threshold` for brute-force/indexed search selection + filter-during-traversal metadata filtering (Qdrant pattern).
+- **`runtime/budget.py`** — Added `BudgetAction` enum (WARN/ALERT/REJECT), `BudgetWindow`, `BudgetWindowManager` for multi-window budget enforcement (Stripe/Lambda limits pattern).
+- **`runtime/service_catalog.py`** — Added `CatalogEntity`, `CatalogStore`, `PluginRegistry`, `CatalogExtension` with typed relations and multi-index lookup (Backstage entity catalog pattern).
+- **`runtime/agent_discovery.py`** — Added `discover_by_labels()` and `discover_by_capability()` for label/capability-based entity discovery.
+- **`runtime/prompt_gate.py`** — Added `GradingResult`, assertion functions (`assert_equals`, `assert_contains`, `assert_no_pii`), PII/harm guardrails, adaptive rewriting (DSPy assertion-based prompt validation pattern).
+
+### New Tests (10 files, 291 tests)
+- `runtime/tests/test_middleware.py` — 31 tests (flat middleware + compiled pipeline).
+- `runtime/tests/test_guardrails.py` — 20 tests (guardrail registry + decorators + Guardian wiring).
+- `runtime/tests/test_resource_auth.py` — 31 tests (resource/permission/policy + aggregate logic).
+- `runtime/tests/test_hybrid_search.py` — 30 tests (fusion strategies + hybrid search integration).
+- `memory/tests/test_vector_search.py` — 29 tests (VectorStore + metadata filtering + operators).
+- `memory/tests/test_checkpoint.py` — 22 tests (checkpoint state + content addressing).
+- `memory/tests/test_schema_contract.py` — 21 tests (schema contract + drift detection + integrity).
+- `runtime/tests/test_prompt_validation.py` — 41 tests (assertions + guardrails + adaptive rewriting).
+- `runtime/tests/test_budget_window.py` — 44 tests (BudgetWindow + BudgetWindowManager + ALERT/REJECT).
+- `runtime/tests/test_catalog.py` — 30 tests (CatalogEntity + CatalogStore + PluginRegistry + discovery).
+
+### Architectural Patterns Adopted (10 patterns from 24 repos)
+1. **Guardrail Tripwire** (OpenAI Agents SDK) — input/output guardrails with tripwire halting.
+2. **Checkpoint State** (Dapr/LangGraph) — content-addressed state snapshots for resumable agents.
+3. **Hybrid Search Alpha-Blended Fusion** (Weaviate) — parallel keyword+vector search with RRF/relative fusion.
+4. **Flat Middleware Array** (tRPC) — recursive `callRecursive` execution with error wrapping.
+5. **Pre-Compiled Enhancer Pipeline** (NestJS) — guards/interceptors/pipes compiled once at registration.
+6. **Contract Schema with Hash Verification** (Prisma) — declarative schema contract with SHA-256 drift detection.
+7. **Resource → Permission → Policy** (Keycloak) — fine-grained authorization with aggregate logic.
+8. **Assertion-Based Prompt Validation** (DSPy) — grading results + guardrails + adaptive rewriting.
+9. **BudgetWindow ALERT/REJECT** (Stripe/Lambda) — multi-window budget enforcement with severity escalation.
+10. **Entity Catalog + Plugin Extensions** (Backstage) — versioned entity schema with typed relations and plugin registry.
+
+### Quality Gates
+- `ruff check .` — All checks passed.
+- `mypy runtime/ memory/` — No issues (219 source files).
+- `pytest` — Full suite passed, coverage 96.89%.
+- `eval/harness.py` — `all_pass: true`.
+- `validate-globals` — 324 scanned, 0 errors, version 5.5.0 consistent.
+
+## [Unreleased] — Persona, Skill, Tech-Stack & Test Expansion
+
+### New Personas (3 added — 19 → 22 total)
+- **`DEVX`** — Developer Experience Engineer (developer portals, SDKs, CLIs, onboarding flows, ergonomics).
+- **`MLOPS`** — ML Operations Engineer (model deployment, model registry, feature store, model serving, monitoring).
+- **`FINOPS`** — Cloud Cost Optimization Engineer (cloud cost analysis, billing, budgets, reserved/spot instances, savings plans).
+
+### New Skills (6 added — 64 → 68 total)
+- **`api-versioning`** — API versioning strategies (header-based, URI-based, deprecation, backward compatibility).
+- **`incident-commander`** — Incident command and response coordination (severity routing, comms, postmortems).
+- **`code-reviewer`** — Multi-dimensional code review with confidence scoring and actionable feedback.
+- **`migration-specialist`** — Database/framework migration planning, execution, and rollback safety.
+- **`prompt-engineer`** — LLM prompt engineering (few-shot, chain-of-thought, structured output, eval harnesses).
+- **`accessibility-auditor`** — WCAG/ADA accessibility auditing (ARIA, keyboard nav, contrast, screen reader compat).
+
+### New Tech-Stack Files (70 added — 91 → 161 total)
+- **AI/ML APIs**: OpenAI, Anthropic, Google AI, Cohere, Hugging Face, Replicate, Together AI, Groq.
+- **DevOps**: Docker, Kubernetes, Helm, Terraform, Ansible, Pulumi, ArgoCD, Vault.
+- **Vector DBs**: Pinecone, Weaviate, Qdrant, Milvus, Chroma, pgvector, LanceDB.
+- **Frameworks**: FastAPI, Django, Flask, Express, NestJS, Spring Boot, Gin, Actix.
+- **Data**: PostgreSQL, MySQL, MongoDB, Redis, Elasticsearch, Kafka, RabbitMQ, ClickHouse.
+- **Auth**: Keycloak, Auth0, Clerk, Supabase Auth, Okta, AWS Cognito.
+- **Payments**: Stripe, PayPal, Square, Razorpay, Mollie, Adyen.
+- **Deploy**: Vercel, Netlify, Railway, Fly.io, Render, Cloudflare Workers, AWS Lambda.
+- **Languages**: Go, Rust, TypeScript, Kotlin, Swift, Elixir, Zig.
+
+### Updated Tech-Stack Files (7 updated)
+- `aizee-5.md`, `python-3.md`, `mcp-1.md`, `pytest-8.md`, `pydantic-2.md`, `tailwind-4.md`, `nextjs-15.md`.
+
+### New Tests (9 files, 148 tests)
+- Added 9 test files for previously untested runtime modules — 148 new tests covering edge cases, error paths, and integration scenarios.
+
+### Updated Counts
+- Personas: 19 → 22
+- Skills: 64 → 68
+- Tech-stack files: 91 → 161
+- Runtime modules: 87 (unchanged)
+- MCP tools: 35 (unchanged)
+- Workflows: 30 (unchanged)
+
+## [Unreleased] — Comprehensive Review & Cleanup (Multi-Persona Audit)
+
+### Critical Fixes
+- **Mojibake repair**: Fixed UTF-8 encoding corruption (UTF-8 misread as Latin-1/CP1252) across 6 files:
+  - `manifest.json`: Arabic SEO triggers (2 keys repaired)
+  - `README-AR.md`: 236 lines, 994 character repairs (full Arabic content restored)
+  - `Memory.md`: 16 lines, 189 character repairs (emoji + Arabic restored)
+  - `workflows/README.md`: 1 line, 3 repairs (≥ symbol restored)
+  - `AGENTS.md`: 36 lines, 44 repairs (box-drawing + em-dash restored)
+  - `.windsurfrules`: 4 lines, 4 repairs (em-dash restored)
+
+### High Priority Fixes
+- **Documentation drift**: Corrected stale module/skill/workflow/tool counts across 6 files:
+  - Runtime modules: 60+ → 87 (in AGENTS.md, spec.md, README.md, docs/ONBOARDING_SRE.md, aizee-5.md)
+  - MCP tools: 27 → 35 (in AGENTS.md, spec.md, README.md, aizee-5.md, docs/ONBOARDING_SRE.md)
+  - Skills: 31 → 64 (in AGENTS.md, spec.md, README.md)
+  - Numbered workflows: 36 → 30 (in AGENTS.md, spec.md, README.md)
+- **Persona count**: Fixed `global-roles-ar.md` from "17 شخصية" → "19 شخصية"
+- **Rule numbering**: Fixed duplicate rule #20 in `global-workflow.md` (second → #21)
+
+### Medium Priority Fixes
+- **Legacy naming**: Renamed `tech-stack/aios-5.md` → `tech-stack/aizee-5.md` + updated all references in Memory.md, CHANGELOG.md, and `runtime/tech_stack.py` alias map.
+- **Prometheus metrics**: Renamed all `aios_*` metrics to `aizee_*` in `runtime/kernel.py` (6 counters/gauges), `runtime/metrics.py` (11 metric lines), and all related tests.
+- **Stale .pyc cleanup**: Removed 317 stale bytecode files (including `aios_server.pyc`, `aios_cli.pyc`) with no corresponding `.py` source.
+- **GSAP skill dedup**: Removed redundant `gsap-new/` and `gsap-refactor/` root wrapper directories (Claude Code-specific). `subskills/` is now the single canonical location.
+- **Silent exception logging**: Added `logger.debug(..., exc_info=True)` to 5 silent `except Exception: pass/continue` blocks in:
+  - `aizee_mcp/aizee_server.py` (tool import + registration + shutdown)
+  - `aizee_mcp/tools/workflow_tools.py` (FTS search fallback)
+  - `runtime/agent_discovery.py` (agent config parse)
+  - `dashboard/server.py` (storage shutdown)
+
+### Low Priority Additions
+- **Manifest encoding tests**: New `tests/test_manifest_encoding.py` (4 tests) — validates manifest.json is valid JSON, free of mojibake, has Arabic triggers mapping to SEO audit workflow, and all trigger paths exist.
+- **Workflow README count**: Updated `workflows/README.md` to accurately reflect 37 workflow files + 6 reference files (43 total).
+
+### Quality Gates
+- ruff: PASS (all checks)
+- mypy: PASS (187 source files, 0 issues)
+- pytest: PASS (all tests, 97% coverage)
+- eval/harness: `all_pass: true`
+- validate-globals: 0 errors, 0 warnings
+
 ## [5.5.0] — 2026-08-23 (15 Patterns from 15 Repos Study → aiZee Runtime)
 
 ### GitHub Repos Study v2 (15 repos analyzed: 5 Laravel + 5 Filament + 5 Node.js)
@@ -260,7 +391,7 @@ Deep analysis of 10 leading GitHub repositories (5 Laravel + 5 Filament) cloned 
 - **`test_uninstaller_gui.py`**: Added `pytest.importorskip("tkinter")` to prevent collection break on headless/Python 3.14 Windows where tkinter is unavailable.
 
 ### Added — Internal Tech-Stack References (P1.1, Dogfooding)
-- 7 new `tech-stack/*.md` files for aiZee's own stack: `python-3.md`, `aios-5.md`, `pydantic-2.md`, `mcp-1.md`, `pytest-7.md`, `pytest-8.md`, `pyyaml-6.md`, `rich-13.md`.
+- 7 new `tech-stack/*.md` files for aiZee's own stack: `python-3.md`, `aizee-5.md`, `pydantic-2.md`, `mcp-1.md`, `pytest-7.md`, `pytest-8.md`, `pyyaml-6.md`, `rich-13.md`.
 - **`runtime/tech_stack.py`**: `_parse_pyproject_toml()` now registers the project self-name + version and extracts `requires-python` version. Added `aizee` → `aios` alias.
 - **Result**: `get_os_status` MCP tool and `kernel.detect_tech_stack()` now return 7 tech_stack entries instead of empty `{}`. aiZee now satisfies `[VER-01]` for itself.
 

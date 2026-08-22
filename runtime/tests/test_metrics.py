@@ -279,10 +279,10 @@ def test_format_metrics():
     }
     mock_kernel.budget = mock_budget
     output = format_metrics(mock_kernel)
-    assert "aios_workflows_total 2" in output
-    assert "aios_rules_total 1" in output
-    assert "aios_budgets_total 1" in output
+    assert "aizee_workflows_total 2" in output
+    assert "aizee_rules_total 1" in output
+    assert "aizee_budgets_total 1" in output
     assert 'scope="global"' in output
-    assert "aios_budget_tokens_total" in output
-    assert "aios_budget_calls_total" in output
+    assert "aizee_budget_tokens_total" in output
+    assert "aizee_budget_calls_total" in output
     assert 'scope="session"' in output

@@ -147,7 +147,7 @@ def test_is_plugin_source_safe_clean() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_aios_plugin_default_tools_and_resources(tmp_path):
+def test_aizee_plugin_default_tools_and_resources(tmp_path):
     _setup_root(tmp_path)
     kernel = Kernel(tmp_path)
 

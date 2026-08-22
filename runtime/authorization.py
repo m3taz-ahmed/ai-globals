@@ -26,6 +26,8 @@ import json
 import re
 import threading
 import time
+import uuid as _uuid
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -297,8 +299,6 @@ class PolicyDecisionPoint:
         - consequential operations fail closed when PDP is unavailable.
         - risk above threshold denies.
         """
-        import uuid as _uuid
-
         decision_id = f"dec-{_uuid.uuid4().hex[:12]}"
         tuple_hash = tup.identity_hash()
 
@@ -505,7 +505,6 @@ class PolicyEnforcementPoint:
             and observed_schema_hash
             and observed_schema_hash != tup.arguments_schema_hash
         ):
-            import uuid as _uuid
             return PermitDecision(
                 decision="deny",
                 decision_id=f"dec-{_uuid.uuid4().hex[:12]}",
@@ -516,7 +515,6 @@ class PolicyEnforcementPoint:
         # Target binding: reject if the resolved target differs from the
         # admitted target (target swap attack).
         if observed_target_id and observed_target_id != tup.target_id:
-            import uuid as _uuid
             return PermitDecision(
                 decision="deny",
                 decision_id=f"dec-{_uuid.uuid4().hex[:12]}",
@@ -570,3 +568,215 @@ class RuntimeOrchestrator:
     def reset(self) -> None:
         """Reset to IDLE state."""
         self._state = RuntimeState.IDLE
+
+
+# ---------------------------------------------------------------------------
+# Resource → Permission → Policy decomposition (adapted from Keycloak)
+#
+# Keycloak's authorization services use a three-tier model:
+#   Resource → Permission → Policy → Decision
+#
+# - Resource: a protected object (MCP tool, file, endpoint, action).
+# - Permission: binds a resource to one or more policies.
+# - Policy: a rule that evaluates to allow/deny/ask.
+#
+# This is an ADDITIONAL layer on top of the existing PolicyDecisionPoint /
+# PolicyEnforcementPoint. It does not replace them — when no explicit
+# policies are registered for a resource, the ResourceRegistry falls back
+# to the PolicyDecisionPoint for backward compatibility.
+# ---------------------------------------------------------------------------
+
+# Type alias: a PolicyDecision is the same PermitDecision used by the PDP.
+PolicyDecision = PermitDecision
+
+# A policy evaluator takes an AuthorizationTuple and returns a Decision.
+PolicyEvaluator = Callable[[AuthorizationTuple], Decision]
+
+# Aggregate logic for combining multiple policy decisions.
+AggregateLogic = Literal["AND", "OR", "DENY_OVERRIDE"]
+
+# Permission logic: positive (normal) or negative (inverted).
+PermissionLogic = Literal["positive", "negative"]
+
+# Protected resource types.
+ResourceType = Literal["mcp_tool", "file", "endpoint", "action"]
+
+
+@dataclass
+class ProtectedResource:
+    """A protected object in the authorization model.
+
+    Adapted from Keycloak's ``Resource``: what is being protected
+    (MCP tool name, file path, API endpoint, runtime action).
+    """
+
+    resource_id: str
+    resource_type: ResourceType
+    name: str
+    description: str = ""
+
+
+@dataclass
+class Permission:
+    """Binds a resource to one or more policies.
+
+    Adapted from Keycloak's ``Permission``: links a resource to policy
+    evaluators. The ``logic`` field (positive/negative) inverts the
+    combined policy result — useful for "deny unless explicitly allowed"
+    patterns.
+    """
+
+    permission_id: str
+    resource_id: str
+    policy_ids: list[str] = field(default_factory=list)
+    logic: PermissionLogic = "positive"
+
+
+def _aggregate_decisions(decisions: list[Decision], logic: AggregateLogic) -> Decision:
+    """Combine multiple policy decisions using aggregate logic.
+
+    - **AND** (unanimous): all must allow; any deny blocks; else ask.
+    - **OR** (affirmative): any allow grants; all deny blocks; else ask.
+    - **DENY_OVERRIDE**: any deny blocks; else any allow grants; else ask.
+    """
+    if not decisions:
+        return "deny"
+    if logic == "AND":
+        if all(d == "allow" for d in decisions):
+            return "allow"
+        if "deny" in decisions:
+            return "deny"
+        return "ask"
+    if logic == "OR":
+        if any(d == "allow" for d in decisions):
+            return "allow"
+        if all(d == "deny" for d in decisions):
+            return "deny"
+        return "ask"
+    # DENY_OVERRIDE
+    if "deny" in decisions:
+        return "deny"
+    if any(d == "allow" for d in decisions):
+        return "allow"
+    return "ask"
+
+
+def _invert_decision(d: Decision) -> Decision:
+    """Invert a decision for negative-permission logic."""
+    if d == "allow":
+        return "deny"
+    if d == "deny":
+        return "allow"
+    return "ask"
+
+
+class ResourceRegistry:
+    """Manages protected resources, permissions, and policy evaluators.
+
+    Implements Keycloak's Resource → Permission → Policy decomposition.
+    Resources are registered, permissions bind resources to policies, and
+    ``evaluate_access`` combines policy results with aggregate logic
+    (AND / OR / DENY_OVERRIDE).
+
+    Backward compatible with ``PolicyDecisionPoint``: when no explicit
+    policies are registered for a resource, the registry delegates to the
+    PDP (if provided) or returns a deny.
+    """
+
+    def __init__(self, pdp: PolicyDecisionPoint | None = None) -> None:
+        self._resources: dict[str, ProtectedResource] = {}
+        self._permissions: dict[str, Permission] = {}
+        self._policies: dict[str, PolicyEvaluator] = {}
+        self._pdp = pdp
+
+    def register_resource(self, resource: ProtectedResource) -> None:
+        """Register a protected resource."""
+        self._resources[resource.resource_id] = resource
+
+    def get_resource(self, resource_id: str) -> ProtectedResource | None:
+        """Look up a registered resource by ID."""
+        return self._resources.get(resource_id)
+
+    def bind_permission(self, permission: Permission) -> None:
+        """Bind a permission (resource → policies) to the registry."""
+        self._permissions[permission.permission_id] = permission
+
+    def register_policy(self, policy_id: str, evaluator: PolicyEvaluator) -> None:
+        """Register a policy evaluator by ID."""
+        self._policies[policy_id] = evaluator
+
+    def list_permissions_for_resource(self, resource_id: str) -> list[Permission]:
+        """Return all permissions bound to a resource."""
+        return [p for p in self._permissions.values() if p.resource_id == resource_id]
+
+    def _evaluate_policy(
+        self,
+        policy_id: str,
+        auth_tuple: AuthorizationTuple,
+    ) -> Decision:
+        """Evaluate a single policy, falling back to the PDP if unregistered."""
+        evaluator = self._policies.get(policy_id)
+        if evaluator is not None:
+            return evaluator(auth_tuple)
+        if self._pdp is not None:
+            return self._pdp.decide(auth_tuple).decision
+        return "deny"
+
+    def evaluate_access(
+        self,
+        resource_id: str,
+        auth_tuple: AuthorizationTuple,
+        logic: AggregateLogic = "AND",
+    ) -> PolicyDecision:
+        """Evaluate access to a resource for an authorization tuple.
+
+        Collects all permissions bound to the resource, evaluates each
+        permission's policies, applies per-permission logic (positive /
+        negative), then aggregates across permissions using ``logic``.
+
+        Falls back to the ``PolicyDecisionPoint`` when no permissions are
+        bound to the resource (backward compatibility).
+        """
+        tuple_hash = auth_tuple.identity_hash()
+        decision_id = f"dec-{_uuid.uuid4().hex[:12]}"
+
+        resource = self._resources.get(resource_id)
+        if resource is None:
+            return PermitDecision(
+                decision="deny",
+                decision_id=decision_id,
+                tuple_hash=tuple_hash,
+                reason="resource_not_found",
+            )
+
+        permissions = self.list_permissions_for_resource(resource_id)
+        if not permissions:
+            # Backward compatibility: delegate to PDP if available.
+            if self._pdp is not None:
+                return self._pdp.decide(auth_tuple)
+            return PermitDecision(
+                decision="deny",
+                decision_id=decision_id,
+                tuple_hash=tuple_hash,
+                reason="no_permissions_bound",
+            )
+
+        # Collect the combined decision from each permission.
+        permission_decisions: list[Decision] = []
+        for perm in permissions:
+            policy_decisions = [
+                self._evaluate_policy(pid, auth_tuple) for pid in perm.policy_ids
+            ]
+            # Aggregate within the permission using the same logic.
+            perm_result = _aggregate_decisions(policy_decisions, logic)
+            if perm.logic == "negative":
+                perm_result = _invert_decision(perm_result)
+            permission_decisions.append(perm_result)
+
+        final = _aggregate_decisions(permission_decisions, logic)
+        return PermitDecision(
+            decision=final,
+            decision_id=decision_id,
+            tuple_hash=tuple_hash,
+            reason=f"resource:{resource_id}:logic:{logic}",
+        )

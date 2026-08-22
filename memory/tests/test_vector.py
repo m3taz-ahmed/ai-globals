@@ -67,7 +67,7 @@ def _make_st_mock() -> MagicMock:
 
 
 def _tmp() -> Path:
-    return Path(tempfile.mkdtemp(prefix="aios_vec_"))
+    return Path(tempfile.mkdtemp(prefix="aizee_vec_"))
 
 
 def _mock_vm(tmp: Path, index_mock: MagicMock | None = None) -> VectorMemory:

@@ -69,8 +69,6 @@
     "seo analysis": "workflows/28-seo-audit.md",
     "search optimization": "workflows/28-seo-audit.md",
     "seo": "workflows/28-seo-audit.md",
-    "Ã˜ÂªÃ˜Â­Ã˜Â³Ã™Å Ã™â€  Ã™â€¦Ã˜Â­Ã˜Â±Ã™Æ’Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â­Ã˜Â«": "workflows/28-seo-audit.md",
-    "Ã˜Â³Ã™Å Ã™Ë†": "workflows/28-seo-audit.md",
     "flutter": "skills/flutter-architect/SKILL.md",
     "flutter design": "skills/flutter-design/SKILL.md",
     "flutter develop": "skills/flutter-developer/SKILL.md",
@@ -82,7 +80,9 @@
     "ai filament": "workflows/29-filament-ai-workflow.md",
     "boost filament": "workflows/29-filament-ai-workflow.md",
     "filacheck": "workflows/29-filament-ai-workflow.md",
-    "ai workflow filament": "workflows/29-filament-ai-workflow.md"
+    "ai workflow filament": "workflows/29-filament-ai-workflow.md",
+    "تحسين محركات البحث": "workflows/28-seo-audit.md",
+    "سيو": "workflows/28-seo-audit.md"
   },
   "features": {
     "audit_log": "runtime/audit.py",

@@ -10,10 +10,10 @@
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/Personas-19-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 Personas">
-    <img src="https://img.shields.io/badge/Skills-60-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="60 Skills">
-    <img src="https://img.shields.io/badge/Workflows-44-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="44 Workflows">
-    <img src="https://img.shields.io/badge/Tech--Stack-89-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="89 Tech-Stack refs">
+    <img src="https://img.shields.io/badge/Personas-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 Personas">
+    <img src="https://img.shields.io/badge/Skills-66-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="66 Skills">
+    <img src="https://img.shields.io/badge/Workflows-30-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="30 Workflows">
+    <img src="https://img.shields.io/badge/Tech--Stack-162-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="162 Tech-Stack refs">
   </p>
 </div>
 
@@ -35,7 +35,7 @@ A **zero-compromise, version-controlled operating system** that sits between you
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
 | Raw SQL, missing XSS, weak secrets | OWASP, zero-trust, RBAC enforced by default |
 | Random drive-by refactoring | Surgical changes through policy + budget + audit gates |
-| One-size-fits-all AI answers | 19 personas + 60 skills auto-selected per task |
+| One-size-fits-all AI answers | 22 personas + 66 skills auto-selected per task |
 
 ---
 
@@ -85,14 +85,14 @@ aizee status    # Current persona, skills, budget
 ```
 .ai/                         # Sovereign root (discovered via AIZEE_ROOT)
 ├── AGENTS.md                # Cross-tool canonical bootloader
-├── global-roles.md          # 19 personas + operational rules
+├── global-roles.md          # 22 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 65+ modules
+├── runtime/                 # Kernel: policy, budget, audit, 88 modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
-├── aizee_mcp/                # MCP server (27 tools, 3 resources)
+├── aizee_mcp/                # MCP server (35 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 60 persona + lord skill files
-├── workflows/               # 44 trigger-based execution protocols
+├── skills/                  # 66 persona + lord skill files
+├── workflows/               # 30 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -106,7 +106,7 @@ aizee status    # Current persona, skills, budget
 ## The Six Pillars
 
 ### 1. Persona + Skill Composition
-19 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, etc.) with 23 lord-level domain skills. Auto-detected per task — no manual selection needed.
+22 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, etc.) with 23 lord-level domain skills. Auto-detected per task — no manual selection needed.
 
 ```bash
 aizee persona detect --multi "build a secure docker API with postgres"
@@ -394,7 +394,7 @@ The installer auto-symlinks these to the correct global locations.
 
 | Server | Purpose | Requires |
 | :--- | :--- | :--- |
-| `aizee` | Core OS tools (27 tools) | Python |
+| `aizee` | Core OS tools (35 tools) | Python |
 | `graphify` | Codebase knowledge graph | Python + graphify |
 | `context7` | Live library documentation | Node.js 18+ |
 | `upwork` | Upwork job search + proposals | Node.js + OAuth |
@@ -460,7 +460,7 @@ Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, st
 
 - **Core:** Pure Python 3.10+ (no Node.js required for core OS)
 - **Memory:** SQLite + FTS5 + optional SentenceTransformers vectors
-- **MCP:** FastMCP server with 27 tools
+- **MCP:** FastMCP server with 35 tools
 - **Dashboard:** Python stdlib HTTP server + SQLite
 - **Knowledge graph:** graphify (optional)
 - **Dependencies:** pyyaml, pydantic, rich, cryptography, numpy, turbovec

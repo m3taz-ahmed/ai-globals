@@ -23,7 +23,7 @@ def _store(tmp: Path, enable_vector: bool = False) -> MemoryStore:
 
 
 def _tmp() -> Path:
-    return Path(tempfile.mkdtemp(prefix="aios_store_"))
+    return Path(tempfile.mkdtemp(prefix="aizee_store_"))
 
 
 def _mem(kind: str = "factual", content: str = "test", source: str = "") -> Memory:

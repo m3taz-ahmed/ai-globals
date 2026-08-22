@@ -14,7 +14,7 @@ CLI (aizee_cli.py)
         │     ├── WorkflowManager — saga orchestration + workflows
         │     ├── AgentManager    — agent pool + personas
         │     └── ChatManager     — chat sessions
-        ├── Runtime Modules (runtime/) — 60+ governance modules
+        ├── Runtime Modules (runtime/) — 88 governance modules
         │     ├── policy.py, guardian.py, probity.py — gates
         │     ├── budget.py — token/cost/call tracking
         │     ├── audit.py — hash-chained append-only audit log
@@ -23,7 +23,7 @@ CLI (aizee_cli.py)
         │     ├── observability.py — Sentry + Prometheus
         │     ├── telemetry.py, tracing.py — telemetry + spans
         │     └── persona.py, skill_resolver.py — persona/skill detection
-        ├── MCP Server (aizee_mcp/) — 27 tools via FastMCP
+        ├── MCP Server (aizee_mcp/) — 35 tools via FastMCP
         └── Memory (memory/) — SQLite + FTS5 + vector store
 ```
 
@@ -31,7 +31,7 @@ CLI (aizee_cli.py)
 
 | Path | Purpose |
 |------|---------|
-| `runtime/` | Kernel + 60+ governance modules |
+| `runtime/` | Kernel + 88 governance modules |
 | `runtime/managers/` | Policy/Workflow/Agent/Chat managers |
 | `aizee_mcp/` | MCP server + tools |
 | `memory/` | SQLite DB, FTS5, vector index |

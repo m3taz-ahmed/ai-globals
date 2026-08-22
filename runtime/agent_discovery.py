@@ -18,10 +18,26 @@ Usage::
 from __future__ import annotations
 
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
+
+from runtime.service_catalog import (
+    CATALOG_API_VERSION,
+    KIND_SKILL,
+    REL_DEPENDS_ON,
+    REL_OWNED_BY,
+    REL_PART_OF,
+    REL_PROVIDES_CAPABILITY,
+    CatalogEntity,
+    CatalogStore,
+    EntityMeta,
+    EntityRelation,
+)
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -115,6 +131,7 @@ class AgentDiscovery:
 
                 data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
             except Exception:
+                logger.debug("Failed to parse agent config %s", path, exc_info=True)
                 return agent
             model = data.get("model")
             if isinstance(model, str):
@@ -134,3 +151,165 @@ class AgentDiscovery:
             mcp_str = f" [mcp={','.join(a.mcp_servers)}]" if a.mcp_servers else ""
             lines.append(f"  - {a.name} ({a.kind}): {a.config_path}{model_str}{mcp_str}")
         return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Catalog-based discovery (Backstage Entity Catalog integration)
+#
+# Additive functions that query a CatalogStore by labels, capabilities, and
+# convert skill .md files into CatalogEntity instances with relations.
+# ---------------------------------------------------------------------------
+
+
+def discover_by_labels(
+    catalog: CatalogStore, labels: dict[str, str]
+) -> list[CatalogEntity]:
+    """Discover entities matching ALL given labels (AND semantics).
+
+    Returns entities that have every key=value pair in their metadata.labels.
+    """
+    if not labels:
+        return []
+    result: list[CatalogEntity] = []
+    for entity in catalog.all():
+        if all(
+            entity.metadata.labels.get(key) == value
+            for key, value in labels.items()
+        ):
+            result.append(entity)
+    return result
+
+
+def discover_by_capability(
+    catalog: CatalogStore, capability: str
+) -> list[CatalogEntity]:
+    """Discover entities that provide a specific capability.
+
+    Matches entities with a ``providesCapability`` relation whose
+    target_ref equals the capability, or whose spec lists the capability.
+    """
+    result: list[CatalogEntity] = []
+    for entity in catalog.all():
+        # Check providesCapability relations.
+        for rel in entity.relations:
+            if rel.type == REL_PROVIDES_CAPABILITY and rel.target_ref == capability:
+                result.append(entity)
+                break
+        else:
+            # Check spec.capabilities list as a fallback.
+            caps = entity.spec.get("capabilities")
+            if isinstance(caps, list) and capability in caps:
+                result.append(entity)
+    return result
+
+
+def skill_to_entity(skill_path: Path, name: str) -> CatalogEntity:
+    """Convert a skill .md file to a CatalogEntity with relations.
+
+    Parses YAML frontmatter (between ``---`` markers) for metadata. Adds:
+    - ``partOf`` relation to ``workflow:default/aizee`` (the catalog root)
+    - ``ownedBy`` relation to ``persona:default/{persona}`` if frontmatter.persona
+    - ``providesCapability`` relation for each frontmatter.capabilities entry
+    - ``dependsOn`` relation for each frontmatter.depends_on entry
+
+    Frontmatter is optional; missing fields fall back to heuristics.
+    """
+    description = ""
+    frontmatter: dict[str, Any] = {}
+    try:
+        text = skill_path.read_text(encoding="utf-8")
+        frontmatter, body = _parse_frontmatter(text)
+        description = (
+            frontmatter.get("description")
+            or _first_prose_line(body)
+        )
+    except OSError:
+        logger.debug("Failed to read skill file %s", skill_path, exc_info=True)
+
+    tags = _split_list(frontmatter.get("tags"))
+    if not tags:
+        tags = ["skill"]
+
+    meta = EntityMeta(
+        name=name,
+        namespace="default",
+        title=str(frontmatter.get("title") or name.replace("-", " ").title()),
+        description=description,
+        labels={"kind": "skill"},
+        tags=tags,
+    )
+
+    relations: list[EntityRelation] = [
+        EntityRelation(type=REL_PART_OF, target_ref="workflow:default/aizee"),
+    ]
+
+    persona = frontmatter.get("persona")
+    if isinstance(persona, str) and persona:
+        relations.append(
+            EntityRelation(type=REL_OWNED_BY, target_ref=f"persona:default/{persona}")
+        )
+    for dep in _split_list(frontmatter.get("depends_on")):
+        relations.append(EntityRelation(type=REL_DEPENDS_ON, target_ref=dep))
+    for cap in _split_list(frontmatter.get("capabilities")):
+        relations.append(EntityRelation(type=REL_PROVIDES_CAPABILITY, target_ref=cap))
+
+    spec: dict[str, Any] = {"file_path": str(skill_path)}
+    triggers = _split_list(frontmatter.get("triggers"))
+    if triggers:
+        spec["triggers"] = triggers
+    tech_stack = _split_list(frontmatter.get("tech_stack"))
+    if tech_stack:
+        spec["tech_stack"] = tech_stack
+
+    return CatalogEntity(
+        api_version=CATALOG_API_VERSION,
+        kind=KIND_SKILL,
+        metadata=meta,
+        spec=spec,
+        relations=relations,
+    )
+
+
+def _parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
+    """Split YAML frontmatter from body. Returns (frontmatter, body)."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}, text
+    end_idx = -1
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            end_idx = i
+            break
+    if end_idx == -1:
+        return {}, text
+    fm_text = "\n".join(lines[1:end_idx])
+    body = "\n".join(lines[end_idx + 1 :])
+    try:
+        import yaml
+
+        data = yaml.safe_load(fm_text) or {}
+        if isinstance(data, dict):
+            return data, body
+    except Exception:
+        logger.debug("Failed to parse frontmatter", exc_info=True)
+    return {}, body
+
+
+def _first_prose_line(body: str) -> str:
+    """Return the first non-empty, non-heading line from body."""
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and not stripped.startswith("["):
+            return stripped
+    return ""
+
+
+def _split_list(value: Any) -> list[str]:
+    """Normalize a frontmatter value into a list of non-empty strings."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if str(v).strip()]
+    if isinstance(value, str):
+        return [v.strip() for v in value.split(",") if v.strip()]
+    return []

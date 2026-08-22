@@ -5,12 +5,18 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-import numpy as np
+try:
+    import numpy as np
+    _HAS_NUMPY = True
+except ImportError:  # pragma: no cover
+    np = None  # type: ignore[assignment]
+    _HAS_NUMPY = False
 
 import config
 
@@ -170,3 +176,206 @@ class VectorMemory:
             self.index.remove(int(u64))
         self.index.write(str(self.index_path))
         self._save_map()
+
+
+# ---------------------------------------------------------------------------
+# VectorStore — standalone in-memory vector store with hybrid-search support
+# (Pattern from Weaviate/Qdrant: brute-force below threshold, indexed above,
+#  filter-during-traversal for metadata constraints.)
+# ---------------------------------------------------------------------------
+
+
+class VectorStore:
+    """In-memory vector store with brute-force and indexed search.
+
+    Uses brute-force cosine similarity for small datasets (below
+    ``full_scan_threshold``) and delegates to an indexed search for
+    larger ones. Metadata filtering follows Qdrant's
+    filter-during-traversal pattern: conditions are applied *during*
+    scoring so filtered-out vectors never enter the top-k.
+
+    Numpy is used when available; a pure-Python fallback is used
+    otherwise so the store remains functional without the dependency.
+    """
+
+    def __init__(self, dim: int = 384, full_scan_threshold: int = 1000) -> None:
+        self._dim = dim
+        self._full_scan_threshold = full_scan_threshold
+        self._vectors: list[list[float]] = []
+        self._ids: list[str] = []
+        self._metadata: list[dict[str, Any]] = []
+        self._index: Any = None  # placeholder for an HNSW-like index
+
+    def __len__(self) -> int:
+        return len(self._vectors)
+
+    @property
+    def full_scan_threshold(self) -> int:
+        return self._full_scan_threshold
+
+    def add(
+        self, id: str, vector: list[float], metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Add a vector with an associated id and optional metadata."""
+        self._vectors.append(list(vector))
+        self._ids.append(id)
+        self._metadata.append(metadata or {})
+
+    def search(
+        self,
+        query_vector: list[float],
+        limit: int = 10,
+        filter_metadata: dict[str, Any] | None = None,
+    ) -> list[tuple[str, float]]:
+        """Search for the top-k most similar vectors.
+
+        Returns a list of ``(id, score)`` tuples sorted by descending
+        cosine similarity. When the dataset is smaller than
+        ``full_scan_threshold`` a brute-force scan is used; otherwise
+        the indexed search path is taken.
+        """
+        if not self._vectors:
+            return []
+        if len(self._vectors) < self._full_scan_threshold:
+            raw = self._brute_force_search(query_vector, limit, filter_metadata)
+        else:
+            raw = self._indexed_search(query_vector, limit, filter_metadata)
+        return [(self._ids[i], score) for i, score in raw]
+
+    # -- brute-force path -------------------------------------------------
+
+    def _brute_force_search(
+        self,
+        query_vector: list[float],
+        limit: int,
+        filter_metadata: dict[str, Any] | None = None,
+    ) -> list[tuple[int, float]]:
+        """Brute-force cosine similarity over all stored vectors."""
+        if not self._vectors:
+            return []
+        if _HAS_NUMPY:
+            return self._numpy_brute_force(query_vector, limit, filter_metadata)
+        return self._pure_python_brute_force(query_vector, limit, filter_metadata)
+
+    def _numpy_brute_force(
+        self,
+        query_vector: list[float],
+        limit: int,
+        filter_metadata: dict[str, Any] | None,
+    ) -> list[tuple[int, float]]:
+        """Numpy-accelerated brute-force search."""
+        assert np is not None
+        query = np.array(query_vector, dtype=np.float32)
+        vectors = np.array(self._vectors, dtype=np.float32)
+        norms = np.linalg.norm(vectors, axis=1)
+        query_norm = np.linalg.norm(query)
+        denom = norms * query_norm + 1e-8
+        scores = (vectors @ query) / denom
+        if filter_metadata:
+            mask = self._apply_metadata_filter(filter_metadata)
+            scores = scores * mask
+        top_indices = np.argsort(scores)[-limit:][::-1]
+        return [(int(i), float(scores[i])) for i in top_indices if scores[i] > 0]
+
+    def _pure_python_brute_force(
+        self,
+        query_vector: list[float],
+        limit: int,
+        filter_metadata: dict[str, Any] | None,
+    ) -> list[tuple[int, float]]:
+        """Pure-Python fallback when numpy is unavailable."""
+        scored: list[tuple[int, float]] = []
+        for i, vec in enumerate(self._vectors):
+            score = self._cosine_python(query_vector, vec)
+            if filter_metadata and not self._matches_metadata(
+                self._metadata[i], filter_metadata,
+            ):
+                score = 0.0
+            if score > 0:
+                scored.append((i, score))
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return scored[:limit]
+
+    @staticmethod
+    def _cosine_python(a: list[float], b: list[float]) -> float:
+        dot = sum(x * y for x, y in zip(a, b, strict=True))
+        na = math.sqrt(sum(x * x for x in a))
+        nb = math.sqrt(sum(y * y for y in b))
+        if na == 0 or nb == 0:
+            return 0.0
+        return dot / (na * nb)
+
+    # -- indexed path (mock HNSW) ----------------------------------------
+
+    def _indexed_search(
+        self,
+        query_vector: list[float],
+        limit: int,
+        filter_metadata: dict[str, Any] | None = None,
+    ) -> list[tuple[int, float]]:
+        """Indexed search path for large datasets.
+
+        The default implementation falls back to brute-force. Subclasses
+        or tests can override this to plug in a real HNSW (or mock) index.
+        """
+        return self._brute_force_search(query_vector, limit, filter_metadata)
+
+    # -- metadata filtering ----------------------------------------------
+
+    def _apply_metadata_filter(
+        self, filter_metadata: dict[str, Any],
+    ) -> Any:
+        """Build a numpy mask array for filter-during-traversal.
+
+        Returns a float32 array where ``1.0`` indicates the vector
+        matches all filter conditions and ``0.0`` indicates it should
+        be excluded. Multiplying scores by this mask removes
+        non-matching vectors during scoring rather than after top-k
+        selection (Qdrant's filter-during-traversal pattern).
+        """
+        assert np is not None
+        mask = np.ones(len(self._vectors), dtype=np.float32)
+        for i, meta in enumerate(self._metadata):
+            if not self._matches_metadata(meta, filter_metadata):
+                mask[i] = 0.0
+        return mask
+
+    @staticmethod
+    def _matches_metadata(
+        meta: dict[str, Any], conditions: dict[str, Any],
+    ) -> bool:
+        """Check whether *meta* satisfies all *conditions*.
+
+        Supports equality (``{"key": value}``) and operator dicts:
+        ``$eq``, ``$ne``, ``$gte``, ``$lte``, ``$gt``, ``$lt``, ``$in``.
+        """
+        for key, value in conditions.items():
+            if key not in meta:
+                return False
+            field_val = meta[key]
+            if isinstance(value, dict):
+                if not VectorStore._check_operators(field_val, value):
+                    return False
+            elif field_val != value:
+                return False
+        return True
+
+    @staticmethod
+    def _check_operators(field_val: Any, ops: dict[str, Any]) -> bool:
+        """Evaluate operator-style conditions against a field value."""
+        for op, operand in ops.items():
+            if op == "$eq" and field_val != operand:
+                return False
+            if op == "$ne" and field_val == operand:
+                return False
+            if op == "$gte" and not (field_val >= operand):
+                return False
+            if op == "$lte" and not (field_val <= operand):
+                return False
+            if op == "$gt" and not (field_val > operand):
+                return False
+            if op == "$lt" and not (field_val < operand):
+                return False
+            if op == "$in" and field_val not in operand:
+                return False
+        return True

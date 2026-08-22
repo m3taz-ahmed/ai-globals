@@ -6,6 +6,7 @@ from __future__ import annotations
 import contextlib
 import hmac
 import json
+import logging
 import mimetypes
 import os
 import secrets
@@ -24,6 +25,8 @@ from runtime.astryx import AstryxLinter
 from runtime.kernel import Kernel
 from runtime.metrics import format_metrics
 from runtime.telemetry import system_metrics
+
+logger = logging.getLogger(__name__)
 
 _MAX_BODY_SIZE = int(os.environ.get("AGENT_OS_DASHBOARD_MAX_BODY_SIZE", "1048576"))
 _ALLOWED_ORIGINS = {o.strip() for o in os.environ.get("AGENT_OS_DASHBOARD_ORIGINS", "http://127.0.0.1:8080,http://localhost:8080").split(",") if o.strip()}
@@ -528,7 +531,7 @@ def _shutdown(_signum: int, _frame: Any) -> None:  # pragma: no cover
         from runtime.storage_backend import StorageFactory
         StorageFactory().shutdown_all()
     except Exception:
-        pass
+        logger.debug("Storage shutdown failed during dashboard shutdown", exc_info=True)
     # Close cached memory store connections
     global _memory_cache
     if _memory_cache is not None:

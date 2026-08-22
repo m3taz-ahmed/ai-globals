@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import ast
+import functools
 import operator
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Literal, cast
@@ -233,3 +235,167 @@ class PolicyEngine:
         if "command" not in kwargs or kwargs.get("command") is None:
             kwargs["command"] = ""
         return self.evaluate({"type": action_type, **kwargs})
+
+
+# ---------------------------------------------------------------------------
+# Guardrail Tripwire pattern (adapted from OpenAI Agents SDK)
+#
+# Guardrails are functions wrapped via @input_guardrail / @output_guardrail
+# decorators. They return a GuardrailResult with tripwire_triggered. If
+# tripped, the guardrail chain halts immediately. This is an ADDITIONAL
+# policy layer on top of the existing PolicyEngine — it does not replace
+# PolicyManager.check() or the YAML rule engine.
+# ---------------------------------------------------------------------------
+
+GuardrailPhase = Literal["input", "output"]
+GuardrailDecision = Literal["allow", "deny", "ask"]
+
+
+@dataclass
+class GuardrailResult:
+    """Result of a guardrail evaluation.
+
+    Adapted from OpenAI Agents SDK ``GuardrailFunctionOutput``:
+    - ``tripwire_triggered`` halts the guardrail chain if True.
+    - ``output_info`` carries structured audit data.
+    - ``decision`` maps to aiZee's allow/deny/ask policy vocabulary.
+    """
+
+    tripwire_triggered: bool
+    output_info: dict[str, Any] = field(default_factory=dict)
+    decision: GuardrailDecision = "allow"
+
+
+# A guardrail function takes a context dict and returns a GuardrailResult.
+GuardrailFunction = Callable[[dict[str, Any]], GuardrailResult]
+
+
+class GuardrailRegistry:
+    """Stores guardrails by name and phase (input/output).
+
+    ``run_guardrails`` runs all registered guardrails for a phase in
+    registration order. The first guardrail with ``tripwire_triggered=True``
+    halts the chain and its result is returned. If no tripwire triggers,
+    an allow result is returned.
+    """
+
+    def __init__(self) -> None:
+        self._guardrails: dict[GuardrailPhase, dict[str, GuardrailFunction]] = {
+            "input": {},
+            "output": {},
+        }
+        self._order: dict[GuardrailPhase, list[str]] = {"input": [], "output": []}
+
+    def register(
+        self,
+        phase: GuardrailPhase,
+        name: str,
+        func: GuardrailFunction,
+    ) -> None:
+        """Register a guardrail function for a phase.
+
+        Re-registering an existing name replaces the function but preserves
+        its original position in the evaluation order.
+        """
+        if name not in self._guardrails[phase]:
+            self._order[phase].append(name)
+        self._guardrails[phase][name] = func
+
+    def unregister(self, phase: GuardrailPhase, name: str) -> None:
+        """Remove a guardrail by name."""
+        self._guardrails[phase].pop(name, None)
+        if name in self._order[phase]:
+            self._order[phase].remove(name)
+
+    def list_guardrails(self, phase: GuardrailPhase) -> list[str]:
+        """Return the ordered list of guardrail names for a phase."""
+        return list(self._order[phase])
+
+    def run_guardrails(
+        self,
+        phase: GuardrailPhase,
+        context: dict[str, Any],
+    ) -> GuardrailResult:
+        """Run all registered guardrails for a phase in order.
+
+        Halts on the first ``tripwire_triggered=True`` result.
+        Returns an allow result if no tripwire triggers.
+        """
+        for name in self._order[phase]:
+            func = self._guardrails[phase][name]
+            result = func(context)
+            if result.tripwire_triggered:
+                # Annotate output_info with the guardrail name for audit.
+                if "guardrail" not in result.output_info:
+                    result.output_info["guardrail"] = name
+                return result
+        return GuardrailResult(tripwire_triggered=False)
+
+    def clear(self) -> None:
+        """Remove all registered guardrails (useful for tests)."""
+        self._guardrails = {"input": {}, "output": {}}
+        self._order = {"input": [], "output": []}
+
+
+# Module-level default registry used by the decorators and the Guardian.
+default_guardrail_registry = GuardrailRegistry()
+
+
+def input_guardrail(
+    name: str | None = None,
+    *,
+    registry: GuardrailRegistry | None = None,
+) -> Callable[[GuardrailFunction], GuardrailFunction]:
+    """Decorator that registers a function as an input guardrail.
+
+    Usage::
+
+        @input_guardrail("no_destructive")
+        def check_destructive(context: dict[str, Any]) -> GuardrailResult:
+            ...
+
+    The wrapped function remains directly callable. When ``name`` is
+    omitted, the function's ``__name__`` is used.
+    """
+
+    def decorator(func: GuardrailFunction) -> GuardrailFunction:
+        reg = registry if registry is not None else default_guardrail_registry
+        reg.register("input", name or func.__name__, func)
+
+        @functools.wraps(func)
+        def wrapper(context: dict[str, Any]) -> GuardrailResult:
+            return func(context)
+
+        return wrapper
+
+    return decorator
+
+
+def output_guardrail(
+    name: str | None = None,
+    *,
+    registry: GuardrailRegistry | None = None,
+) -> Callable[[GuardrailFunction], GuardrailFunction]:
+    """Decorator that registers a function as an output guardrail.
+
+    Usage::
+
+        @output_guardrail("no_secrets_in_output")
+        def check_secrets(context: dict[str, Any]) -> GuardrailResult:
+            ...
+
+    The wrapped function remains directly callable. When ``name`` is
+    omitted, the function's ``__name__`` is used.
+    """
+
+    def decorator(func: GuardrailFunction) -> GuardrailFunction:
+        reg = registry if registry is not None else default_guardrail_registry
+        reg.register("output", name or func.__name__, func)
+
+        @functools.wraps(func)
+        def wrapper(context: dict[str, Any]) -> GuardrailResult:
+            return func(context)
+
+        return wrapper
+
+    return decorator

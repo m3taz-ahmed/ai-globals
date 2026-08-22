@@ -5,12 +5,16 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import tempfile
 import threading
+import time
 import uuid
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from enum import Enum
 from pathlib import Path
 from typing import Any, Literal
 
@@ -19,6 +23,253 @@ ExceedAction = Literal["warn", "fallback", "block"]
 
 ALLOWED_PERIODS: set[Period] = {"session", "hourly", "daily", "weekly", "monthly"}
 ALLOWED_EXCEED: set[ExceedAction] = {"warn", "fallback", "block"}
+
+ALERT_THRESHOLD: float = 0.8  # 80% utilization triggers ALERT
+WINDOW_PERIODS: set[str] = {"hourly", "daily", "weekly", "monthly"}
+
+_logger = logging.getLogger(__name__)
+
+
+class BudgetAction(str, Enum):
+    """Action to take when a budget window threshold is crossed."""
+
+    ALERT = "alert"   # Log + webhook + continue
+    REJECT = "reject"  # Block + raise BudgetExceededError
+    WARN = "warn"     # Log warning + continue
+
+
+class BudgetTargetScope(str, Enum):
+    """Scope at which a budget window applies."""
+
+    SESSION = "session"
+    AGENT = "agent"
+    GLOBAL = "global"
+
+
+@dataclass
+class BudgetWindow:
+    """Time-scoped budget tracking window with cumulative spend."""
+
+    window_id: str
+    scope: BudgetTargetScope
+    scope_id: str  # session ID, agent ID, or "global"
+    period: str  # "hourly", "daily", "weekly", "monthly"
+    start_time: float
+    end_time: float
+    spend: float = 0.0  # cumulative spend in this window
+    limit: float = 0.0  # budget limit for this window
+    action: BudgetAction = BudgetAction.WARN
+    is_active: bool = True
+
+    @property
+    def remaining(self) -> float:
+        return max(0.0, self.limit - self.spend)
+
+    @property
+    def utilization(self) -> float:
+        if self.limit <= 0:
+            return 0.0
+        return self.spend / self.limit
+
+    @property
+    def is_exceeded(self) -> bool:
+        return self.spend >= self.limit and self.limit > 0
+
+
+def _period_seconds(period: str) -> float:
+    """Return the duration in seconds for a window period."""
+    if period == "hourly":
+        return 3600.0
+    if period == "daily":
+        return 86400.0
+    if period == "weekly":
+        return 604800.0
+    if period == "monthly":
+        return 2592000.0  # 30 days
+    return 86400.0
+
+
+class BudgetWindowManager:
+    """Manages time-scoped budget windows with ALERT/REJECT enforcement.
+
+    Tracks cumulative spend per window and enforces budget limits via
+    pre-action checks (``check_budget_limit``) and post-action cost
+    recording (``on_complete``). Windows can be backfilled from the audit
+    log on restart and policies are lazily refreshed when stale.
+    """
+
+    def __init__(self) -> None:
+        self._windows: dict[str, BudgetWindow] = {}
+        self._alert_callbacks: list[Callable[[BudgetWindow], None]] = []
+        self._last_policy_refresh: float = time.time()
+        self._lock = threading.RLock()
+
+    def register_window(self, window: BudgetWindow) -> None:
+        """Register a budget window for tracking."""
+        with self._lock:
+            self._windows[window.window_id] = window
+
+    def _matching_windows(
+        self, scope: BudgetTargetScope, scope_id: str
+    ) -> list[BudgetWindow]:
+        """Return active windows matching the given scope and scope_id."""
+        now = time.time()
+        result: list[BudgetWindow] = []
+        for w in self._windows.values():
+            if not w.is_active:
+                continue
+            if w.scope != scope:
+                continue
+            if w.scope_id != scope_id:
+                continue
+            # Expire windows whose end_time has passed
+            if w.end_time <= now:
+                w.is_active = False
+                continue
+            result.append(w)
+        return result
+
+    def check_budget_limit(
+        self, scope: BudgetTargetScope, scope_id: str, amount: float
+    ) -> BudgetAction:
+        """Pre-action check: returns the action to take for a projected spend.
+
+        - Returns ``REJECT`` if any matching window would be exceeded and its
+          action is ``REJECT``.
+        - Returns ``ALERT`` if any matching window is at/above the alert
+          threshold (80% by default) or already exceeded with action ``ALERT``.
+        - Returns ``WARN`` otherwise.
+        """
+        with self._lock:
+            windows = self._matching_windows(scope, scope_id)
+            if not windows:
+                return BudgetAction.WARN
+
+            action = BudgetAction.WARN
+            for w in windows:
+                projected = w.spend + amount
+                projected_util = projected / w.limit if w.limit > 0 else 0.0
+                if projected >= w.limit and w.limit > 0:
+                    if w.action == BudgetAction.REJECT:
+                        return BudgetAction.REJECT
+                    if w.action == BudgetAction.ALERT:
+                        action = BudgetAction.ALERT
+                elif projected_util >= ALERT_THRESHOLD and w.limit > 0:
+                    if w.action in (BudgetAction.ALERT, BudgetAction.REJECT):
+                        action = BudgetAction.ALERT
+            return action
+
+    def on_complete(
+        self, scope: BudgetTargetScope, scope_id: str, actual_cost: float
+    ) -> None:
+        """Post-action callback: records actual cost from execution.
+
+        Fires alert callbacks for any window that newly crosses a threshold
+        or becomes exceeded after recording the cost.
+        """
+        with self._lock:
+            windows = self._matching_windows(scope, scope_id)
+            for w in windows:
+                was_exceeded = w.is_exceeded
+                prev_util = w.utilization
+                w.spend += actual_cost
+                now_exceeded = w.is_exceeded
+                curr_util = w.utilization
+                # Fire alert if newly exceeded or crossed the alert threshold
+                crossed_threshold = (
+                    prev_util < ALERT_THRESHOLD <= curr_util
+                    or (not was_exceeded and now_exceeded)
+                )
+                if crossed_threshold:
+                    self._fire_alerts(w)
+            self._last_policy_refresh = time.time()
+
+    def _fire_alerts(self, window: BudgetWindow) -> None:
+        """Invoke registered alert callbacks for a window."""
+        for cb in self._alert_callbacks:
+            try:
+                cb(window)
+            except Exception:
+                _logger.exception("Alert callback failed for window %s", window.window_id)
+
+    def backfill_from_audit(self, audit_entries: list[dict[str, Any]]) -> None:
+        """Reconstruct windows from audit log on restart.
+
+        Each audit entry is expected to contain ``scope``, ``scope_id``,
+        ``cost``, and ``timestamp`` keys. Windows are matched by scope +
+        scope_id + period, and spend is accumulated for entries falling
+        within the window's time range.
+        """
+        with self._lock:
+            for entry in audit_entries:
+                scope_str = entry.get("scope")
+                scope_id = entry.get("scope_id", "")
+                cost = float(entry.get("cost", 0.0))
+                ts = float(entry.get("timestamp", 0.0))
+                if not scope_str:
+                    continue
+                try:
+                    scope = BudgetTargetScope(scope_str)
+                except ValueError:
+                    continue
+                for w in self._windows.values():
+                    if w.scope != scope or w.scope_id != scope_id:
+                        continue
+                    if w.start_time <= ts <= w.end_time:
+                        w.spend += cost
+
+    def register_alert_callback(self, cb: Callable[[BudgetWindow], None]) -> None:
+        """Register a callback invoked when a window crosses a threshold."""
+        with self._lock:
+            self._alert_callbacks.append(cb)
+
+    def get_active_windows(self) -> list[BudgetWindow]:
+        """Return all currently active windows (not expired)."""
+        with self._lock:
+            now = time.time()
+            active: list[BudgetWindow] = []
+            for w in self._windows.values():
+                if w.is_active and w.end_time > now:
+                    active.append(w)
+            return active
+
+    def maybe_refresh_policies(self, stale_threshold: float = 300.0) -> bool:
+        """Lazy policy refresh — only reload when stale (5 min default).
+
+        Returns ``True`` if a refresh was performed, ``False`` if policies
+        were still fresh.
+        """
+        with self._lock:
+            now = time.time()
+            if now - self._last_policy_refresh >= stale_threshold:
+                self._last_policy_refresh = now
+                return True
+            return False
+
+
+def make_window(
+    scope: BudgetTargetScope,
+    scope_id: str,
+    period: str = "daily",
+    limit: float = 0.0,
+    action: BudgetAction = BudgetAction.WARN,
+    window_id: str | None = None,
+) -> BudgetWindow:
+    """Helper to construct a ``BudgetWindow`` with computed time bounds."""
+    now = time.time()
+    duration = _period_seconds(period)
+    return BudgetWindow(
+        window_id=window_id or str(uuid.uuid4()),
+        scope=scope,
+        scope_id=scope_id,
+        period=period,
+        start_time=now,
+        end_time=now + duration,
+        spend=0.0,
+        limit=limit,
+        action=action,
+        is_active=True,
+    )
 
 
 @dataclass
@@ -51,6 +302,7 @@ class BudgetManager:
         self.usage: dict[str, dict[str, Any]] = {}
         self._lock = threading.RLock()
         self._dirty = False
+        self.window_manager: BudgetWindowManager | None = None
         self._load()
 
     def _default_budgets(self) -> dict[str, Budget]:
@@ -275,6 +527,22 @@ class BudgetManager:
             if budget.max_calls and projected["calls"] >= budget.max_calls:
                 exceeded.append("calls")
 
+            # --- BudgetWindow integration (optional, backward-compatible) ---
+            window_action: BudgetAction | None = None
+            if self.window_manager is not None and self.window_manager.get_active_windows():
+                w_scope = BudgetTargetScope.SESSION if scope == "session" else (
+                    BudgetTargetScope.GLOBAL if scope == "global" else BudgetTargetScope.AGENT
+                )
+                w_action = self.window_manager.check_budget_limit(w_scope, scope, cost)
+                if w_action == BudgetAction.REJECT:
+                    return {
+                        "ok": False,
+                        "reason": "Budget window exceeded (REJECT)",
+                        "action": "block",
+                    }
+                if w_action == BudgetAction.ALERT:
+                    window_action = BudgetAction.ALERT
+
             if exceeded:
                 if budget.on_exceed == "warn":
                     if not dry_run:
@@ -308,8 +576,16 @@ class BudgetManager:
             if not dry_run:
                 u.update(projected)
                 self._dirty = True
+                if self.window_manager is not None and self.window_manager.get_active_windows():
+                    w_scope = BudgetTargetScope.SESSION if scope == "session" else (
+                        BudgetTargetScope.GLOBAL if scope == "global" else BudgetTargetScope.AGENT
+                    )
+                    self.window_manager.on_complete(w_scope, scope, cost)
 
             result: dict[str, Any] = {"ok": True, "reason": None, "action": "allow"}
+            if window_action == BudgetAction.ALERT:
+                result["action"] = "alert"
+                result["reason"] = "Budget window approaching limit"
             if rollout_id and rollout_result is not None:
                 result["rollout"] = rollout_result
                 result["reminder"] = rollout_result["reminder"]

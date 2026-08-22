@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sqlite3
 import uuid
@@ -16,7 +17,10 @@ import config
 from runtime.repository import BaseRepository
 
 from .hybrid import HybridSearcher
+from .schema_contract import verify_schema_integrity
 from .vector import VectorMemory
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -93,6 +97,17 @@ class MemoryStore(BaseRepository):
         self.root = root or config.discover_root()
         self.vector = VectorMemory(self.root) if enable_vector else None
         super().__init__(db_path or self.root / "brain" / "memory.db")
+        # Additive schema-integrity check: warn on drift, never block init.
+        self._verify_schema()
+
+    def _verify_schema(self) -> None:
+        """Warn (do not block) if the on-disk schema drifted from the contract."""
+        try:
+            is_valid, drift_desc = verify_schema_integrity(self.db_path)
+            if not is_valid and drift_desc:
+                logger.warning("Schema drift detected in %s: %s", self.db_path, drift_desc)
+        except Exception as exc:  # pragma: no cover - defensive, never block init
+            logger.warning("Schema integrity check failed for %s: %s", self.db_path, exc)
 
     def add(
         self,

@@ -14,10 +14,13 @@ Usage::
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import shutil
 import sqlite3
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,6 +36,59 @@ _MIGRATIONS: dict[int, MigrationFn] = {}
 # Rollback functions keyed by version (reverses migration to that version).
 _RollbackFn = Callable[[sqlite3.Connection], None]
 _ROLLBACK_MIGRATIONS: dict[int, _RollbackFn] = {}
+
+
+# ---------------------------------------------------------------------------
+# Hash-verified migration edges (additive, backward compatible)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class MigrationEdge:
+    """A migration edge with an optional expected post-migration schema hash.
+
+    Attributes:
+        from_version: Source schema version.
+        to_version: Target schema version.
+        expected_hash: Optional SHA-256 of the schema contract expected after
+            applying this migration. When set, ``run_migrations`` verifies the
+            resulting schema matches; a mismatch logs a warning (non-blocking).
+    """
+
+    from_version: int
+    to_version: int
+    expected_hash: str = ""
+
+
+# Edges keyed by from_version. Existing numeric version numbers are preserved
+# so legacy callers continue to work unchanged.
+_HASH_EDGES: dict[int, MigrationEdge] = {}
+
+
+def register_hash_edge(from_version: int, to_version: int, expected_hash: str) -> None:
+    """Register a hash-verified migration edge (additive, optional)."""
+    _HASH_EDGES[from_version] = MigrationEdge(from_version, to_version, expected_hash)
+
+
+def hash_edge(from_version: int) -> MigrationEdge | None:
+    """Return the registered hash edge for a version, if any."""
+    return _HASH_EDGES.get(from_version)
+
+
+def compute_schema_hash(conn: sqlite3.Connection) -> str:
+    """Compute a SHA-256 hash of the current table+index DDL in a database."""
+    payload: dict[str, dict[str, str]] = {"tables": {}, "indexes": {}}
+    for row in conn.execute("SELECT name, sql FROM sqlite_master WHERE type='table'"):
+        name, sql = row
+        if name.startswith("sqlite_"):
+            continue
+        payload["tables"][name] = sql or ""
+    for row in conn.execute("SELECT name, sql FROM sqlite_master WHERE type='index'"):
+        name, sql = row
+        if not sql:
+            continue
+        payload["indexes"][name] = sql
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 def migration(from_version: int) -> Callable[[MigrationFn], MigrationFn]:
@@ -133,7 +189,12 @@ class MigrationRunner:
         conn.commit()
 
     def run_migrations(self) -> int:
-        """Run all pending migrations. Returns the final version."""
+        """Run all pending migrations. Returns the final version.
+
+        When a hash-verified edge is registered for a migration step, the
+        resulting schema hash is checked after applying the migration. A
+        mismatch logs a warning but does not block (additive verification).
+        """
         with sqlite3.connect(self.db_path) as conn:
             version = self._get_version(conn)
             if version >= CURRENT_VERSION:
@@ -147,6 +208,16 @@ class MigrationRunner:
                 logger.info("Migrating schema %d -> %d", v, v + 1)
                 fn(conn)
                 self._set_version(conn, v + 1)
+                # Additive hash verification (non-blocking).
+                edge = hash_edge(v)
+                if edge and edge.expected_hash:
+                    actual = compute_schema_hash(conn)
+                    if actual != edge.expected_hash:
+                        logger.warning(
+                            "Schema hash mismatch after migration %d -> %d: "
+                            "expected %s, got %s",
+                            v, v + 1, edge.expected_hash, actual,
+                        )
             return self._get_version(conn)
 
     def rollback(self, version: int) -> int:

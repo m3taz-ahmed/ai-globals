@@ -168,7 +168,7 @@ def test_migrate_script_exists():
     assert (_REPO / "scripts" / "migrate.py").exists()
 
 
-def test_aios_version_file_exists():
+def test_aizee_version_file_exists():
     """Verify .aizee-version exists."""
     assert (_REPO / ".aizee-version").exists()
 

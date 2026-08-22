@@ -86,7 +86,7 @@ def test_mcp_client_loads_config(tmp_path: Path) -> None:
     assert client.is_configured() is False
 
 
-def test_mcp_client_loads_from_aios_config(tmp_path: Path) -> None:
+def test_mcp_client_loads_from_aizee_config(tmp_path: Path) -> None:
     config_dir = tmp_path / "aizee_mcp"
     config_dir.mkdir()
     (config_dir / "config.json").write_text(

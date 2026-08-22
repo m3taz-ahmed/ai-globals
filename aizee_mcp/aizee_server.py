@@ -8,6 +8,7 @@ tool registration to the modules in ``aizee_mcp.tools``.
 from __future__ import annotations
 
 import importlib
+import logging
 import pkgutil
 from typing import Any
 
@@ -19,6 +20,8 @@ from aizee_mcp.tools import (
     register_workflow_tools,
 )
 from aizee_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-exported for tests
+
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP("aizee")
 
@@ -52,6 +55,7 @@ def _auto_discover_tools() -> bool:
         try:
             mod = importlib.import_module(f"aizee_mcp.tools.{name}")
         except Exception:
+            logger.debug("Failed to import MCP tool module %s", name, exc_info=True)
             continue
         # Prefer a no-arg ``register`` alias; fall back to ``register_*_tools``.
         register_fn = getattr(mod, "register", None)
@@ -68,6 +72,7 @@ def _auto_discover_tools() -> bool:
                 register_fn(mcp)
                 registered += 1
             except Exception:
+                logger.debug("Failed to register tools from module %s", name, exc_info=True)
                 continue
     return registered > 0
 
@@ -137,7 +142,7 @@ def _graceful_shutdown(signum: int, frame: Any) -> None:
         from runtime.storage_backend import StorageFactory
         StorageFactory().shutdown_all()
     except Exception:
-        pass
+        logger.debug("Storage shutdown failed during graceful shutdown", exc_info=True)
     raise SystemExit(0)
 
 

@@ -1,6 +1,6 @@
 # aiZee
 
-# aiZee â€” Global Bootloader
+# aiZee — Global Bootloader
 
 - **Root:** discovered via `AIZEE_ROOT` env or `config.discover_root()` (no hardcoded path).
 - Set `AIZEE_ROOT` if not already set. Use `PYTHONIOENCODING=utf-8` on Windows.
@@ -36,14 +36,14 @@ For quick iteration: `aizee test` (fast tier, ~12s, no coverage).
 No `eval` in policy code.
 
 ## Project Testing Protocol (ANY project under aiZee)
-Two-tier testing `[TEST-07]` â€” see `workflows/testing-tiers.md` for per-stack commands:
+Two-tier testing `[TEST-07]` — see `workflows/testing-tiers.md` for per-stack commands:
 - FAST (during iteration): targeted tests only for touched code. ~5s max.
 - FULL (before done): complete suite + coverage. Must pass.
 - No full suite on every change. No skipping full suite before done.
 - If no test framework exists, write the first test before done `[TEST-09]`.
 
 ## Non-negotiable user policy
-- No full test suites during iteration â€” use FAST tier (targeted `--filter=...` / `<file>` only).
-- FULL test suite is mandatory before declaring done â€” no exceptions.
+- No full test suites during iteration — use FAST tier (targeted `--filter=...` / `<file>` only).
+- FULL test suite is mandatory before declaring done — no exceptions.
 - No `git add .` / `git add -A` (`[GIT-06]`). No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
 - Delete temporary/scratch/test files immediately after use.

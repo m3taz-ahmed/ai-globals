@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -21,6 +22,13 @@ from .loop_detector import LoopDetector
 from .managers import AgentManager, ChatManager, PolicyManager, WorkflowManager
 from .mcp_firewall import McpFirewall
 from .metrics import CollectorRegistry, Counter, Gauge
+from .middleware import (
+    ActionContext,
+    CompiledPipeline,
+    Middleware,
+    MiddlewarePipeline,
+    MiddlewareResult,
+)
 from .persona import PersonaDetector
 from .preloop import FeedbackLoop
 from .skill_resolver import SkillResolver
@@ -112,6 +120,15 @@ class Kernel:
         # Plugin manager — lazily initialized to avoid loading plugins on kernel creation
         self._plugins: PluginManager | None = None
 
+        # Pattern 4: Flat middleware array (tRPC-style callRecursive)
+        self._middleware_pipeline = MiddlewarePipeline()
+
+        # Pattern 5: Pre-compiled enhancer pipeline (NestJS-style)
+        # Builders configure a CompiledPipeline per action type; compiled
+        # pipelines are cached after first execution.
+        self._pipeline_builders: dict[str, Callable[[CompiledPipeline], None]] = {}
+        self._compiled_pipelines: dict[str, CompiledPipeline] = {}
+
     @property
     def plugins(self) -> PluginManager:
         """Lazily initialize the PluginManager on first access."""
@@ -127,12 +144,12 @@ class Kernel:
 
     def _build_metrics(self) -> CollectorRegistry:
         registry = CollectorRegistry()
-        self._actions_total: Counter = Counter("aios_actions_total", "Total actions evaluated", ("action", "decision"))
-        self._workflows_total: Counter = Counter("aios_workflows_total", "Total workflows executed", ("status",))
-        self._sagas_total: Counter = Counter("aios_sagas_total", "Total sagas executed", ("status",))
-        self._guardian_denials_total: Counter = Counter("aios_guardian_denials", "Total guardian denials", ("rule",))
-        self._probity_violations_total: Counter = Counter("aios_probity_violations", "Total probity violations", ("rule",))
-        self._budget_gauge: Gauge = Gauge("aios_budget_remaining", "Remaining budget for active scopes", ("scope",))
+        self._actions_total: Counter = Counter("aizee_actions_total", "Total actions evaluated", ("action", "decision"))
+        self._workflows_total: Counter = Counter("aizee_workflows_total", "Total workflows executed", ("status",))
+        self._sagas_total: Counter = Counter("aizee_sagas_total", "Total sagas executed", ("status",))
+        self._guardian_denials_total: Counter = Counter("aizee_guardian_denials", "Total guardian denials", ("rule",))
+        self._probity_violations_total: Counter = Counter("aizee_probity_violations", "Total probity violations", ("rule",))
+        self._budget_gauge: Gauge = Gauge("aizee_budget_remaining", "Remaining budget for active scopes", ("scope",))
         registry.register(self._actions_total)
         registry.register(self._workflows_total)
         registry.register(self._sagas_total)
@@ -178,61 +195,192 @@ class Kernel:
 
     # --- Action evaluation (delegates to PolicyManager) ---
     def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:
-        """Evaluate action through policy + budget + governance gates."""
+        """Evaluate action through policy + budget + governance gates.
+
+        Dispatches to one of three execution paths (additive, backward-compatible):
+
+        1. **Compiled pipeline** (Pattern 5 — NestJS): if a pipeline builder is
+           registered for ``action_type``, the pre-compiled enhancer chain
+           (pipes → guards → interceptors → handler) is used. The pipeline is
+           compiled on first call and cached for subsequent calls.
+        2. **Middleware pipeline** (Pattern 4 — tRPC): if global middlewares are
+           registered, the flat middleware array is executed via recursive
+           ``callRecursive`` with the direct path as the terminal handler.
+        3. **Direct path** (existing): the original guardian → policy → budget
+           → finalize flow, unchanged when no middlewares or pipelines are
+           registered.
+        """
         fresh_context = kwargs.pop("fresh_context", False)
         session_id = kwargs.pop("session_id", None)
         with with_span(self.tracer.get_tracer("kernel"), f"act.{action_type}"):
             self._auto_persona(kwargs)
             if fresh_context and session_id is None:
                 session_id = uuid.uuid4().hex
-            try:
-                action_data = ActionSchema(type=action_type, **kwargs).model_dump()
-            except ValidationError as e:
-                return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
 
-            self.policy_mgr.check_probity(action_type, action_data, self.probity)
+            # Pattern 5: Pre-compiled enhancer pipeline (NestJS-style)
+            compiled = self._get_compiled_pipeline(action_type)
+            if compiled is not None:
+                return self._act_via_compiled_pipeline(
+                    action_type, dry_run, kwargs, session_id, compiled,
+                )
 
-            # Loop detection — block repeated identical actions before guardian.
-            # A fresh context starts a new session, so reset the detector.
-            # Dry-run actions are not executed, so skip detection for them.
-            if fresh_context:
-                self.loop_detector.reset()
-            loop_hit = None if dry_run else self.loop_detector.check_and_record(action_type, action_data)
-            if loop_hit is not None:
-                self._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
-                return {
-                    "ok": False,
-                    "decision": Decision.DENY.value,
-                    "reason": f"loop detected: {loop_hit.tool} repeated {loop_hit.repeat_count}x in window {loop_hit.window}",
-                    "loop": True,
-                    "repeat_count": loop_hit.repeat_count,
-                }
+            # Pattern 4: Flat middleware array (tRPC-style callRecursive)
+            if self._middleware_pipeline.has_middlewares():
+                return self._act_via_middleware(action_type, dry_run, kwargs, session_id)
 
-            guard = self.policy_mgr.check_guardian(action_type, action_data, self.guardian)
-            if guard:
-                return guard
+            # Existing direct path (backward-compatible default)
+            return self._act_direct(action_type, dry_run, kwargs, session_id, fresh_context)
 
-            decision = self.policy.can(action_data["type"], **action_data)
-            if decision["decision"] == Decision.DENY.value:
-                self._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
-                return self.policy_mgr.handle_policy_denied(action_data, kwargs, decision, dry_run, self.telemetry)
+    def _act_direct(
+        self,
+        action_type: str,
+        dry_run: bool,
+        kwargs: dict[str, Any],
+        session_id: str | None,
+        fresh_context: bool,
+    ) -> dict[str, Any]:
+        """Existing direct action evaluation path (guardian → policy → budget)."""
+        try:
+            action_data = ActionSchema(type=action_type, **kwargs).model_dump()
+        except ValidationError as e:
+            return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
 
-            if decision["decision"] == Decision.ASK.value and not self.policy_mgr.resolve_approval(action_data, dry_run):
-                self._actions_total.labels(action=action_type, decision=Decision.ASK.value).inc()
-                return self.policy_mgr.handle_policy_ask(action_data, kwargs, decision, dry_run, self.telemetry)
+        self.policy_mgr.check_probity(action_type, action_data, self.probity)
 
-            self._actions_total.labels(action=action_type, decision=Decision.ALLOW.value).inc()
+        # Loop detection — block repeated identical actions before guardian.
+        # A fresh context starts a new session, so reset the detector.
+        # Dry-run actions are not executed, so skip detection for them.
+        if fresh_context:
+            self.loop_detector.reset()
+        loop_hit = None if dry_run else self.loop_detector.check_and_record(action_type, action_data)
+        if loop_hit is not None:
+            self._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+            return {
+                "ok": False,
+                "decision": Decision.DENY.value,
+                "reason": f"loop detected: {loop_hit.tool} repeated {loop_hit.repeat_count}x in window {loop_hit.window}",
+                "loop": True,
+                "repeat_count": loop_hit.repeat_count,
+            }
 
-            budget_result = self.budget.check(
-                "session",
-                action_data.get("tokens", 0),
-                action_data.get("cost", 0.0),
-                dry_run=dry_run,
-                **self.policy_mgr.build_budget_kwargs(action_data, session_id=session_id),
+        guard = self.policy_mgr.check_guardian(action_type, action_data, self.guardian)
+        if guard:
+            return guard
+
+        decision = self.policy.can(action_data["type"], **action_data)
+        if decision["decision"] == Decision.DENY.value:
+            self._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+            return self.policy_mgr.handle_policy_denied(action_data, kwargs, decision, dry_run, self.telemetry)
+
+        if decision["decision"] == Decision.ASK.value and not self.policy_mgr.resolve_approval(action_data, dry_run):
+            self._actions_total.labels(action=action_type, decision=Decision.ASK.value).inc()
+            return self.policy_mgr.handle_policy_ask(action_data, kwargs, decision, dry_run, self.telemetry)
+
+        self._actions_total.labels(action=action_type, decision=Decision.ALLOW.value).inc()
+
+        budget_result = self.budget.check(
+            "session",
+            action_data.get("tokens", 0),
+            action_data.get("cost", 0.0),
+            dry_run=dry_run,
+            **self.policy_mgr.build_budget_kwargs(action_data, session_id=session_id),
+        )
+        result = self.policy_mgr.finalize_action(action_data, kwargs, decision, budget_result, dry_run, self.telemetry)
+        self.policy_mgr.record_preloop(action_type, result, decision)
+        return result
+
+    def _act_via_middleware(
+        self,
+        action_type: str,
+        dry_run: bool,
+        kwargs: dict[str, Any],
+        session_id: str | None,
+    ) -> dict[str, Any]:
+        """Execute action through the flat middleware array (Pattern 4).
+
+        The direct path is wrapped as the terminal handler. Middlewares can
+        observe, transform, or short-circuit before reaching the handler.
+        """
+        context = ActionContext(
+            action_type=action_type,
+            data=dict(kwargs),
+            dry_run=dry_run,
+            session_id=session_id,
+        )
+
+        def handler(ctx: ActionContext) -> MiddlewareResult[dict[str, Any]]:
+            result = self._act_direct(
+                ctx.action_type, ctx.dry_run, ctx.data, ctx.session_id, fresh_context=False,
             )
-            result = self.policy_mgr.finalize_action(action_data, kwargs, decision, budget_result, dry_run, self.telemetry)
-            self.policy_mgr.record_preloop(action_type, result, decision)
-            return result
+            return MiddlewareResult(ok=bool(result.get("ok", False)), data=result)
+
+        mw_result = self._middleware_pipeline.execute(context, handler)
+        if mw_result.ok:
+            return mw_result.data if mw_result.data is not None else {"ok": True}
+        err_msg = str(mw_result.error) if mw_result.error else "middleware error"
+        return {"ok": False, "error": err_msg}
+
+    def _act_via_compiled_pipeline(
+        self,
+        action_type: str,
+        dry_run: bool,
+        kwargs: dict[str, Any],
+        session_id: str | None,
+        pipeline: CompiledPipeline,
+    ) -> dict[str, Any]:
+        """Execute action through the pre-compiled enhancer pipeline (Pattern 5)."""
+        context = ActionContext(
+            action_type=action_type,
+            data=dict(kwargs),
+            dry_run=dry_run,
+            session_id=session_id,
+        )
+        result = pipeline.execute(context)
+        if result.ok:
+            return result.data if result.data is not None else {"ok": True}
+        err_msg = str(result.error) if result.error else "pipeline error"
+        return {"ok": False, "error": err_msg}
+
+    # --- Middleware & Pipeline Registration ---
+
+    def use_middleware(self, mw: Middleware) -> None:
+        """Register a global middleware (Pattern 4 — tRPC-style).
+
+        Once at least one middleware is registered, ``act()`` dispatches
+        through the flat middleware array instead of the direct path.
+        """
+        self._middleware_pipeline.use(mw)
+
+    def register_action_pipeline(
+        self,
+        action_type: str,
+        builder: Callable[[CompiledPipeline], None],
+    ) -> None:
+        """Register a compiled pipeline builder for an action type (Pattern 5).
+
+        The builder receives a ``CompiledPipeline`` and adds guards,
+        interceptors, pipes, and a handler. The pipeline is compiled on
+        first ``act()`` call for that action type and cached thereafter.
+        """
+        self._pipeline_builders[action_type] = builder
+        # Invalidate any previously cached compiled pipeline for this action
+        self._compiled_pipelines.pop(action_type, None)
+
+    def _get_compiled_pipeline(self, action_type: str) -> CompiledPipeline | None:
+        """Get or lazily compile the pipeline for an action type.
+
+        Returns None if no builder is registered for the action type.
+        On first access, the builder configures the pipeline and it is
+        compiled and cached. Subsequent calls return the cached instance.
+        """
+        if action_type not in self._pipeline_builders:
+            return None
+        if action_type not in self._compiled_pipelines:
+            pipeline = CompiledPipeline()
+            self._pipeline_builders[action_type](pipeline)
+            pipeline.compile()
+            self._compiled_pipelines[action_type] = pipeline
+        return self._compiled_pipelines[action_type]
 
     # --- Workflow (delegates to WorkflowManager) ---
     def run_workflow(

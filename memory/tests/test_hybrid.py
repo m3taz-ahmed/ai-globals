@@ -23,7 +23,7 @@ from memory.store import Memory, MemoryStore
 
 
 def _tmp() -> Path:
-    return Path(tempfile.mkdtemp(prefix="aios_hybrid_"))
+    return Path(tempfile.mkdtemp(prefix="aizee_hybrid_"))
 
 
 def _store(tmp: Path) -> MemoryStore:

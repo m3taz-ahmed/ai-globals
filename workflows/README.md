@@ -1,6 +1,6 @@
-# `workflows/` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Execution Protocols
+# `workflows/` — Execution Protocols
 
-This directory contains **37 execution workflows** (30 numbered protocols 00-29 + 7 standards protocols) plus 7 reference files (cheat-sheet, commands-reference, update-me, spec-driven series). Each activates when the AI detects a specific task type.
+This directory contains **37 execution workflows** (30 numbered trigger-based protocols 00-29 + 7 standards protocols) plus 6 reference files (cheat-sheet, commands-reference, update-me, spec-driven series). 43 `.md` files total. Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 
@@ -78,18 +78,18 @@ This directory contains **37 execution workflows** (30 numbered protocols 00-29 
 Workflows follow the global **7-Step Execution Loop** in `global-workflow.md`:
 
 ```
-Step 1: ROUTE & READ  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Load context layers (0 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 1 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 2 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 3)
-Step 2: THINK         ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Internal reasoning, anti-pattern check
-Step 3: GOLDEN RULE   ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Clarify if ambiguous (ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥80% clear = proceed)
-Step 4: EXECUTE       ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Deliver with verifiable success criteria
-Step 5: VERIFY        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Run tests, static analysis, formatting
-Step 6: DOCS SYNC     ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Update Memory.md and CHANGELOG.md
-Step 7: HANDOFF       ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Summarize state for next agent/session
+Step 1: ROUTE & READ  → Load context layers (0 → 1 → 2 → 3)
+Step 2: THINK         → Internal reasoning, anti-pattern check
+Step 3: GOLDEN RULE   → Clarify if ambiguous (≥80% clear = proceed)
+Step 4: EXECUTE       → Deliver with verifiable success criteria
+Step 5: VERIFY        → Run tests, static analysis, formatting
+Step 6: DOCS SYNC     → Update Memory.md and CHANGELOG.md
+Step 7: HANDOFF       → Summarize state for next agent/session
 ```
 
 ## Machine-Readable Routing
 
-See `manifest.json` at repo root for the triggerÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢workflow map used by automated tools.
+See `manifest.json` at repo root for the trigger→workflow map used by automated tools.
 
 ## Adding a New Workflow
 

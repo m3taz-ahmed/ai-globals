@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # Set up isolated root BEFORE importing the module
-os.environ["AIZEE_ROOT"] = tempfile.mkdtemp(prefix="aios_common_test_")
+os.environ["AIZEE_ROOT"] = tempfile.mkdtemp(prefix="aizee_common_test_")
 ROOT = Path(os.environ["AIZEE_ROOT"])
 (ROOT / "brain").mkdir(parents=True, exist_ok=True)
 

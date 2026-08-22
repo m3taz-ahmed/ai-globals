@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aizee_mcp._compat import FastMCP
 
 # Set up isolated root BEFORE importing
-_ROOT = tempfile.mkdtemp(prefix="aios_wf_test_")
+_ROOT = tempfile.mkdtemp(prefix="aizee_wf_test_")
 os.environ["AIZEE_ROOT"] = _ROOT
 ROOT = Path(_ROOT)
 for sub in ("rules", "workflows", "tech-stack", "skills", "state", "brain"):

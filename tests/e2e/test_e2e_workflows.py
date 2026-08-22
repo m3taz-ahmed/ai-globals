@@ -127,6 +127,6 @@ class TestMetricsExport:
         from runtime.metrics import format_metrics
 
         output = format_metrics(kernel)
-        assert "aios_workflows_total" in output
-        assert "aios_rules_total" in output
-        assert "aios_budgets_total" in output
+        assert "aizee_workflows_total" in output
+        assert "aizee_rules_total" in output
+        assert "aizee_budgets_total" in output

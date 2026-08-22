@@ -49,7 +49,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 
 @pytest.fixture
 def tmp_root():
-    path = Path(tempfile.mkdtemp(prefix="aios_test_"))
+    path = Path(tempfile.mkdtemp(prefix="aizee_test_"))
     yield path
     shutil.rmtree(path, ignore_errors=True)
 

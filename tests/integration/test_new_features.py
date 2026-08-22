@@ -48,7 +48,7 @@ def test_guardian_and_metrics_count(kernel: Kernel) -> None:
     assert result["ok"] is False
     assert "Guardian denied" in result["error"]
     samples = {s.name: s.value for s in kernel.metrics.collect()}
-    assert samples.get("aios_guardian_denials_total", 0) >= 1
+    assert samples.get("aizee_guardian_denials_total", 0) >= 1
 
 
 def test_astryx_lint_rejects_eval() -> None:
