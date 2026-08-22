@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v5.4.0
-# Source of truth validator — PowerShell wrapper delegates to this script.
+# AI Globals Validation Script (Python) v5.5.0
+# Source of truth validator - PowerShell wrapper delegates to this script.
 
 import argparse
 import hashlib
@@ -114,7 +114,7 @@ def check_core_rules(global_path: str, manifest: dict[str, str]) -> bool:
             with open(cf_path, 'rb') as f:
                 h = hashlib.sha256(f.read()).hexdigest()
             if manifest.get(cf) != h:
-                cprint(f"Core rule change in {cf} — forcing full scan.", Colors.YELLOW)
+                cprint(f"Core rule change in {cf} - forcing full scan.", Colors.YELLOW)
                 return True
     return False
 
@@ -244,18 +244,18 @@ def check_symbolic_codes(content: str, rel_name: str, ctx: ValidationContext) ->
 def handle_broken_section(content: str, raw_t: str, resolved: str, sec: str,
                            rel_name: str, ctx: ValidationContext) -> tuple[str, bool, bool]:
     near = next((h for h in ctx.global_headers[resolved] if h.startswith(sec) or sec.startswith(h)), None)
-    if ctx.fix and near and (not ctx.interactive or input(f"Fix §{sec}->§{near} in {rel_name}? [Y/N]: ").strip().upper() == 'Y'):
-        content = content.replace(f"{raw_t} §{sec}", f"{raw_t} §{near}")
+    if ctx.fix and near and (not ctx.interactive or input(f"Fix -{sec}->-{near} in {rel_name}? [Y/N]: ").strip().upper() == 'Y'):
+        content = content.replace(f"{raw_t} -{sec}", f"{raw_t} -{near}")
         ctx.healed_count += 1
-        cprint(f"Healed §{sec}->§{near} in {rel_name}", Colors.GRAY)
+        cprint(f"Healed -{sec}->-{near} in {rel_name}", Colors.GRAY)
         return content, False, True
-    cprint(f"ERROR: Broken ref §{sec} in {rel_name} (target: {resolved})", Colors.RED)
+    cprint(f"ERROR: Broken ref -{sec} in {rel_name} (target: {resolved})", Colors.RED)
     ctx.error_count += 1
     return content, True, False
 
 def check_cross_references(content: str, rel_name: str, ctx: ValidationContext) -> tuple[str, bool, bool]:
     error, modified = False, False
-    for ref in re.finditer(r"([\w\-\./]+\.md)\s+[§S]\s*(\d+(?:\.\d+)?)", content):
+    for ref in re.finditer(r"([\w\-\./]+\.md)\s+[-S]\s*(\d+(?:\.\d+)?)", content):
         raw_t, sec = ref.group(1), ref.group(2)
         target = raw_t.replace("/", os.sep)
         resolved = get_fuzzy_match(target, list(ctx.global_headers.keys()))
@@ -294,13 +294,15 @@ IGNORED_FILE_REFS = {
     'seo_report.md', 'seo_integration_report.md', 'repos_analysis_report.md',
     # deleted superseded skill
     'seo-content-generator.md',
+    # Laravel Boost context files (live in client project's .ai/ dir, not aiZee)
+    'laravel.md', 'filament.md', 'project.md',
 }
 
 def check_file_references(content: str, rel_name: str, ctx: ValidationContext, global_path: str) -> bool:
     error = False
     for ref in re.finditer(r"(?<![\w/])(\.?[\w\-./]+\.md)\b", content):
         raw_t = ref.group(1)
-        if re.match(r"^\s+[§S]\s*\d+", content[ref.end():]):
+        if re.match(r"^\s+[-S]\s*\d+", content[ref.end():]):
             continue
         # Skip wildcard/template references like .gsap/pages/*.animation.md or .gsap/pages/<page>.animation.md
         # Use a tight window so version ranges like <0.9.17 in the previous line do not hide real refs.

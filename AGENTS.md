@@ -1,14 +1,19 @@
 ---
 name: aizee
-description: Sovereign AI engineering control plane. IDE global bootloader — sets the OS root once and loads all rules, skills, workflows, and tech-stack from it.
+description: Sovereign AI engineering control plane. IDE global bootloader â€” sets the OS root once and loads all rules, skills, workflows, and tech-stack from it.
 license: MIT
 ---
 
-# aiZee — Global Bootloader
+# aiZee â€” Global Bootloader
 
 - **Root:** discovered via `AIZEE_ROOT` env or `config.discover_root()` (no hardcoded path).
 - Set `AIZEE_ROOT` if not already set. Use `PYTHONIOENCODING=utf-8` on Windows.
 - This file is the canonical root pointer. All other OS files discover the root via `AIZEE_ROOT` or `config.discover_root()` and are loaded relative to it.
+
+## Working Directory [DIR-01]
+- **Working directory: D:\server\.ai ONLY.** All edits, new files, and modifications go here.
+- **D:\server\aizee is READ-ONLY.** Never edit files in izee directly. It is the deployment/usage folder, updated only via the batch update script. If you need to sync changes from .ai to izee, use the batch script.
+- When the IDE opens files from izee, copy them to .ai first, edit in .ai, then sync back via the batch script.
 
 ## Cold Start
 1. Read `global-roles.md`, `global-workflow.md`, and `Memory.md`.
@@ -36,20 +41,20 @@ For quick iteration during development: `aizee test` (fast tier, ~12s, no covera
 No `eval` in policy code.
 
 ## Project Testing Protocol (ANY project under aiZee)
-Every project — Laravel, React, Python, Go, Node — follows two-tier testing `[TEST-07]`:
+Every project â€” Laravel, React, Python, Go, Node â€” follows two-tier testing `[TEST-07]`:
 - **FAST tier** (during iteration): run ONLY targeted tests for the code you touched. ~5s max. See `workflows/testing-tiers.md` for per-stack commands.
 - **FULL tier** (before declaring done): run the project's complete test suite + coverage. Must pass green.
 - Never run the full suite on every change. Never skip the full suite before done.
 - If the project has no test framework, write the first test for the touched code before declaring done `[TEST-09]`.
 
 ## Non-negotiable user policy
-- No full test suites during iteration — use FAST tier (targeted `--filter=...` / `<file>` only).
-- FULL test suite is mandatory before declaring done — no exceptions.
+- No full test suites during iteration â€” use FAST tier (targeted `--filter=...` / `<file>` only).
+- FULL test suite is mandatory before declaring done â€” no exceptions.
 - No `git add .` / `git add -A` (`[GIT-06]`). No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
 - Delete temporary/scratch/test files immediately after use.
 
 ## Shell Compatibility `[SHELL-01]`
-- Detect the active shell before running commands. On Windows the default shell is **PowerShell** — never use bash syntax (`&&`, `||`, `2>nul`, `ls`, `cat`, `grep`).
+- Detect the active shell before running commands. On Windows the default shell is **PowerShell** â€” never use bash syntax (`&&`, `||`, `2>nul`, `ls`, `cat`, `grep`).
 - PowerShell equivalents: `;` instead of `&&`, `if ($?) { ... }` instead of `||`, `Test-Path` instead of `ls ... 2>nul`, `Get-ChildItem` instead of `ls`, `Get-Content` instead of `cat`, `Select-String` instead of `grep`.
 - In workflow CMD steps, use `pwsh:` or `ps:` prefix for PowerShell commands on Windows; `bash:` for POSIX shells on Linux/macOS.
 - When using `subprocess` in Python, pass command lists (not shell strings) to stay cross-platform. Use `shell=True` only when absolutely necessary and never with user input.
@@ -60,13 +65,13 @@ Every project — Laravel, React, Python, Go, Node — follows two-tier testing 
 
 aiZee follows a layered design:
 
-- **CLI / Entry Point** — `aizee_cli.py` parses commands, delegates to kernel.
-- **Kernel (Facade)** — `runtime/kernel.py` routes to managers.
-- **Managers** — `runtime/managers/` (PolicyManager, WorkflowManager, AgentManager, ChatManager).
-- **Runtime Modules** — 60+ governance modules in `runtime/`.
-- **MCP Server** — `aizee_mcp/` exposes 27 tools via FastMCP.
-- **Memory** — `memory/` SQLite + FTS5 + vector store.
-- **Skills / Workflows / Tech-Stack** — declarative `.md` files loaded at runtime.
+- **CLI / Entry Point** â€” `aizee_cli.py` parses commands, delegates to kernel.
+- **Kernel (Facade)** â€” `runtime/kernel.py` routes to managers.
+- **Managers** â€” `runtime/managers/` (PolicyManager, WorkflowManager, AgentManager, ChatManager).
+- **Runtime Modules** â€” 60+ governance modules in `runtime/`.
+- **MCP Server** â€” `aizee_mcp/` exposes 27 tools via FastMCP.
+- **Memory** â€” `memory/` SQLite + FTS5 + vector store.
+- **Skills / Workflows / Tech-Stack** â€” declarative `.md` files loaded at runtime.
 
 ### Core Infrastructure
 
@@ -88,23 +93,23 @@ aiZee follows a layered design:
 
 ```
 aizee/                         # Sovereign root (AIZEE_ROOT)
-├── aizee_cli.py               # CLI entry point
-├── config.py                  # Root discovery + version
-├── runtime/                   # Kernel + 60+ governance modules
-│   ├── kernel.py              # Facade
-│   ├── managers/              # Policy/Workflow/Agent/Chat managers
-│   ├── storage_backend.py     # StorageBackend protocol + factory
-│   ├── service_catalog.py     # ServiceDescriptor + multi-index catalog
-│   ├── schemas.py             # Pydantic + exceptions + pagination
-│   └── ...                    # 60+ governance modules
-├── aizee_mcp/                 # MCP server (27 tools)
-├── memory/                    # SQLite + FTS5 + vector
-├── skills/                    # 31 persona + lord skills
-├── workflows/                 # 36 trigger-based protocols
-├── rules/                     # Compressed behavioral rules
-├── tech-stack/                # 75 version-locked stack references
-│   └── spec-driven-templates/ # SDD templates (spec/plan/tasks/constitution/checklist)
-└── eval/                      # Agent benchmark harness
+â”œâ”€â”€ aizee_cli.py               # CLI entry point
+â”œâ”€â”€ config.py                  # Root discovery + version
+â”œâ”€â”€ runtime/                   # Kernel + 60+ governance modules
+â”‚   â”œâ”€â”€ kernel.py              # Facade
+â”‚   â”œâ”€â”€ managers/              # Policy/Workflow/Agent/Chat managers
+â”‚   â”œâ”€â”€ storage_backend.py     # StorageBackend protocol + factory
+â”‚   â”œâ”€â”€ service_catalog.py     # ServiceDescriptor + multi-index catalog
+â”‚   â”œâ”€â”€ schemas.py             # Pydantic + exceptions + pagination
+â”‚   â””â”€â”€ ...                    # 60+ governance modules
+â”œâ”€â”€ aizee_mcp/                 # MCP server (27 tools)
+â”œâ”€â”€ memory/                    # SQLite + FTS5 + vector
+â”œâ”€â”€ skills/                    # 31 persona + lord skills
+â”œâ”€â”€ workflows/                 # 36 trigger-based protocols
+â”œâ”€â”€ rules/                     # Compressed behavioral rules
+â”œâ”€â”€ tech-stack/                # 75 version-locked stack references
+â”‚   â””â”€â”€ spec-driven-templates/ # SDD templates (spec/plan/tasks/constitution/checklist)
+â””â”€â”€ eval/                      # Agent benchmark harness
 ```
 
 ## First Principles
@@ -149,14 +154,14 @@ When making changes, follow these priorities:
 - Use `ValidationError` for input validation
 - Use `StorageError` for storage backend failures
 - All exceptions carry `error_code`, `severity`, and `context` dict
-- Never use bare `Exception` — always an `AizeeError` subclass
+- Never use bare `Exception` â€” always an `AizeeError` subclass
 
 ## Storage Rules
 
 - Use `StorageFactory` from `runtime/storage_backend.py` for new key-value stores
 - Do not instantiate `InMemoryStorage` / `JsonFileStorage` / `SqliteStorage` directly
-- Existing `MemoryStore` (SQLite) is unchanged — new code opts into the abstraction
-- Backends are cached by path — repeat `create()` returns the same instance
+- Existing `MemoryStore` (SQLite) is unchanged â€” new code opts into the abstraction
+- Backends are cached by path â€” repeat `create()` returns the same instance
 - Call `factory.shutdown_all()` on process exit to flush + close
 
 ## Common Mistakes
@@ -182,14 +187,14 @@ If behavior is unclear:
 ## Code Style
 
 - Use `from __future__ import annotations` in all Python files
-- Strict typing — no `Any` without justification, no `mixed`/`unknown` abuse
+- Strict typing â€” no `Any` without justification, no `mixed`/`unknown` abuse
 - Class <300 lines, method <30 lines (`[CODE-03]`)
 - Enums/constants over magic strings (`[CODE-04]`)
 - SOLID & DRY (`[CODE-05]`)
 - Constructor injection (pass dependencies in `__init__`)
 - Self-explanatory code over comments
 - Always use braces in conditionals (for JS/TS projects)
-- Never leave a `catch`/`except` block empty — log with context
+- Never leave a `catch`/`except` block empty â€” log with context
 - Follow existing project patterns
 
 ## Logging
@@ -200,7 +205,7 @@ If behavior is unclear:
 
 ## Pull Request Guidelines
 
-- Keep changes focused — avoid unrelated refactors
+- Keep changes focused â€” avoid unrelated refactors
 - Preserve behavior unless the task explicitly requires change
 - Update docs (`Memory.md`, `CHANGELOG.md`) when user-facing
 - Conventional commits: `feat:`, `fix:`, `perf:`, `docs:`, `chore:`, `refactor:`

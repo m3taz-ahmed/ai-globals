@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "5.4.0",
+    "version": "5.5.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
-    "updated": "2026-08-21"
+    "updated": "2026-08-23"
   },
   "triggers": {
     "/prompt": "workflows/00-prompt-architecting.md",
@@ -69,15 +69,20 @@
     "seo analysis": "workflows/28-seo-audit.md",
     "search optimization": "workflows/28-seo-audit.md",
     "seo": "workflows/28-seo-audit.md",
-    "تحسين محركات البحث": "workflows/28-seo-audit.md",
-    "سيو": "workflows/28-seo-audit.md",
+    "Ã˜ÂªÃ˜Â­Ã˜Â³Ã™Å Ã™â€  Ã™â€¦Ã˜Â­Ã˜Â±Ã™Æ’Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â­Ã˜Â«": "workflows/28-seo-audit.md",
+    "Ã˜Â³Ã™Å Ã™Ë†": "workflows/28-seo-audit.md",
     "flutter": "skills/flutter-architect/SKILL.md",
     "flutter design": "skills/flutter-design/SKILL.md",
     "flutter develop": "skills/flutter-developer/SKILL.md",
     "dart": "tech-stack/flutter.md",
     "riverpod": "skills/flutter-developer/SKILL.md",
     "bloc": "skills/flutter-developer/SKILL.md",
-    "material 3": "skills/flutter-design/SKILL.md"
+    "material 3": "skills/flutter-design/SKILL.md",
+    "filament ai": "workflows/29-filament-ai-workflow.md",
+    "ai filament": "workflows/29-filament-ai-workflow.md",
+    "boost filament": "workflows/29-filament-ai-workflow.md",
+    "filacheck": "workflows/29-filament-ai-workflow.md",
+    "ai workflow filament": "workflows/29-filament-ai-workflow.md"
   },
   "features": {
     "audit_log": "runtime/audit.py",
@@ -121,7 +126,13 @@
     "evidence_gates": "eval/harness.py",
     "eval_stages": "eval/stages.py",
     "closure_evaluator": "runtime/closure_evaluator.py",
-    "mcp_schemas": "aizee_mcp/tools/schemas.py"
+    "mcp_schemas": "aizee_mcp/tools/schemas.py",
+    "command_bus": "runtime/commands.py",
+    "scoped_manager": "runtime/scoped_manager.py",
+    "hook_lifecycle": "runtime/hook_lifecycle.py",
+    "layers": "runtime/layers.py",
+    "contract_emitter": "runtime/contract_emitter.py",
+    "manifest_generator": "scripts/generate_manifest.py"
   },
   "standards": {
     "git": "workflows/git-standards.md",

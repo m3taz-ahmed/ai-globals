@@ -1,3 +1,8 @@
+---
+name: test-driven-development
+description: Test-driven development methodology.
+---
+
 [SKILL] test-driven-development
 [OBJ] Red-Green-Refactor enforcement.
 [RULES]

@@ -190,6 +190,15 @@ class GuardianClosureEvaluator(ClosureEvaluator):
     - ``action``: the action name string
     - ``attributes``: the action attributes dict
     - ``context``: the runtime context dict
+    - ``tool``: alias for action (Fastify-style hook param name)
+    - ``request``: the ActionRequest dataclass instance
+    - ``decision``: the current Decision status string
+    - ``rule_name``: the matched rule name
+    - ``reason``: the decision reason
+    - ``user``: the acting user id (from attributes)
+    - ``tenant``: the tenant id (from attributes)
+    - ``session``: the session id (from attributes)
+    - ``phase``: the current hook phase (pre_receive, pre_validation, etc.)
     """
 
     _SENTINEL: object = object()
@@ -199,17 +208,41 @@ class GuardianClosureEvaluator(ClosureEvaluator):
         action: str | None = None,
         attributes: dict[str, Any] | None = None,
         context: dict[str, Any] | None = None,
+        *,
+        request: Any = None,
+        decision: str | None = None,
+        rule_name: str | None = None,
+        reason: str | None = None,
+        phase: str | None = None,
     ) -> None:
         super().__init__(evaluation_identifier="guardian")
         self._action = action
         self._attributes = attributes
         self._context = context
+        self._request = request
+        self._decision = decision
+        self._rule_name = rule_name
+        self._reason = reason
+        self._phase = phase
 
     def resolve_default_by_name(self, param_name: str) -> Any:
+        attrs = self._attributes or {}
+        ctx = self._context or {}
         defaults: dict[str, Any] = {
             "action": self._action,
             "attributes": self._attributes,
             "context": self._context,
+            "tool": self._action,  # Fastify-style alias
+            "request": self._request,
+            "decision": self._decision,
+            "rule_name": self._rule_name,
+            "reason": self._reason,
+            "phase": self._phase,
+            "user": attrs.get("user") or ctx.get("user"),
+            "tenant": attrs.get("tenant") or ctx.get("tenant"),
+            "session": attrs.get("session") or ctx.get("session"),
+            "user_id": attrs.get("user_id") or ctx.get("user_id"),
+            "tenant_id": attrs.get("tenant_id") or ctx.get("tenant_id"),
         }
         value = defaults.get(param_name, self._SENTINEL)
         return None if value is self._SENTINEL else value

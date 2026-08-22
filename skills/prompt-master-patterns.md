@@ -1,3 +1,8 @@
+---
+name: prompt-master-patterns
+description: Prompt engineering patterns and best practices.
+---
+
 [SKILL] prompt-master-patterns
 [OBJ] Fix 37 token-wasting AI prompting patterns.
 [RULES]

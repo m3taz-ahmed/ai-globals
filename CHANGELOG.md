@@ -1,5 +1,43 @@
 # Changelog
 
+## [5.5.0] — 2026-08-23 (15 Patterns from 15 Repos Study → aiZee Runtime)
+
+### GitHub Repos Study v2 (15 repos analyzed: 5 Laravel + 5 Filament + 5 Node.js)
+Deep analysis of top 15 GitHub repositories across Laravel (Invoice Ninja, Bagisto, Monica), Filament, and Node.js (Fastify, Prisma, Remix, NestJS, pnpm). Full report at `D:\server\temp\github-study-v2\REPOS_ANALYSIS_REPORT.md`.
+
+### New Runtime Modules (5 files)
+- **`runtime/commands.py`** (NEW): Command ABC + CommandBus with Saga-style rollback. Inspired by Invoice Ninja's `new MarkPaid()` pattern.
+- **`runtime/scoped_manager.py`** (NEW): ScopedManager + ScopedRegistry + scoped_factory for context-isolated service instances. Inspired by Filament's `app()->scoped()` + Octane state flushing.
+- **`runtime/hook_lifecycle.py`** (NEW): HookRegistry with 6 phases (pre_receive, pre_validation, pre_handler, post_handler, post_response, on_error). Inspired by Fastify's lifecycle hooks.
+- **`runtime/layers.py`** (NEW): Layer IntEnum + LayerManifest for numbered package layering. Inspired by Prisma's numbered package prefixes.
+- **`runtime/contract_emitter.py`** (NEW): ContractArtifact emitter (JSON schema + TypeScript stubs from Pydantic). Inspired by Prisma's contract-first design.
+
+### New Script (1 file)
+- **`scripts/generate_manifest.py`** (NEW): Auto-generate `runtime/__init__.py` re-exports from manifest. Inspired by Remix's `generate-remix.ts`.
+
+### Deepened Existing Modules
+- **`runtime/closure_evaluator.py`**: GuardianClosureEvaluator now resolves 14 param names (action, tool, attributes, context, request, decision, rule_name, reason, phase, user, tenant, session, user_id, tenant_id). Inspired by Filament's automatic DI.
+- **`runtime/__init__.py`**: +15 re-exports for new modules.
+- **`scripts/guard_invariants.py`**: +3 new checks (no_magic_strings, trait_composition, manifest_drift).
+
+### New Tests (89 tests)
+7 new test files: `test_commands.py` (13), `test_scoped_manager.py` (14), `test_hook_lifecycle.py` (10), `test_layers.py` (12), `test_contract_emitter.py` (13), `test_generate_manifest.py` (11), `test_closure_evaluator_deepened.py` (16).
+
+### Documentation Updates
+- **`tech-stack/filament-4.md`**: +5 rules (Schema separation, sub-navigation, global search, scoped managers, path generators).
+- **`tech-stack/filament-5.md`**: +5 rules (Page-based UI, enum traits, minimal plugins, view hooks, asset publishing).
+- **`tech-stack/laravel-12.md`**: +5 rules (Command objects, custom casts, fluent chaining, package modularity, search abstraction).
+- **`tech-stack/laravel-13.md`**: +4 rules (PHP 8 attributes, contract-first artifacts, state flushing, app warming).
+- **`tech-stack/useful-repos.md`**: +10 entries (Laravel/Filament/Node.js tools + reference repos).
+- **`tech-stack/laravel-ai-workflow.md`** (NEW): 8 rules for Boost + Compass + FilaCheck pipeline.
+- **`skills/backend-frameworks-lord/SKILL.md`**: +7 rules (all 15 patterns).
+- **`workflows/29-filament-ai-workflow.md`** (NEW): 15 rules for AI-assisted Filament dev.
+- **`workflows/README.md`**: Updated count.
+- **`manifest.json`**: +5 triggers, +6 features.
+
+### Quality Gates
+- ruff ✅ (0 errors), mypy ✅ (0 errors, 220 source files), pytest ✅ (982 tests, 97% coverage), guard_invariants ✅ (all checks passed), validate-globals ✅ (0 errors, 0 warnings), eval/harness.py ✅ (all_pass: true).
+
 ## [5.4.0] — 2026-08-21 (SEO Integration: 5 Repos + 5 Tools Study → aiZee)
 
 ### SEO Study (5 GitHub repos + 5 building blocks analyzed)

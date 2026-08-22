@@ -1,3 +1,8 @@
+---
+name: test-guard
+description: Guard test quality and coverage.
+---
+
 [SKILL] test-guard
 [OBJ] Prevent AI test bloat and invalid mocking.
 [RULES]

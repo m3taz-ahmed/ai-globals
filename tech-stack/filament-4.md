@@ -5,8 +5,8 @@
 2. [REQ] Optimization: Fluent chaining only (PHPStan Lvl 8). `eagerLoad()` on ALL tables. Polling >30s.
 3. [REQ] Structure: Use PHP 8.4 property hooks. Use Filament native multi-tenancy.
 4. [REQ] Custom Namespaces: Use `Filament\Schemas\Components` (NOT `Filament\Forms\...`). Use `configure()` from Schema classes.
-5. [REQ] Tab-based Forms: `Tabs::make()` with logical tabs (Content/SEO/Settings/Media). ⛔ NEVER one long form. Split into tabs by domain concern.
-6. [REQ] Status Enum System: `enum Status implements HasColor, HasIcon, HasLabel` with backed string values. 7 states: Publish, Future, Draft, Auto, Pending, Private, Trash. ⛔ NEVER string status column. Use backed enum with colors/icons.
+5. [REQ] Tab-based Forms: `Tabs::make()` with logical tabs (Content/SEO/Settings/Media). â›” NEVER one long form. Split into tabs by domain concern.
+6. [REQ] Status Enum System: `enum Status implements HasColor, HasIcon, HasLabel` with backed string values. 7 states: Publish, Future, Draft, Auto, Pending, Private, Trash. â›” NEVER string status column. Use backed enum with colors/icons.
 7. [REQ] Upload/URL Toggle: `ToggleButtons::make('media_type')->options(['upload','url'])->live()` + `visible(fn(Get $get) => $get('media_type') === 'upload')` for flexible media input.
 8. [REQ] Configurable Content Editor: `HasContentEditor` trait + `config('package.editor')` for pluggable editors (RichEditor / MarkdownEditor / TinyEditor). Toolbar buttons from config.
 9. [REQ] Create Option Forms: `Select::make('category_id')->relationship()->createOptionForm([...])->preload()->searchable()` for inline creation without leaving page.
@@ -18,3 +18,9 @@
 15. [REQ] Authorization via Plugin: `Plugin::make()->authorizeResource(fn() => Gate::check('edit.resource'))` for per-plugin authorization gates.
 16. [REQ] Action Groups: `ActionGroup::make([EditAction, Action::preview->openUrlInNewTab(), DeleteAction])` for consistent record actions.
 17. [REQ] Search Highlighting: `highlightSearchResults(Collection, ?string $search)` trait for frontend search with visual feedback.
+
+18. [REQ] Schema Separation Pattern: Extract Forms/Tables/Infolists to dedicated classes (PostForm::configure(), PostsTable::configure()) keeping Resource files lean. Adopt for Resources with >50 lines of schema code.
+19. [REQ] Sub-Navigation Pattern: getRecordSubNavigation() with tabbed views (View, Edit, Comments) for record-centric workflows. Context-aware navigation per record state.
+20. [REQ] Global Search Integration: getGlobalSearchEloquentQuery(), getGloballySearchableAttributes(), getGlobalSearchResultDetails() for cross-resource search. Required for admin panels with >5 resources.
+21. [REQ] Scoped Managers (Octane-safe): pp()->scoped() for stateful services (CuratorManager, GlideManager) creating fresh instances per request. Prevents state leakage in Octane/Swoole long-running processes.
+22. [REQ] Path Generator Strategy: PathGenerator interface with DatePathGenerator/UserPathGenerator/DefaultPathGenerator for pluggable storage path strategies. Use for media plugins with flexible file organization.

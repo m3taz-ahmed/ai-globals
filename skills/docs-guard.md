@@ -1,3 +1,8 @@
+---
+name: docs-guard
+description: Guard documentation quality and completeness.
+---
+
 [SKILL] docs-guard
 [OBJ] Verify documentation accuracy against source code.
 [RULES]

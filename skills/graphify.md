@@ -1,3 +1,8 @@
+---
+name: graphify-windows
+description: Graphify knowledge graph integration for Windows.
+---
+
 [SKILL] graphify-windows
 [OBJ] Extract and query codebase knowledge graph.
 [RULES]

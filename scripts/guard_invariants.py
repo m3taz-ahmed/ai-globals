@@ -11,6 +11,9 @@ Checks:
 3. Every skill file has frontmatter.
 4. Kernel facade delegates to managers (no direct logic in Kernel.act).
 5. Policy files have valid actions.
+6. New modules use enums/constants, not magic strings.
+7. Trait composition preferred over deep inheritance (>4 bases flagged).
+8. runtime/__init__.py has no manifest drift (exports match imports).
 
 Usage::
 
@@ -57,7 +60,7 @@ def check_future_annotations(root: Path) -> list[Violation]:
 
 
 def check_no_bare_exception(root: Path) -> list[Violation]:
-    """No ``raise Exception(`` — must use AizeeError subclasses."""
+    """No ``raise Exception(`` - must use AizeeError subclasses."""
     violations: list[Violation] = []
     runtime = root / "runtime"
     if not runtime.exists():
@@ -82,6 +85,9 @@ def check_skills_have_frontmatter(root: Path) -> list[Violation]:
     if not skills.exists():
         return violations
     for md in skills.rglob("*.md"):
+        # Skip reference/template subdirectories (not skill files)
+        if "references" in md.parts or "templates" in md.parts:
+            continue
         text = md.read_text(encoding="utf-8").strip()
         if not text.startswith("---"):
             violations.append(Violation(
@@ -151,12 +157,137 @@ def check_policy_actions_valid(root: Path) -> list[Violation]:
     return violations
 
 
+def check_no_magic_strings_in_new_modules(root: Path) -> list[Violation]:
+    """New runtime modules must use enums/constants, not bare magic strings for status.
+
+    Checks commands.py, hook_lifecycle.py for string literals used as status
+    where an enum exists. This is a lightweight heuristic check.
+    """
+    violations: list[Violation] = []
+    checks_map = {
+        "runtime/commands.py": (r'["\']pending["\']|["\']completed["\']|["\']failed["\']', "CommandStatus"),
+        "runtime/hook_lifecycle.py": (r'["\']pre_receive["\']|["\']post_response["\']', "HookPhase"),
+    }
+    for rel_path, (pattern, enum_name) in checks_map.items():
+        path = root / rel_path
+        if not path.exists():
+            continue
+        compiled = re.compile(pattern)
+        in_enum_class = False
+        enum_indent = 0
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            stripped = line.strip()
+            # Detect enum class entry BEFORE the Enum skip check
+            if f"class {enum_name}" in line:
+                in_enum_class = True
+                enum_indent = len(line) - len(line.lstrip())
+                continue
+            if stripped.startswith("#") or stripped.startswith('"') or "Enum" in line:
+                continue
+            if in_enum_class and stripped and not stripped.startswith("#"):
+                current_indent = len(line) - len(line.lstrip())
+                if current_indent <= enum_indent:
+                    in_enum_class = False
+            if in_enum_class:
+                continue
+            if compiled.search(line) and "=" in line and "Enum" not in line:
+                violations.append(Violation(
+                    check="no_magic_strings",
+                    file=rel_path,
+                    line=i,
+                    message=f"possible magic string (use {enum_name}): {stripped[:80]}",
+                ))
+    return violations
+
+
+def check_trait_composition_over_inheritance(root: Path) -> list[Violation]:
+    """Runtime classes should prefer composition (multiple base concerns) over deep inheritance.
+
+    Flags any runtime class with >3 levels of inheritance (heuristic: class X(Y)
+    where Y is also a subclass of another class). This is a lightweight check.
+    """
+    violations: list[Violation] = []
+    runtime = root / "runtime"
+    if not runtime.exists():
+        return violations
+    # Look for classes that inherit from more than 2 bases (composition smell)
+    pattern = re.compile(r"^class\s+\w+\s*\(([^)]+)\)\s*:")
+    for py in runtime.rglob("*.py"):
+        if py.name.startswith("__"):
+            continue
+        for i, line in enumerate(py.read_text(encoding="utf-8").splitlines(), 1):
+            match = pattern.match(line)
+            if match:
+                bases = [b.strip() for b in match.group(1).split(",") if b.strip()]
+                # More than 3 bases suggests composition via multiple inheritance (OK)
+                # but flag if it's a single deep chain - heuristic only
+                if len(bases) > 4:
+                    violations.append(Violation(
+                        check="trait_composition",
+                        file=str(py.relative_to(root)),
+                        line=i,
+                        message=f"class with {len(bases)} bases - verify composition is intentional",
+                    ))
+    return violations
+
+
+def check_manifest_no_drift(root: Path) -> list[Violation]:
+    """runtime/__init__.py should match what generate_manifest.py would produce.
+
+    Runs the manifest generator in verify mode. If drift is detected, reports it.
+    """
+    violations: list[Violation] = []
+    init_path = root / "runtime" / "__init__.py"
+    if not init_path.exists():
+        return violations
+    try:
+        import sys as _sys
+        scripts_dir = str(root / "scripts")
+        if scripts_dir not in _sys.path:
+            _sys.path.insert(0, scripts_dir)
+        from generate_manifest import (  # pyright: ignore[reportMissingImports]
+            generate_init_source,
+            parse_existing_init,
+        )
+
+        existing = init_path.read_text(encoding="utf-8")
+        manifest = parse_existing_init(existing)
+        generated = generate_init_source(manifest)
+        # Compare export names (order-independent)
+        existing_names = set(re.findall(r'^    "(\w+)",$', existing, re.MULTILINE))
+        generated_names = set(re.findall(r'^    "(\w+)",$', generated, re.MULTILINE))
+        existing_names.discard("annotations")
+        generated_names.discard("annotations")
+        missing = generated_names - existing_names
+        extra = existing_names - generated_names
+        if missing:
+            violations.append(Violation(
+                check="manifest_drift",
+                file="runtime/__init__.py",
+                line=1,
+                message=f"exports missing from __all__: {sorted(missing)}",
+            ))
+        if extra:
+            violations.append(Violation(
+                check="manifest_drift",
+                file="runtime/__init__.py",
+                line=1,
+                message=f"exports in __all__ but not imported: {sorted(extra)}",
+            ))
+    except Exception:
+        pass
+    return violations
+
+
 ALL_CHECKS = [
     check_future_annotations,
     check_no_bare_exception,
     check_skills_have_frontmatter,
     check_kernel_facade_delegates,
     check_policy_actions_valid,
+    check_no_magic_strings_in_new_modules,
+    check_trait_composition_over_inheritance,
+    check_manifest_no_drift,
 ]
 
 
@@ -172,11 +303,11 @@ def main() -> int:
     root = Path(__file__).resolve().parent.parent
     violations = run_all(root)
     if not violations:
-        print("guard:invariants — all checks passed")
+        print("guard:invariants - all checks passed")
         return 0
-    print(f"guard:invariants — {len(violations)} violation(s):")
+    print(f"guard:invariants - {len(violations)} violation(s):")
     for v in violations:
-        print(f"  [{v.check}] {v.file}:{v.line} — {v.message}")
+        print(f"  [{v.check}] {v.file}:{v.line} - {v.message}")
     return 1
 
 

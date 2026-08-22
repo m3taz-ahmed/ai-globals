@@ -1,3 +1,8 @@
+---
+name: subagent-driven-development
+description: Subagent-driven development workflow.
+---
+
 [SKILL] subagent-driven-development
 [OBJ] Dispatch subagents for continuous task execution.
 [RULES]

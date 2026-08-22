@@ -1,3 +1,8 @@
+---
+name: gsap-animated-frontend
+description: GSAP animated frontend skill with animation patterns.
+---
+
 # GSAP Animated Frontend
 
 <p align="center">
@@ -78,20 +83,20 @@ The workflow state lives in the project being animated, not in chat history.
 
 ```text
 your-project/
-└── .gsap/
-    ├── animation-spec.md
-    ├── animation-plan.md
-    ├── audit-report.md
-    ├── tasks/
-    │   └── homepage.tasks.md
-    ├── phases/
-    │   └── homepage/
-    │       ├── p01-hero.md
-    │       └── p02-feature-grid.md
-    └── pages/
-        ├── homepage.animation.md
-        ├── schools.animation.md
-        └── dashboard.animation.md
+â””â”€â”€ .gsap/
+    â”œâ”€â”€ animation-spec.md
+    â”œâ”€â”€ animation-plan.md
+    â”œâ”€â”€ audit-report.md
+    â”œâ”€â”€ tasks/
+    â”‚   â””â”€â”€ homepage.tasks.md
+    â”œâ”€â”€ phases/
+    â”‚   â””â”€â”€ homepage/
+    â”‚       â”œâ”€â”€ p01-hero.md
+    â”‚       â””â”€â”€ p02-feature-grid.md
+    â””â”€â”€ pages/
+        â”œâ”€â”€ homepage.animation.md
+        â”œâ”€â”€ schools.animation.md
+        â””â”€â”€ dashboard.animation.md
 ```
 
 This means a fresh agent session can resume by reading `.gsap` files without needing prior conversation context.
@@ -102,34 +107,34 @@ This means a fresh agent session can resume by reading `.gsap` files without nee
 
 ```text
 gsap-animated-frontend/
-├── SKILL.md
-├── gsap_cli.py
-├── requirements.txt
-├── scripts/
-│   ├── gsap_workflow.py
-│   ├── brand_extractor.py
-│   ├── structure_search.py
-│   ├── interview_generator.py
-│   └── phase_planner.py
-├── subskills/
-│   ├── gsap-new/
-│   │   └── SKILL.md
-│   └── gsap-refactor/
-│       └── SKILL.md
-├── templates/
-│   ├── animation-spec.md
-│   ├── animation-plan.md
-│   ├── audit-report.md
-│   ├── animation-tasks.md
-│   ├── page-animation.md
-│   └── phase.md
-├── references/
-│   ├── animation-recipes.md
-│   ├── gsap-core-patterns.md
-│   ├── performance-guide.md
-│   └── scroll-trigger-patterns.md
-└── assets/
-    └── gsap-skill-banner.svg
+â”œâ”€â”€ SKILL.md
+â”œâ”€â”€ gsap_cli.py
+â”œâ”€â”€ requirements.txt
+â”œâ”€â”€ scripts/
+â”‚   â”œâ”€â”€ gsap_workflow.py
+â”‚   â”œâ”€â”€ brand_extractor.py
+â”‚   â”œâ”€â”€ structure_search.py
+â”‚   â”œâ”€â”€ interview_generator.py
+â”‚   â””â”€â”€ phase_planner.py
+â”œâ”€â”€ subskills/
+â”‚   â”œâ”€â”€ gsap-new/
+â”‚   â”‚   â””â”€â”€ SKILL.md
+â”‚   â””â”€â”€ gsap-refactor/
+â”‚       â””â”€â”€ SKILL.md
+â”œâ”€â”€ templates/
+â”‚   â”œâ”€â”€ animation-spec.md
+â”‚   â”œâ”€â”€ animation-plan.md
+â”‚   â”œâ”€â”€ audit-report.md
+â”‚   â”œâ”€â”€ animation-tasks.md
+â”‚   â”œâ”€â”€ page-animation.md
+â”‚   â””â”€â”€ phase.md
+â”œâ”€â”€ references/
+â”‚   â”œâ”€â”€ animation-recipes.md
+â”‚   â”œâ”€â”€ gsap-core-patterns.md
+â”‚   â”œâ”€â”€ performance-guide.md
+â”‚   â””â”€â”€ scroll-trigger-patterns.md
+â””â”€â”€ assets/
+    â””â”€â”€ gsap-skill-banner.svg
 ```
 
 ### Design Rules
@@ -251,19 +256,19 @@ Workflow behavior:
 
 ```text
 your-project/
-└── .gsap/
-    ├── animation-spec.md
-    ├── animation-plan.md
-    ├── audit-report.md
-    ├── tasks/
-    │   └── homepage.tasks.md
-    ├── phases/
-    │   └── homepage/
-    │       ├── p01-hero.md
-    │       ├── p02-feature-grid.md
-    │       └── p03-stats.md
-    └── pages/
-        └── homepage.animation.md
+â””â”€â”€ .gsap/
+    â”œâ”€â”€ animation-spec.md
+    â”œâ”€â”€ animation-plan.md
+    â”œâ”€â”€ audit-report.md
+    â”œâ”€â”€ tasks/
+    â”‚   â””â”€â”€ homepage.tasks.md
+    â”œâ”€â”€ phases/
+    â”‚   â””â”€â”€ homepage/
+    â”‚       â”œâ”€â”€ p01-hero.md
+    â”‚       â”œâ”€â”€ p02-feature-grid.md
+    â”‚       â””â”€â”€ p03-stats.md
+    â””â”€â”€ pages/
+        â””â”€â”€ homepage.animation.md
 ```
 
 These files are the workflow memory. A fresh agent session should resume from them instead of relying on chat history.

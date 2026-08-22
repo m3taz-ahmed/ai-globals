@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "5.4.0"
+version = "5.5.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -109,7 +109,17 @@ python_version = "3.14"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
-exclude = ["skills/", "tmp/", "scratch/", "temp/", "brain/", "state/", "__pycache__/", "\\.git/", "\\.github/"]
+exclude = [
+    "skills/", "tmp/", "scratch/", "temp/", "brain/", "state/",
+    "__pycache__/", "\\.git/", "\\.github/",
+    # Old helper scripts that predate strict typing
+    "scripts/tests/test_validator\\.py",
+    "scripts/ui-ux-pro-max/",
+    "scripts/graphify_mcp_wrapper\\.py",
+    "scripts/validate-globals\\.py",
+    "scripts/fetch-free-keys\\.py",
+    "scripts/restore_brain\\.py",
+]
 [[tool.mypy.overrides]]
 module = ["yaml", "sentence_transformers", "turbovec", "numpy", "psutil", "sentry_sdk"]
 ignore_missing_imports = true
@@ -137,7 +147,7 @@ strict = false
 disallow_untyped_defs = false
 warn_return_any = false
 
-# Scripts: installer/wrapper scripts use subprocess and dynamic paths.
+# Scripts (general): relaxed for installer/wrapper scripts.
 [[tool.mypy.overrides]]
 module = ["scripts.*"]
 strict = false
@@ -156,6 +166,12 @@ module = [
     "aizee_mcp.tools.seo_tools",
 ]
 disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = ["scripts.generate_manifest", "scripts.guard_invariants"]
+strict = false
+disallow_untyped_defs = false
+warn_return_any = false
 
 [tool.pytest.ini_options]
 testpaths = ["runtime/tests", "memory/tests", "eval/tests", "tests"]

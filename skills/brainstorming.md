@@ -1,3 +1,8 @@
+---
+name: brainstorming
+description: Brainstorming and ideation skill.
+---
+
 [SKILL] brainstorming
 [OBJ] Explore intent, requirements, and design before implementation.
 [RULES]

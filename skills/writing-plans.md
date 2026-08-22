@@ -1,3 +1,8 @@
+---
+name: writing-plans
+description: Write structured plans for complex tasks.
+---
+
 [SKILL] writing-plans
 [OBJ] Create step-by-step implementation plan before coding.
 [RULES]

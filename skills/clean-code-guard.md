@@ -1,3 +1,8 @@
+---
+name: clean-code-guard
+description: Enforce clean code, SOLID, and DRY principles.
+---
+
 [SKILL] clean-code-guard
 [OBJ] Code review enforcing SOLID, DRY, KISS, and YAGNI.
 [RULES]
