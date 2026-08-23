@@ -612,7 +612,7 @@ if (-not $SkipPip) {
     $RequiredPackages = @("yaml", "mcp", "pydantic", "rich", "numpy", "cryptography")
     foreach ($pkg in $RequiredPackages) {
         $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        $check = & python -c "import $pkg; print('ok')" 2>&1
+        $null = & python -c "import $pkg; print('ok')" 2>&1
         $pkgExit = $LASTEXITCODE
         $ErrorActionPreference = $prevEAP
         if ($pkgExit -ne 0) {
