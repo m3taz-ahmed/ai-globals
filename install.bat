@@ -1,17 +1,32 @@
 @echo off
-REM aiZee — Double-click GUI Installer Launcher (Windows)
-REM No terminal needed — just double-click this file.
+REM ============================================================
+REM  aiZee Installer Launcher (Windows)
+REM  Double-click this file — no terminal setup needed.
+REM  Launches the GUI installer wizard.
+REM ============================================================
 
-REM Change to the directory where this .bat lives
+setlocal
+title aiZee Installer
 cd /d "%~dp0"
 
-REM Launch the GUI installer with execution policy bypass
+echo.
+echo  ============================================================
+echo    aiZee Installer
+echo    Launching GUI wizard...
+echo  ============================================================
+echo.
+
+REM --- Launch the GUI installer with execution policy bypass ---
 powershell -ExecutionPolicy Bypass -NoProfile -File "%~dp0installer\gui_installer.ps1"
 
-REM Keep window open if there was an error
+REM --- Keep window open if there was an error ---
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo [aizee] Installer exited with error code %ERRORLEVEL%
-    echo [aizee] Check the log in state\install-*.log
+    echo  ============================================================
+    echo   [aiZee] Installer exited with error code %ERRORLEVEL%
+    echo   [aiZee] Check the log in state\install-*.log
+    echo  ============================================================
+    echo.
     pause
 )
+endlocal
