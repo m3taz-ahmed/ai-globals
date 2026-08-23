@@ -773,7 +773,14 @@ if (-not $SkipMCP) {
 
     $ClaudeDir = Join-Path $Root ".claude"
     New-Directory $ClaudeDir
-    $EscapedRoot = $Root -replace '\\', '\\\\'
+    # Use absolute paths for python-based MCP wrappers so they work
+    # regardless of the IDE's working directory. npx/uvx-based servers
+    # don't need a path (they resolve via PATH).
+    # JSON requires backslashes to be doubled (D:\ -> D:\\). Use .Replace()
+    # (literal) not -replace (regex) to avoid over-escaping.
+    $AizeeWrapper = (Join-Path $Root 'scripts\aizee_mcp_wrapper.py').Replace('\', '\\')
+    $GraphifyWrapper = (Join-Path $Root 'scripts\graphify_mcp_wrapper.py').Replace('\', '\\')
+    $EnvWrapper = (Join-Path $Root 'scripts\mcp_env_wrapper.py').Replace('\', '\\')
     $ClaudeSettings = @"
 {
   "permissions": {
@@ -782,13 +789,13 @@ if (-not $SkipMCP) {
     "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:Invoke-WebRequest -Method Post","bash:Invoke-WebRequest -Method Delete","bash:node -e","bash:python -c"]
   },
   "mcpServers": {
-    "aizee": { "command": "python", "args": ["scripts/aizee_mcp_wrapper.py"] },
+    "aizee": { "command": "python", "args": ["$AizeeWrapper"] },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
-    "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
-    "upwork": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
-    "freelancer": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "freelancer-mcp-server@2.0.0"] },
-    "fiverr": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "uvx", "fiverr-mcp-server"] },
-    "linkedin": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"] }
+    "graphify": { "command": "python", "args": ["$GraphifyWrapper"] },
+    "upwork": { "command": "python", "args": ["$EnvWrapper", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
+    "freelancer": { "command": "python", "args": ["$EnvWrapper", "npx", "-y", "freelancer-mcp-server@2.0.0"] },
+    "fiverr": { "command": "python", "args": ["$EnvWrapper", "uvx", "fiverr-mcp-server"] },
+    "linkedin": { "command": "python", "args": ["$EnvWrapper", "octopus-linkedin-mcp"] }
   },
   "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context"] }
 }
@@ -893,10 +900,13 @@ if (-not $WhatIf) {
     }
 
     # Config path verification
+    # settings.json stores paths with JSON-escaped backslashes (D:\ -> D:\\),
+    # so check for the JSON-escaped form of the root path.
     $settingsPath = Join-Path $Root ".claude\settings.json"
     if (Test-Path $settingsPath) {
         $settingsContent = Get-Content $settingsPath -Raw
-        if ($settingsContent -notmatch [regex]::Escape($Root)) {
+        $escapedRoot = $Root.Replace('\', '\\')
+        if ($settingsContent -notmatch [regex]::Escape($escapedRoot)) {
             Write-Warn "settings.json does not contain current root path"
         } else {
             Write-Ok "settings.json paths verified"
