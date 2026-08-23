@@ -66,18 +66,6 @@ Delegates all logic to `validate-globals.py`. Accepts identical flags.
 
 ---
 
-## Free AI Keys
-
-### `fetch-free-keys.py` — Free API Key Discovery
-
-Fetches and lists available free-tier API keys from community sources for AI model providers.
-
-```bash
-python scripts/fetch-free-keys.py
-```
-
----
-
 ## OpenCode Integration
 
 ### `run-opencode-free.ps1` / `run-opencode-free.cmd`

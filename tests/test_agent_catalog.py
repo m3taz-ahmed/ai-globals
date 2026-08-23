@@ -20,7 +20,6 @@ from runtime.agent_catalog import (
     ModelTier,
 )
 
-
 # -- enums ----------------------------------------------------------------
 
 

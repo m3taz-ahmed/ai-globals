@@ -43,7 +43,7 @@ def test_dashboard_status():
         with urlopen(f"http://127.0.0.1:{port}/api/status") as resp:
             body = resp.read().decode()
             data = json.loads(body)
-            assert data["version"] == "5.5.0"
+            assert data["version"] == "5.6.0"
     finally:
         server.shutdown()
 
@@ -56,7 +56,7 @@ def test_dashboard_health():
         with urlopen(f"http://127.0.0.1:{port}/api/health") as resp:
             data = json.loads(resp.read().decode())
             assert data["ok"] is True
-            assert data["version"] == "5.5.0"
+            assert data["version"] == "5.6.0"
     finally:
         server.shutdown()
 
@@ -323,31 +323,25 @@ def test_dashboard_client_ip_no_trusted_proxy():
 
 
 # ---------------------------------------------------------------------------
-# Dashboard token file generation
+# Dashboard token: opt-in via env only (no files, no auto-generation)
 # ---------------------------------------------------------------------------
 
-def test_dashboard_token_file_generation():
-    """Lines 101-108: token file is generated when no env token and no allow-no-token."""
+def test_dashboard_token_none_by_default():
+    """Default is open access: no token, and no token file is ever created."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tok_"))
     import dashboard.server as dash_server
-    # Clear caches
     dash_server._kernel_cache = None
     dash_server._memory_cache = None
+    os.environ.pop("AIZEE_DASHBOARD_TOKEN", None)
     os.environ.pop("AGENT_OS_DASHBOARD_TOKEN", None)
-    os.environ.pop("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", None)
     (tmp / "state").mkdir(parents=True, exist_ok=True)
-    try:
-        token = dash_server._dashboard_token(tmp)
-        assert token is not None
-        token_file = tmp / "state" / "dashboard.token"
-        assert token_file.exists()
-        assert token_file.read_text(encoding="utf-8").strip() == token
-    finally:
-        os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
+    token = dash_server._dashboard_token(tmp)
+    assert token is None
+    assert not (tmp / "state" / "dashboard.token").exists()
 
 
 def test_dashboard_token_from_env():
-    """Lines 96-98: token from env var takes priority."""
+    """Env var opts into authentication."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_toke_"))
     os.environ["AGENT_OS_DASHBOARD_TOKEN"] = "env-secret"
     try:
@@ -358,17 +352,17 @@ def test_dashboard_token_from_env():
         os.environ.pop("AGENT_OS_DASHBOARD_TOKEN", None)
 
 
-def test_dashboard_token_allow_no_token():
-    """Lines 99-100: returns None when AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN=1."""
+def test_dashboard_token_allow_no_token_flag_is_obsolete():
+    """The legacy ALLOW_NO_TOKEN flags are ignored — open access is the default."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tokn_"))
+    os.environ.pop("AIZEE_DASHBOARD_TOKEN", None)
     os.environ.pop("AGENT_OS_DASHBOARD_TOKEN", None)
-    os.environ["AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN"] = "1"
+    os.environ["AIZEE_DASHBOARD_ALLOW_NO_TOKEN"] = "1"
     try:
         import dashboard.server as dash_server
-        token = dash_server._dashboard_token(tmp)
-        assert token is None
+        assert dash_server._dashboard_token(tmp) is None
     finally:
-        pass  # Leave allow-no-token set for other tests
+        os.environ.pop("AIZEE_DASHBOARD_ALLOW_NO_TOKEN", None)
 
 
 # ---------------------------------------------------------------------------
@@ -421,13 +415,29 @@ def test_dashboard_check_invalid_action():
 
 
 def test_dashboard_check_with_approve():
-    """Line 277: /api/check with approve=1."""
+    """Approving actions via GET is rejected with 400 (CSRF-safe)."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chka_"))
     server, port = _serve(tmp)
     try:
         time.sleep(0.1)
-        with urlopen(f"http://127.0.0.1:{port}/api/check?action=deploy&approve=1") as resp:
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urlopen(f"http://127.0.0.1:{port}/api/check?action=deploy&approve=1")
+        assert exc.value.code == 400
+        # The action must never have been executed.
+        assert b"not allowed" in exc.value.read()
+    finally:
+        server.shutdown()
+
+
+def test_dashboard_check_get_is_dry_run_only():
+    """GET /api/check always evaluates as dry-run (no budget/audit mutation)."""
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_chkd_"))
+    server, port = _serve(tmp)
+    try:
+        time.sleep(0.1)
+        with urlopen(f"http://127.0.0.1:{port}/api/check?action=Bash") as resp:
             data = json.loads(resp.read().decode())
+            # dry_run results never claim a real executed action
             assert "ok" in data or "decision" in data
     finally:
         server.shutdown()
@@ -1058,6 +1068,35 @@ def test_dashboard_serves_index_html():
         server.shutdown()
 
 
+def test_dashboard_serves_app_js():
+    """Serves dashboard/app.js with a JavaScript content type (CSP external script)."""
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_js_"))
+    for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
+        (tmp / sub).mkdir(parents=True, exist_ok=True)
+    (tmp / "runtime/policies/default.yaml").write_text(
+        "default_action: ask\nrules:\n"
+        "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
+    )
+    dash_dir = tmp / "dashboard"
+    dash_dir.mkdir(parents=True, exist_ok=True)
+    (dash_dir / "app.js").write_text("console.log('aizee');", encoding="utf-8")
+    os.environ["AIZEE_ROOT"] = str(tmp)
+    os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
+    port = server.server_address[1]
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+    try:
+        time.sleep(0.1)
+        with urlopen(f"http://127.0.0.1:{port}/app.js") as resp:
+            body = resp.read().decode()
+            ctype = resp.headers.get("Content-Type", "")
+            assert "aizee" in body
+            assert "javascript" in ctype
+    finally:
+        server.shutdown()
+
+
 def test_dashboard_serves_index_css():
     """Line 239-240: serves dashboard/index.css."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_css_"))
@@ -1086,15 +1125,22 @@ def test_dashboard_serves_index_css():
 
 
 def test_dashboard_serve_file_not_found():
-    """Line 413-414: _serve_file returns 404 when file doesn't exist."""
+    """_serve_file returns 404 when the asset is missing from the asset dir."""
+    import dashboard.server as dash_server
+
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_404f_"))
+    empty_dash = tmp / "empty-dashboard"
+    empty_dash.mkdir(parents=True, exist_ok=True)
     server, port = _serve(tmp)
+    prev = dash_server._ASSET_DIR_OVERRIDE
+    dash_server._ASSET_DIR_OVERRIDE = empty_dash
     try:
         time.sleep(0.1)
         with pytest.raises(urllib.error.HTTPError) as exc:
             urlopen(f"http://127.0.0.1:{port}/")
         assert exc.value.code == 404
     finally:
+        dash_server._ASSET_DIR_OVERRIDE = prev
         server.shutdown()
 
 
@@ -1335,22 +1381,18 @@ def test_dashboard_main_block_poll_assert_mocked():
 
 
 # ---------------------------------------------------------------------------
-# Token from existing file (line 103)
+# Token files are obsolete: env-only opt-in
 # ---------------------------------------------------------------------------
 
-def test_dashboard_token_from_existing_file():
-    """Line 103: token read from existing token file."""
+def test_dashboard_token_from_existing_file_ignored():
+    """A leftover state/dashboard.token file is ignored — env is the only source."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tokf_"))
     import dashboard.server as dash_server
+    os.environ.pop("AIZEE_DASHBOARD_TOKEN", None)
     os.environ.pop("AGENT_OS_DASHBOARD_TOKEN", None)
-    os.environ.pop("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", None)
     (tmp / "state").mkdir(parents=True, exist_ok=True)
     (tmp / "state" / "dashboard.token").write_text("file-based-token", encoding="utf-8")
-    try:
-        token = dash_server._dashboard_token(tmp)
-        assert token == "file-based-token"
-    finally:
-        os.environ.setdefault("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
+    assert dash_server._dashboard_token(tmp) is None
 
 
 # ---------------------------------------------------------------------------
@@ -1549,7 +1591,7 @@ def test_dashboard_sse_broken_pipe():
     handler.headers.get.return_value = ""
     handler.wfile.write.side_effect = BrokenPipeError()
     handler.kernel = MagicMock()
-    handler.kernel.status.return_value = {"version": "5.5.0", "budgets": 0, "metrics": {}}
+    handler.kernel.status.return_value = {"version": "5.6.0", "budgets": 0, "metrics": {}}
     # Should not raise
     dash_server.DashboardHandler._send_sse_events(handler)
 
@@ -1584,3 +1626,99 @@ def test_dashboard_main_block_in_process():
     finally:
         sys.argv = original_argv
 
+
+
+# ---------------------------------------------------------------------------
+# Public static assets vs protected APIs (auth chicken-and-egg fix)
+# ---------------------------------------------------------------------------
+
+def test_dashboard_index_served_without_token():
+    """GET / serves the UI shell without Authorization (token prompt lives in app.js)."""
+    import dashboard.server as dash_server
+
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_pubidx_"))
+    for sub in ("runtime/policies", "state"):
+        (tmp / sub).mkdir(parents=True, exist_ok=True)
+    dash_dir = tmp / "dashboard"
+    dash_dir.mkdir(parents=True, exist_ok=True)
+    (dash_dir / "index.html").write_text("<html>Shell</html>", encoding="utf-8")
+    os.environ["AIZEE_ROOT"] = str(tmp)
+    os.environ["AIZEE_DASHBOARD_TOKEN"] = "secret-token-1"
+    os.environ.pop("AIZEE_DASHBOARD_ALLOW_NO_TOKEN", None)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
+    port = server.server_address[1]
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    prev = dash_server._ASSET_DIR_OVERRIDE
+    dash_server._ASSET_DIR_OVERRIDE = dash_dir
+    t.start()
+    try:
+        time.sleep(0.1)
+        with urlopen(f"http://127.0.0.1:{port}/") as resp:
+            assert resp.status == 200
+            assert "Shell" in resp.read().decode()
+        # APIs remain token-protected.
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urlopen(f"http://127.0.0.1:{port}/api/status")
+        assert exc.value.code == 401
+    finally:
+        dash_server._ASSET_DIR_OVERRIDE = prev
+        server.shutdown()
+        os.environ.pop("AIZEE_DASHBOARD_TOKEN", None)
+
+
+def test_dashboard_public_assets_get_only():
+    """The public-asset exemption applies to GET only; POST stays blocked."""
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_pubpost_"))
+    for sub in ("runtime/policies", "state"):
+        (tmp / sub).mkdir(parents=True, exist_ok=True)
+    os.environ["AIZEE_ROOT"] = str(tmp)
+    os.environ["AIZEE_DASHBOARD_TOKEN"] = "secret-token-2"
+    os.environ.pop("AIZEE_DASHBOARD_ALLOW_NO_TOKEN", None)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
+    port = server.server_address[1]
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+    try:
+        time.sleep(0.1)
+        req = Request(f"http://127.0.0.1:{port}/", method="POST", data=b"{}")
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urlopen(req)
+        assert exc.value.code == 401
+    finally:
+        server.shutdown()
+        os.environ.pop("AIZEE_DASHBOARD_TOKEN", None)
+
+
+def test_dashboard_sends_no_cache_header():
+    """Static shell must revalidate: stale cached HTML breaks against new CSP."""
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_cc_"))
+    for sub in ("runtime/policies", "state"):
+        (tmp / sub).mkdir(parents=True, exist_ok=True)
+    dash_dir = tmp / "dashboard"
+    dash_dir.mkdir(parents=True, exist_ok=True)
+    (dash_dir / "index.html").write_text("<html>shell</html>", encoding="utf-8")
+    os.environ["AIZEE_ROOT"] = str(tmp)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), DashboardHandler)
+    port = server.server_address[1]
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+    try:
+        time.sleep(0.1)
+        with urlopen(f"http://127.0.0.1:{port}/") as resp:
+            assert resp.headers.get("Cache-Control") == "no-cache"
+    finally:
+        server.shutdown()
+
+
+def test_dashboard_serves_vendored_chart_js():
+    """Chart.js is vendored locally (CSP: script-src 'self', no CDN, offline-safe)."""
+    tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_cjs_"))
+    server, port = _serve(tmp)
+    try:
+        time.sleep(0.1)
+        with urlopen(f"http://127.0.0.1:{port}/vendor/chart.umd.min.js") as resp:
+            body = resp.read()
+            assert len(body) > 100000  # full Chart.js umd bundle
+            assert b"sourceMappingURL" not in body  # no devtools map request
+    finally:
+        server.shutdown()

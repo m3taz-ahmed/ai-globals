@@ -136,20 +136,9 @@ class Guardian:
     """
 
     # Permission dependencies: permission -> list of required prerequisites.
-    # Inspired by Monica's BaseService::$permissionDependencies.
-    DEFAULT_PERMISSION_DEPENDENCIES: ClassVar[dict[str, list[str]]] = {
-        "author_must_be_vault_manager": [
-            "vault_must_belong_to_account",
-            "author_must_belong_to_account",
-        ],
-        "author_must_be_account_administrator": [
-            "author_must_belong_to_account",
-        ],
-        "author_must_be_vault_editor": [
-            "vault_must_belong_to_account",
-            "author_must_belong_to_account",
-        ],
-    }
+    # Empty by default — projects declare their own domain-specific
+    # dependencies via guardian.yaml or the permission_dependencies param.
+    DEFAULT_PERMISSION_DEPENDENCIES: ClassVar[dict[str, list[str]]] = {}
 
     EVALUATION_ERROR_REASON: ClassVar[str] = "evaluation error"
     NO_MATCHING_RULE_REASON: ClassVar[str] = "no matching rule"

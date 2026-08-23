@@ -441,12 +441,9 @@ def _parser_to_page_data(parser: _SeoHtmlParser, body: str, url: str, status_cod
     no_dims = [img for img in parser.images if not img.get("width") or not img.get("height")]
     robots_meta = parser.meta.get("robots", "").lower()
     heading_order: list[int] = []
-    for h in parser.h1s:
-        heading_order.append(1)
-    for h in parser.h2s:
-        heading_order.append(2)
-    for h in parser.h3s:
-        heading_order.append(3)
+    heading_order.extend([1] * len(parser.h1s))
+    heading_order.extend([2] * len(parser.h2s))
+    heading_order.extend([3] * len(parser.h3s))
 
     return PageData(
         url=url,
@@ -530,6 +527,11 @@ def _audit_page_issues(parser: _SeoHtmlParser, body: str, url: str) -> list[dict
     # Viewport (mobile-friendly)
     if not parser.meta.get("viewport"):
         issues.append(_issue("WARNING", "Mobile", "viewport-missing", "Viewport meta tag missing", "Add viewport meta for mobile-friendliness"))
+
+    # Robots directives (nofollow)
+    robots_meta = parser.meta.get("robots", "").lower()
+    if "nofollow" in robots_meta:
+        issues.append(_issue("WARNING", "Core", "nofollow", "Robots meta contains nofollow directive", "Remove nofollow if links on this page should be followed"))
 
     return issues
 

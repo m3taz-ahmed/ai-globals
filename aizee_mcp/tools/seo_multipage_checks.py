@@ -126,7 +126,7 @@ def find_redirect_chains_and_loops(pages: list[PageData]) -> list[dict[str, Any]
 
         # Traverse the chain
         visited: list[str] = [page.url]
-        current = page.redirect_url
+        current: str | None = page.redirect_url
         is_loop = False
         chain_length = 1
 

@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "5.5.0",
+    "version": "5.6.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
     "updated": "2026-08-23"
   },

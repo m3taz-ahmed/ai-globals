@@ -113,6 +113,44 @@ class TestCliCheck:
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class TestCliInvalidJsonArgs:
+    """Malformed JSON arguments must fail gracefully (rc=1), not traceback."""
+
+    def test_check_bad_json(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main(["--root", str(tmp), "check", "Read", "--args", "{not json"])
+            captured = capsys.readouterr()
+            assert rc == 1
+            assert "Invalid JSON" in captured.out
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_run_bad_context(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main(["--root", str(tmp), "run", "test", "--context", "[1,2,"])
+            assert rc == 1
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_saga_bad_steps(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main(["--root", str(tmp), "saga", "s1", "--steps", '"not-a-list"'])
+            assert rc == 1
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_policy_wrong_type(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main(["--root", str(tmp), "policy", "test", "Read", "--args", "[1]"])
+            assert rc == 1
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 # ---------------------------------------------------------------------------
 # run (workflow)
 # ---------------------------------------------------------------------------
@@ -369,11 +407,23 @@ class TestCliSync:
     def test_sync_runs_subprocess(self, capsys):
         tmp = _tmp_root()
         try:
+            (tmp / "scripts").mkdir(exist_ok=True)
+            (tmp / "scripts" / "sync-agent-configs.py").write_text("# sync\n")
             with patch("aizee_cli.subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
                 rc = main(["--root", str(tmp), "sync"])
                 assert rc == 0
                 mock_run.assert_called_once()
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_sync_missing_script_fails_gracefully(self, capsys):
+        tmp = _tmp_root()
+        try:
+            rc = main(["--root", str(tmp), "sync"])
+            captured = capsys.readouterr()
+            assert rc == 1
+            assert "not found" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -391,6 +441,18 @@ class TestCliGraphify:
                 rc = main(["--root", str(tmp), "graphify"])
                 assert rc == 0
                 mock_run.assert_called_once_with(["graphify", "update", "."], check=False)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_graphify_nonzero_exit_reported(self, capsys):
+        tmp = _tmp_root()
+        try:
+            with patch("aizee_cli.subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=3)
+                rc = main(["--root", str(tmp), "graphify"])
+                captured = capsys.readouterr()
+                assert rc == 3
+                assert "exited with code 3" in captured.out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

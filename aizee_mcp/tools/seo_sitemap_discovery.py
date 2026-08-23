@@ -77,7 +77,8 @@ def fetch_robots_txt(origin: str, user_agent: str = DEFAULT_USER_AGENT) -> str |
                     robots_url, MAX_ROBOTS_TXT_BYTES,
                 )
                 body = body[:MAX_ROBOTS_TXT_BYTES]
-            return body.decode("utf-8", errors="replace")
+            decoded: str = body.decode("utf-8", errors="replace")
+            return decoded
     except Exception as exc:
         _logger.debug("Failed to fetch robots.txt from %s: %s", robots_url, exc)
         return None

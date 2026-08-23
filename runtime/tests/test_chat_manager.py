@@ -114,17 +114,35 @@ class TestMessageSending:
         result = cm.chat_message("hello world", act_fn=_ok_act_fn)
         assert result["ok"]
         assert "reply" in result
-        assert "hello world" in result["reply"]
+        assert result["reply"].startswith("[local] ")
 
-    def test_reply_truncated_to_100_chars(self, tmp_root: Path) -> None:
-        """The reply echoes only the first 100 characters of the message."""
+    def test_offline_fallback_is_explicit(self, tmp_root: Path) -> None:
+        """Arbitrary (non-intent) messages get an honest offline reply."""
         cm = ChatManager(tmp_root)
         long_msg = "x" * 250
         result = cm.chat_message(long_msg, act_fn=_ok_act_fn)
         assert result["ok"]
-        # Reply contains "Acknowledged: " prefix + first 100 chars of message
-        assert "Acknowledged: " in result["reply"]
-        assert result["reply"] == f"Acknowledged: {long_msg[:100]}"
+        assert "No LLM backend configured" in result["reply"]
+
+    def test_status_intent_answers_from_context(self, tmp_root: Path) -> None:
+        """The 'status' intent answers from the injected context provider."""
+        from runtime.local_responder import LocalResponder
+
+        responder = LocalResponder(context_provider=lambda: {
+            "version": "9.9.9", "workflows": ["a"], "rules": [], "personas": [], "skills": [],
+        })
+        cm = ChatManager(tmp_root, responder=responder)
+        result = cm.chat_message("what is the status?", act_fn=_ok_act_fn)
+        assert result["ok"]
+        assert "v9.9.9" in result["reply"]
+        assert "1 workflows" in result["reply"]
+
+    def test_help_intent_lists_supported_intents(self, tmp_root: Path) -> None:
+        cm = ChatManager(tmp_root)
+        result = cm.chat_message("help", act_fn=_ok_act_fn)
+        assert result["ok"]
+        assert "status" in result["reply"]
+        assert "budgets" in result["reply"]
 
     def test_user_message_recorded_in_session(self, tmp_root: Path) -> None:
         """The user message is added to the session history."""
@@ -326,7 +344,7 @@ class TestErrorHandling:
         cm = ChatManager(tmp_root)
         result = cm.chat_message("", act_fn=_ok_act_fn)
         assert result["ok"]
-        assert result["reply"] == "Acknowledged: "
+        assert result["reply"].startswith("[local] ")
 
     def test_act_fn_raising_exception_propagates(self, tmp_root: Path) -> None:
         """If act_fn raises, the exception propagates to the caller."""
@@ -337,3 +355,64 @@ class TestErrorHandling:
 
         with pytest.raises(RuntimeError, match="exploded"):
             cm.chat_message("boom", act_fn=exploding_act)
+
+
+class TestLocalResponderAllIntents:
+    """Cover every LocalResponder intent branch from live context."""
+
+    def _responder(self):
+        from runtime.local_responder import LocalResponder
+
+        ctx = {
+            "version": "1.0",
+            "budgets": ["global", "session"],
+            "workflows": [f"wf-{i}" for i in range(7)],
+            "rules": ["r1", "r2"],
+            "guardian_rules": ["g1"],
+            "skills": ["s1", "s2", "s3"],
+            "tech_stack": {"laravel": {}, "react": {}},
+        }
+        return LocalResponder(context_provider=lambda: ctx)
+
+    def test_budget_intent_with_limits(self):
+        reply = self._responder().reply("what about budgets?")
+        assert "[local]" in reply
+        assert "2 active budget scope(s)" in reply
+        assert "global" in reply
+
+    def test_budget_intent_without_limits(self):
+        from runtime.local_responder import LocalResponder
+
+        r = LocalResponder(context_provider=lambda: {})
+        assert "No budget limits" in r.reply("budgets?")
+
+    def test_workflow_intent_truncates_long_lists(self):
+        reply = self._responder().reply("run a workflow")
+        assert "7 registered workflow(s)" in reply
+        assert "+2 more" in reply
+
+    def test_rules_intent_counts_guardian_too(self):
+        reply = self._responder().reply("show me the rules")
+        assert "2 policy rule(s)" in reply
+        assert "1 guardian rule(s)" in reply
+
+    def test_skills_intent(self):
+        assert "3 skill(s)" in self._responder().reply("list skills")
+
+    def test_stack_intent_sorted_names(self):
+        reply = self._responder().reply("what tech stack?")
+        assert "laravel" in reply and "react" in reply
+
+    def test_status_reply_when_provider_fails(self):
+        from runtime.local_responder import LocalResponder
+
+        def broken():
+            raise RuntimeError("boom")
+
+        r = LocalResponder(context_provider=broken)
+        assert "unavailable" in r.reply("status?")
+
+    def test_status_reply_when_no_provider(self):
+        from runtime.local_responder import LocalResponder
+
+        assert "Kernel state unavailable" in LocalResponder().reply("status?")

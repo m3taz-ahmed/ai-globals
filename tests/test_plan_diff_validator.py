@@ -15,7 +15,6 @@ from runtime.plan_diff_validator import (
     ValidationResult,
 )
 
-
 # -- ValidationLevel enum ----------------------------------------------------
 
 

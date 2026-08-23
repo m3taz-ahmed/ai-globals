@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v5.5.0
+# AI Globals Validation Script (Python) v5.6.0
 # Source of truth validator - PowerShell wrapper delegates to this script.
 
 import argparse
@@ -296,6 +296,16 @@ IGNORED_FILE_REFS = {
     'seo-content-generator.md',
     # Laravel Boost context files (live in client project's .ai/ dir, not aiZee)
     'laravel.md', 'filament.md', 'project.md',
+    # rules_materializer OUTPUT targets (descriptive refs to what the tool emits,
+    # not tracked input files): Aider reads CONVENTIONS.md, Devin reads .devin/rules/aizee.md
+    'conventions.md', 'aizee.md',
+    # external temp study reports (live in D:\server\temp\, not aizee root)
+    'mobile_strengthening_report.md',
+    # files in external repos referenced descriptively (e.g. RNCopilot's docs/AI-GUIDE.md)
+    'ai-guide.md',
+    # example skill directory structure in workflow 30 template (glossary/cheatsheet
+    # are illustrative of what a skill *may* contain, not tracked aiZee files)
+    'glossary.md', 'cheatsheet.md',
 }
 
 def check_file_references(content: str, rel_name: str, ctx: ValidationContext, global_path: str) -> bool:
@@ -418,24 +428,25 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 def check_workflow_counts(global_path: str, ctx: ValidationContext) -> None:
-    """Warn if workflow/README.md counts no longer match the filesystem."""
+    """Warn if workflow/README.md numbered-workflow count matches the filesystem.
+
+    Counts only numbered workflows (``NN-*.md``) to stay consistent with
+    ``scripts/sync_docs.py`` and the README's "Numbered Workflows" section.
+    Standards/reference files (e.g. ``git-standards.md``) carry the
+    ``[WORKFLOW]`` tag but are not numbered trigger-based protocols.
+    """
     wf_dir = os.path.join(global_path, "workflows")
     if not os.path.isdir(wf_dir):
         return
-    md_files = [f for f in os.listdir(wf_dir) if f.endswith(".md") and f != "README.md"]
-    workflow_files = []
-    for f in md_files:
-        p = os.path.join(wf_dir, f)
-        with open(p, encoding="utf-8", errors="ignore") as fh:
-            if re.search(r"^\[WORKFLOW\]", fh.read(), re.MULTILINE):
-                workflow_files.append(f)
+    numbered_re = re.compile(r"^\d{2}-.+\.md$")
+    workflow_files = [f for f in os.listdir(wf_dir) if numbered_re.match(f)]
     readme_path = os.path.join(wf_dir, "README.md")
     if os.path.exists(readme_path):
         with open(readme_path, encoding="utf-8", errors="ignore") as fh:
             readme_text = fh.read()
         # report as warning, not error, since prose is hand-maintained
         if str(len(workflow_files)) not in readme_text:
-            cprint(f"WARNING: workflows/README.md count may not match {len(workflow_files)} workflow files", Colors.YELLOW)
+            cprint(f"WARNING: workflows/README.md count may not match {len(workflow_files)} numbered workflow files", Colors.YELLOW)
             ctx.warning_count += 1
 
 

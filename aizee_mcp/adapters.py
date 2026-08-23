@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import shutil
 import ssl
 import urllib.error
@@ -17,6 +18,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class Backend(str, Enum):
@@ -237,7 +240,15 @@ class RemoteA2AAdapter(AgentAdapter):
         self._endpoint = str(self.config.get("endpoint", "")).rstrip("/")
         self._poll_interval = float(self.config.get("poll_interval", 2.0))
         self._timeout = float(self.config.get("timeout", 300.0))
+        self._request_timeout = float(self.config.get("request_timeout", 30.0))
         self._verify_ssl = bool(self.config.get("verify_ssl", True))
+        self._ssl_context: ssl.SSLContext | None = None
+        if not self._verify_ssl:
+            logger.warning(
+                "RemoteA2AAdapter SSL verification is DISABLED for %s — "
+                "use only in trusted dev environments",
+                self._endpoint,
+            )
         if not self._endpoint:
             raise AdapterError("RemoteA2AAdapter requires config['endpoint']")
         # Validate endpoint URL scheme
@@ -247,12 +258,22 @@ class RemoteA2AAdapter(AgentAdapter):
                 f"Got: {self._endpoint}"
             )
 
-    def _create_ssl_context(self) -> ssl.SSLContext | None:
-        """Create SSL context for secure connections."""
-        if not self._verify_ssl:
-            return None
-        ctx = ssl.create_default_context()
-        return ctx
+    def _create_ssl_context(self) -> ssl.SSLContext:
+        """Create (once) the SSL context for secure connections.
+
+        When ``verify_ssl=False`` an explicitly unverified context is
+        returned; passing ``context=None`` to ``urlopen`` would instead use
+        the default *verified* context, silently ignoring the flag. The
+        context is memoized — ``ssl.create_default_context()`` loads the
+        system CA store, which is too expensive to repeat per poll tick.
+        """
+        if self._ssl_context is None:
+            ctx = ssl.create_default_context()
+            if not self._verify_ssl:
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+            self._ssl_context = ctx
+        return self._ssl_context
 
     async def launch(self, task: str, profile: str | None = None) -> Session:
         payload = json.dumps({"task": task, "profile": profile or "default"}).encode("utf-8")
@@ -266,10 +287,13 @@ class RemoteA2AAdapter(AgentAdapter):
         loop = asyncio.get_running_loop()
         try:
             response = await loop.run_in_executor(
-                None, lambda: urllib.request.urlopen(req, context=ssl_ctx)  # nosec B310 - validated HTTPS endpoint
+                None,
+                lambda: urllib.request.urlopen(  # nosec B310 - validated HTTPS endpoint
+                    req, context=ssl_ctx, timeout=self._request_timeout
+                ),
             )
             body = json.loads(response.read().decode("utf-8"))
-        except urllib.error.URLError as exc:
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
             raise AdapterError(f"A2A launch failed: {exc}") from exc
         session = Session(
             session_id=body.get("session_id", f"a2a-{len(self._sessions) + 1}"),
@@ -290,10 +314,15 @@ class RemoteA2AAdapter(AgentAdapter):
         while True:
             try:
                 response = await loop.run_in_executor(
-                    None, urllib.request.urlopen, urllib.request.Request(url)
+                    None,
+                    lambda: urllib.request.urlopen(  # nosec B310 - validated HTTPS endpoint
+                        urllib.request.Request(url),
+                        context=self._create_ssl_context(),
+                        timeout=self._request_timeout,
+                    ),
                 )
                 body = json.loads(response.read().decode("utf-8"))
-            except urllib.error.URLError as exc:
+            except (urllib.error.URLError, TimeoutError, OSError) as exc:
                 session.status = "failed"
                 self._store_artifact(session, "error", str(exc))
                 return session

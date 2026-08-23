@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar, cast
 
@@ -17,6 +17,38 @@ def _load_persona_data() -> dict[str, Any]:
     data_path = Path(__file__).resolve().parent / "personas.yaml"
     data = yaml.safe_load(data_path.read_text(encoding="utf-8"))
     return cast(dict[str, Any], data)
+
+
+def inject_persona_context(
+    detector: PersonaDetector,
+    context: dict[str, Any],
+    text_keys: Sequence[str] = ("message", "request", "query", "content"),
+    fallback_text: str | None = None,
+) -> dict[str, Any]:
+    """Populate persona/skill fields in *context* from the first text key found.
+
+    Single source of truth for the persona-injection block previously
+    duplicated across Kernel._auto_persona, WorkflowManager.run_workflow,
+    and WorkflowRunner.run. Mutates and returns *context*; no-op when
+    persona fields already exist or no usable text is present.
+    """
+    if "personas" in context or "persona" in context:
+        return context
+    text: Any = fallback_text
+    for key in text_keys:
+        value = context.get(key)
+        if isinstance(value, str):
+            text = value
+            break
+    if not isinstance(text, str) or not text.strip():
+        return context
+    result = detector.detect_multiple(text)
+    context["persona"] = result["persona"]
+    context["skill"] = result["skill"]
+    context["personas"] = result["personas"]
+    context["skills"] = result["skills"]
+    context["lords"] = result["lords"]
+    return context
 
 
 class PersonaDetector:

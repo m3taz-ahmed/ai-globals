@@ -29,7 +29,7 @@ from .middleware import (
     MiddlewarePipeline,
     MiddlewareResult,
 )
-from .persona import PersonaDetector
+from .persona import PersonaDetector, inject_persona_context
 from .preloop import FeedbackLoop
 from .skill_resolver import SkillResolver
 from .sovereign import AgentCapabilities
@@ -106,7 +106,12 @@ class Kernel:
             self.project_root, self.root, self.persona, self._sagas_total,
         )
         self.agent_mgr = AgentManager(self.root, self.persona)
-        self.chat_mgr = ChatManager(self.project_root)
+        # LocalResponder reads live kernel state lazily via the bound method.
+        from runtime.local_responder import LocalResponder
+
+        self.chat_mgr = ChatManager(
+            self.project_root, responder=LocalResponder(context_provider=self.status),
+        )
 
         # Backward-compatible direct attributes (settable for tests)
         self.policy = self.policy_mgr.policy
@@ -182,16 +187,9 @@ class Kernel:
 
     def _auto_persona(self, kwargs: dict[str, Any]) -> None:
         """Inject personas and skills into kwargs if missing and text is present."""
-        if "personas" in kwargs or "persona" in kwargs:
-            return
-        text = kwargs.get("message") or kwargs.get("content") or kwargs.get("query") or kwargs.get("request")
-        if isinstance(text, str) and text.strip():
-            result = self.persona.detect_multiple(text)
-            kwargs["persona"] = result["persona"]
-            kwargs["skill"] = result["skill"]
-            kwargs["personas"] = result["personas"]
-            kwargs["skills"] = result["skills"]
-            kwargs["lords"] = result["lords"]
+        inject_persona_context(
+            self.persona, kwargs, text_keys=("message", "content", "query", "request"),
+        )
 
     # --- Action evaluation (delegates to PolicyManager) ---
     def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:

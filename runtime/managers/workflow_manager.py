@@ -12,6 +12,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from runtime.enums import ActionResultStatus
+from runtime.persona import inject_persona_context
 from runtime.saga import Saga, SagaOrchestrator, SagaStep
 from runtime.workflow import WorkflowRunner
 
@@ -69,18 +70,13 @@ class WorkflowManager:
         if fresh_context:
             session_id = uuid.uuid4().hex
         prompt = context.get("message") or context.get("request") or context.get("query") or workflow_id
-        if (
-            "personas" not in context
-            and "persona" not in context
-            and isinstance(prompt, str)
-            and persona_detector
-        ):
-            result = persona_detector.detect_multiple(prompt)
-            context["persona"] = result["persona"]
-            context["skill"] = result["skill"]
-            context["personas"] = result["personas"]
-            context["skills"] = result["skills"]
-            context["lords"] = result["lords"]
+        if persona_detector:
+            inject_persona_context(
+                persona_detector,
+                context,
+                text_keys=("message", "request", "query"),
+                fallback_text=prompt if isinstance(prompt, str) else None,
+            )
         try:
             valid_context = WorkflowContextSchema.validate(context)
         except ValidationError as e:

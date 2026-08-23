@@ -27,6 +27,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -169,14 +170,12 @@ class AuditWorkflow:
             config=config,
             started_at=time.time(),
         )
-        self._phase_handlers: dict[
-            AuditPhase, Any  # Callable[[], PhaseResult]
-        ] = {}
+        self._phase_handlers: dict[AuditPhase, Callable[[], PhaseResult]] = {}
 
     def register_phase_handler(
         self,
         phase: AuditPhase,
-        handler: Any,  # Callable[[], PhaseResult]
+        handler: Callable[[], PhaseResult],
     ) -> None:
         """Register a callable that executes *phase* and returns a PhaseResult."""
         self._phase_handlers[phase] = handler

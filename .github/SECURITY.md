@@ -5,4 +5,4 @@
 2. [PROHIBIT] Reporting: ⛔ DO NOT file public GitHub Issues for security bugs.
 3. [REQ] Disclosure: Private email to maintainer. Include file, impact, repro steps.
 4. [REQ] SLA: Ack within 48h. Initial assessment 5 days. Fix 30 days.
-5. [REQ] Hardening: AI OS enforces secret scanning via validation script.
+5. [REQ] Hardening: AiZee enforces secret scanning via validation script.

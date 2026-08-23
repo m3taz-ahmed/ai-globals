@@ -28,7 +28,7 @@ import json
 import logging
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 from pydantic import Field as PydField
 
 from runtime.schemas import AizeeError, ErrorSeverity
@@ -60,8 +60,9 @@ def validate_output(  # noqa: UP047
     """Validate *data* against *schema* and return the parsed model.
 
     If *strict* is True, validation errors raise :class:`OutputSchemaError`.
-    If False, errors are logged and the raw data is returned wrapped in
-    the schema with defaults (best-effort).
+    If False, invalid fields are dropped and schema defaults apply — the
+    remaining data is re-validated, so the returned model is always fully
+    validated (never bypassed via ``model_construct``).
     """
     try:
         return schema.model_validate(data)
@@ -73,11 +74,21 @@ def validate_output(  # noqa: UP047
             "Output from %s failed schema validation (non-strict): %s",
             tool_name, errors,
         )
-        # Best-effort: try to construct with defaults for missing fields
+        # Best-effort: keep only fields that individually validate, so the
+        # reconstructed model still passes schema validation.
+        sanitized: dict[str, Any] = {}
+        for name in schema.model_fields:
+            if name not in data:
+                continue
+            try:
+                TypeAdapter(schema.model_fields[name].annotation).validate_python(data[name])
+            except ValidationError:
+                continue
+            sanitized[name] = data[name]
         try:
-            return schema.model_construct(**data)
-        except Exception:
-            raise OutputSchemaError(tool_name, errors) from exc
+            return schema.model_validate(sanitized)
+        except ValidationError as exc2:
+            raise OutputSchemaError(tool_name, exc2.errors()) from exc2
 
 
 def validate_json_output(  # noqa: UP047
@@ -96,7 +107,8 @@ def validate_json_output(  # noqa: UP047
 
 def safe_model_dump(model: BaseModel) -> dict[str, Any]:
     """Dump a Pydantic model to a JSON-safe dict."""
-    return json.loads(model.model_dump_json())
+    dumped: dict[str, Any] = json.loads(model.model_dump_json())
+    return dumped
 
 
 # ---------------------------------------------------------------------------

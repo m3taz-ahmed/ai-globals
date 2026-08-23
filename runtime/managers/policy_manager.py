@@ -12,7 +12,7 @@ from runtime.budget import BudgetManager
 from runtime.enums import ActionResultStatus, Decision
 from runtime.guardian import ActionRequest, DecisionStatus, Guardian
 from runtime.metrics import Counter
-from runtime.policy import PolicyEngine
+from runtime.policy import READ_ACTIONS, PolicyEngine
 from runtime.preloop import FeedbackLoop, Outcome
 from runtime.probity import Guardrails
 
@@ -60,11 +60,10 @@ class PolicyManager:
             return Guardrails(data)
         return Guardrails()
 
-    # Actions that are inherently safe (read-only) and skip the guardian gate.
-    _READ_ONLY_ACTIONS: ClassVar[set[str]] = {
-        "Read", "read", "view", "grep", "Glob", "search", "query", "list",
-        "get", "status", "ChatMessage", "graphify",
-    }
+    # Read-only actions skip the guardian gate. Derived from the canonical
+    # READ_ACTIONS set in runtime/policy.py (single source of truth) plus
+    # ChatMessage, which is user-initiated and carries no side effects.
+    _READ_ONLY_ACTIONS: ClassVar[frozenset[str]] = frozenset(READ_ACTIONS | {"ChatMessage"})
 
     def check_guardian(
         self, action_type: str, action_data: dict[str, Any], guardian: Guardian | None = None
@@ -82,8 +81,15 @@ class PolicyManager:
             decision = g.authorize(
                 ActionRequest(tool=action_type, attributes={"action": action_data, "args": action_data})
             )
-        except Exception:
-            return None
+        except Exception as exc:
+            # Fail closed: a broken guardian must never silently allow actions.
+            self._guardian_denials_total.labels(rule="guardian_error").inc()
+            self.audit.log("guardian.error", {"action": action_type, "error": str(exc)})
+            return {
+                "ok": False,
+                "error": f"Guardian evaluation failed: {exc}",
+                "decision": {"rule": "guardian_error", "reason": f"fail-closed: {exc}"},
+            }
         if decision.status == DecisionStatus.DENY:
             self._guardian_denials_total.labels(rule=decision.rule_name).inc()
             return {

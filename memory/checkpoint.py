@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 import time
 import uuid
 from abc import ABC, abstractmethod
@@ -188,6 +189,9 @@ class SqliteCheckpointSaver(BaseCheckpointSaver):
     def __init__(self, db_path: Path) -> None:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        # Single shared connection with check_same_thread=False requires
+        # explicit serialization of access across threads.
+        self._lock = threading.RLock()
         self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode=WAL")
@@ -205,22 +209,23 @@ class SqliteCheckpointSaver(BaseCheckpointSaver):
         """Insert a new checkpoint. Metadata is merged into the checkpoint."""
         # config thread_id is stored in metadata for traceability.
         merged_meta = {**checkpoint.metadata, **metadata, "thread_id": self._config_thread(config)}
-        self._conn.execute(
-            """
-            INSERT OR REPLACE INTO checkpoints
-                (id, parent_id, created_at, channel_values, channel_versions, metadata)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                checkpoint.checkpoint_id,
-                checkpoint.parent_id,
-                checkpoint.created_at,
-                json.dumps(checkpoint.channel_values),
-                json.dumps(checkpoint.channel_versions),
-                json.dumps(merged_meta),
-            ),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                """
+                INSERT OR REPLACE INTO checkpoints
+                    (id, parent_id, created_at, channel_values, channel_versions, metadata)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    checkpoint.checkpoint_id,
+                    checkpoint.parent_id,
+                    checkpoint.created_at,
+                    json.dumps(checkpoint.channel_values),
+                    json.dumps(checkpoint.channel_versions),
+                    json.dumps(merged_meta),
+                ),
+            )
+            self._conn.commit()
 
     def get(self, config: dict[str, Any]) -> Checkpoint | None:
         """Retrieve the latest checkpoint for a config.
@@ -230,35 +235,37 @@ class SqliteCheckpointSaver(BaseCheckpointSaver):
         """
         thread_id = self._config_thread(config)
         specific = config.get("checkpoint_id")
-        if specific:
-            row = self._conn.execute(
-                "SELECT * FROM checkpoints WHERE id = ?",
-                (specific,),
-            ).fetchone()
-        else:
-            row = self._conn.execute(
-                """
-                SELECT * FROM checkpoints
-                WHERE json_extract(metadata, '$.thread_id') = ?
-                ORDER BY created_at DESC, rowid DESC
-                LIMIT 1
-                """,
-                (thread_id,),
-            ).fetchone()
+        with self._lock:
+            if specific:
+                row = self._conn.execute(
+                    "SELECT * FROM checkpoints WHERE id = ?",
+                    (specific,),
+                ).fetchone()
+            else:
+                row = self._conn.execute(
+                    """
+                    SELECT * FROM checkpoints
+                    WHERE json_extract(metadata, '$.thread_id') = ?
+                    ORDER BY created_at DESC, rowid DESC
+                    LIMIT 1
+                    """,
+                    (thread_id,),
+                ).fetchone()
         return self._row_to_checkpoint(row) if row else None
 
     def list(self, config: dict[str, Any], limit: int = 10) -> list[Checkpoint]:
         """Return checkpoint history for a config, newest first."""
         thread_id = self._config_thread(config)
-        rows = self._conn.execute(
-            """
-            SELECT * FROM checkpoints
-            WHERE json_extract(metadata, '$.thread_id') = ?
-            ORDER BY created_at DESC, rowid DESC
-            LIMIT ?
-            """,
-            (thread_id, limit),
-        ).fetchall()
+        with self._lock:
+            rows = self._conn.execute(
+                """
+                SELECT * FROM checkpoints
+                WHERE json_extract(metadata, '$.thread_id') = ?
+                ORDER BY created_at DESC, rowid DESC
+                LIMIT ?
+                """,
+                (thread_id, limit),
+            ).fetchall()
         return [self._row_to_checkpoint(row) for row in rows]
 
     @staticmethod
@@ -274,4 +281,5 @@ class SqliteCheckpointSaver(BaseCheckpointSaver):
 
     def close(self) -> None:
         """Close the underlying SQLite connection."""
-        self._conn.close()
+        with self._lock:
+            self._conn.close()

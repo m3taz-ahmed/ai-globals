@@ -34,11 +34,22 @@ Usage::
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Safe single path component: no separators, no "..", bounded length.
+_SAFE_COMPONENT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+
+def _safe_component(value: str, kind: str) -> str:
+    """Validate a category/entry_id as a safe single path component."""
+    if not _SAFE_COMPONENT_RE.match(value) or ".." in value:
+        raise ValueError(f"Unsafe git-memory {kind}: {value!r}")
+    return value
 
 
 @dataclass
@@ -113,6 +124,8 @@ class GitMemoryStore:
         Returns:
             Path to the written file.
         """
+        _safe_component(category, "category")
+        _safe_component(entry_id, "entry_id")
         cat_dir = self.repo_path / category
         cat_dir.mkdir(parents=True, exist_ok=True)
         file_path = cat_dir / f"{entry_id}.json"
@@ -132,6 +145,8 @@ class GitMemoryStore:
 
     def read(self, category: str, entry_id: str) -> MemoryEntry | None:
         """Read a memory entry from the store."""
+        _safe_component(category, "category")
+        _safe_component(entry_id, "entry_id")
         file_path = self.repo_path / category / f"{entry_id}.json"
         if not file_path.exists():
             return None
@@ -139,6 +154,8 @@ class GitMemoryStore:
 
     def delete(self, category: str, entry_id: str) -> bool:
         """Delete a memory entry."""
+        _safe_component(category, "category")
+        _safe_component(entry_id, "entry_id")
         file_path = self.repo_path / category / f"{entry_id}.json"
         if not file_path.exists():
             return False
@@ -149,6 +166,7 @@ class GitMemoryStore:
         """List all entry IDs, optionally filtered by category."""
         entries: list[str] = []
         if category:
+            _safe_component(category, "category")
             cat_dir = self.repo_path / category
             if cat_dir.exists():
                 entries = [f.stem for f in cat_dir.glob("*.json")]

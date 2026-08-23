@@ -13,7 +13,7 @@ from typing import Any, ClassVar
 
 from .enums import ActionResultStatus, StepType
 from .mcp_client import McpClient, parse_mcp_command
-from .persona import PersonaDetector
+from .persona import PersonaDetector, inject_persona_context
 from .repository import BaseRepository
 
 
@@ -80,14 +80,9 @@ class WorkflowRunner(BaseRepository):
         act: Callable[..., dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         context = dict(context)
-        prompt = context.get("message") or context.get("request") or context.get("query")
-        if "personas" not in context and "persona" not in context and isinstance(prompt, str) and prompt.strip():
-            result = self.persona.detect_multiple(prompt)
-            context["persona"] = result["persona"]
-            context["skill"] = result["skill"]
-            context["personas"] = result["personas"]
-            context["skills"] = result["skills"]
-            context["lords"] = result["lords"]
+        inject_persona_context(
+            self.persona, context, text_keys=("message", "request", "query"),
+        )
         wf = self.get(workflow_id)
         if not wf:
             return {"ok": False, "error": f"Workflow {workflow_id} not found"}

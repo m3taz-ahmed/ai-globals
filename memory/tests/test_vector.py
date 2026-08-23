@@ -31,6 +31,24 @@ class TestMemIdToUint64:
         assert isinstance(result, int)
         assert 0 <= result < 2**64
 
+    def test_fallback_hash_stable_across_interpreters(self):
+        """Fallback must not use salted hash(): same value in any process."""
+        import subprocess
+        import sys
+
+        code = (
+            "from memory.vector import _mem_id_to_uint64;"
+            "print(_mem_id_to_uint64('not-a-uuid-string'))"
+        )
+        results = set()
+        for _ in range(2):
+            out = subprocess.run(
+                [sys.executable, "-c", code], capture_output=True, text=True, timeout=60
+            )
+            assert out.returncode == 0
+            results.add(out.stdout.strip())
+        assert len(results) == 1
+
     def test_empty_string_uses_hash_fallback(self):
         result = _mem_id_to_uint64("")
         assert isinstance(result, int)

@@ -17,7 +17,6 @@ from runtime.agent_gateway import (
 )
 from runtime.schemas import ErrorSeverity
 
-
 # -- Verdict enum ------------------------------------------------------------
 
 
@@ -247,7 +246,7 @@ class TestCheckRequestResponse:
         gw = AgentGateway()
         ctx = GuardrailContext(prompt="Key: sk-abcdefghijklmnopqrstuvwxyz123456")
         # Act
-        verdict, results = gw.check_request(ctx)
+        verdict, _results = gw.check_request(ctx)
         # Assert
         assert verdict is Verdict.BLOCK
 

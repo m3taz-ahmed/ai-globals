@@ -4,16 +4,16 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.5.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.5.0">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-982%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="982 اختبار ناجح">
-    <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-97%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 97%">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.6.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.6.0">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-4028%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="4028 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-96%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 96%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-19-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="19 شخصية">
-    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-60-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 مهارة">
-    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-44-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 سير عمل">
-    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-89-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="88 مرجع تقنية">
+    <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 شخصية">
+    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-73-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="73 مهارة">
+    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 سير عمل">
+    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-163-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="163 مرجع تقنية">
   </p>
 </div>
 
@@ -37,7 +37,7 @@
 | حزم قديمة وديون تقنية صامتة | تثبيت إصدار دقيق عبر MCP حي |
 | SQL خام، XSS مفقود، أسرار ضعيفة | OWASP و zero-trust و RBAC مفروضة |
 | إعادة هيكلة عشوائية | تغييرات جراحية عبر بوابات policy + budget + audit |
-| إجابات واحدة-للجميع | 19 شخصية + 78 مهارة تُختار تلقائيًا |
+| إجابات واحدة-للجميع | 22 شخصية + 73 مهارة تُختار تلقائيًا |
 
 ---
 
@@ -85,7 +85,7 @@ aizee status    # الشخصية، المهارات، الميزانية
 ## الأعمدة الستة
 
 ### 1. الشخصيات + المهارات
-20 شخصية (`ARCH`، `QA`، `SEC`، `DEV`، `SRE`، `DATA`، `ML`، `DEVOPS`، `FREELANCE`، إلخ) مع 13 مهارة lord. تُكتشف تلقائيًا حسب المهمة.
+22 شخصية (`ARCH`، `QA`، `SEC`، `DEV`، `SRE`، `DATA`، `ML`، `DEVOPS`، `FREELANCE`، إلخ) مع 29 مهارة lord. تُكتشف تلقائيًا حسب المهمة.
 
 ```bash
 aizee persona detect --multi "ابني API آمن مع docker و postgres"
@@ -114,12 +114,44 @@ SQLite + FTS5 + فهرسة متجهة اختيارية. طبقات: عرضية،
 ```bash
 ruff check .          # 0 تحذيرات
 mypy                  # 0 أخطاء (90+ ملف، strict)
-pytest -q             # 2526 اختبار، 91% تغطية
+pytest -q             # 4028 اختبار، 96% تغطية
 python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 ```
 
 ### 6. كفاءة Tokens
 كشف الشخصيات محلي (Python خالص، صفر tokens). فقط أسماء المهارات relevant تُرجع — ليس الملفات كاملة.
+
+---
+
+## الجديد في v5.6.0
+
+### إصلاحات أمنية حرجة (3)
+- **ثغرة تصعيد صلاحيات في مُقيِّم السياسات** (`runtime/policy.py`): القيم الحرفية `true`/`false`/`null` كانت تُعامل كأسماء متغيرات → `flag == true` تطابق كل إجراء يفتقد flag (`None == None → True`) → قاعدة `reversible == true → allow` كانت توافق تلقائيًا على كل write/edit. الإصلاح بـ `_yaml_literals` + fail-closed لـ TypeError. 13 اختبار ارتداد.
+- **Guardian fail-closed**: استثناء الـ guardian لم يعد يُبتلع كـ allow — يُنكر مع audit log.
+- **إزالة approve-via-GET**: `GET /api/check?approve=1` يرجع 400، وGET دائمًا `dry_run=True`. أغلق ثغرة CSRF من localhost.
+
+### Dashboard (قرارات تصميمية)
+- **Open-access افتراضي**: التوكن opt-in عبر `AIZEE_DASHBOARD_TOKEN` فقط. الأمان محفوظ بربط 127.0.0.1 + CSRF header على POSTs.
+- **تقديم الـ UI من `_CODE_DIR`** بدلاً من root المُكتشَف — يمنع mismatch بين server جديد وmarkup قديم.
+- **CSP**: أزال `'unsafe-inline'` من script-src — كل JS انتقل لـ `dashboard/app.js` خارجي.
+
+### إعادة هيكلة (Refactors)
+- **`spec_engine.py` (876 سطر) → `runtime/spec/` package** (models/engine/scaffold/analysis/templates) مع facade للتوافق العكسي.
+- **`inject_persona_context()`** — يوحّد 3 كتل مكررة (kernel/workflow_manager/workflow).
+- **`READ_ACTIONS`** مصدر واحد لتصنيف read-only.
+- **`LocalResponder`** (جديد) — يجاوب على intents تشغيلية من حالة kernel الحية بدون LLM tokens.
+
+### تقوية Memory/Adapters
+- `checkpoint.py`: RLock حول اتصال SQLite المشترك.
+- `vector.py`: `blake2b` deterministic بدلاً من `hash()` المملّح.
+- `git_memory.py`: `_safe_component` regex يمنع path traversal.
+- `adapters.py`: SSL context مُ memoized + `verify_ssl=False` فعّال فعليًا + `request_timeout`.
+
+### أدوات + توثيق
+- **`scripts/sync_docs.py`** (جديد): يزامن counts + جدول workflows من filesystem. `--check` مربوط بـ CI.
+- **`CONTRIBUTING.md`** (جديد): معايير الكود + وصفات module/skill/workflow.
+- **CLI**: أخطاء ودودة للـ JSON تالف بدلاً من tracebacks.
+- **Counts مُحدّثة**: 105 runtime modules، 73 skills، 36 workflows، 163 tech-stack refs.
 
 ---
 
@@ -374,7 +406,7 @@ python dashboard/server.py 8080
 | :--- | :--- | :--- |
 | Lint | `ruff check .` | 0 تحذيرات |
 | الأنواع | `mypy` | 0 أخطاء (90+ ملف) |
-| الاختبارات | `pytest -q` | 2526 ناجح، 91% تغطية |
+| الاختبارات | `pytest -q` | 4028 ناجح، 96% تغطية |
 | السلامة | `validate-globals.py` | 0 أخطاء |
 | E2E | `eval/harness.py` | all_pass: true |
 

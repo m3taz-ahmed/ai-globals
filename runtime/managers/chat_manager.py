@@ -8,16 +8,27 @@ from pathlib import Path
 from typing import Any
 
 from runtime.chat import ChatSession
+from runtime.local_responder import LocalResponder
 from runtime.prompt_gate import PromptGate, PromptRisk
 
 
 class ChatManager:
-    """Encapsulates chat session lifecycle."""
+    """Encapsulates chat session lifecycle.
 
-    def __init__(self, project_root: Path) -> None:
+    Replies are produced by an injected :class:`LocalResponder` (or a
+    subclass with an LLM backend). The responder is constructed lazily by
+    default so tests can inject doubles.
+    """
+
+    def __init__(
+        self,
+        project_root: Path,
+        responder: LocalResponder | None = None,
+    ) -> None:
         self.project_root = project_root
         self.default_session = ChatSession(project_root)
         self.prompt_gate = PromptGate()
+        self.responder = responder or LocalResponder()
 
     def chat_message(
         self,
@@ -65,7 +76,7 @@ class ChatManager:
             fresh_context=fresh_context,
         )
         if result["ok"]:
-            reply = f"Acknowledged: {message[:100]}"
+            reply = self.responder.reply(message)
             session.add("assistant", reply, metadata={"decision": result["decision"]})
             result["reply"] = reply
         if session_id is not None:

@@ -21,7 +21,10 @@ Action = Literal["allow", "ask", "deny"]
 # and ensures destructive operations are always denied even if a policy file
 # forgets to cover them. The YAML `default_action` still wins as the final
 # fallback for truly unclassified actions.
-_READ_ACTIONS: frozenset[str] = frozenset({
+#
+# ``READ_ACTIONS`` is the SINGLE source of truth for read-only action
+# classification; PolicyManager derives its guardian-skip set from it.
+READ_ACTIONS: frozenset[str] = frozenset({
     "view", "read", "Read", "grep", "Glob", "graphify query", "graphify explain",
     "graphify path", "search", "query", "list", "get", "status", "analyze_budget",
     "get_metrics", "get_os_status", "git status", "git diff", "git log", "ls",
@@ -43,7 +46,7 @@ def _classify_action(action_type: str) -> Action:
     at = action_type.strip()
     if at in _DESTRUCTIVE_ACTIONS or any(d in at for d in ("rm -rf", "drop", "truncate", "destroy")):
         return "deny"
-    if at in _READ_ACTIONS:
+    if at in READ_ACTIONS:
         return "allow"
     if at in _WRITE_ACTIONS:
         return "ask"
@@ -81,6 +84,17 @@ class _SafeEvaluator(ast.NodeVisitor):
         ast.NotIn: lambda a, b: a not in b,
     }
 
+    # YAML-style literals used in policy conditions. Without this mapping,
+    # `flag == true` resolved BOTH sides to None when the attribute was
+    # missing (None == None -> True), silently matching every action that
+    # lacked the attribute — a privilege-escalation hole for allow rules.
+    _yaml_literals: ClassVar[dict[str, Any]] = {
+        "true": True,
+        "false": False,
+        "null": None,
+        "none": None,
+    }
+
     def __init__(self, action: dict[str, Any]) -> None:
         self.action = action
 
@@ -96,6 +110,8 @@ class _SafeEvaluator(ast.NodeVisitor):
         if isinstance(node, ast.Set):
             return {self.visit(elt) for elt in node.elts}
         if isinstance(node, ast.Name):
+            if node.id in self._yaml_literals:
+                return self._yaml_literals[node.id]
             return self.action.get(node.id)
         if isinstance(node, ast.Subscript):
             value = self.visit(node.value)
@@ -119,7 +135,12 @@ class _SafeEvaluator(ast.NodeVisitor):
                 if op is None:
                     return False
                 right = self.visit(comparator)
-                if not op(left, right):
+                try:
+                    if not op(left, right):
+                        return False
+                except TypeError:
+                    # e.g. `'x' in missing_attr` (None is not iterable).
+                    # A non-evaluable comparison must NOT match.
                     return False
                 left = right
             return True

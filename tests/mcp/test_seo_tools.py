@@ -338,7 +338,7 @@ class TestSeoAuditPage:
         assert result["ok"] is True
         assert result["h1_count"] == 3  # multiple H1 = issue
         issue_rules = [i["rule_id"] for i in result["issues"]]
-        assert "h1-multiple" in issue_rules
+        assert "multiple-h1" in issue_rules
 
     def test_audit_invalid_url(self):
         fn = _get_tool("seo_audit_page")

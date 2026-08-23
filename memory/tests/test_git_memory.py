@@ -76,6 +76,32 @@ class TestGitMemoryStore:
     def test_read_nonexistent(self, store: GitMemoryStore) -> None:
         assert store.read("facts", "nonexistent") is None
 
+
+class TestGitMemoryPathSafety:
+    """Category/entry_id must be safe single path components (no traversal)."""
+
+    @pytest.mark.parametrize("bad", ["../../etc/passwd", "a/b", "a\\b", "..", ".", "", ".git"])
+    def test_unsafe_entry_id_rejected(self, store: GitMemoryStore, bad: str) -> None:
+        with pytest.raises(ValueError, match="Unsafe git-memory"):
+            store.write("facts", bad, {"x": 1})
+
+    @pytest.mark.parametrize("bad", ["../../x", "facts/x", "", ".."])
+    def test_unsafe_category_rejected(self, store: GitMemoryStore, bad: str) -> None:
+        with pytest.raises(ValueError, match="Unsafe git-memory"):
+            store.write(bad, "some-id", {"x": 1})
+
+    def test_unsafe_read_delete_rejected(self, store: GitMemoryStore) -> None:
+        with pytest.raises(ValueError):
+            store.read("facts", "../../escape")
+        with pytest.raises(ValueError):
+            store.delete("../outside", "id")
+        with pytest.raises(ValueError):
+            store.list_entries("../../somewhere")
+
+    def test_safe_ids_still_work(self, store: GitMemoryStore) -> None:
+        store.write("facts", "python-is-great-001", {"ok": True})
+        assert store.read("facts", "python-is-great-001") is not None
+
     def test_write_preserves_created_at(self, store: GitMemoryStore) -> None:
         store.write("facts", "test-1", {"v": 1})
         entry1 = store.read("facts", "test-1")

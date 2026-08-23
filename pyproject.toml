@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "5.5.0"
+version = "5.6.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -117,11 +117,10 @@ exclude = [
     "scripts/ui-ux-pro-max/",
     "scripts/graphify_mcp_wrapper\\.py",
     "scripts/validate-globals\\.py",
-    "scripts/fetch-free-keys\\.py",
     "scripts/restore_brain\\.py",
 ]
 [[tool.mypy.overrides]]
-module = ["yaml", "sentence_transformers", "turbovec", "numpy", "psutil", "sentry_sdk"]
+module = ["yaml", "sentence_transformers", "turbovec", "numpy", "psutil", "sentry_sdk", "defusedxml", "defusedxml.ElementTree"]
 ignore_missing_imports = true
 
 # Test files: included in type checking but with relaxed strictness.
@@ -177,6 +176,10 @@ warn_return_any = false
 testpaths = ["runtime/tests", "memory/tests", "eval/tests", "tests"]
 python_files = "test_*.py"
 pythonpath = ["."]
+# Thread-based timeout (signal-based does not work on Windows); guards CI
+# against hung tests (network, subprocesses) without killing the whole run.
+timeout = "300"
+timeout_method = "thread"
 addopts = "-ra -q --strict-markers"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

@@ -195,7 +195,7 @@ class TestScanImportsPython:
         guard = SupplyChainGuard(tmp_path)
         guard.load_declared()
         findings = guard.scan_imports(src)
-        brand = [f for f in findings if f.module == "brand_new_pkg"][0]
+        brand = next(f for f in findings if f.module == "brand_new_pkg")
         assert brand.line == 3
 
     def test_relative_import_not_flagged(self, tmp_path: Path) -> None:

@@ -57,7 +57,6 @@ backups/
 aios.egg-info/
 
 # Personal utility scripts (not part of aiZee system)
-scripts/fetch-free-keys.py
 scripts/run-opencode-free.ps1
 scripts/run-opencode-free.cmd
 scripts/apply-zenmux-cursor-model.ps1

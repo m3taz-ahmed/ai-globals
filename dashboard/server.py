@@ -9,7 +9,6 @@ import json
 import logging
 import mimetypes
 import os
-import secrets
 import signal
 import sys
 import threading
@@ -19,6 +18,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, cast
 
+# Allow direct execution (`python dashboard/server.py`) from any CWD:
+# Python puts the script's directory on sys.path, not the project root,
+# so bootstrap it before importing project modules.
+if __package__ in (None, ""):
+    _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
+    if _PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, _PROJECT_ROOT)
+
 import config
 from memory.store import MemoryStore
 from runtime.astryx import AstryxLinter
@@ -27,6 +34,17 @@ from runtime.metrics import format_metrics
 from runtime.telemetry import system_metrics
 
 logger = logging.getLogger(__name__)
+
+# The dashboard UI MUST be the one shipped next to this server code. Serving
+# assets from a discovered root (which may point to another install/version)
+# pairs NEW security policy with OLD markup (or vice versa) and silently
+# breaks the UI. Tests may override _ASSET_DIR_OVERRIDE.
+_CODE_DIR = Path(__file__).resolve().parent
+_ASSET_DIR_OVERRIDE: Path | None = None
+
+
+def _asset_dir() -> Path:
+    return _ASSET_DIR_OVERRIDE or _CODE_DIR
 
 _MAX_BODY_SIZE = int(os.environ.get("AGENT_OS_DASHBOARD_MAX_BODY_SIZE", "1048576"))
 _ALLOWED_ORIGINS = {o.strip() for o in os.environ.get("AGENT_OS_DASHBOARD_ORIGINS", "http://127.0.0.1:8080,http://localhost:8080").split(",") if o.strip()}
@@ -103,34 +121,19 @@ def _client_ip(handler: DashboardHandler) -> str:
 
 
 def _dashboard_token(root: Path) -> str | None:
-    """Return the configured dashboard token, generating one lazily if needed.
+    """Return the configured dashboard token, or None for open access.
 
-    Checks AIZEE_DASHBOARD_TOKEN first, falls back to legacy AGENT_OS_DASHBOARD_TOKEN.
-    If neither is set and AIZEE_DASHBOARD_ALLOW_NO_TOKEN != "1", generates a
-    random token and prints a security warning.
+    Authentication is OPT-IN: set ``AIZEE_DASHBOARD_TOKEN`` (or legacy
+    ``AGENT_OS_DASHBOARD_TOKEN``) to require Bearer auth on every API call.
+    By default the dashboard runs unauthenticated — a deliberate choice for
+    local use, which stays safe because the server binds to 127.0.0.1,
+    GETs are read-only/dry-run, and state-changing POSTs still enforce the
+    CSRF custom header that cross-origin pages cannot set.
     """
-    env_token = os.environ.get("AIZEE_DASHBOARD_TOKEN") or os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
-    if env_token:
-        return env_token
-    allow_no_token = (
-        os.environ.get("AIZEE_DASHBOARD_ALLOW_NO_TOKEN") == "1"
-        or os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1"
+    return (
+        os.environ.get("AIZEE_DASHBOARD_TOKEN")
+        or os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
     )
-    if allow_no_token:
-        print("WARNING: Dashboard running without authentication token. "
-              "Set AIZEE_DASHBOARD_TOKEN for production use.")
-        return None
-    token_file = root / "state" / "dashboard.token"
-    if token_file.exists():
-        return token_file.read_text(encoding="utf-8").strip()
-    token_file.parent.mkdir(parents=True, exist_ok=True)
-    token = secrets.token_urlsafe(32)
-    token_file.write_text(token, encoding="utf-8")
-    with contextlib.suppress(OSError):
-        token_file.chmod(0o600)  # Windows
-    print(f"Generated dashboard token at {token_file}")
-    print("WARNING: For production, set AIZEE_DASHBOARD_TOKEN env var explicitly.")
-    return token
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -154,7 +157,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     _CSP: str = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "script-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; "
@@ -178,6 +181,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        # The UI ships without asset hashing; heuristic browser caching would
+        # serve a STALE index.html after upgrades (breaking it against newer
+        # CSP/routes). Local files are cheap — always revalidate.
+        self.send_header("Cache-Control", "no-cache")
 
     def _send(
         self, code: int, body: bytes, content_type: str = "text/plain", cors: bool = True
@@ -193,10 +200,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def _auth(self) -> bool:
         token = _dashboard_token(self.root)
         if not token:
-            return (
-                os.environ.get("AIZEE_DASHBOARD_ALLOW_NO_TOKEN") == "1"
-                or os.environ.get("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN") == "1"
-            )
+            return True  # Open-access mode (opt-in auth via AIZEE_DASHBOARD_TOKEN).
         header = self.headers.get("Authorization", "")
         return hmac.compare_digest(header, f"Bearer {token}")
 
@@ -212,17 +216,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self) -> None:
         self._send(204, b"", cors=True)
 
+    # Static UI assets are served without authentication: they contain no
+    # secrets, and the token prompt lives inside app.js — requiring auth to
+    # fetch the page that asks for the token is a chicken-and-egg deadlock.
+    # Everything under /api/* (and any other path) stays token-protected.
+    _PUBLIC_ASSETS: frozenset[str] = frozenset({
+        "/", "/index.html", "/index.css", "/app.js",
+        "/favicon.ico", "/favicon-32.png", "/favicon-16.png",
+        "/apple-touch-icon.png", "/logo.png",
+    })
+
     def _handle(self) -> None:
         if not _check_rate_limit(_client_ip(self)):
             self._send(429, b"Rate limit exceeded", cors=True)
             return
-        if not self._auth():
+        parsed = urllib.parse.urlparse(self.path)
+        is_public_asset = self.command == "GET" and parsed.path in self._PUBLIC_ASSETS
+        if not is_public_asset and not self._auth():
             self._send(401, b"Unauthorized", cors=True)
             return
         if self.command == "POST" and not self._csrf():
             self._send(403, b"CSRF protection failed", cors=True)
             return
-        parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/status":
             self._send_status()
         elif parsed.path == "/api/health":
@@ -266,19 +281,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/events":
             self._send_sse_events()
         elif parsed.path == "/" or parsed.path == "/index.html":
-            self._serve_file(self.root / "dashboard" / "index.html")
+            self._serve_file(_asset_dir() / "index.html")
+        elif parsed.path == "/app.js":
+            self._serve_file(_asset_dir() / "app.js", "application/javascript; charset=utf-8")
+        elif parsed.path == "/vendor/chart.umd.min.js":
+            self._serve_file(
+                _asset_dir() / "static" / "vendor" / "chart.umd.min.js",
+                "application/javascript; charset=utf-8",
+            )
         elif parsed.path == "/index.css":
-            self._serve_file(self.root / "dashboard" / "index.css")
+            self._serve_file(_asset_dir() / "index.css")
         elif parsed.path == "/favicon.ico":
-            self._serve_file(self.root / "dashboard" / "static" / "favicon.ico")
+            self._serve_file(_asset_dir() / "static" / "favicon.ico")
         elif parsed.path == "/favicon-32.png":
-            self._serve_file(self.root / "dashboard" / "static" / "favicon-32.png")
+            self._serve_file(_asset_dir() / "static" / "favicon-32.png")
         elif parsed.path == "/favicon-16.png":
-            self._serve_file(self.root / "dashboard" / "static" / "favicon-16.png")
+            self._serve_file(_asset_dir() / "static" / "favicon-16.png")
         elif parsed.path == "/apple-touch-icon.png":
-            self._serve_file(self.root / "dashboard" / "static" / "apple-touch-icon.png")
+            self._serve_file(_asset_dir() / "static" / "apple-touch-icon.png")
         elif parsed.path == "/logo.png":
-            self._serve_file(self.root / "logo.png")
+            self._serve_file(_asset_dir().parent / "logo.png")
         else:
             self._send(404, b"Not found")
 
@@ -310,13 +332,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._send(200, json.dumps(health).encode("utf-8"), "application/json")
 
     def _send_check(self, query: str) -> None:
+        """Dry-run policy evaluation only.
+
+        GET is CSRF-exempt and must never trigger privileged state changes,
+        so ``approve`` is rejected outright and evaluation always runs with
+        ``dry_run=True`` (no audit writes, no budget deduction). Real
+        approved actions belong to the CLI/MCP gates.
+        """
         qs = urllib.parse.parse_qs(query)
         action = qs.get("action", [""])[0]
         if not action or not action.isalnum():
             self._send(400, b"Invalid action format")
             return
-        action_args = {"approved": True} if qs.get("approve", [""])[0] == "1" else {}
-        result = self.kernel.act(action, **action_args)
+        if qs.get("approve", [""])[0]:
+            self._send(400, b"Approving actions via GET is not allowed; use the aizee CLI gate instead")
+            return
+        result = self.kernel.act(action, dry_run=True)
         self._send(200, json.dumps(result, default=str).encode("utf-8"), "application/json")
 
     def _send_memory_search(self, query: str) -> None:
@@ -450,11 +481,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             "application/json",
         )
 
-    def _serve_file(self, path: Path) -> None:
+    def _serve_file(self, path: Path, content_type: str | None = None) -> None:
         if not path.exists():
             self._send(404, b"Not found")
             return
-        self._send(200, path.read_bytes(), mimetypes.guess_type(str(path))[0] or "text/plain", cors=False)
+        ctype = content_type or mimetypes.guess_type(str(path))[0] or "text/plain"
+        self._send(200, path.read_bytes(), ctype, cors=False)
 
     def _send_graph(self) -> None:
         """Serve the graphify graph.json (capped to 2MB for dashboard)."""
@@ -548,4 +580,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, _shutdown)
     server = ThreadingHTTPServer((host, port), DashboardHandler)
     print(f"aiZee dashboard: http://{host}:{port}")
+    if not _dashboard_token(Path(os.environ.get("AIZEE_ROOT", "."))):
+        print("Open-access mode: APIs are unauthenticated (localhost only). "
+              "Set AIZEE_DASHBOARD_TOKEN to require a Bearer token.")
     server.serve_forever()

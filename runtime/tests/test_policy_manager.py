@@ -79,15 +79,17 @@ class TestBuildProbity:
 
 
 class TestCheckGuardian:
-    def test_guardian_exception_returns_none(self, tmp_path: Path) -> None:
-        """Cover lines 85-86: exception in guardian.authorize returns None."""
+    def test_guardian_exception_fails_closed(self, tmp_path: Path) -> None:
+        """Cover lines 85-96: exception in guardian.authorize denies (fail-closed)."""
         os_root, project_root = _setup_roots(tmp_path)
         mgr = _make_manager(os_root, project_root)
         # Pass a guardian that raises on authorize
         bad_guardian = MagicMock()
         bad_guardian.authorize.side_effect = RuntimeError("boom")
         result = mgr.check_guardian("write", {"type": "write"}, guardian=bad_guardian)
-        assert result is None
+        assert result is not None
+        assert result["ok"] is False
+        assert result["decision"]["rule"] == "guardian_error"
 
     def test_guardian_require_approval(self, tmp_path: Path) -> None:
         """Cover line 95: guardian REQUIRE_APPROVAL returns error response."""

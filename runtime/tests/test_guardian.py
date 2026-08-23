@@ -465,19 +465,23 @@ def test_validate_permission_dependencies_no_deps():
     assert missing == []
 
 
-def test_validate_permission_dependencies_default_deps():
+def test_validate_permission_dependencies_default_empty():
+    """Default dependency map is empty — no foreign domain rules shipped."""
     g = Guardian([])
-    is_valid, missing = g.validate_permission_dependencies([
-        'author_must_be_vault_manager',
-        'vault_must_belong_to_account',
-        'author_must_belong_to_account',
-    ])
+    assert Guardian.DEFAULT_PERMISSION_DEPENDENCIES == {}
+    is_valid, missing = g.validate_permission_dependencies(['any_permission'])
     assert is_valid is True
     assert missing == []
 
 
-def test_validate_permission_dependencies_default_deps_missing():
-    g = Guardian([])
+def test_validate_permission_dependencies_project_supplied_missing():
+    """Missing prerequisites from project-supplied maps are reported."""
+    g = Guardian([], permission_dependencies={
+        'author_must_be_vault_manager': [
+            'vault_must_belong_to_account',
+            'author_must_belong_to_account',
+        ],
+    })
     is_valid, missing = g.validate_permission_dependencies(
         ['author_must_be_vault_manager']
     )
@@ -552,3 +556,44 @@ def test_authorize_no_auto_validation_on_deny_decision():
     d = g.authorize(ActionRequest(tool="x", attributes={"permissions": ["perm_a"]}))
     assert d.status == DecisionStatus.DENY
     assert d.rule_name == "deny_all"
+
+
+# ---------------------------------------------------------------------------
+# True-async coverage for the invoke/ainvoke decorators
+# ---------------------------------------------------------------------------
+
+
+class TestAsyncInvokeDecorator:
+    def test_async_wrapper_allows_and_returns(self):
+        from runtime.guardian import invoke
+
+        g = Guardian([])
+        @invoke(g)
+        async def double(value):
+            return value * 2
+
+        assert asyncio.run(double(21)) == 42
+
+    def test_async_wrapper_enforces_deny_rule(self):
+        from runtime.guardian import invoke
+
+        g = Guardian([{"name": "deny-double", "tool": "double", "decision": "deny"}])
+
+        @invoke(g)
+        async def double(value):
+            return value * 2
+
+        with pytest.raises(Exception) as excinfo:
+            asyncio.run(double(21))
+        assert "deny-double" in str(excinfo.value)
+
+    def test_ainvoke_alias_is_async_safe(self):
+        from runtime.guardian import ainvoke
+
+        g = Guardian([])
+
+        @ainvoke(g)
+        async def echo(text):
+            return text
+
+        assert asyncio.run(echo("hi")) == "hi"

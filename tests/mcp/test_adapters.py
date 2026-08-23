@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import ssl
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -316,10 +317,27 @@ def test_remote_a2a_ssl_context_with_verify():
 
 
 def test_remote_a2a_ssl_context_without_verify():
-    """Cover lines 252-253: None returned when verify_ssl is False."""
+    """Cover lines 252-259: unverified context returned when verify_ssl is False.
+
+    The context must explicitly disable verification (urllib's default
+    context always verifies, so returning None silently ignored the flag).
+    """
     adapter = RemoteA2AAdapter({"endpoint": "https://example.com", "verify_ssl": False})
     ctx = adapter._create_ssl_context()
-    assert ctx is None
+    assert ctx is not None
+    assert ctx.verify_mode == ssl.CERT_NONE
+    assert ctx.check_hostname is False
+
+
+def test_remote_a2a_request_timeout_default():
+    """Per-request socket timeout defaults to 30s so polls cannot hang."""
+    adapter = RemoteA2AAdapter({"endpoint": "https://example.com"})
+    assert adapter._request_timeout == 30.0
+
+
+def test_remote_a2a_request_timeout_custom():
+    adapter = RemoteA2AAdapter({"endpoint": "https://example.com", "request_timeout": 5.0})
+    assert adapter._request_timeout == 5.0
 
 
 # ---------------------------------------------------------------------------
@@ -527,3 +545,63 @@ def test_registry_run_codex_with_mocks():
         assert result["backend"] == "codex"
         assert result["status"] == "completed"
         assert result["artifacts"]["stdout"] == "codex output"
+
+
+# ---------------------------------------------------------------------------
+# True-async coverage: real event loop + patched urlopen (executor path)
+# ---------------------------------------------------------------------------
+
+
+def test_remote_a2a_launch_real_loop_passes_timeout_and_context():
+    """launch runs on a real event loop and forwards timeout+SSL context."""
+    adapter = RemoteA2AAdapter({
+        "endpoint": "https://example.com/a2a",
+        "request_timeout": 12.5,
+        "verify_ssl": False,
+    })
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps({"session_id": "remote-loop"}).encode()
+
+    with patch("aizee_mcp.adapters.urllib.request.urlopen") as mock_open:
+        mock_open.return_value = mock_response
+        session = asyncio.run(adapter.launch("real task"))
+    assert session.session_id == "remote-loop"
+    kwargs = mock_open.call_args.kwargs
+    assert kwargs["timeout"] == 12.5
+    ctx = kwargs["context"]
+    assert ctx.verify_mode == ssl.CERT_NONE
+
+
+def test_remote_a2a_poll_real_loop_timeout_passed():
+    """poll forwards the per-request socket timeout so hangs cannot block."""
+    adapter = RemoteA2AAdapter({
+        "endpoint": "https://example.com/a2a",
+        "request_timeout": 3.25,
+        "poll_interval": 0.01,
+    })
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps({"status": "completed"}).encode()
+
+    session = Session(session_id="s1", backend=Backend.REMOTE_A2A, profile="default")
+    session.artifacts["remote_session_id"] = "remote-1"
+
+    with patch("aizee_mcp.adapters.urllib.request.urlopen") as mock_open:
+        mock_open.return_value = mock_response
+        result = asyncio.run(adapter.poll(session))
+    assert result.status == "completed"
+    assert mock_open.call_args.kwargs["timeout"] == 3.25
+
+
+def test_remote_a2a_poll_socket_timeout_marks_failed():
+    """A socket timeout during poll marks the session failed (no hang)."""
+    adapter = RemoteA2AAdapter({"endpoint": "https://example.com/a2a", "request_timeout": 0.05})
+
+    session = Session(session_id="s2", backend=Backend.REMOTE_A2A, profile="default")
+
+    def _hang(req, **kwargs):
+        raise TimeoutError("timed out")
+
+    with patch("aizee_mcp.adapters.urllib.request.urlopen", side_effect=_hang):
+        result = asyncio.run(adapter.poll(session))
+    assert result.status == "failed"
+    assert "timed out" in str(result.artifacts.get("error", ""))

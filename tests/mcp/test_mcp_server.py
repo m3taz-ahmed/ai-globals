@@ -114,10 +114,12 @@ class TestSearchMemory:
     def test_search_memory_result_has_source(self):
         result = _call("search_memory", {"query": "behavioral rules"})
         data = json.loads(result)
-        if data:
-            assert "source" in data[0]
-            assert "kind" in data[0]
-            assert "content" in data[0]
+        assert isinstance(data, list)
+        # The query is seeded by module-level ingest; results are expected.
+        assert len(data) > 0, f"expected seeded results, got none: {data}"
+        assert "source" in data[0]
+        assert "kind" in data[0]
+        assert "content" in data[0]
 
 
 # ---------------------------------------------------------------------------

@@ -18,6 +18,7 @@ Usage::
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from runtime.schemas import (
     AizeeError,
@@ -122,7 +123,7 @@ def classify_and_raise(exc: Exception) -> None:
 def classify_error_with_context(
     exc: Exception,
     operation: str = "",
-    context: dict | None = None,
+    context: dict[str, Any] | None = None,
 ) -> AizeeError:
     """Classify *exc* and return an AizeeError instance with context.
 
@@ -138,4 +139,4 @@ def classify_error_with_context(
     # but AizeeError base requires (error_code, message, severity, context).
     if error_class is AizeeError:
         return AizeeError("UNEXPECTED_ERROR", message, ErrorSeverity.MEDIUM, ctx)
-    return error_class(message, ctx)  # type: ignore[call-arg]
+    return error_class(message, ctx)  # type: ignore[arg-type]

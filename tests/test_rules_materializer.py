@@ -18,7 +18,6 @@ from runtime.rules_materializer import (
 )
 from runtime.schemas import ValidationError
 
-
 # -- RuleEntry ---------------------------------------------------------------
 
 

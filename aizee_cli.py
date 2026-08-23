@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -21,6 +21,23 @@ if TYPE_CHECKING:
     from runtime.kernel import Kernel
 
 console = Console()
+
+
+class CLIInputError(ValueError):
+    """Raised when a CLI argument fails validation (bad JSON, wrong type)."""
+
+
+def _load_json(raw: str, label: str, expected_type: type = dict) -> Any:
+    """Parse a JSON CLI argument with a friendly error instead of a traceback."""
+    if not raw:
+        return expected_type()
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise CLIInputError(f"Invalid JSON for {label}: {exc}") from exc
+    if not isinstance(parsed, expected_type):
+        raise CLIInputError(f"{label} must be JSON {expected_type.__name__}, got {type(parsed).__name__}")
+    return parsed
 
 
 def _root(args: argparse.Namespace) -> Path:
@@ -66,7 +83,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 def cmd_check(args: argparse.Namespace) -> int:
     k = _kernel(args)
-    action_args = json.loads(args.args) if args.args else {}
+    action_args = _load_json(args.args, "--args")
     if args.approve:
         action_args["approved"] = True
     result = k.act(args.action, **action_args)
@@ -79,7 +96,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 def cmd_run(args: argparse.Namespace) -> int:
     k = _kernel(args)
-    context = json.loads(args.context) if args.context else {}
+    context = _load_json(args.context, "--context")
     result = k.run_workflow(args.workflow, context)
     print(json.dumps(result, indent=2, default=str))
     return 0
@@ -179,12 +196,32 @@ def cmd_memory(args: argparse.Namespace) -> int:
 
 def cmd_sync(args: argparse.Namespace) -> int:
     root = _root(args)
-    subprocess.run([sys.executable, str(root / "scripts" / "sync-agent-configs.py")], check=True)
-    return 0
+    script = root / "scripts" / "sync-agent-configs.py"
+    if not script.exists():
+        console.print(f"[red]Sync script not found: {script}[/red]")
+        return 1
+    try:
+        proc = subprocess.run([sys.executable, str(script)], check=False)
+    except OSError as exc:
+        console.print(f"[red]Sync failed: {exc}[/red]")
+        return 1
+    if proc.returncode != 0:
+        console.print(f"[red]Sync exited with code {proc.returncode}[/red]")
+    return proc.returncode
 
 
 def cmd_graphify(args: argparse.Namespace) -> int:
-    subprocess.run(["graphify", "update", "."], check=False)
+    try:
+        proc = subprocess.run(["graphify", "update", "."], check=False)
+    except FileNotFoundError:
+        console.print("[red]'graphify' command not found on PATH.[/red]")
+        return 1
+    except OSError as exc:
+        console.print(f"[red]graphify failed: {exc}[/red]")
+        return 1
+    if proc.returncode != 0:
+        console.print(f"[red]graphify exited with code {proc.returncode}[/red]")
+        return proc.returncode
     return 0
 
 
@@ -196,7 +233,7 @@ def cmd_version(args: argparse.Namespace) -> int:
 def cmd_policy(args: argparse.Namespace) -> int:
     k = _kernel(args)
     if args.subcommand == "test":
-        action_args = json.loads(args.args) if args.args else {}
+        action_args = _load_json(args.args, "--args")
         result = k.act(args.action, dry_run=True, **action_args)
         print(json.dumps(result, indent=2, default=str))
     return 0
@@ -268,8 +305,8 @@ def cmd_project(args: argparse.Namespace) -> int:
 
 def cmd_saga(args: argparse.Namespace) -> int:
     k = _kernel(args)
-    steps = json.loads(args.steps) if args.steps else []
-    context = json.loads(args.context) if args.context else {}
+    steps = _load_json(args.steps, "--steps", expected_type=list)
+    context = _load_json(args.context, "--context")
     result = k.run_saga(args.saga_id, steps, context)
     print(json.dumps(result, indent=2, default=str))
     return 0
@@ -420,7 +457,6 @@ def cmd_linkedin(args: argparse.Namespace) -> int:
 
 def cmd_mcp(args: argparse.Namespace) -> int:
     if args.server == "sync":
-        import subprocess
         root = _root(args)
         cmd = [sys.executable, str(root / "scripts" / "mcp_global_sync.py")]
         if args.check:
@@ -438,7 +474,7 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     if not client.is_configured():
         console.print(f"[red]MCP server '{args.server}' not configured[/red]")
         return 1
-    arguments = json.loads(args.args) if args.args else {}
+    arguments = _load_json(args.args, "--args")
     result = client.call_tool(args.tool, arguments)
     print(json.dumps(result, indent=2, default=str))
     return 0 if result.get("ok") else 1
@@ -477,12 +513,12 @@ def cmd_ci(args: argparse.Namespace) -> int:
 def cmd_agent(args: argparse.Namespace) -> int:
     k = _kernel(args)
     if args.subcommand == "spawn":
-        scope = json.loads(args.scope) if args.scope else []
-        lords = json.loads(args.lords) if getattr(args, "lords", "") else []
+        scope = _load_json(args.scope, "--scope", expected_type=list)
+        lords = _load_json(getattr(args, "lords", "") or "", "--lords", expected_type=list)
         result = k.spawn_agent(args.agent_id, args.persona, scope, lords=lords)
         print(json.dumps(result, indent=2, default=str))
     elif args.subcommand == "delegate":
-        arguments = json.loads(args.args) if args.args else {}
+        arguments = _load_json(args.args, "--args")
         result = k.delegate(args.agent_id, args.action, **arguments)
         print(json.dumps(result, indent=2, default=str))
     elif args.subcommand == "list":
@@ -678,7 +714,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     # --- Tech stack detection check ---
     try:
         from runtime.kernel import Kernel
-        k = Kernel(os_root)
+        k = Kernel(os_root, project_root)
         ts = k.detect_tech_stack()
         checks[f"tech_stack detection ({len(ts)} entries)"] = len(ts) > 0
     except Exception:
@@ -734,9 +770,6 @@ def cmd_test(args: argparse.Namespace) -> int:
       aizee test --verbose → verbose output
       aizee test --xdist   → parallel execution (faster on Linux/macOS, slower on Windows)
     """
-    import subprocess
-    import sys
-
     if args.full:
         pytest_args = [
             sys.executable, "-m", "pytest",
@@ -967,7 +1000,11 @@ def main(argv: list[str] | None = None) -> int:
         "doctor": cmd_doctor,
         "uninstall": cmd_uninstall,
     }
-    return commands[args.command](args)
+    try:
+        return commands[args.command](args)
+    except CLIInputError as exc:
+        console.print(f"[red]{exc}[/red]")
+        return 1
 
 
 if __name__ == "__main__":

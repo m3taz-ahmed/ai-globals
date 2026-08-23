@@ -1,6 +1,117 @@
 # Changelog
 
-## [Unreleased] — Governance Layer: Market Research + 10 Runtime Modules + 5 Skills + 3 Workflows
+## [5.6.0] — 2026-08-23 (Security Hardening + Quality Gates Zeroed + Docs Sync Automation)
+
+### Critical Security Fixes (3)
+- **Policy evaluator privilege-escalation** (`runtime/policy.py`): YAML-style `true`/`false`/`null` literals in conditions were parsed as variable names. `flag == true` matched every action MISSING that flag (`None == None → True`). `reversible == true → allow` auto-approved all write/edit/apply regardless of reversibility. Fixed via `_yaml_literals` mapping + fail-closed TypeError handling. 13 regression tests (`test_policy_evaluator_security.py`).
+- **Guardian fail-closed** (`runtime/managers/policy_manager.py`): broken `guardian.authorize` now denies with `guardian_error` + audit log instead of silently allowing.
+- **approve-via-GET removed** (`dashboard/server.py`): GET `/api/check` is dry-run only; `?approve=1` returns 400. Closes localhost CSRF privilege escalation.
+
+### Security Hardening (9 more fixes)
+- **verify_ssl effective** (`aizee_mcp/adapters.py`): False builds a real unverified SSL context (+ init warning); previously returned None = default verified context.
+- **A2A timeouts**: launch/poll pass `request_timeout` (default 30s) + SSL context; socket timeouts mark sessions failed instead of hanging.
+- **Stable vector ids** (`memory/vector.py`): non-UUID fallback hashes via blake2b (was salted `hash()` → orphaned vectors after restart).
+- **Checkpoint thread-safety** (`memory/checkpoint.py`): RLock around shared SQLite connection.
+- **Non-strict output validation hardened** (`aizee_mcp/tools/mcp_output_schemas.py`): dropped `model_construct` bypass; invalid fields dropped then re-validated.
+- **git_memory path sanitization** (`memory/git_memory.py`): category/entry_id validated against safe-component regex (blocks traversal).
+- **CLI error handling** (`aizee_cli.py`): friendly errors for malformed JSON args; sync/graphify report failures instead of tracebacks/silent success.
+- **SEO fallback registration** (`aizee_mcp/aizee_server.py`): manual fallback now registers all 8 SEO tools.
+- **Dashboard CSP**: script-src 'unsafe-inline' removed — JS moved to external `dashboard/app.js`, inline handlers replaced with addEventListener.
+
+### Dashboard (Design Decisions)
+- **Open-access by default**: tokens removed by default; auth is OPT-IN via `AIZEE_DASHBOARD_TOKEN` env only. Safety preserved by 127.0.0.1 binding + read-only GETs + CSRF custom-header on POSTs.
+- **Assets served from code directory**: `/`, `/app.js`, `/index.css`, favicons resolve from server code's own directory (`_asset_dir()`) — never from discovered root. Fixes version-mismatch dead UI. Tests use `_ASSET_DIR_OVERRIDE`.
+- **Cache-Control: no-cache** on all responses (prevents stale-shell breakage after upgrades).
+- **Direct execution hardened**: `python dashboard/server.py` bootstraps sys.path for any CWD.
+
+### Architecture & Refactor
+- **spec_engine.py (876 lines) split** into `runtime/spec/` package: models / engine / scaffold / analysis / templates. `runtime.spec_engine` remains a backward-compatible facade.
+- **Persona injection unified**: single `inject_persona_context()` in `runtime/persona.py` replaces 3 duplicated blocks (kernel/workflow_manager/workflow).
+- **Read-only classification unified**: `PolicyManager._READ_ONLY_ACTIONS` derives from canonical `READ_ACTIONS` in `runtime/policy.py` (+ ChatMessage).
+- **ChatManager implemented**: new `runtime/local_responder.py` answers status/budget/workflow/rules/skills/stack intents from live kernel state (zero tokens, honest offline label) instead of hardcoded "Acknowledged".
+
+### Tooling & Docs
+- **`scripts/sync_docs.py`** (new): counts + workflow routing table regenerated from filesystem truth; `--check` wired into CI validate workflow.
+- **`CONTRIBUTING.md`** added: two-tier testing, code standards, module/skill/workflow recipes.
+- **pytest-timeout** wired (300s, thread method) guarding CI against hung tests.
+- **True async tests added**: Guardian invoke/ainvoke decorators + A2A adapter executor path.
+- **CI validate.yml**: type-check corrected to `aizee_cli.py` (was nonexistent `cli.py`); docs sync check added.
+- **Counts synced**: AGENTS.md/spec.md (105 modules / 73 skills / 36 workflows / 163 stack refs); README/README-AR badges updated.
+
+### Quality Gates → Green
+- **mypy: 0 errors** across runtime/memory/aizee_mcp/config/cli/dashboard (268 files) — was 7 pre-existing.
+- **ruff: 0 errors** repo-wide — was 13 pre-existing.
+- **Full suite green** (~4,050 tests), coverage 96.26% (floor 80%).
+
+### Version Bump
+- 5.5.0 → 5.6.0 across: pyproject.toml, .aizee-version, manifest.json, README.md, README-AR.md, tech-stack/aizee-5.md, aizee_mcp/API.md, scripts/validate-globals.{py,ps1}, tests/dashboard/test_dashboard.py.
+
+## [Previous] — Dashboard: Assets Served From Code Directory (Version-Coherence Fix)
+
+- **User-reported dead UI** ("Connecting..." stuck, side menu unresponsive in every browser): running the new server while `AIZEE_ROOT` pointed at another install served OLD inline-script markup under the NEW strict CSP, silently blocking all JS. Verified via headless Chromium that matching assets work.
+- **Fix**: `/`, `/app.js`, `/index.css`, favicons and logo now resolve from the server code's own directory (`_asset_dir()`), never from a discovered root — UI and server are always the same version. Tests use `_ASSET_DIR_OVERRIDE`.
+- Added `Cache-Control: no-cache` to every response so upgraded shells are always re-fetched.
+
+## [Previous] — Dashboard: Open-Access by Default (Tokens Now Opt-In)
+
+- **Design decision**: dashboard authentication is no longer automatic. `state/dashboard.token` files and auto-generation are removed entirely; the only auth source is the `AIZEE_DASHBOARD_TOKEN` env var. Unset (default) = open APIs.
+- Safety without a token is preserved by: 127.0.0.1 default binding, read-only/dry-run GETs (`approve` via GET already removed), and the CSRF custom-header requirement on all POSTs.
+- Static UI assets (`/`, `/app.js`, icons) are served unauthenticated in both modes, fixing the chicken-and-egg deadlock where the page asking for the token was itself token-protected.
+- Startup prints an "Open-access mode" notice; app.js still prompts for a token on 401 when opt-in auth is enabled.
+- Direct execution hardened: `python dashboard/server.py` bootstraps sys.path so it works from any CWD.
+
+## [Previous] — Elite Review: Policy Evaluator Privilege-Escalation Fix
+
+### Critical Security Fix
+- **`runtime/policy.py` `_SafeEvaluator`**: YAML-style `true`/`false`/`null` literals in rule conditions were parsed as variable names. `flag == true` matched every action MISSING the flag (`None == None → True`). Concretely: `reversible == true → allow` auto-approved all write/edit/apply regardless of reversibility (privilege escalation), and deny rules like `tier-consequential-git-writes` falsely denied benign actions (e.g. ChatMessage "what is the status?"). Fixed via `_yaml_literals` mapping + fail-closed TypeError handling for membership checks on missing attributes. 13 regression tests added (`test_policy_evaluator_security.py`).
+
+### Review Findings Fixed
+- **CI validate.yml** type-checked nonexistent `cli.py`; corrected to `aizee_cli.py`.
+- **RemoteA2AAdapter**: SSL context memoized (was reloading the system CA store on every poll tick).
+- **Dashboard `/app.js` route** now covered by a test (content-type + body).
+
+## [Previous] — Security Hardening + Quality Gates Zeroed + Docs Sync Automation
+
+### Security Fixes (from full project audit)
+- **[CRITICAL] Dashboard auth**: `dashboard/app.js` now sends `Authorization: Bearer` on every request; 401 prompts for the token (sessionStorage). The bundled UI previously only worked in ALLOW_NO_TOKEN mode.
+- **[CRITICAL] approve-via-GET removed**: GET `/api/check` is dry-run only; `?approve=1` returns 400. Closes localhost CSRF privilege escalation.
+- **[CRITICAL] Guardian fail-closed**: broken `guardian.authorize` now denies with `guardian_error` + audit log instead of silently allowing.
+- **verify_ssl effective** (`aizee_mcp/adapters.py`): False builds a real unverified SSL context (+ init warning); previously returned None = default verified context.
+- **A2A timeouts**: launch/poll pass `request_timeout` (default 30s) + SSL context; socket timeouts mark sessions failed instead of hanging the executor thread.
+- **Stable vector ids**: non-UUID fallback hashes via blake2b (was salted `hash()` → orphaned vectors after restart).
+- **Checkpoint thread-safety**: RLock around shared SQLite connection in `memory/checkpoint.py`.
+- **Non-strict output validation hardened**: dropped `model_construct` bypass; invalid fields dropped then re-validated.
+- **git_memory path safety**: category/entry_id validated against safe-component regex (blocks traversal).
+- **CLI error handling**: friendly errors for malformed JSON args (check/run/policy/saga/mcp/agent); sync/graphify report failures instead of tracebacks/silent success; doctor passes project_root to Kernel.
+- **SEO fallback registration**: manual MCP fallback now registers all 8 SEO tools.
+- **Dashboard CSP**: script-src 'unsafe-inline' removed — JS moved to external `/app.js`, inline handlers replaced with addEventListener bindings.
+- **Windows token ACL**: dashboard token file restricted via icacls (chmod is a no-op on Windows).
+
+### Product Bugs Fixed
+- **nofollow robots directive** now flagged by `seo_audit_page` (feature was tested but never implemented).
+- **`multiple-h1` rule_id** test mismatch fixed (test expected nonexistent `h1-multiple`).
+- **Guardian foreign defaults removed**: Monica's BaseService permission dependencies no longer shipped in core.
+
+### Quality Gates → Green on main
+- **mypy: 0 errors** across runtime/memory/aizee_mcp/config/cli/dashboard (268 files) — was 7 pre-existing.
+- **ruff: 0 errors** repo-wide — was 13 pre-existing.
+- **Full suite green** (~4,050 tests), coverage 96.26% (floor 80%). Previously-failing SEO network tests were real product bugs, now fixed with mocks intact.
+
+### Architecture & Refactor
+- **spec_engine.py (876 lines) split** into `runtime/spec/` package: models / engine / scaffold / analysis / templates. `runtime.spec_engine` remains a backward-compatible facade. Phase-gate logic deduplicated (`_phase_gate`), md5 finding ids → sha256.
+- **Persona injection unified**: single `inject_persona_context()` in `runtime/persona.py` replaces 3 duplicated blocks (kernel/workflow_manager/workflow).
+- **Read-only classification unified**: `PolicyManager._READ_ONLY_ACTIONS` derives from canonical `READ_ACTIONS` in `runtime/policy.py` (+ ChatMessage).
+- **ChatManager implemented**: new `runtime/local_responder.py` answers status/budget/workflow/rules/skills/stack intents from live kernel state (zero tokens, honest offline label) instead of hardcoded "Acknowledged".
+
+### Tooling & Docs
+- **`scripts/sync_docs.py`**: counts + workflow routing table regenerated from filesystem truth; `--check` wired into CI validate workflow. Fixed AGENTS.md/spec.md stale counts (88→105 modules, 66→73 skills, 30→36 workflows, 162→163 stack refs), README duplicate table + missing rows (27, 33-35), double-listed memory-sync row.
+- **pytest-timeout wired** (300s, thread method) guarding CI against hung tests.
+- **True async tests added**: Guardian invoke/ainvoke decorators + A2A adapter executor path (real event loop, timeout/context assertions).
+- **Conditional assertion fixed** in `tests/mcp/test_mcp_server.py` (seeded search results must exist and carry fields).
+- **CONTRIBUTING.md added** (was referenced but missing): two-tier testing, code standards, module/skill/workflow recipes.
+- Removed untracked `fetch-free-keys.py` (conflicted with supply-chain posture) + cleaned references.
+
+## [Previous] — Governance Layer: Market Research + 10 Runtime Modules + 5 Skills + 3 Workflows
 
 ### Market Research (2026 AI Coding Governance)
 - Analyzed Gartner Magic Quadrant for AI Governance Platforms (June 2026), Sonar State of Code (1,149 devs), Qodo AI Coding Paradox (500 eng), UserQ MENA (500 users), Eshal CX Benchmark (412 leaders).

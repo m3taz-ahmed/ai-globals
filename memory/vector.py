@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
@@ -42,7 +43,11 @@ def _mem_id_to_uint64(mem_id: str) -> int:
     try:
         return int(uuid.UUID(mem_id).hex[:16], 16)
     except Exception:
-        return hash(mem_id) % (2**64)
+        # blake2b is deterministic across processes; built-in hash() is
+        # salted per process (PYTHONHASHSEED), which would orphan vectors
+        # after restart.
+        digest = hashlib.blake2b(mem_id.encode("utf-8"), digest_size=8).digest()
+        return int.from_bytes(digest, "big")
 
 
 class Embedder:

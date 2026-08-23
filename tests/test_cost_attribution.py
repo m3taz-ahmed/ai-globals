@@ -18,7 +18,6 @@ from runtime.cost_attribution import (
     CostRecord,
 )
 
-
 # -- enums ----------------------------------------------------------------
 
 
@@ -201,7 +200,7 @@ class TestThreadSafety:
         per_thread = 50
 
         def worker(tid: int) -> None:
-            for i in range(per_thread):
+            for _i in range(per_thread):
                 ca.record(_rec(agent_id=f"a{tid}", cost=1.0))
 
         threads = [threading.Thread(target=worker, args=(t,)) for t in range(n_threads)]

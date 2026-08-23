@@ -17,6 +17,7 @@ from aizee_mcp.tools import (
     register_context_tools,
     register_memory_tools,
     register_policy_tools,
+    register_seo_tools,
     register_workflow_tools,
 )
 from aizee_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-exported for tests
@@ -83,6 +84,7 @@ def _register_tools_fallback() -> None:
     register_workflow_tools(mcp)
     register_policy_tools(mcp)
     register_context_tools(mcp)
+    register_seo_tools(mcp)
 
 
 # Auto-discover and register all tool modules; fall back to manual registration.

@@ -1,4 +1,4 @@
-# AI OS Rules Architecture
+# AiZee Rules Architecture
 
 This directory contains **compressed behavioral and structural rules** for aiZee. All files use Telegraphic Pseudo-Code (`[FILE]/[RULES]` format) — natively dense, no compilation step required.
 
