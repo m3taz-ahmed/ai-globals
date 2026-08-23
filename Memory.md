@@ -6,6 +6,17 @@
 3. [REQ] Keep under 500 lines.
 [UPDATED] 2026-08-23
 [NOTES]
+- **Integration patterns from 7 GitHub repos - 2026-08-24 (18 patterns from strix, open-notebook, book-to-skill, open-seo, i-have-adhd, no-ai-slop, ai-job-search)**:
+  - **16 new modules**: runtime/text_sanitize.py (invisible codepoint sanitization), runtime/seo_issue_registry.py (typed SEO audit issue registry, 30+ issue types), runtime/skill_eval.py (self-checking EVAL.md loader), runtime/budget_escalation.py (multi-stage escalation + subagent reserve), runtime/tool_output_bounder.py (output bounding for MCP tools), runtime/provider_registry.py (LLM provider registry, 8 providers), runtime/audit_workflow.py (phased durable audit with checkpointing), runtime/sarif_emitter.py (SARIF 2.1.0 emission), runtime/output_gate.py (pre-send check + portability test), runtime/error_classifier.py (classify_error to typed AizeeError), runtime/sql_injection_guard.py (ORDER BY/identifier validation), aizee_mcp/tools/seo_page_reporters.py (per-page SEO checks), aizee_mcp/tools/seo_multipage_checks.py (cross-page SEO checks), aizee_mcp/tools/seo_sitemap_discovery.py (robots.txt + sitemap discovery with caps), aizee_mcp/tools/mcp_output_schemas.py (MCP output schema validation), eval/rubric.py (eval rubric + release gate).
+  - **2 new workflows**: workflows/30-skill-generation.md (book-to-skill pipeline), workflows/31-drafter-reviewer.md (drafter-reviewer pipeline).
+  - **1 new skill**: skills/content-quality-lord/ (banned words + slop patterns + EVAL.md + references).
+  - **Refactored existing code**: budget.py wired with check_escalation() + should_stop_subagent() using budget_escalation module. seo_tools.py _audit_page_issues() now delegates to seo_page_reporters module (67 lines of inline checks replaced with 36-line delegation).
+  - **16 test files, 214 tests**: All passing. ruff PASS on all new modules + test files.
+  - **Quality gates**: ruff PASS, pytest PASS (214/214 tests).
+  - **Security audit (SEC persona)**: Fixed XXE vulnerability in seo_sitemap_discovery.py (added defusedxml fallback + DOCTYPE/ENTITY rejection), fixed SSRF risk (added _validate_url_scheme to restrict to http/https only). All other modules CLEAN (no hardcoded secrets, no injection, no unsafe deserialization, no PII).
+  - **Compliance (LEGAL persona)**: No secrets, no PII, no copyrighted content from source repos. All skill/workflow content is original.
+  - **Delivery readiness (FREELANCE persona)**: All 16 modules have proper docstrings, no TODO/FIXME without tickets, no scratch files, Memory.md updated.
+  - **Type fixes**: Fixed 4 IDE type errors — OutputSchemaError errors param widened to list[Any], error_classifier AizeeError base instantiation via _instantiate_error helper, validate_tool_output test uses isinstance narrowing.
 - **Architectural patterns implementation - 2026-08-23 (10 patterns from 24 top repos)**:
   - **3 new runtime modules**: `runtime/middleware.py` (tRPC flat middleware + NestJS pre-compiled pipeline), `memory/checkpoint.py` (Dapr/LangGraph checkpoint state), `memory/schema_contract.py` (Prisma contract-first schema verification).
   - **7 existing modules enhanced**: policy.py (guardrails), guardian.py (guardrail wiring), authorization.py (R→P→P decomposition), semantic_search.py (hybrid search fusion), vector.py (full_scan_threshold + filter-during-traversal), budget.py (BudgetWindow ALERT/REJECT), service_catalog.py (Backstage entity catalog + plugins), agent_discovery.py (label/capability discovery), prompt_gate.py (assertion-based validation).

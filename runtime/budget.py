@@ -159,6 +159,65 @@ class BudgetWindowManager:
                         action = BudgetAction.ALERT
             return action
 
+    def check_escalation(
+        self,
+        scope: BudgetTargetScope,
+        scope_id: str,
+        is_root: bool = True,
+    ) -> Any | None:
+        """Check if budget utilization has crossed an escalation stage.
+
+        Uses :mod:`runtime.budget_escalation` to compute multi-stage
+        escalation directives. Returns an ``EscalationDirective`` if a
+        band has been crossed, or ``None`` if utilization is below the
+        first band.
+        """
+        from runtime.budget_escalation import compute_escalation
+
+        with self._lock:
+            windows = self._matching_windows(scope, scope_id)
+            if not windows:
+                return None
+            # Use the window with the highest utilization
+            best_window = max(
+                windows,
+                key=lambda w: w.utilization if w.limit > 0 else 0.0,
+            )
+            if best_window.limit <= 0:
+                return None
+            return compute_escalation(
+                spend=best_window.spend,
+                limit=best_window.limit,
+                is_root=is_root,
+            )
+
+    def should_stop_subagent(
+        self,
+        scope: BudgetTargetScope,
+        scope_id: str,
+    ) -> bool:
+        """Check if a subagent should be force-stopped (reserve reached).
+
+        Uses :mod:`runtime.budget_escalation` to check the subagent
+        reserve fraction.
+        """
+        from runtime.budget_escalation import should_stop_subagent as _check
+
+        with self._lock:
+            windows = self._matching_windows(scope, scope_id)
+            if not windows:
+                return False
+            best_window = max(
+                windows,
+                key=lambda w: w.utilization if w.limit > 0 else 0.0,
+            )
+            if best_window.limit <= 0:
+                return False
+            return _check(
+                spend=best_window.spend,
+                limit=best_window.limit,
+            )
+
     def on_complete(
         self, scope: BudgetTargetScope, scope_id: str, actual_cost: float
     ) -> None:

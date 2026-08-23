@@ -59,6 +59,38 @@ _AI_CRAWLERS = {
 
 _SEVERITY_PENALTY: dict[str, int] = {"CRITICAL": -8, "WARNING": -3, "INFO": -1}
 
+# Maps issue_type IDs from the registry to legacy category labels.
+_ISSUE_TYPE_TO_CATEGORY: dict[str, str] = {
+    "missing-title": "Core",
+    "title-too-long": "Core",
+    "title-too-short": "Core",
+    "missing-meta-description": "Core",
+    "meta-description-too-long": "Core",
+    "meta-description-too-short": "Core",
+    "missing-h1": "Core",
+    "multiple-h1": "Core",
+    "heading-order-skip": "Core",
+    "missing-canonical": "Core",
+    "canonical-mismatch": "Core",
+    "noindex-page": "Core",
+    "blocked-page": "Core",
+    "server-error": "Core",
+    "broken-page": "Core",
+    "broken-internal-link": "Core",
+    "thin-content": "Content",
+    "images-missing-alt": "Images",
+    "slow-response": "Performance",
+    "deep-page": "Architecture",
+    "missing-structured-data": "Schema",
+    "missing-hreflang": "International",
+    "duplicate-title": "Core",
+    "duplicate-meta-description": "Core",
+    "duplicate-content": "Content",
+    "redirect-chain": "Core",
+    "redirect-loop": "Core",
+    "orphan-page": "Architecture",
+}
+
 _ALLOWED_SCHEMES = {"http", "https"}
 _BLOCKED_SCHEMES = {"javascript", "data", "file", "ftp", "mailto"}
 _CWV_STRATEGIES = {"mobile", "desktop"}
@@ -398,6 +430,46 @@ def _issue(severity: str, category: str, rule_id: str, message: str, fix: str = 
     return {"severity": severity, "category": category, "rule_id": rule_id, "message": message, "fix": fix}
 
 
+def _parser_to_page_data(parser: _SeoHtmlParser, body: str, url: str, status_code: int = 200) -> Any:
+    """Convert a _SeoHtmlParser result to a PageData for the new reporters module."""
+    from aizee_mcp.tools.seo_page_reporters import PageData
+
+    text = _strip_html(body)
+    wc = _word_count(text)
+    ch = _content_hash(text)
+    no_alt = [img for img in parser.images if not img.get("alt")]
+    no_dims = [img for img in parser.images if not img.get("width") or not img.get("height")]
+    robots_meta = parser.meta.get("robots", "").lower()
+    heading_order: list[int] = []
+    for h in parser.h1s:
+        heading_order.append(1)
+    for h in parser.h2s:
+        heading_order.append(2)
+    for h in parser.h3s:
+        heading_order.append(3)
+
+    return PageData(
+        url=url,
+        status_code=status_code,
+        is_html=True,
+        title=parser.title.strip() if parser.title else None,
+        meta_description=parser.meta.get("description", "") or None,
+        canonical_url=parser.canonical or None,
+        h1_count=len(parser.h1s),
+        heading_order=heading_order,
+        is_indexable="noindex" not in robots_meta,
+        robots_meta=robots_meta or None,
+        word_count=wc,
+        content_hash=ch,
+        images_missing_alt=len(no_alt),
+        images_missing_dims=len(no_dims),
+        og_title=parser.og_tags.get("og:title") or None,
+        og_description=parser.og_tags.get("og:description") or None,
+        has_structured_data=bool(parser.json_ld),
+        has_hreflang=False,  # Not currently extracted by _SeoHtmlParser
+    )
+
+
 def _compute_health_score(issues: list[dict[str, str]]) -> int:
     score = 100
     for issue in issues:
@@ -425,66 +497,35 @@ def _cwv_status(metric: str, value: float | None) -> str:
 
 
 def _audit_page_issues(parser: _SeoHtmlParser, body: str, url: str) -> list[dict[str, str]]:
+    """Audit a parsed page for SEO issues.
+
+    Uses the new :mod:`aizee_mcp.tools.seo_page_reporters` module
+    (ported from open-seo) for structured issue detection, then
+    converts the enriched issues back to the legacy dict format for
+    backward compatibility with existing tool consumers.
+    """
+    from aizee_mcp.tools.seo_page_reporters import run_page_reporters
+
+    page_data = _parser_to_page_data(parser, body, url)
+    enriched_issues = run_page_reporters(page_data)
+
+    # Convert enriched issues (with registry metadata) back to legacy format
     issues: list[dict[str, str]] = []
-    title = parser.title.strip()
-    desc = parser.meta.get("description", "")
-    canonical = parser.canonical
-    h1_count = len(parser.h1s)
-    text = _strip_html(body)
-    wc = _word_count(text)
+    for ei in enriched_issues:
+        severity = ei.get("severity", "info").upper()
+        issue_type = ei.get("issue_type", "")
+        title = ei.get("title", issue_type)
+        how_to_fix = ei.get("how_to_fix", "")
+        # Map issue_type to legacy category
+        category = _ISSUE_TYPE_TO_CATEGORY.get(issue_type, "Core")
+        issues.append(_issue(severity, category, issue_type, title, how_to_fix))
 
-    # Title checks
-    if not title:
-        issues.append(_issue("CRITICAL", "Core", "title-missing", "Title tag is missing", "Add a <title> tag (50-60 chars)"))
-    elif len(title) < 15:
-        issues.append(_issue("WARNING", "Core", "title-short", f"Title too short ({len(title)} chars)", "Expand to 50-60 chars"))
-    elif len(title) > 65:
-        issues.append(_issue("WARNING", "Core", "title-long", f"Title too long ({len(title)} chars)", "Shorten to 50-60 chars"))
-
-    # Description checks
-    if not desc:
-        issues.append(_issue("CRITICAL", "Core", "desc-missing", "Meta description is missing", "Add meta description (150-160 chars)"))
-    elif len(desc) < 50:
-        issues.append(_issue("WARNING", "Core", "desc-short", f"Description too short ({len(desc)} chars)", "Expand to 150-160 chars"))
-    elif len(desc) > 165:
-        issues.append(_issue("WARNING", "Core", "desc-long", f"Description too long ({len(desc)} chars)", "Shorten to 150-160 chars"))
-
-    # H1 checks
-    if h1_count == 0:
-        issues.append(_issue("CRITICAL", "Core", "h1-missing", "No H1 heading found", "Add exactly one H1 per page"))
-    elif h1_count > 1:
-        issues.append(_issue("WARNING", "Core", "h1-multiple", f"{h1_count} H1 headings found", "Use exactly one H1 per page"))
-
-    # Canonical
-    if not canonical:
-        issues.append(_issue("WARNING", "Core", "canonical-missing", "Canonical tag is missing", "Add self-referencing rel=canonical"))
-
-    # Word count
-    if wc < 300:
-        issues.append(_issue("WARNING", "Content", "thin-content", f"Low word count ({wc} words)", "Expand content to 300+ words minimum"))
-
-    # Images without alt
-    no_alt = [img for img in parser.images if not img.get("alt")]
-    if no_alt:
-        issues.append(_issue("WARNING", "Images", "img-alt-missing", f"{len(no_alt)} images without alt text", "Add descriptive alt text to all images"))
-
-    # Images without dimensions
-    no_dims = [img for img in parser.images if not img.get("width") or not img.get("height")]
-    if no_dims:
-        issues.append(_issue("INFO", "Images", "img-dimensions-missing", f"{len(no_dims)} images without width/height", "Add width/height to prevent CLS"))
-
-    # Open Graph
+    # Preserve legacy checks not yet in the registry
+    # Open Graph checks
     if not parser.og_tags.get("og:title"):
         issues.append(_issue("INFO", "Social", "og-title-missing", "og:title tag missing", "Add og:title for social sharing"))
     if not parser.og_tags.get("og:description"):
         issues.append(_issue("INFO", "Social", "og-desc-missing", "og:description tag missing", "Add og:description for social sharing"))
-
-    # Robots meta
-    robots_meta = parser.meta.get("robots", "").lower()
-    if "noindex" in robots_meta:
-        issues.append(_issue("INFO", "Core", "noindex", "Page has noindex directive", "Remove noindex if page should be indexed"))
-    if "nofollow" in robots_meta:
-        issues.append(_issue("INFO", "Core", "nofollow", "Page has nofollow directive", "Remove nofollow if links should be followed"))
 
     # Viewport (mobile-friendly)
     if not parser.meta.get("viewport"):
