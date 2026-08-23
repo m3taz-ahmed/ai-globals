@@ -894,7 +894,13 @@ function Start-Installation {
     # Handle finish page actions
     $NextBtn.Add_Click({
         if ($Window.FindName("FinishLaunchDashboard").IsChecked) {
-            Start-Process python -ArgumentList "dashboard/server.py" -WorkingDirectory $script:installRoot
+            # Use start-dashboard.bat which launches the server + opens the browser
+            $launcher = Join-Path $script:installRoot "start-dashboard.bat"
+            if (Test-Path $launcher) {
+                Start-Process cmd -ArgumentList "/c", "`"$launcher`""
+            } else {
+                Start-Process python -ArgumentList "dashboard/server.py" -WorkingDirectory $script:installRoot
+            }
         }
         if ($Window.FindName("FinishOpenReadme").IsChecked) {
             Start-Process notepad -ArgumentList (Join-Path $script:installRoot "README.md")
