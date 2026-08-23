@@ -216,6 +216,7 @@ personas:
     weight: 1.2
     skill: mobile-game-producer
     lords:
+    - mobile-architect
     - game-architect
     - flutter-architect
     - flutter-developer
@@ -232,6 +233,7 @@ personas:
     - ios
     - flutter
     - react native
+    - expo
     - push notification
     - offline sync
     - mobile
@@ -243,6 +245,20 @@ personas:
     - widget
     - pubspec
     - pub.dev
+    - tanstack query
+    - zustand
+    - mmkv
+    - unistyles
+    - nativewind
+    - patrol
+    - maestro
+    - revenuecat
+    - posthog
+    - sentry
+    - eas build
+    - codemagic
+    - تطبيق موبايل
+    - موبايل ابليكيشن
   DATA:
     name: Data Engineer & DBA
     weight: 1.2

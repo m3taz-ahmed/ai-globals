@@ -44,13 +44,14 @@ class TestManifestEncoding:
         path = _manifest_path()
         data = json.loads(path.read_text(encoding="utf-8"))
         arabic_keys = [k for k in data["triggers"] if any(0x0600 <= ord(c) <= 0x06FF for c in k)]
-        # We expect at least the SEO Arabic triggers.
-        assert len(arabic_keys) >= 2, f"Expected >=2 Arabic triggers, got {len(arabic_keys)}: {arabic_keys}"
-        # Verify they map to the SEO audit workflow.
-        for key in arabic_keys:
-            assert data["triggers"][key] == "workflows/28-seo-audit.md", (
-                f"Arabic trigger '{key}' maps to {data['triggers'][key]}, expected workflows/28-seo-audit.md"
-            )
+        # We expect at least the SEO + mobile Arabic triggers.
+        assert len(arabic_keys) >= 4, f"Expected >=4 Arabic triggers, got {len(arabic_keys)}: {arabic_keys}"
+        # Verify SEO Arabic triggers map to the SEO audit workflow.
+        seo_keys = [k for k in arabic_keys if data["triggers"][k] == "workflows/28-seo-audit.md"]
+        assert len(seo_keys) >= 2, f"Expected >=2 SEO Arabic triggers, got {len(seo_keys)}"
+        # Verify mobile Arabic triggers map to the mobile bootstrap workflow.
+        mobile_keys = [k for k in arabic_keys if data["triggers"][k] == "workflows/32-mobile-app-bootstrap.md"]
+        assert len(mobile_keys) >= 2, f"Expected >=2 mobile Arabic triggers, got {len(mobile_keys)}"
 
     def test_all_trigger_paths_exist(self) -> None:
         """Every trigger value must point to an existing file."""

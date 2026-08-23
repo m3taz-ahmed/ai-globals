@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **37 execution workflows** (30 numbered trigger-based protocols 00-29 + 7 standards protocols) plus 6 reference files (cheat-sheet, commands-reference, update-me, spec-driven series). 43 `.md` files total. Each activates when the AI detects a specific task type.
+This directory contains **40 execution workflows** (33 numbered trigger-based protocols 00-32 + 7 standards protocols) plus 7 reference files (cheat-sheet, commands-reference, monthly-maintenance, update-me, README, code-quality, testing-tiers). 47 `.md` files total. Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 
@@ -54,6 +54,9 @@ This directory contains **37 execution workflows** (30 numbered trigger-based pr
 | Laravel API versioning | `26-laravel-api-versioning.md` | Header-based API versioning with structure constants |
 | SEO audit / optimization | 28-seo-audit.md | Comprehensive SEO audit (technical, content, schema, GEO/AEO, CWV, links, images) |
 | Filament AI workflow | 29-filament-ai-workflow.md | AI-assisted Filament dev using Boost + Compass + FilaCheck pipeline |
+| Skill generation | 30-skill-generation.md | Book-to-skill pipeline for creating new skills |
+| Drafter-reviewer | 31-drafter-reviewer.md | Drafter-reviewer pipeline for parallel code generation |
+| Mobile app bootstrap | 32-mobile-app-bootstrap.md | Cross-platform mobile app scaffolding (Flutter or Expo) with full architecture |
 
 ## Standards & Reference Files
 

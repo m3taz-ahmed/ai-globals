@@ -82,7 +82,26 @@
     "filacheck": "workflows/29-filament-ai-workflow.md",
     "ai workflow filament": "workflows/29-filament-ai-workflow.md",
     "تحسين محركات البحث": "workflows/28-seo-audit.md",
-    "سيو": "workflows/28-seo-audit.md"
+    "سيو": "workflows/28-seo-audit.md",
+    "mobile bootstrap": "workflows/32-mobile-app-bootstrap.md",
+    "mobile app setup": "workflows/32-mobile-app-bootstrap.md",
+    "flutter app": "workflows/32-mobile-app-bootstrap.md",
+    "expo app": "workflows/32-mobile-app-bootstrap.md",
+    "react native app": "workflows/32-mobile-app-bootstrap.md",
+    "mobile app": "workflows/32-mobile-app-bootstrap.md",
+    "تطبيق موبايل": "workflows/32-mobile-app-bootstrap.md",
+    "موبايل ابليكيشن": "workflows/32-mobile-app-bootstrap.md",
+    "mobile-architect": "skills/mobile-architect/SKILL.md",
+    "expo": "tech-stack/expo-sdk-56.md",
+    "react native": "tech-stack/expo-sdk-56.md",
+    "tanstack query": "skills/mobile-architect/SKILL.md",
+    "zustand": "skills/mobile-architect/SKILL.md",
+    "mmkv": "skills/mobile-architect/SKILL.md",
+    "unistyles": "skills/mobile-architect/SKILL.md",
+    "patrol": "skills/mobile-architect/SKILL.md",
+    "maestro": "skills/mobile-architect/SKILL.md",
+    "revenuecat": "skills/mobile-architect/SKILL.md",
+    "eas build": "skills/mobile-architect/SKILL.md"
   },
   "features": {
     "audit_log": "runtime/audit.py",
@@ -132,7 +151,8 @@
     "hook_lifecycle": "runtime/hook_lifecycle.py",
     "layers": "runtime/layers.py",
     "contract_emitter": "runtime/contract_emitter.py",
-    "manifest_generator": "scripts/generate_manifest.py"
+    "manifest_generator": "scripts/generate_manifest.py",
+    "mobile_patterns": "runtime/mobile_patterns.py"
   },
   "standards": {
     "git": "workflows/git-standards.md",

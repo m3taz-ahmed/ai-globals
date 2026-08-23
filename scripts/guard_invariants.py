@@ -85,8 +85,8 @@ def check_skills_have_frontmatter(root: Path) -> list[Violation]:
     if not skills.exists():
         return violations
     for md in skills.rglob("*.md"):
-        # Skip reference/template subdirectories (not skill files)
-        if "references" in md.parts or "templates" in md.parts:
+        # Skip reference/template subdirectories and EVAL files (not skill files)
+        if "references" in md.parts or "templates" in md.parts or md.name == "EVAL.md":
             continue
         text = md.read_text(encoding="utf-8").strip()
         if not text.startswith("---"):

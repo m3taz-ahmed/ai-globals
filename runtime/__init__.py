@@ -31,6 +31,12 @@ from runtime.middleware import CompiledPipeline as CompiledPipeline
 from runtime.middleware import EnhancerType as EnhancerType
 from runtime.middleware import MiddlewarePipeline as MiddlewarePipeline
 from runtime.middleware import MiddlewareResult as MiddlewareResult
+from runtime.mobile_patterns import MobileAuditConfig as MobileAuditConfig
+from runtime.mobile_patterns import MobilePattern as MobilePattern
+from runtime.mobile_patterns import MobilePatternAuditor as MobilePatternAuditor
+from runtime.mobile_patterns import MobilePlatform as MobilePlatform
+from runtime.mobile_patterns import PatternResult as PatternResult
+from runtime.mobile_patterns import PatternSeverity as PatternSeverity
 from runtime.prompt_gate import PromptGate as PromptGate
 from runtime.reasoning_graph import ReasoningGraph as ReasoningGraph
 from runtime.scoped_manager import ScopedManager as ScopedManager
@@ -61,6 +67,12 @@ __all__ = [
     "McpFirewall",
     "MiddlewarePipeline",
     "MiddlewareResult",
+    "MobileAuditConfig",
+    "MobilePattern",
+    "MobilePatternAuditor",
+    "MobilePlatform",
+    "PatternResult",
+    "PatternSeverity",
     "PromptGate",
     "ReasoningGraph",
     "ScopedManager",

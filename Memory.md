@@ -6,6 +6,20 @@
 3. [REQ] Keep under 500 lines.
 [UPDATED] 2026-08-23
 [NOTES]
+- **Mobile strengthening — 2026-08-23 (8 GitHub repos study + full implementation)**:
+  - **Study**: Analyzed 8 production mobile repos (5 Flutter + 3 React Native/Expo) cloned to `D:\server\temp\mobile-study`. Full report at `D:\server\temp\mobile-study\MOBILE_STRENGTHENING_REPORT.md` (408 lines).
+  - **Repos analyzed**: ultimate-flutter-template, flutter-firebase-blueprint, flutter-riverpod-clean-arch, flutter-ddd-template, riverpod-clean-arch, expo-supabase-starter, expo-boilerplate-sdk56, rn-copilot.
+  - **New runtime module**: `runtime/mobile_patterns.py` (~580 lines) — MobilePatternAuditor with 18 pattern checks. Supports Flutter + RN + KMP + Swift + Kotlin Native. RN backend isolation now checks @supabase/firebase in components/hooks (not just Flutter). CI/CD check covers nested fastlane/Fastfile (ios/fastlane/, android/fastlane/).
+  - **New tests**: `tests/test_mobile_patterns.py` (61 tests, all passing) — covers all 18 patterns for both platforms + RN backend isolation + nested Fastfile + audit_summary + edge cases.
+  - **New skill**: `skills/mobile-architect/SKILL.md` (lord skill) — cross-platform mobile architect.
+  - **New tech-stack**: `tech-stack/expo-sdk-56.md` (209 lines) — Expo SDK 56 / RN 0.86 / React 19.2 / TS 6.0.
+  - **New workflow**: `workflows/32-mobile-app-bootstrap.md` (93 lines) — 6-phase mobile bootstrap.
+  - **Updated skills**: flutter-architect (+6 rules, merged duplicate L10n rule 15/21 → 25 rules total), mobile-game-producer (+5 rules).
+  - **Updated personas.yaml**: MOBILE +mobile-architect lord + 16 keywords.
+  - **Updated useful-repos.md**: +18 mobile repos (103 total).
+  - **Updated manifest.json**: +20 triggers + mobile_patterns feature.
+  - **Code review (DEV+QA+ARCH)**: Fixed 6 issues — [DIR-01] violation (edited aizee/Memory.md instead of .ai), duplicate L10n rule in flutter-architect, 2 dead code functions (_dir_has_subdirs, _glob_exists), test fixture version mismatch (expo ^57 → ^56), workflows/README.md count error (38 → 40). All fixed.
+  - **Quality gates**: ruff PASS, mypy PASS, pytest 61/61 PASS.
 - **Integration patterns from 7 GitHub repos - 2026-08-24 (18 patterns from strix, open-notebook, book-to-skill, open-seo, i-have-adhd, no-ai-slop, ai-job-search)**:
   - **16 new modules**: runtime/text_sanitize.py (invisible codepoint sanitization), runtime/seo_issue_registry.py (typed SEO audit issue registry, 30+ issue types), runtime/skill_eval.py (self-checking EVAL.md loader), runtime/budget_escalation.py (multi-stage escalation + subagent reserve), runtime/tool_output_bounder.py (output bounding for MCP tools), runtime/provider_registry.py (LLM provider registry, 8 providers), runtime/audit_workflow.py (phased durable audit with checkpointing), runtime/sarif_emitter.py (SARIF 2.1.0 emission), runtime/output_gate.py (pre-send check + portability test), runtime/error_classifier.py (classify_error to typed AizeeError), runtime/sql_injection_guard.py (ORDER BY/identifier validation), aizee_mcp/tools/seo_page_reporters.py (per-page SEO checks), aizee_mcp/tools/seo_multipage_checks.py (cross-page SEO checks), aizee_mcp/tools/seo_sitemap_discovery.py (robots.txt + sitemap discovery with caps), aizee_mcp/tools/mcp_output_schemas.py (MCP output schema validation), eval/rubric.py (eval rubric + release gate).
   - **2 new workflows**: workflows/30-skill-generation.md (book-to-skill pipeline), workflows/31-drafter-reviewer.md (drafter-reviewer pipeline).
