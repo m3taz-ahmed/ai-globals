@@ -1,6 +1,6 @@
 # `workflows/` — Execution Protocols
 
-This directory contains **40 execution workflows** (33 numbered trigger-based protocols 00-32 + 7 standards protocols) plus 7 reference files (cheat-sheet, commands-reference, monthly-maintenance, update-me, README, code-quality, testing-tiers). 47 `.md` files total. Each activates when the AI detects a specific task type.
+This directory contains **43 execution workflows** (36 numbered trigger-based protocols 00-35 + 7 standards protocols) plus 7 reference files (cheat-sheet, commands-reference, monthly-maintenance, update-me, README, code-quality, testing-tiers). 50 `.md` files total. Each activates when the AI detects a specific task type.
 
 ## Numbered Workflows (Trigger-Based)
 

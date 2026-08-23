@@ -1,6 +1,50 @@
 # Changelog
 
-## [Unreleased] — Architectural Patterns Implementation (10 Patterns from 24 Top Repos)
+## [Unreleased] — Governance Layer: Market Research + 10 Runtime Modules + 5 Skills + 3 Workflows
+
+### Market Research (2026 AI Coding Governance)
+- Analyzed Gartner Magic Quadrant for AI Governance Platforms (June 2026), Sonar State of Code (1,149 devs), Qodo AI Coding Paradox (500 eng), UserQ MENA (500 users), Eshal CX Benchmark (412 leaders).
+- Key findings: 42% AI-committed code, 96% don't fully trust AI, 89% had AI production incidents, 28% Arabic churn in MENA, 24-point dialect gap.
+- Identified 10 market gaps (G1-G10) and 6 direct competitors (repo-contract, Elastra, Salt Code, Fiddler, GitLab Duo, Databricks Unity Catalog).
+
+### New Runtime Modules (10 added)
+- **`runtime/rules_materializer.py`** — Emit aiZee rules → 7 tool formats (CLAUDE.md, .cursor/rules/*.mdc, .clinerules/*.md, .windsurfrules, .github/copilot-instructions.md, CONVENTIONS.md, .devin/rules/*.md). 6-scope precedence. Drift detection. (Closes G2)
+- **`runtime/agent_gateway.py`** — LLM/MCP request-response interception. Pre-LLM + post-execution guardrails. ALLOW/REDACT/BLOCK verdicts. 3 built-in guardrails + custom registration. (Closes G1)
+- **`runtime/plan_diff_validator.py`** — Plan + diff validation. AST import resolution, dependency guard, unrelated-refactor detection, test gap, forbidden paths. (Closes G3)
+- **`runtime/composite_identity.py`** — Dual principal (agent + human) attribution. SHA-256 signature. Thread-safe registry. (Closes G4)
+- **`runtime/supply_chain_guard.py`** — Undeclared import detection in 4 ecosystems (Python/Node/PHP/Go). AST + regex. Stdlib exclusion. (Closes G7)
+- **`runtime/agent_catalog.py`** — Allowlist of permitted agents/flows/models. RBAC-gated. AgentStatus + ModelTier enums. (Closes G8)
+- **`runtime/mcp_securable.py`** — MCP servers as governed securables with GRANT policies (USE/ADMIN/REGISTER). Tool allowlisting. (Closes G9)
+- **`runtime/cost_attribution.py`** — Per-agent cost tags + anomaly detection (SPIKE/BUDGET_BREACH/UNEXPECTED_PROVIDER). (Closes G10)
+- **`eval/reliability.py`** — reliability@k + security-adjusted reliability@k. Replaces misapplied pass@k. Multi-rollout scoring. (Closes G5)
+
+### New Skills (5 lord-level)
+- **`skills/arabic-dialect-lord/`** — 20 rules, 5 dialect families (Gulf/Egyptian/Levantine/Maghrebi/MSA), RTL, code-switching. Competitive moat for MENA. (Closes G6)
+- **`skills/agent-governance-lord/`** — 20 rules, gateway enforcement stack, agent/flow/model allowlist, MCP-as-securable, composite identity.
+- **`skills/eval-reliability-lord/`** — 18 rules, reliability@k + security-adjusted, multi-rollout mandatory, Docker reproducibility.
+- **`skills/supply-chain-lord/`** — 19 rules, dependency guard, SBOM, Cosign, minimum release age, no floating ranges.
+- **`skills/compliance-lord/`** — 16 rules, EU AI Act (Art. 9-15), NIST AI RMF, ISO 42001, risk tier classification.
+
+### New Workflows (3 added)
+- **`workflows/33-multi-tool-sync.md`** — 5-phase rules materialization (collect → resolve → materialize → drift detect → verify).
+- **`workflows/34-agent-gateway-audit.md`** — 5-phase gateway audit (register → intercept requests → intercept responses → composite identity → audit report).
+- **`workflows/35-reliability-eval.md`** — 5-phase reliability eval (prepare rollouts → classify → score → report → release gate).
+
+### Updated
+- `manifest.json`: +34 triggers, +10 features.
+- `personas.yaml`: ARCH+agent-governance-lord+compliance-lord, QA+eval-reliability-lord, UX+arabic-dialect-lord, SEC+supply-chain-lord+agent-governance-lord, LEGAL+compliance-lord, ML+eval-reliability-lord, MLOPS+eval-reliability-lord, +25 keywords.
+- `workflows/README.md`: 40 → 43 workflows.
+- `runtime/__init__.py`: +34 re-exports.
+- `tech-stack/useful-repos.md`: +16 governance/eval/Arabic repos.
+
+### Tests
+- 242 new tests across 9 test files. All PASS.
+- Full suite: 3830 passed (275s).
+
+### Quality Gates
+- ruff: 0 errors. mypy: 0 errors. pytest: 3830 passed. graphify: 13217 nodes/27857 edges. memory ingest: 131 memories.
+
+## [Previous] — Architectural Patterns Implementation (10 Patterns from 24 Top Repos)
 
 ### New Runtime Modules (3 added)
 - **`runtime/middleware.py`** — Flat middleware pipeline (tRPC-style recursive `callRecursive`) + pre-compiled enhancer pipeline (NestJS-style guards/interceptors/pipes compiled once at registration).

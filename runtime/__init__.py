@@ -7,7 +7,16 @@ import config
 __version__ = config.VERSION
 
 # Re-export new governance modules for convenient access.
+from runtime.agent_catalog import AgentCatalog as AgentCatalog
+from runtime.agent_catalog import CatalogAgent as CatalogAgent
+from runtime.agent_catalog import CatalogFlow as CatalogFlow
+from runtime.agent_catalog import CatalogModel as CatalogModel
 from runtime.agent_discovery import AgentDiscovery as AgentDiscovery
+from runtime.agent_gateway import AgentGateway as AgentGateway
+from runtime.agent_gateway import GuardrailContext as GuardrailContext
+from runtime.agent_gateway import GuardrailPhase as GuardrailPhase
+from runtime.agent_gateway import GuardrailResult as GuardrailResult
+from runtime.agent_gateway import Verdict as Verdict
 from runtime.approval_service import ApprovalService as ApprovalService
 from runtime.closure_evaluator import ClosureEvaluator as ClosureEvaluator
 from runtime.closure_evaluator import GuardianClosureEvaluator as GuardianClosureEvaluator
@@ -15,10 +24,18 @@ from runtime.commands import Command as Command
 from runtime.commands import CommandBus as CommandBus
 from runtime.commands import CommandResult as CommandResult
 from runtime.commands import CommandStatus as CommandStatus
+from runtime.composite_identity import CompositeIdentity as CompositeIdentity
+from runtime.composite_identity import CompositeIdentityRegistry as CompositeIdentityRegistry
+from runtime.composite_identity import Principal as Principal
+from runtime.composite_identity import PrincipalRole as PrincipalRole
 from runtime.context_manager import ContextManager as ContextManager
 from runtime.contract_emitter import ContractArtifact as ContractArtifact
 from runtime.contract_emitter import emit_contract as emit_contract
 from runtime.contract_emitter import emit_contracts as emit_contracts
+from runtime.cost_attribution import CostAnomaly as CostAnomaly
+from runtime.cost_attribution import CostAnomalyType as CostAnomalyType
+from runtime.cost_attribution import CostAttribution as CostAttribution
+from runtime.cost_attribution import CostRecord as CostRecord
 from runtime.hook_lifecycle import HookContext as HookContext
 from runtime.hook_lifecycle import HookPhase as HookPhase
 from runtime.hook_lifecycle import HookRegistry as HookRegistry
@@ -26,6 +43,10 @@ from runtime.layers import Layer as Layer
 from runtime.layers import LayerManifest as LayerManifest
 from runtime.loop_detector import LoopDetector as LoopDetector
 from runtime.mcp_firewall import McpFirewall as McpFirewall
+from runtime.mcp_securable import Grant as Grant
+from runtime.mcp_securable import McpPermission as McpPermission
+from runtime.mcp_securable import McpSecurableRegistry as McpSecurableRegistry
+from runtime.mcp_securable import McpServer as McpServer
 from runtime.middleware import ActionContext as ActionContext
 from runtime.middleware import CompiledPipeline as CompiledPipeline
 from runtime.middleware import EnhancerType as EnhancerType
@@ -37,34 +58,69 @@ from runtime.mobile_patterns import MobilePatternAuditor as MobilePatternAuditor
 from runtime.mobile_patterns import MobilePlatform as MobilePlatform
 from runtime.mobile_patterns import PatternResult as PatternResult
 from runtime.mobile_patterns import PatternSeverity as PatternSeverity
+from runtime.plan_diff_validator import Finding as Finding
+from runtime.plan_diff_validator import PlanDiffValidator as PlanDiffValidator
+from runtime.plan_diff_validator import ValidationLevel as ValidationLevel
+from runtime.plan_diff_validator import ValidationResult as ValidationResult
 from runtime.prompt_gate import PromptGate as PromptGate
 from runtime.reasoning_graph import ReasoningGraph as ReasoningGraph
+from runtime.rules_materializer import MaterializationResult as MaterializationResult
+from runtime.rules_materializer import RuleEntry as RuleEntry
+from runtime.rules_materializer import RulesMaterializer as RulesMaterializer
+from runtime.rules_materializer import ScopeLevel as ScopeLevel
+from runtime.rules_materializer import ToolTarget as ToolTarget
 from runtime.scoped_manager import ScopedManager as ScopedManager
 from runtime.scoped_manager import ScopedRegistry as ScopedRegistry
 from runtime.scoped_manager import scoped_factory as scoped_factory
+from runtime.supply_chain_guard import DeclaredDependency as DeclaredDependency
+from runtime.supply_chain_guard import DependencyEcosystem as DependencyEcosystem
+from runtime.supply_chain_guard import SupplyChainGuard as SupplyChainGuard
+from runtime.supply_chain_guard import UndeclaredImport as UndeclaredImport
 from runtime.trajectory import TrajectoryTracker as TrajectoryTracker
 
 __all__ = [
     "ActionContext",
+    "AgentCatalog",
     "AgentDiscovery",
+    "AgentGateway",
     "ApprovalService",
+    "CatalogAgent",
+    "CatalogFlow",
+    "CatalogModel",
     "ClosureEvaluator",
     "Command",
     "CommandBus",
     "CommandResult",
     "CommandStatus",
     "CompiledPipeline",
+    "CompositeIdentity",
+    "CompositeIdentityRegistry",
     "ContextManager",
     "ContractArtifact",
+    "CostAnomaly",
+    "CostAnomalyType",
+    "CostAttribution",
+    "CostRecord",
+    "DeclaredDependency",
+    "DependencyEcosystem",
     "EnhancerType",
+    "Finding",
+    "Grant",
     "GuardianClosureEvaluator",
+    "GuardrailContext",
+    "GuardrailPhase",
+    "GuardrailResult",
     "HookContext",
     "HookPhase",
     "HookRegistry",
     "Layer",
     "LayerManifest",
     "LoopDetector",
+    "MaterializationResult",
     "McpFirewall",
+    "McpPermission",
+    "McpSecurableRegistry",
+    "McpServer",
     "MiddlewarePipeline",
     "MiddlewareResult",
     "MobileAuditConfig",
@@ -73,11 +129,23 @@ __all__ = [
     "MobilePlatform",
     "PatternResult",
     "PatternSeverity",
+    "PlanDiffValidator",
+    "Principal",
+    "PrincipalRole",
     "PromptGate",
     "ReasoningGraph",
+    "RuleEntry",
+    "RulesMaterializer",
+    "ScopeLevel",
     "ScopedManager",
     "ScopedRegistry",
+    "SupplyChainGuard",
+    "ToolTarget",
     "TrajectoryTracker",
+    "UndeclaredImport",
+    "ValidationLevel",
+    "ValidationResult",
+    "Verdict",
     "emit_contract",
     "emit_contracts",
     "scoped_factory",

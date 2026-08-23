@@ -6,7 +6,32 @@
 3. [REQ] Keep under 500 lines.
 [UPDATED] 2026-08-23
 [NOTES]
-- **Mobile strengthening — 2026-08-23 (8 GitHub repos study + full implementation)**:
+- **Market research + governance layer implementation — 2026-08-23 (10 new runtime modules + 5 skills + 3 workflows)**:
+  - **Market research**: Analyzed AI coding governance market 2026 (Gartner Magic Quadrant June 2026, Sonar 1,149 dev survey, Qodo 500 eng survey, UserQ MENA 500-user survey, Eshal CX 412-leader benchmark). Key findings: 42% AI-committed code, 96% don't fully trust AI, 89% had AI production incidents, 28% Arabic churn in MENA, 24-point dialect gap.
+  - **10 new runtime modules**:
+    - `runtime/rules_materializer.py` (330 lines) — emit aiZee rules → 7 tool formats (CLAUDE.md, .cursor/rules/*.mdc, .clinerules/*.md, .windsurfrules, .github/copilot-instructions.md, CONVENTIONS.md, .devin/rules/*.md). 6-scope precedence (ORG>PROJECT>NAMESPACE>REPO>TEAM>USER). Drift detection. Inspired by Elastra.
+    - `runtime/agent_gateway.py` (289 lines) — LLM/MCP request-response interception. Pre-LLM + post-execution guardrails. 3 verdicts (ALLOW/REDACT/BLOCK). 3 built-in guardrails (secret_leak, prompt_injection, destructive_command). Custom guardrail registration. Verdict log. Inspired by Fiddler AI.
+    - `runtime/plan_diff_validator.py` (347 lines) — plan + diff validation. AST import resolution, dependency guard, unrelated-refactor detection (connected components), test gap detection, forbidden path enforcement. Inspired by repo-contract.
+    - `runtime/composite_identity.py` (162 lines) — dual principal (agent + human) attribution. SHA-256 signature. Thread-safe registry. Inspired by GitLab Duo.
+    - `runtime/supply_chain_guard.py` (~440 lines) — detect undeclared imports in 4 ecosystems (Python/Node/PHP/Go). AST for Python, regex for others. Stdlib exclusion. Manifest parsers. Inspired by repo-contract dependency guard.
+    - `runtime/agent_catalog.py` (195 lines) — allowlist of permitted agents/flows/models. RBAC-gated. AgentStatus (ALLOWED/BLOCKED/DEPRECATED), ModelTier (FRONTIER/STANDARD/LOCAL). Inspired by GitLab Duo.
+    - `runtime/mcp_securable.py` (144 lines) — MCP servers as governed securables with GRANT policies (USE/ADMIN/REGISTER). Tool allowlisting. Inspired by Databricks Unity Catalog.
+    - `runtime/cost_attribution.py` (189 lines) — per-agent cost tags + anomaly detection (SPIKE/BUDGET_BREACH/UNEXPECTED_PROVIDER). Cost by agent/model. Inspired by FINOPS + Databricks.
+    - `eval/reliability.py` (~270 lines) — reliability@k + security-adjusted reliability@k. Replaces misapplied pass@k. Multi-rollout scoring. Inspired by arXiv 2608.14711.
+  - **5 new skills** (all lord-level):
+    - `skills/arabic-dialect-lord/` — 20 rules, 5 dialect families (Gulf/Egyptian/Levantine/Maghrebi/MSA), RTL, code-switching, cultural context. Competitive moat for MENA.
+    - `skills/agent-governance-lord/` — 20 rules, gateway enforcement stack, agent/flow/model allowlist, MCP-as-securable, composite identity, human-in-the-loop.
+    - `skills/eval-reliability-lord/` — 18 rules, reliability@k + security-adjusted, multi-rollout mandatory, Docker reproducibility, no recall contamination.
+    - `skills/supply-chain-lord/` — 19 rules, dependency guard, SBOM, Cosign, minimum release age, no floating ranges, typosquat detection.
+    - `skills/compliance-lord/` — 16 rules, EU AI Act (Art. 9-15), NIST AI RMF (GOVERN/MAP/MEASURE/MANAGE), ISO 42001 (clauses 4/6/8/9/10), risk tier classification.
+  - **3 new workflows**:
+    - `workflows/33-multi-tool-sync.md` — 5-phase materialization (collect → resolve → materialize → drift detect → verify).
+    - `workflows/34-agent-gateway-audit.md` — 5-phase gateway audit (register → intercept requests → intercept responses → composite identity → audit report).
+    - `workflows/35-reliability-eval.md` — 5-phase reliability eval (prepare rollouts → classify → score → report → release gate).
+  - **Updated**: manifest.json (+34 triggers, +10 features), personas.yaml (ARCH+agent-governance-lord+compliance-lord, QA+eval-reliability-lord, UX+arabic-dialect-lord, SEC+supply-chain-lord+agent-governance-lord, LEGAL+compliance-lord, ML+eval-reliability-lord, MLOPS+eval-reliability-lord, +25 keywords), workflows/README.md (40→43), runtime/__init__.py (+34 exports), tech-stack/useful-repos.md (+16 governance/eval/Arabic repos).
+  - **Tests**: 242 new tests across 9 test files. All PASS.
+  - **Quality gates**: ruff PASS (0 errors), mypy PASS (0 errors), pytest FULL 3830 passed (275s), graphify update (13217 nodes/27857 edges), aizee memory ingest (131 memories).
+  - **Competitive positioning**: aiZee now covers 10/10 identified market gaps (G1-G10). Unique moat: arabic-dialect-lord (no competitor has dialect-aware governance).
   - **Study**: Analyzed 8 production mobile repos (5 Flutter + 3 React Native/Expo) cloned to `D:\server\temp\mobile-study`. Full report at `D:\server\temp\mobile-study\MOBILE_STRENGTHENING_REPORT.md` (408 lines).
   - **Repos analyzed**: ultimate-flutter-template, flutter-firebase-blueprint, flutter-riverpod-clean-arch, flutter-ddd-template, riverpod-clean-arch, expo-supabase-starter, expo-boilerplate-sdk56, rn-copilot.
   - **New runtime module**: `runtime/mobile_patterns.py` (~580 lines) — MobilePatternAuditor with 18 pattern checks. Supports Flutter + RN + KMP + Swift + Kotlin Native. RN backend isolation now checks @supabase/firebase in components/hooks (not just Flutter). CI/CD check covers nested fastlane/Fastfile (ios/fastlane/, android/fastlane/).
