@@ -7,6 +7,7 @@ import ast
 import fnmatch
 import functools
 import importlib.util
+import logging
 import threading
 import warnings
 from abc import ABC, abstractmethod
@@ -23,6 +24,8 @@ from runtime.schemas import AizeeError, ErrorSeverity
 if TYPE_CHECKING:
     from memory.store import MemoryStore
     from runtime.kernel import Kernel
+
+_logger = logging.getLogger(__name__)
 
 
 class PluginSandboxError(AizeeError):
@@ -249,6 +252,7 @@ class PluginManager:
         try:
             spec.loader.exec_module(module)
         except Exception as exc:
+            _logger.debug("plugin '%s' failed to load: %s", name, exc, exc_info=True)
             warnings.warn(f"Plugin '{name}' failed to load: {exc}", stacklevel=2)
             return None
         return module
@@ -292,6 +296,7 @@ class PluginManager:
                 self._plugins[name] = plugin
                 self._guards[name] = guard
             except Exception as exc:
+                _logger.debug("plugin '%s' failed to register: %s", name, exc, exc_info=True)
                 warnings.warn(
                     f"Plugin '{name}' failed to register: {exc}", stacklevel=2
                 )
@@ -302,6 +307,7 @@ class PluginManager:
             try:
                 plugin.boot()
             except Exception as exc:
+                _logger.debug("plugin '%s' failed to boot: %s", name, exc, exc_info=True)
                 warnings.warn(
                     f"Plugin '{name}' failed to boot: {exc}", stacklevel=2
                 )

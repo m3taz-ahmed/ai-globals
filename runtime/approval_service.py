@@ -24,6 +24,7 @@ Usage::
 from __future__ import annotations
 
 import json
+import logging
 import threading
 import time
 import uuid
@@ -33,6 +34,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from runtime.storage_backend import StorageBackend as _StorageBackend
+
+_logger = logging.getLogger(__name__)
 
 
 class ApprovalStatus(str, Enum):
@@ -113,7 +116,8 @@ class WebhookChannel(NotificationChannel):
         try:
             urllib.request.urlopen(req, timeout=5)
             return True
-        except Exception:
+        except Exception as exc:
+            _logger.debug("webhook notification failed: %s", exc, exc_info=True)
             return False
 
 
@@ -168,7 +172,8 @@ class ApprovalService:
             try:
                 if ch.send(request):
                     succeeded.append(ch.name)
-            except Exception:
+            except Exception as exc:
+                _logger.debug("approval channel %s failed: %s", ch.name, exc, exc_info=True)
                 continue
         return succeeded
 

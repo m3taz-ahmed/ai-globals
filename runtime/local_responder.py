@@ -12,9 +12,12 @@ kernel data — no model calls, no network, fully deterministic.
 
 from __future__ import annotations
 
+import logging
 import re
 from collections.abc import Callable
 from typing import Any
+
+_logger = logging.getLogger(__name__)
 
 _PREFIX = "[local] "
 
@@ -43,7 +46,8 @@ class LocalResponder:
             return {}
         try:
             return self._context_provider()
-        except Exception:
+        except Exception as exc:
+            _logger.debug("context provider failed: %s", exc, exc_info=True)
             return {}
 
     def reply(self, message: str) -> str:

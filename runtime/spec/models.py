@@ -94,6 +94,9 @@ class Task:
     status: str = "pending"  # pending, in_progress, done, blocked
     depends_on: list[str] = field(default_factory=list)
     estimate_hours: float = 0.0
+    # WS-E W1: Task verification — evidence required before "done"
+    verification_evidence: str = ""  # command output, test result, or URL
+    verified: bool = False  # set True when evidence is reviewed
 
 
 @dataclass
@@ -111,6 +114,8 @@ class Spec:
     updated_at: str = ""
     constitution: str = ""  # Project governing principles
     deltas: list[SpecDelta] = field(default_factory=list)  # Delta-based changes
+    # WS-E W3: State transition history for audit trail
+    state_history: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -125,7 +130,8 @@ class Spec:
             "plan": self.plan,
             "tasks": [
                 {"id": t.id, "description": t.description, "status": t.status,
-                 "depends_on": t.depends_on, "estimate_hours": t.estimate_hours}
+                 "depends_on": t.depends_on, "estimate_hours": t.estimate_hours,
+                 "verification_evidence": t.verification_evidence, "verified": t.verified}
                 for t in self.tasks
             ],
             "created_at": self.created_at,
@@ -137,6 +143,7 @@ class Spec:
                  "priority": d.priority}
                 for d in self.deltas
             ],
+            "state_history": list(self.state_history),
         }
 
     @classmethod
@@ -158,6 +165,8 @@ class Spec:
                 Task(
                     id=t["id"], description=t["description"], status=t.get("status", "pending"),
                     depends_on=t.get("depends_on", []), estimate_hours=t.get("estimate_hours", 0.0),
+                    verification_evidence=t.get("verification_evidence", ""),
+                    verified=t.get("verified", False),
                 )
                 for t in data.get("tasks", [])
             ],
@@ -174,4 +183,5 @@ class Spec:
                 )
                 for d in data.get("deltas", [])
             ],
+            state_history=list(data.get("state_history", [])),
         )

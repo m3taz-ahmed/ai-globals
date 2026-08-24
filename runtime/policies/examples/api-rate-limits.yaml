@@ -1,6 +1,6 @@
 name: api-rate-limits
 apiVersion: governance.aizee/v1
-default_action: ask
+# default_action moved to default.yaml per GATE-B3
 rules:
   - name: limit-expensive-llm-calls
     condition: "type == 'mcp_call_tool' and 'llm' in command"

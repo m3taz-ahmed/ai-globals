@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import hmac
+import ipaddress
 import json
 import logging
 import mimetypes
@@ -56,12 +57,13 @@ _memory_cache: tuple[Path, MemoryStore] | None = None
 _cache_lock = threading.Lock()
 
 # Simple per-IP fixed-window rate limiter.
-_rate_limit = int(os.environ.get("AGENT_OS_DASHBOARD_RATE_LIMIT", "120"))
-_rate_window = float(os.environ.get("AGENT_OS_DASHBOARD_RATE_WINDOW", "60"))
+# Clamp to >=1 so a misconfigured env var (0 or negative) cannot disable rate limiting.
+_rate_limit = max(1, int(os.environ.get("AGENT_OS_DASHBOARD_RATE_LIMIT", "120")))
+_rate_window = max(1.0, float(os.environ.get("AGENT_OS_DASHBOARD_RATE_WINDOW", "60")))
 _rate_state: dict[str, tuple[int, float]] = {}
 _rate_lock = threading.Lock()
-# Max number of tracked IPs; oldest entries evicted when exceeded.
-_rate_max_entries = int(os.environ.get("AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES", "10000"))
+# Max number of tracked IPs; oldest entries evicted when exceeded. Clamp to >=1.
+_rate_max_entries = max(1, int(os.environ.get("AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES", "10000")))
 
 
 def _kernel_instance() -> Kernel:
@@ -116,7 +118,12 @@ def _client_ip(handler: DashboardHandler) -> str:
     if direct in _TRUSTED_PROXIES:
         forwarded = handler.headers.get("X-Forwarded-For", "").split(",")[-1].strip()
         if forwarded:
-            return forwarded
+            # Validate that the forwarded value is a real IP address to prevent spoofing.
+            try:
+                ipaddress.ip_address(forwarded)
+                return forwarded
+            except ValueError:
+                logger.warning("Invalid X-Forwarded-For value %r from trusted proxy; using direct IP", forwarded)
     return direct
 
 
@@ -311,7 +318,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._handle()
 
     def _read_json_body(self) -> dict[str, Any] | None:
-        content_length = int(self.headers.get("Content-Length", 0))
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+        except (ValueError, TypeError):
+            # SEC-05: garbage Content-Length header → 400, not traceback
+            self._send(400, b"Invalid Content-Length header")
+            return None
         if content_length <= 0:
             return {}
         if content_length > _MAX_BODY_SIZE:
@@ -430,7 +442,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def _send_telemetry(self) -> None:
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        limit = int(qs.get("limit", ["100"])[0])
+        try:
+            limit = min(int(qs.get("limit", ["100"])[0]), 1000)
+        except (ValueError, TypeError):
+            self._send(400, b"Invalid limit")
+            return
         event_type = qs.get("type", [""])[0] or None
         events = self.kernel.telemetry.query(limit=limit, event_type=event_type)
         self._send(200, json.dumps(events, default=str).encode("utf-8"), "application/json")
@@ -443,12 +459,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._send(200, json.dumps(data, default=str).encode("utf-8"), "application/json")
 
     def _send_audit(self) -> None:
+        # SEC-06: support ?limit= (default 200, max 1000) + tail-read
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        try:
+            limit = min(int(qs.get("limit", ["200"])[0]), 1000)
+        except (ValueError, TypeError):
+            limit = 200
         audit_file = self.root / "state" / "audit.log"
-        lines = []
+        lines: list[Any] = []
         if audit_file.exists():
+            # Tail-read: only keep the last `limit` lines in memory
+            from collections import deque
             with audit_file.open("r", encoding="utf-8") as f:
-                lines = [json.loads(line) for line in f if line.strip()]
-        self._send(200, json.dumps(lines[-100:], default=str).encode("utf-8"), "application/json")
+                tail = list(deque(f, maxlen=limit))
+            for line in tail:
+                if line.strip():
+                    try:
+                        lines.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        self._send(200, json.dumps(lines, default=str).encode("utf-8"), "application/json")
 
     def _send_guardian(self) -> None:
         rules = [r.get("name", "unnamed") for r in self.kernel.guardian.rules]
@@ -458,12 +488,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._send(200, json.dumps({"capabilities": self.kernel.capabilities.list()}).encode("utf-8"), "application/json")
 
     def _send_tracing(self) -> None:
+        # SEC-06: support ?limit= (default 200, max 1000) + tail-read
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        try:
+            limit = min(int(qs.get("limit", ["200"])[0]), 1000)
+        except (ValueError, TypeError):
+            limit = 200
         trace_file = self.kernel.project_root / "state" / "spans.jsonl"
-        lines = []
+        lines: list[Any] = []
         if trace_file.exists():
+            # Tail-read: only keep the last `limit` lines in memory
+            from collections import deque
             with trace_file.open("r", encoding="utf-8") as f:
-                lines = [json.loads(line) for line in f if line.strip()]
-        self._send(200, json.dumps(lines[-100:], default=str).encode("utf-8"), "application/json")
+                tail = list(deque(f, maxlen=limit))
+            for line in tail:
+                if line.strip():
+                    try:
+                        lines.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+        self._send(200, json.dumps(lines, default=str).encode("utf-8"), "application/json")
 
     def _send_lint(self) -> None:
         body = self._read_json_body()
@@ -521,18 +565,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send(200, json.dumps({"ok": False, "error": str(exc)}).encode("utf-8"), "application/json", cors=True)
 
     def _send_sse_events(self) -> None:
-        """Server-Sent Events stream for real-time telemetry (lightweight WebSocket alternative)."""
+        """Server-Sent Events stream for real-time telemetry.
+
+        SEC-04: routes through shared security headers, polls every 5s (not 1s),
+        hard 10-min connection lifetime (EventSource auto-reconnects).
+        """
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "keep-alive")
+        # Security headers (same as _send)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
         if _ALLOWED_ORIGINS:
             origin = self.headers.get("Origin", "")
             if origin in _ALLOWED_ORIGINS:
                 self.send_header("Access-Control-Allow-Origin", origin)
         self.end_headers()
         try:
-            for _ in range(60):  # 60s max stream
+            # 10 min max (120 iterations x 5s), down from 60s x 1s polling
+            for _ in range(120):
                 status = self.kernel.status()
                 payload = json.dumps({
                     "version": status.get("version"),
@@ -546,7 +599,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 }, default=str)
                 self.wfile.write(f"data: {payload}\n\n".encode())
                 self.wfile.flush()
-                time.sleep(1)
+                time.sleep(5)  # 5s poll interval (was 1s)
         except (BrokenPipeError, ConnectionResetError):
             pass
 
@@ -573,14 +626,43 @@ def _shutdown(_signum: int, _frame: Any) -> None:  # pragma: no cover
     sys.exit(0)
 
 
+def _is_loopback_host(host: str) -> bool:
+    """Return True only for loopback addresses (SEC-W1).
+
+    Accepts: 127.x.x.x, localhost, ::1.
+    Rejects: 0.0.0.0, external IPs, hostnames.
+    """
+    h = host.strip().lower()
+    if h in ("localhost", "::1"):
+        return True
+    # 127.0.0.0/8 — any 127.x.x.x is loopback
+    parts = h.split(".")
+    if len(parts) == 4 and parts[0] == "127":
+        return all(p.isdigit() and 0 <= int(p) <= 255 for p in parts[1:])
+    return False
+
+
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
     host = os.environ.get("AGENT_OS_HOST", "127.0.0.1")
+    token = _dashboard_token(Path(os.environ.get("AIZEE_ROOT", ".")))
+    # SEC-W1: refuse to bind non-loopback host without authentication.
+    # This enforces the "safe because bound to loopback" invariant that
+    # the open-access mode relies on.
+    if not _is_loopback_host(host) and token is None:
+        raise SystemExit(
+            "aiZee dashboard refuses to bind non-loopback host "
+            f"'{host}' without authentication. Set AIZEE_DASHBOARD_TOKEN "
+            "to enable network-exposed mode."
+        )
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
     server = ThreadingHTTPServer((host, port), DashboardHandler)
     print(f"aiZee dashboard: http://{host}:{port}")
-    if not _dashboard_token(Path(os.environ.get("AIZEE_ROOT", "."))):
+    if not token:
         print("Open-access mode: APIs are unauthenticated (localhost only). "
               "Set AIZEE_DASHBOARD_TOKEN to require a Bearer token.")
+    elif not _is_loopback_host(host):
+        print("WARNING: NETWORK-EXPOSED MODE — dashboard is accessible on the "
+              f"network at {host}:{port}. Ensure TLS is terminated at ingress.")
     server.serve_forever()

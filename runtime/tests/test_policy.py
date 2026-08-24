@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from pathlib import Path
 
-from runtime.policy import PolicyEngine, _SafeEvaluator
+from runtime.policy import PolicyEngine, _safe_priority, _SafeEvaluator
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -81,9 +81,14 @@ class TestPolicyEvaluation:
 
     def test_smart_fallback_respects_deny_default(self, tmp_path: Path):
         """When default_action=deny, smart fallback defers to deny for unknown actions."""
-        _write_default(tmp_path)
-        extra = "default_action: deny\nrules: []\n"
-        (tmp_path / "runtime" / "policies" / "zz-override.yaml").write_text(extra)
+        # GATE-B3: default_action must be in default.yaml, not override files
+        policy_dir = tmp_path / "runtime" / "policies"
+        policy_dir.mkdir(parents=True, exist_ok=True)
+        content = (
+            "default_action: deny\nrules:\n"
+            "  - name: allow-read\n    condition: \"type == 'Read'\"\n    action: allow\n"
+        )
+        (policy_dir / "default.yaml").write_text(content)
         e = _engine(tmp_path)
         # "find" is a read action (would classify as allow) but not in any
         # explicit rule, so it falls through. deny default overrides for safety.
@@ -108,13 +113,14 @@ class TestMultiFileLoading:
         assert result["decision"] == "deny"
         assert result["rule"] == "deny-drop"
 
-    def test_second_yaml_overrides_default_action(self, tmp_path: Path):
+    def test_second_yaml_does_not_override_default_action(self, tmp_path: Path):
+        """GATE-B3: Only default.yaml may set default_action."""
         _write_default(tmp_path)
         extra = "default_action: deny\nrules: []\n"
         (tmp_path / "runtime" / "policies" / "zz-override.yaml").write_text(extra)
         e = _engine(tmp_path)
-        # default.yaml sets "ask"; zz-override.yaml (loaded after) sets "deny"
-        assert e.default_action == "deny"
+        # default.yaml sets "ask"; zz-override.yaml's default_action is ignored
+        assert e.default_action == "ask"
 
     def test_no_policies_dir_loads_cleanly(self, tmp_path: Path):
         e = PolicyEngine(tmp_path)  # no policies dir at all
@@ -284,7 +290,7 @@ class TestSafeEvaluatorNodes:
 
 class TestMalformedDefaultAction:
     def test_invalid_default_action_skips_file(self, tmp_path: Path):
-        """Cover lines 135-136: policy file with invalid default_action is skipped."""
+        """GATE-B3: policy file with invalid default_action warns and skips it."""
         policy_dir = tmp_path / "runtime" / "policies"
         policy_dir.mkdir(parents=True, exist_ok=True)
         (policy_dir / "default.yaml").write_text(
@@ -294,9 +300,44 @@ class TestMalformedDefaultAction:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             e = PolicyEngine(tmp_path)
-        assert any("invalid default_action" in str(warning.message) for warning in w)
+        assert any("malformed default_action" in str(warning.message) for warning in w)
         # default_action stays at its initial value "ask"
         assert e.default_action == "ask"
-        # Rules from the skipped file are not loaded
-        assert len(e.rules) == 0
+        # Rules are still loaded (only default_action is skipped, not the file)
+        assert len(e.rules) == 1
+
+
+# ---------------------------------------------------------------------------
+# Priority parsing (review fix)
+# ---------------------------------------------------------------------------
+
+
+class TestSafePriority:
+    """Test _safe_priority helper for robust priority parsing."""
+
+    def test_valid_int(self) -> None:
+        assert _safe_priority(100) == 100
+
+    def test_valid_string(self) -> None:
+        assert _safe_priority("50") == 50
+
+    def test_default_zero(self) -> None:
+        assert _safe_priority(0) == 0
+
+    def test_invalid_string_defaults_to_zero(self) -> None:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = _safe_priority("not-a-number")
+        assert result == 0
+        assert any("Invalid priority" in str(warning.message) for warning in w)
+
+    def test_none_defaults_to_zero(self) -> None:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = _safe_priority(None)  # type: ignore[arg-type]
+        assert result == 0
+        assert any("Invalid priority" in str(warning.message) for warning in w)
+
+    def test_float_truncates(self) -> None:
+        assert _safe_priority(99.7) == 99
 

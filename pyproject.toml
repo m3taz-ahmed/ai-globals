@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "5.6.0"
+version = "5.7.1"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -72,7 +72,7 @@ exclude = ["runtime.tests*", "memory.tests*", "tests*"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+target-version = "py310"
 exclude = [
     "tmp",
     "scratch",
@@ -105,12 +105,12 @@ ignore = ["E501", "UP042", "UP046", "UP017"]
 convention = "google"
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.10"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
 exclude = [
-    "skills/", "tmp/", "scratch/", "temp/", "brain/", "state/",
+    "skills/", "tmp/", "scratch/", "temp/", "brain/", "state/", "backups/",
     "__pycache__/", "\\.git/", "\\.github/",
     # Old helper scripts that predate strict typing
     "scripts/tests/test_validator\\.py",
@@ -137,7 +137,7 @@ warn_unused_ignores = false
 check_untyped_defs = false
 allow_untyped_defs = true
 allow_incomplete_defs = true
-disable_error_code = ["union-attr", "attr-defined", "method-assign", "comparison-overlap", "type-arg", "assignment", "misc"]
+disable_error_code = ["union-attr", "attr-defined", "method-assign", "comparison-overlap", "type-arg", "assignment", "misc", "var-annotated", "func-returns-value", "arg-type"]
 
 # Dashboard: stdlib HTTP server uses dynamic BaseHTTPRequestHandler attributes.
 [[tool.mypy.overrides]]

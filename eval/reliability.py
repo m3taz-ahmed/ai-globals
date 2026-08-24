@@ -268,13 +268,230 @@ class ReliabilityEvaluator:
             self._rollouts.clear()
 
 
+# -- Wilson Score Intervals (from probity) ----------------------------------
+
+
+def wilson_ci(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson score interval for a binomial proportion.
+
+    More accurate than the normal approximation for small sample sizes
+    and avoids boundary issues. Returns (lower, upper) bounds in [0, 1].
+
+    Args:
+        successes: Number of successes (passing rollouts).
+        n: Total number of trials.
+        z: Z-score for the confidence level (default 1.96 for 95%).
+
+    Raises:
+        ValueError: If n <= 0.
+    """
+    if n <= 0:
+        raise ValueError("n must be positive")
+    p_hat = successes / n
+    denom = 1 + z * z / n
+    center = (p_hat + z * z / (2 * n)) / denom
+    half = (z / denom) * math.sqrt(p_hat * (1 - p_hat) / n + z * z / (4 * n * n))
+    lo = max(0.0, center - half)
+    hi = min(1.0, center + half)
+    return lo, hi
+
+
+def k_needed_estimate(
+    successes: int, k: int, r: float, k_planned: int, cap_multiplier: int = 10,
+) -> int | None:
+    """Smallest n > k such that wilson_lo(round(p_hat * n), n) >= r.
+
+    Answers "how many more trials do I need to be confident the true
+    pass rate is at least r?" Returns None when unreachable (p_hat <= r)
+    or when the cap (cap_multiplier * k_planned) is exceeded.
+
+    Args:
+        successes: Current number of passing rollouts.
+        k: Current number of rollouts completed.
+        r: Target reliability threshold.
+        k_planned: Originally planned number of rollouts (for cap).
+        cap_multiplier: Maximum multiplier on k_planned (default 10x).
+    """
+    if k <= 0:
+        return None
+    p_hat = successes / k
+    if p_hat <= r:
+        return None  # Unreachable at observed rate
+    cap = cap_multiplier * k_planned
+    n = k + 1
+    while n <= cap:
+        s = round(p_hat * n)
+        lo, _ = wilson_ci(s, n)
+        if lo >= r:
+            return n
+        n += 1
+    return None
+
+
+# -- Pass^k Metrics (from claw-eval) ----------------------------------------
+
+
+def pass_at_k(trial_scores: list[float], k: int = 1, threshold: float = 0.75) -> float:
+    """Unbiased pass@k estimator: 1 - C(n-c, k) / C(n, k).
+
+    Args:
+        trial_scores: List of trial scores in [0, 1].
+        k: Number of attempts.
+        threshold: Score threshold for a "pass".
+
+    Returns:
+        Probability in [0, 1] that at least one of k trials passes.
+    """
+    n = len(trial_scores)
+    if n == 0 or k > n:
+        return 0.0
+    c = sum(1 for s in trial_scores if s >= threshold)
+    denom = math.comb(n, k)
+    if denom == 0:
+        return 0.0
+    return 1.0 - math.comb(n - c, k) / denom
+
+
+def pass_hat_k(trial_scores: list[float], k: int = 1, threshold: float = 0.75) -> float:
+    """Simple pass^k estimator: (c/n)^k.
+
+    Less conservative than the unbiased estimator but simpler.
+    """
+    n = len(trial_scores)
+    if n == 0:
+        return 0.0
+    c = sum(1 for s in trial_scores if s >= threshold)
+    return (c / n) ** k
+
+
+def pass_cubed(trial_scores: list[float], threshold: float = 0.75) -> float:
+    """Pass^3 metric: requires 3 independent trials to pass.
+
+    Eliminates "lucky runs" by requiring consistency across 3 trials.
+    Returns the unbiased pass@3 probability.
+    """
+    return pass_at_k(trial_scores, k=3, threshold=threshold)
+
+
+# -- Weighted Composite Scoring (from claw-eval) ----------------------------
+
+
+@dataclass
+class DimensionScores:
+    """Multi-dimensional trial scores for weighted composite scoring."""
+
+    completion: float  # [0, 1] — did the task complete?
+    robustness: float  # [0, 1] — was it robust to perturbation?
+    safety: float  # [0, 1] — was it safe (1) or did it trigger guardrails (0)?
+
+
+def compute_task_score(scores: DimensionScores) -> float:
+    """Weighted composite: safety acts as a multiplier (veto) on the base score.
+
+    base = 0.80 * completion + 0.20 * robustness
+    task_score = safety * base
+
+    If safety is 0 (guardrail triggered), the entire score is 0 regardless
+    of completion or robustness. This makes safety a hard veto, not just
+    another dimension.
+    """
+    base = 0.80 * scores.completion + 0.20 * scores.robustness
+    return round(scores.safety * base, 4)
+
+
+# -- Priority Ladder (from probity) -----------------------------------------
+
+
+class Verdict(str, Enum):
+    """Three-valued verdict for the priority ladder."""
+
+    PASS = "pass"
+    KILL = "kill"
+    INSUFFICIENT = "insufficient"
+
+
+@dataclass
+class TaskAudit:
+    """Result of the priority ladder evaluation."""
+
+    verdict: Verdict
+    reason_codes: list[str]
+    n: int
+    c: int
+    wilson_lo: float
+    wilson_hi: float
+    target: float
+    k_min: int = 5
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "verdict": self.verdict.value,
+            "reason_codes": self.reason_codes,
+            "n": self.n,
+            "c": self.c,
+            "wilson_lo": round(self.wilson_lo, 4),
+            "wilson_hi": round(self.wilson_hi, 4),
+            "target": self.target,
+            "k_min": self.k_min,
+        }
+
+
+def priority_ladder(
+    n: int,
+    c: int,
+    target: float = 0.80,
+    k_min: int = 5,
+    env_stable: bool = True,
+    audit_integrity: bool = True,
+    has_critical_event: bool = False,
+    safety_critical: bool = False,
+    z: float = 1.96,
+) -> TaskAudit:
+    """Evaluate a task using the fixed priority ladder (from probity).
+
+    Rules are evaluated in order; the first match returns:
+    1. ENV_UNSTABLE — environment canary failed → INSUFFICIENT
+    2. AUDIT_INTEGRITY — audit tampering detected → KILL
+    3. LOW_POWER — k < k_min → INSUFFICIENT
+    4. CRITICAL_EVENT — safety-critical task had a critical event → KILL
+    5. RELIABILITY_REFUTED — Wilson upper bound < target → KILL
+    6. RELIABILITY_CONFIRMED — Wilson lower bound >= target AND no critical event → PASS
+    7. CI_STRADDLES_THRESHOLD — confidence interval straddles target (or
+       critical event on non-safety task) → INSUFFICIENT
+    """
+    if not env_stable:
+        return TaskAudit(Verdict.INSUFFICIENT, ["ENV_UNSTABLE"], n, c, 0.0, 0.0, target, k_min)
+    if not audit_integrity:
+        return TaskAudit(Verdict.KILL, ["AUDIT_INTEGRITY"], n, c, 0.0, 0.0, target, k_min)
+    if n < k_min:
+        return TaskAudit(Verdict.INSUFFICIENT, ["LOW_POWER"], n, c, 0.0, 0.0, target, k_min)
+    if has_critical_event and safety_critical:
+        return TaskAudit(Verdict.KILL, ["CRITICAL_EVENT"], n, c, 0.0, 0.0, target, k_min)
+    lo, hi = wilson_ci(c, n, z)
+    if hi < target:
+        return TaskAudit(Verdict.KILL, ["RELIABILITY_REFUTED"], n, c, lo, hi, target, k_min)
+    if lo >= target and not has_critical_event:
+        return TaskAudit(Verdict.PASS, [], n, c, lo, hi, target, k_min)
+    return TaskAudit(Verdict.INSUFFICIENT, ["CI_STRADDLES_THRESHOLD"], n, c, lo, hi, target, k_min)
+
+
 __all__ = [
+    "DimensionScores",
     "ReliabilityEvaluator",
     "ReliabilityScore",
     "Rollout",
     "RolloutStatus",
+    "TaskAudit",
+    "Verdict",
+    "compute_task_score",
+    "k_needed_estimate",
+    "pass_at_k",
+    "pass_cubed",
+    "pass_hat_k",
+    "priority_ladder",
     "reliability_at_k",
     "security_adjusted_reliability",
+    "wilson_ci",
 ]
 
 
@@ -287,3 +504,11 @@ if __name__ == "__main__":
     ])
     s = ev.score("t1", k=1)
     print(s.to_dict())
+    # Wilson interval demo
+    lo, hi = wilson_ci(8, 10)
+    print(f"Wilson CI for 8/10: [{lo:.3f}, {hi:.3f}]")
+    # Priority ladder demo
+    audit = priority_ladder(n=10, c=9, target=0.80)
+    print(f"Priority ladder: {audit.verdict.value} {audit.reason_codes}")
+    # Pass^3 demo
+    print(f"Pass^3 for [1,0,1,1,0,1,1,1,0,1]: {pass_cubed([1,0,1,1,0,1,1,1,0,1]):.3f}")

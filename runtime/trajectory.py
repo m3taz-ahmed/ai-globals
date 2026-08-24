@@ -23,10 +23,12 @@ Usage::
 
 from __future__ import annotations
 
+import json
 import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 
@@ -48,6 +50,24 @@ class RunStatus(str, Enum):
     ABORTED = "aborted"
 
 
+class FailureCategory(str, Enum):
+    """10-category failure taxonomy (from microsoft/AgentRx).
+
+    Classifies the root cause of a failed trajectory step.
+    """
+
+    INSTRUCTION_ADHERENCE = "instruction_adherence"  # Did not follow instructions/plan
+    INVENTION = "invention"  # Invented new information not in context
+    INVALID_INVOCATION = "invalid_invocation"  # Wrong tool, wrong args, wrong format
+    MISINTERPRETATION = "misinterpretation"  # Misinterpreted tool output
+    INTENT_PLAN_MISALIGNMENT = "intent_plan_misalignment"  # Plan diverged from intent
+    UNDERSPECIFIED_INTENT = "underspecified_intent"  # User intent too vague
+    INTENT_NOT_SUPPORTED = "intent_not_supported"  # Task outside agent capabilities
+    GUARDRAILS_TRIGGERED = "guardrails_triggered"  # Policy/guardrail blocked the action
+    SYSTEM_FAILURE = "system_failure"  # Infrastructure error (timeout, crash)
+    INCONCLUSIVE = "inconclusive"  # Could not determine root cause
+
+
 @dataclass
 class TrajectoryStep:
     """A single recorded action in a run."""
@@ -59,6 +79,10 @@ class TrajectoryStep:
     check: str | None = None
     evidence: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    failure_category: FailureCategory | None = None  # Set when status is FAILED/BLOCKED
+    tool_name: str | None = None  # Tool invoked (for NDJSON trace schema)
+    tool_input: dict[str, Any] | None = None  # Tool args (for NDJSON trace schema)
+    tool_output: str | None = None  # Tool result (for NDJSON trace schema)
 
 
 @dataclass
@@ -136,6 +160,10 @@ class TrajectoryTracker:
         file: str | None = None,
         check: str | None = None,
         evidence: str | None = None,
+        failure_category: FailureCategory | None = None,
+        tool_name: str | None = None,
+        tool_input: dict[str, Any] | None = None,
+        tool_output: str | None = None,
         **metadata: Any,
     ) -> TrajectoryStep:
         """Record a step in a run."""
@@ -149,6 +177,10 @@ class TrajectoryTracker:
             check=check,
             evidence=evidence,
             metadata=metadata,
+            failure_category=failure_category,
+            tool_name=tool_name,
+            tool_input=tool_input,
+            tool_output=tool_output,
         )
         run.steps.append(step)
         if file:
@@ -223,3 +255,76 @@ class TrajectoryTracker:
             "assumptions": len(run.assumptions),
             "stalled": self.is_stalled(run_id),
         }
+
+    def export_ndjson(self, run_id: str, output_path: Path) -> int:
+        """Export a run's trajectory as NDJSON (from agent-trace).
+
+        Each line is a JSON event with type, timestamp, and payload.
+        Zero-dependency: no database needed, just a flat file.
+
+        Returns the number of events written.
+        """
+        run = self._runs.get(run_id)
+        if run is None:
+            raise KeyError(f"unknown run_id {run_id!r}")
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        count = 0
+        with output_path.open("w", encoding="utf-8") as f:
+            # Run start event
+            f.write(json.dumps({
+                "type": "run_start",
+                "ts": run.started_at,
+                "run_id": run.run_id,
+                "intent": run.derived_intent or run.original_intent,
+                "boundary": run.boundary,
+            }) + "\n")
+            count += 1
+            for step in run.steps:
+                event: dict[str, Any] = {
+                    "type": "step",
+                    "ts": step.timestamp,
+                    "run_id": run.run_id,
+                    "action": step.action,
+                    "status": step.status.value,
+                }
+                if step.tool_name:
+                    event["tool"] = step.tool_name
+                if step.tool_input is not None:
+                    event["tool_input"] = step.tool_input
+                if step.tool_output is not None:
+                    event["tool_output"] = step.tool_output
+                if step.file:
+                    event["file"] = step.file
+                if step.failure_category:
+                    event["failure_category"] = step.failure_category.value
+                if step.metadata:
+                    event["metadata"] = step.metadata
+                f.write(json.dumps(event, default=str) + "\n")
+                count += 1
+            # Run end event
+            f.write(json.dumps({
+                "type": "run_end",
+                "ts": time.time(),
+                "run_id": run.run_id,
+                "status": run.status.value,
+                "total_steps": len(run.steps),
+            }) + "\n")
+            count += 1
+        return count
+
+    def failure_summary(self, run_id: str) -> dict[str, int]:
+        """Summarize failures by category (from microsoft/AgentRx taxonomy).
+
+        Returns a dict mapping FailureCategory.value to count.
+        """
+        run = self._runs.get(run_id)
+        if run is None:
+            return {}
+        summary: dict[str, int] = {}
+        for step in run.steps:
+            if step.status in (StepStatus.FAILED, StepStatus.BLOCKED):
+                cat = step.failure_category or FailureCategory.INCONCLUSIVE
+                key = cat.value
+                summary[key] = summary.get(key, 0) + 1
+        return summary

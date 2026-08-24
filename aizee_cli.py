@@ -604,7 +604,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "mcp tools module": (os_root / "aizee_mcp" / "tools").is_dir(),
         "crypto module": (os_root / "runtime" / "crypto.py").exists(),
         "migrations module": (os_root / "runtime" / "migrations.py").exists(),
-        "observability module": (os_root / "runtime" / "observability.py").exists(),
+        "telemetry module": (os_root / "runtime" / "telemetry.py").exists(),
         "LICENSE": (os_root / "LICENSE").exists(),
         "CODEOWNERS": (os_root / ".github" / "CODEOWNERS").exists(),
         "API.md": (os_root / "aizee_mcp" / "API.md").exists(),

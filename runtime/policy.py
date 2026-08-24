@@ -60,6 +60,16 @@ class PolicyRule:
     action: Action
     description: str = ""
     approvers: list[str] = field(default_factory=list)
+    priority: int = 0  # Higher priority wins; tie → file order (GATE-B3)
+
+
+def _safe_priority(raw: Any) -> int:
+    """Parse priority value safely, defaulting to 0 on invalid input."""
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        warnings.warn(f"Invalid priority value {raw!r}, defaulting to 0", stacklevel=2)
+        return 0
 
 
 class _SafeEvaluator(ast.NodeVisitor):
@@ -95,6 +105,13 @@ class _SafeEvaluator(ast.NodeVisitor):
         "none": None,
     }
 
+    # Sentinel for missing attributes. When an action lacks a referenced
+    # attribute, we return _MISSING (not None) so that comparisons like
+    # `env != "prod"` fail-closed instead of matching (None != "prod" -> True).
+    # This prevents allow-by-absence: a rule requiring env != "prod" must NOT
+    # match actions that have no env attribute at all.
+    _MISSING: ClassVar[object] = object()
+
     def __init__(self, action: dict[str, Any]) -> None:
         self.action = action
 
@@ -112,7 +129,11 @@ class _SafeEvaluator(ast.NodeVisitor):
         if isinstance(node, ast.Name):
             if node.id in self._yaml_literals:
                 return self._yaml_literals[node.id]
-            return self.action.get(node.id)
+            # Return _MISSING sentinel for absent attributes so comparisons
+            # fail-closed (see _MISSING docstring).
+            if node.id in self.action:
+                return self.action[node.id]
+            return self._MISSING
         if isinstance(node, ast.Subscript):
             value = self.visit(node.value)
             key = self.visit(node.slice)
@@ -135,6 +156,10 @@ class _SafeEvaluator(ast.NodeVisitor):
                 if op is None:
                     return False
                 right = self.visit(comparator)
+                # Fail-closed: if either operand is a missing attribute,
+                # the comparison must NOT match (prevents allow-by-absence).
+                if left is self._MISSING or right is self._MISSING:
+                    return False
                 try:
                     if not op(left, right):
                         return False
@@ -183,19 +208,29 @@ class PolicyEngine:
             _excluded = {"default.yaml", "guardian.yaml", "probity.yaml", "mcp_firewall.yaml"}
             others = sorted(p for p in policy_dir.rglob("*.yaml") if p.name not in _excluded)
             if default.exists():
-                self._load_file(default)
+                self._load_file(default, is_default=True)
             for path in others:
                 self._load_file(path)
 
-    def _load_file(self, path: Path) -> None:
+    def _load_file(self, path: Path, *, is_default: bool = False) -> None:
         from runtime.schemas import PolicyRuleSchema
 
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        default_action = data.get("default_action", self.default_action)
-        if default_action not in ("allow", "ask", "deny"):
-            warnings.warn(f"Skipping malformed policy file {path}: invalid default_action", stacklevel=2)
-            return
-        self.default_action = cast(Action, default_action)
+        # Only default.yaml may set default_action (GATE-B3: prevents
+        # alphabetically-last YAML from silently clobbering engine-wide default).
+        if "default_action" in data:
+            if is_default:
+                default_action = data.get("default_action", self.default_action)
+                if default_action not in ("allow", "ask", "deny"):
+                    warnings.warn(f"Skipping malformed default_action in {path}", stacklevel=2)
+                else:
+                    self.default_action = cast(Action, default_action)
+            else:
+                warnings.warn(
+                    f"Policy file {path.name} defines default_action but is not "
+                    "default.yaml — ignored. Move default_action to default.yaml.",
+                    stacklevel=2,
+                )
         for r in data.get("rules", []):
             if not isinstance(r, dict):
                 warnings.warn(f"Invalid rule in {path}: {r}", stacklevel=2)
@@ -215,12 +250,20 @@ class PolicyEngine:
                     action=cast(Action, validated.action),
                     description=validated.description,
                     approvers=validated.approvers,
+                    priority=_safe_priority(r.get("priority", 0)),
                 )
             )
 
     def evaluate(self, action: dict[str, Any]) -> dict[str, Any]:
-        """Evaluate an action and return decision."""
-        for rule in self.rules:
+        """Evaluate an action and return decision.
+
+        Rules are evaluated in priority order (highest first); ties broken by
+        file order (insertion order). This makes precedence deterministic and
+        independent of filename sorting (GATE-B3).
+        """
+        # Sort by priority descending; stable sort preserves file order for ties.
+        ordered = sorted(enumerate(self.rules), key=lambda pair: (-pair[1].priority, pair[0]))
+        for _, rule in ordered:
             if _SafeEvaluator(action).evaluate(rule.condition):
                 return {
                     "decision": rule.action,

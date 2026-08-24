@@ -10,11 +10,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+_logger = logging.getLogger(__name__)
 
 _SENSITIVE_KEYS = re.compile(r"(token|key|secret|password|credential|auth|api[_-]?key)", re.IGNORECASE)
 
@@ -97,19 +100,30 @@ class AuditLogger:
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     def log(self, event_type: str, details: dict[str, Any]) -> None:
-        """Append a new hash-chained entry to the audit log."""
+        """Append a new hash-chained entry to the audit log.
+
+        Fail-open: if the audit log cannot be written (disk full, permission
+        error, etc.), the error is logged but NOT raised. Observability must
+        never crash the agent.
+        """
         with self._lock:
-            self._rotate_if_needed()
-            prev_hash = self._last_hash()
-            entry: dict[str, Any] = {
-                "ts": datetime.now(timezone.utc).isoformat(),
-                "type": event_type,
-                "details": self._redact(details),
-                "prev_hash": prev_hash,
-            }
-            entry["hash"] = self._compute_hash(entry)
-            with self.log_file.open("a", encoding="utf-8") as f:
-                f.write(json.dumps(entry, default=str) + "\n")
+            try:
+                self._rotate_if_needed()
+                prev_hash = self._last_hash()
+                entry: dict[str, Any] = {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "type": event_type,
+                    "details": self._redact(details),
+                    "prev_hash": prev_hash,
+                }
+                entry["hash"] = self._compute_hash(entry)
+                with self.log_file.open("a", encoding="utf-8") as f:
+                    f.write(json.dumps(entry, default=str) + "\n")
+            except OSError as exc:
+                _logger.warning(
+                    "Audit log write failed (fail-open): %s — event_type=%s",
+                    exc, event_type,
+                )
 
     def log_admission(self, record: dict[str, Any]) -> None:
         """Append an admission event with identity keys (Hazem R1-R15).

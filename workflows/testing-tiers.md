@@ -27,11 +27,29 @@ Every project under aiZee follows four tiers:
 # FAST — targeted (after editing runtime/budget.py)
 pytest runtime/tests/test_budget.py -q --no-cov --tb=short
 
+# FAST — targeted (after editing memory/store.py)
+pytest memory/tests/test_store.py -q --no-cov --tb=short
+
+# FAST — targeted (after editing runtime/taint.py)
+pytest tests/test_taint.py -q --no-cov --tb=short
+
+# FAST — targeted (after editing runtime/skill_scanner.py)
+pytest tests/test_skill_scanner.py -q --no-cov --tb=short
+
+# FAST — targeted (after editing runtime/confidence_gate.py)
+pytest tests/test_confidence_gate.py -q --no-cov --tb=short
+
+# FAST — targeted (after editing runtime/learning_loop.py)
+pytest tests/test_learning_loop.py -q --no-cov --tb=short
+
+# FAST — targeted (after editing memory/vector.py)
+pytest memory/tests/test_vector.py -q --no-cov --tb=short
+
 # SMOKE — critical path only
 aizee test  # fast tier, skips slow/mcp/dashboard/vector (~12s)
 
 # FULL — before done
-aizee test --full  # full suite + coverage (~35s)
+aizee test --full  # full suite + coverage (~360s, 4028+ tests, 96% coverage)
 
 # VIBE — behavioral evals
 python eval/harness.py  # LLM-graded scenarios

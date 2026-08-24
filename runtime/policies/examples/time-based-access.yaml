@@ -1,6 +1,6 @@
 name: time-based-access
 apiVersion: governance.aizee/v1
-default_action: ask
+# default_action moved to default.yaml per GATE-B3
 rules:
   - name: allow-reads-business-hours
     condition: "type in ['view', 'Read', 'grep', 'Glob']"

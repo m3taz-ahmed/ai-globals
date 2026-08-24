@@ -54,31 +54,44 @@ class Embedder:
     """Local embedder with optional sentence-transformers.
 
     Uses a module-level singleton to avoid re-loading the SentenceTransformer
-    model on every instantiation (saves ~3s per test).
+    model on every instantiation (saves ~3s per test). The model is loaded
+    lazily on first :meth:`embed` call (or explicit :meth:`_ensure_model`),
+    not at construction time, so creating an ``Embedder`` never triggers a
+    network download or blocks on HuggingFace Hub.
     """
 
     _singleton: Any = None
     _singleton_model_name: str | None = None
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
+        self.model_name = model_name
         self.model: Any = None
-        if SentenceTransformer is not None:
-            # Reuse the singleton if the model name matches
-            if Embedder._singleton is not None and Embedder._singleton_model_name == model_name:
-                self.model = Embedder._singleton
-            else:
-                self.model = SentenceTransformer(model_name)
-                Embedder._singleton = self.model
-                Embedder._singleton_model_name = model_name
         self.dim = 384
 
-    def embed(self, texts: Sequence[str]) -> np.ndarray[Any, np.dtype[Any]]:
+    def _ensure_model(self) -> None:
+        """Load the SentenceTransformer model on first use (lazy)."""
         if self.model is not None:
+            return
+        if SentenceTransformer is None:
+            return
+        # Reuse the singleton if the model name matches
+        if Embedder._singleton is not None and Embedder._singleton_model_name == self.model_name:
+            self.model = Embedder._singleton
+        else:
+            self.model = SentenceTransformer(self.model_name)
+            Embedder._singleton = self.model
+            Embedder._singleton_model_name = self.model_name
+
+    def embed(self, texts: Sequence[str]) -> Any:
+        self._ensure_model()
+        if self.model is not None:
+            assert np is not None  # narrowed for type checkers
             return np.asarray(self.model.encode(list(texts)), dtype=np.float32)
         raise RuntimeError("SentenceTransformer model is not available.")
 
     def is_available(self) -> bool:
-        return self.model is not None
+        # Check without triggering a load: True only if the library is importable.
+        return SentenceTransformer is not None
 
     @classmethod
     def _reset_singleton(cls) -> None:
@@ -131,6 +144,7 @@ class VectorMemory:
         except RuntimeError as exc:
             logger.warning("Vector embed failed for batch: %s", exc)
             return
+        assert np is not None  # narrowed for type checkers
         u64s = np.array([_mem_id_to_uint64(mid) for mid in mem_ids], dtype=np.uint64)
         for u64, mid in zip(u64s, mem_ids, strict=True):
             self.id_map[str(u64)] = mid
@@ -155,6 +169,7 @@ class VectorMemory:
             present = [u for u in u64s if str(int(u)) in self.id_map]
             if not present:
                 return []
+            assert np is not None  # narrowed for type checkers
             allowlist = np.array(present, dtype=np.uint64)
         scores, ids_arr = self.index.search(vector, k=k, allowlist=allowlist)
         results = []
@@ -175,6 +190,7 @@ class VectorMemory:
         """Remove a batch of memories and persist the index once."""
         if not self.is_available() or not mem_ids:
             return
+        assert np is not None  # narrowed for type checkers
         u64s = np.array([_mem_id_to_uint64(mid) for mid in mem_ids], dtype=np.uint64)
         for u64 in u64s:
             self.id_map.pop(str(u64), None)

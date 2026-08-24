@@ -42,7 +42,7 @@ def count_skills(root: Path) -> int:
     if not skills.exists():
         return 0
     dirs = [p for p in skills.iterdir() if p.is_dir() and (p / "SKILL.md").exists()]
-    flats = list(skills.glob("*.md"))
+    flats = [p for p in skills.glob("*.md") if p.name not in ("README.md", "EVAL.md")]
     return len(dirs) + len(flats)
 
 
@@ -193,14 +193,14 @@ def sync(root: Path) -> dict[str, bool]:
         updated = _substitute_counts(original, counts)
         changed[name] = updated != original
         if changed[name]:
-            doc.write_text(updated, encoding="utf-8")
+            doc.write_text(updated, encoding="utf-8", newline="\n")
 
     readme = root / "workflows" / "README.md"
     original = readme.read_text(encoding="utf-8")
     updated = rebuild_readme(root, counts)
     changed["workflows/README.md"] = updated != original
     if changed["workflows/README.md"]:
-        readme.write_text(updated, encoding="utf-8")
+        readme.write_text(updated, encoding="utf-8", newline="\n")
     return changed
 
 

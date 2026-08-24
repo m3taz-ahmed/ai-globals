@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import atexit
 import json
+import logging
 import os
 import queue
 import shutil
@@ -18,6 +19,8 @@ import threading
 import uuid
 from pathlib import Path
 from typing import Any, cast
+
+_logger = logging.getLogger(__name__)
 
 # Shared stdio process pool keyed by (server_name, os_root).  Keeps MCP server
 # processes alive across multiple tool calls instead of spawning per call.
@@ -160,38 +163,27 @@ class McpClient:
             raise RuntimeError(f"MCP server '{self.server_name}' not configured")
         cmd = self.config["command"]
         args = self.config.get("args", [])
-        # Load centralized .env secrets so external MCP servers inherit them
         _load_secrets_once()
-        env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
-        # Augment PATH with per-user Python script dirs so entry-point MCP
-        # servers (e.g. installed via ``pip install --user``) resolve without
-        # hardcoding machine-specific paths in config.json.
-        extra_path = _user_script_dirs()
-        if extra_path:
-            env["PATH"] = os.pathsep.join([*extra_path, env.get("PATH", "")])
-        # Some Python MCP servers expose their entry point as a top-level
-        # module (e.g. ``server.py``) that is only importable from the user
-        # site-packages. Add it to PYTHONPATH so ``python -c`` wrappers work.
-        extra_site = _user_site_dirs()
-        if extra_site:
-            existing = env.get("PYTHONPATH", "")
-            env["PYTHONPATH"] = os.pathsep.join([*extra_site, existing]) if existing else os.pathsep.join(extra_site)
-        # On Windows, CreateProcess uses the *parent* process PATH for
-        # executable lookup, not the env we pass to the child. Resolve the
-        # command to an absolute path via shutil.which against the augmented
-        # PATH so user-installed entry points are found portably.
+        env = self._build_spawn_env()
         resolved = shutil.which(cmd, path=env.get("PATH"))
         if resolved:
             cmd = resolved
         return subprocess.Popen(
-            [cmd, *args],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            env=env,
-            cwd=str(self.os_root),
+            [cmd, *args], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, text=True, env=env, cwd=str(self.os_root),
         )
+
+    def _build_spawn_env(self) -> dict[str, str]:
+        """Build environment for the child MCP server process."""
+        env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
+        extra_path = _user_script_dirs()
+        if extra_path:
+            env["PATH"] = os.pathsep.join([*extra_path, env.get("PATH", "")])
+        extra_site = _user_site_dirs()
+        if extra_site:
+            existing = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = os.pathsep.join([*extra_site, existing]) if existing else os.pathsep.join(extra_site)
+        return env
 
     def _send(
         self,
@@ -201,68 +193,67 @@ class McpClient:
     ) -> dict[str, Any]:
         if proc.stdin is None or proc.stdout is None:
             raise RuntimeError("Process pipes not available")
-        stdout = proc.stdout
         req = json.dumps(payload)
         proc.stdin.write(req + "\n")
         proc.stdin.flush()
-
-        q: queue.Queue[str | Exception] = queue.Queue()
-
-        def _read() -> None:
-            try:
-                line = stdout.readline()
-                q.put(line)
-            except Exception as exc:
-                q.put(exc)
-
-        reader = threading.Thread(target=_read, daemon=True)
-        reader.start()
-        try:
-            result = q.get(timeout=timeout)
-        except queue.Empty as exc:
-            raise TimeoutError(
-                f"MCP server '{self.server_name}' response timed out after {timeout}s"
-            ) from exc
+        result = self._read_stdout(proc.stdout, timeout)
         if isinstance(result, Exception):
             raise result
         if not result:
             raise RuntimeError("MCP server closed stdout")
         return cast(dict[str, Any], json.loads(result))
 
+    def _read_stdout(self, stdout: Any, timeout: float) -> str | Exception:
+        """Read a line from stdout with timeout via a daemon thread."""
+        q: queue.Queue[str | Exception] = queue.Queue()
+        def _read() -> None:
+            try:
+                q.put(stdout.readline())
+            except Exception as exc:
+                _logger.debug("stdout read failed: %s", exc, exc_info=True)
+                q.put(exc)
+        reader = threading.Thread(target=_read, daemon=True)
+        reader.start()
+        try:
+            return q.get(timeout=timeout)
+        except queue.Empty:
+            return TimeoutError(
+                f"MCP server '{self.server_name}' response timed out after {timeout}s")
+
     def _ensure_process(self) -> subprocess.Popen[str]:
         with _PROC_LOCK:
-            proc = _PROC_POOL.get(self._key)
-            if proc is not None and proc.poll() is not None:
-                # Reap the dead process to prevent zombie accumulation.
-                try:
-                    proc.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                proc = None
-            if proc is None:
-                proc = self._spawn()
-                _PROC_POOL[self._key] = proc
-                _PROC_INIT[self._key] = False
+            proc = self._reap_or_spawn()
             if not _PROC_INIT.get(self._key):
-                init_id = str(uuid.uuid4())
-                init_resp = self._send(
-                    proc,
-                    {
-                        "jsonrpc": "2.0",
-                        "id": init_id,
-                        "method": "initialize",
-                        "params": {
-                            "protocolVersion": "2024-11-05",
-                            "capabilities": {},
-                            "clientInfo": {"name": "aizee", "version": "4.22.1"},
-                        },
-                    },
-                )
-                if "error" in init_resp:
-                    self._release_locked(proc)
-                    raise RuntimeError(init_resp["error"])
-                _PROC_INIT[self._key] = True
+                self._init_server(proc)
             return proc
+
+    def _reap_or_spawn(self) -> subprocess.Popen[str]:
+        """Reap dead process if needed and spawn a new one."""
+        proc = _PROC_POOL.get(self._key)
+        if proc is not None and proc.poll() is not None:
+            try:
+                proc.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+            proc = None
+        if proc is None:
+            proc = self._spawn()
+            _PROC_POOL[self._key] = proc
+            _PROC_INIT[self._key] = False
+        return proc
+
+    def _init_server(self, proc: subprocess.Popen[str]) -> None:
+        """Send initialize request to the MCP server."""
+        init_id = str(uuid.uuid4())
+        init_resp = self._send(proc, {
+            "jsonrpc": "2.0", "id": init_id, "method": "initialize",
+            "params": {"protocolVersion": "2024-11-05", "capabilities": {},
+                       "clientInfo": {"name": "aizee", "version": "4.22.1"}},
+        })
+        if "error" in init_resp:
+            self._release_locked(proc)
+            raise RuntimeError(init_resp["error"])
+        _PROC_INIT[self._key] = True
 
     def _release_locked(self, proc: subprocess.Popen[str] | None = None) -> None:
         proc = proc or _PROC_POOL.pop(self._key, None)
@@ -310,6 +301,7 @@ class McpClient:
                     },
                 )
         except Exception as exc:
+            _logger.debug("MCP tool call failed: %s", exc, exc_info=True)
             with _PROC_LOCK:
                 self._release_locked()
             return {"ok": False, "error": str(exc)}
@@ -323,81 +315,81 @@ class McpClient:
             self._release_locked()
 
     async def async_call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Async version of call_tool using asyncio.subprocess.
-
-        Spawns a fresh process per call (no pooling) for isolation.
-        Suitable for async contexts where blocking I/O is undesirable.
-        """
+        """Async version of call_tool using asyncio.subprocess."""
         if not self.config:
             return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
+        proc = await self._async_spawn()
+        if isinstance(proc, dict):
+            return proc
+        try:
+            init_err = await self._async_init(proc)
+            if init_err:
+                return init_err
+            resp = await self._async_call(proc, tool_name, arguments)
+        except TimeoutError:
+            return {"ok": False, "error": f"MCP server '{self.server_name}' timed out"}
+        except Exception as exc:
+            _logger.debug("MCP async call failed: %s", exc, exc_info=True)
+            return {"ok": False, "error": str(exc)}
+        finally:
+            await self._async_terminate(proc)
+        if "error" in resp:
+            return {"ok": False, "error": resp["error"]}
+        return {"ok": True, "result": resp.get("result")}
+
+    async def _async_spawn(self) -> asyncio.subprocess.Process | dict[str, Any]:
+        """Spawn async subprocess. Returns process or error dict."""
         cmd = self.config["command"]
         args = self.config.get("args", [])
         _load_secrets_once()
         env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
         try:
-            proc = await asyncio.create_subprocess_exec(
-                cmd,
-                *args,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env=env,
-                cwd=str(self.os_root),
+            return await asyncio.create_subprocess_exec(
+                cmd, *args, stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                env=env, cwd=str(self.os_root),
             )
         except Exception as exc:
+            _logger.debug("MCP server spawn failed: %s", exc, exc_info=True)
             return {"ok": False, "error": f"Failed to spawn MCP server: {exc}"}
 
-        try:
-            # Initialize
-            init_id = str(uuid.uuid4())
-            init_req = json.dumps({
-                "jsonrpc": "2.0",
-                "id": init_id,
-                "method": "initialize",
-                "params": {
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {},
-                    "clientInfo": {"name": "aizee", "version": "4.22.1"},
-                },
-            }) + "\n"
-            assert proc.stdin is not None
-            proc.stdin.write(init_req.encode())
-            await proc.stdin.drain()
-            assert proc.stdout is not None
-            init_line = await asyncio.wait_for(proc.stdout.readline(), timeout=_DEFAULT_TIMEOUT)
-            if not init_line:
-                return {"ok": False, "error": "MCP server closed stdout during init"}
-            init_resp = json.loads(init_line.decode())
-            if "error" in init_resp:
-                return {"ok": False, "error": init_resp["error"]}
+    async def _async_init(self, proc: asyncio.subprocess.Process) -> dict[str, Any] | None:
+        """Send initialize request. Returns error dict or None on success."""
+        init_req = json.dumps({"jsonrpc": "2.0", "id": str(uuid.uuid4()),
+            "method": "initialize", "params": {"protocolVersion": "2024-11-05",
+            "capabilities": {}, "clientInfo": {"name": "aizee", "version": "4.22.1"}}}) + "\n"
+        assert proc.stdin is not None
+        proc.stdin.write(init_req.encode())
+        await proc.stdin.drain()
+        assert proc.stdout is not None
+        init_line = await asyncio.wait_for(proc.stdout.readline(), timeout=_DEFAULT_TIMEOUT)
+        if not init_line:
+            return {"ok": False, "error": "MCP server closed stdout during init"}
+        init_resp = json.loads(init_line.decode())
+        if "error" in init_resp:
+            return {"ok": False, "error": init_resp["error"]}
+        return None
 
-            # Call tool
-            call_id = str(uuid.uuid4())
-            call_req = json.dumps({
-                "jsonrpc": "2.0",
-                "id": call_id,
-                "method": "tools/call",
-                "params": {"name": tool_name, "arguments": arguments},
-            }) + "\n"
-            proc.stdin.write(call_req.encode())
-            await proc.stdin.drain()
-            resp_line = await asyncio.wait_for(proc.stdout.readline(), timeout=_DEFAULT_TIMEOUT)
-            if not resp_line:
-                return {"ok": False, "error": "MCP server closed stdout"}
-            resp = json.loads(resp_line.decode())
+    async def _async_call(self, proc: asyncio.subprocess.Process, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Send tools/call request and return parsed response."""
+        call_req = json.dumps({"jsonrpc": "2.0", "id": str(uuid.uuid4()),
+            "method": "tools/call", "params": {"name": tool_name, "arguments": arguments}}) + "\n"
+        assert proc.stdin is not None
+        proc.stdin.write(call_req.encode())
+        await proc.stdin.drain()
+        assert proc.stdout is not None
+        resp_line = await asyncio.wait_for(proc.stdout.readline(), timeout=_DEFAULT_TIMEOUT)
+        if not resp_line:
+            return {"ok": False, "error": "MCP server closed stdout"}
+        return cast(dict[str, Any], json.loads(resp_line.decode()))
+
+    async def _async_terminate(self, proc: asyncio.subprocess.Process) -> None:
+        """Terminate the async process."""
+        proc.terminate()
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=2)
         except TimeoutError:
-            return {"ok": False, "error": f"MCP server '{self.server_name}' timed out"}
-        except Exception as exc:
-            return {"ok": False, "error": str(exc)}
-        finally:
-            proc.terminate()
-            try:
-                await asyncio.wait_for(proc.wait(), timeout=2)
-            except TimeoutError:
-                proc.kill()
-        if "error" in resp:
-            return {"ok": False, "error": resp["error"]}
-        return {"ok": True, "result": resp.get("result")}
+            proc.kill()
 
     def is_configured(self) -> bool:
         return bool(self.config)

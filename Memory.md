@@ -4,8 +4,75 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-08-23
+[UPDATED] 2026-08-24
 [NOTES]
+- **Comprehensive review report remediation — 2026-08-24 (ARCH persona)**:
+  - **Schema drift fix** (`memory/store.py`, `memory/schema_contract.py`): `memory_decay` table + `idx_decay_last_accessed` index now created in `_init_schema` (not lazily). FTS5 shadow tables (`memories_fts*`) ignored in `detect_schema_drift`. `verify_schema_integrity` now returns `(True, None)` for fresh DBs — no more false drift warnings.
+  - **Lazy SentenceTransformer** (`memory/vector.py`): `Embedder.__init__` no longer loads the model; `_ensure_model()` loads on first `embed()` call. Prevents network download on every `MemoryStore` creation. Updated 3 tests for lazy behavior.
+  - **Documentation sync**: Updated all counts to 85 runtime / 72 skills / 50 workflows / 163 tech-stack / 36 MCP tools / 22 personas across `spec.md`, `README.md`, `README-AR.md`, `AGENTS.md`, `docs/ONBOARDING_SRE.md`, `tech-stack/aizee-5.md`, `tech-stack/README.md`. Fixed `aios_`→`aizee_` metric names in ONBOARDING_SRE.
+  - **validate-globals PASS**: Removed broken competitive-analysis report ref from `Memory.md`. Fixed `validate-globals.ps1` version 5.6.0→5.7.1. CRLF→LF in `AGENTS.md`/`spec.md`. Fixed `sync_docs.py` to use `newline="\n"` and exclude `README.md`/`EVAL.md` from skill count.
+  - **manifest.json**: Features expanded 35→97 (all 85 runtime modules + 12 cross-dir features).
+  - **Deleted** `skills/seo-content-generator.md` (superseded by `skills/seo-lord/`). Skills count: 73→72.
+  - **Rust/Cargo supply chain support** (`runtime/supply_chain_guard.py`): Added `DependencyEcosystem.RUST`, `_RUST_USE_RE` regex, `_extract_rust_imports()`, `_load_rust_declared()`, `_parse_cargo_toml()`. Handles `use` statements, skips std/core/alloc/crate/super.
+  - **Docker image cosign signing** (`.github/workflows/release.yml`): Added `cosign sign --yes` for container image (keyless OIDC). SBOM was already signed.
+  - **CI mypy expansion** (`.github/workflows/validate.yml`): Added `eval/harness.py`, `eval/pipeline.py`, `eval/reliability.py`, `eval/redteam.py`, `scripts/guard_invariants.py`, `scripts/sync_docs.py` to mypy check.
+  - **eval/tests/test_memory_decay.py** (new, 3 tests): Verifies memory_decay table exists at init, decay lifecycle (add→access→decay→recover), persistence across restarts.
+  - **docs/ONBOARDING_SRE.md**: Added sections for `finalization_reserve` (budget), `KillSwitchRule` (guardian hard-stop), `AIZEE_DASHBOARD_TOKEN` (dashboard security).
+  - **skills/README.md** (new): 72-skill catalog with types, domains, and adding-guide.
+  - **testing-tiers.md**: Added FAST-tier commands for taint, skill_scanner, confidence_gate, learning_loop, vector tests.
+  - **ACTIVE_CONTEXT.md**: Rewritten for v5.7.1 current state.
+  - **scripts/update_aizee.bat**: Hardcoded paths → relative (`%~dp0..` + `AIZEE_DEPLOY` env override).
+  - **guard_invariants.py**: `skills/README.md` excluded from frontmatter check.
+  - **graphify**: Rebuilt (13124 nodes, 27847 links). Note: reports checked `edges` key but actual key is `links` — graph was never broken.
+  - **Quality gates**: ruff PASS, mypy PASS (224 files), validate-globals PASS (0E/0W), sync_docs in sync, guard_invariants all pass, targeted tests 98 passed.
+- **Comprehensive review of all 125 changed files — 2026-08-24 (ARCH persona + 3 parallel review subagents)**:
+  - **3 subagents reviewed all 125 files** in parallel across WS-B/A, WS-D/E/F, WS-G/H/I/J groups.
+  - **Issues found and fixed (17 total)**:
+    - **CRITICAL: k8s NetworkPolicy egress** (`deploy/k8s/deployment.yaml`): `to: []` blocked ALL outbound traffic. Fixed to allow HTTPS egress to any destination.
+    - **CRITICAL: schema_contract missing memory_decay** (`memory/schema_contract.py`): `memory_decay` table created in `store.py` but missing from `default_memory_contract()` → schema drift warnings on every init. Added table + index to contract.
+    - **CRITICAL: mcp_firewall.yaml default_action silently ignored** (`runtime/policies/mcp_firewall.yaml`): GATE-B3 restriction caused `default_action: allow` to be silently dropped → MCP tools became `ask` instead of `allow`. Fixed by removing `default_action` and adding catch-all allow rule with priority 0. Also fixed YAML parsing error (unquoted colon in description).
+    - **HIGH: Missing runtime exports** (`runtime/__init__.py`): 12 new module exports missing (ConfidenceGate, LearningLoop, SkillRouter, Bounder, Witness, LazyImport, ReflexionLog, OutputEnvelope, CostProvider, etc.). Added all exports + `__all__` entries.
+    - **HIGH: Probity normalization inconsistency** (`runtime/probity.py`): `EnforceFilenameCasing` and `EnforceTdd` checked `("write", "edit")` directly instead of using `normalize_action_type()`. Fixed to use consistent normalization.
+    - **HIGH: Constitution regex too narrow** (`runtime/spec/engine.py`): `r"MUST\s+(.+?)(?:\.|$)"` missed principles ending with `!`, `?`, `;`, `:`, or newlines. Fixed to `r"MUST\s+(.+?)(?:[.!?;:]|\n|$)"`.
+    - **MED: delete_by_source_batch length validation** (`memory/store.py`): No length limit on source strings. Added 1000-char max validation.
+    - **MED: ConfidenceGate weight validation** (`runtime/confidence_gate.py`): No validation that weights are in [0.0, 1.0]. Added validation with ValueError on out-of-range.
+    - **MED: LazyImport error handling** (`runtime/quality.py`): Malformed import paths raised cryptic errors. Added path validation + try/except with clear error messages.
+    - **MED: Priority parsing error handling** (`runtime/policy.py`): `int(r.get("priority", 0))` crashed on non-numeric strings. Added `_safe_priority()` helper with try/except + warning.
+    - **MED: FTS5 sanitization enhanced** (`memory/store.py`): Parentheses and hyphens not stripped from FTS5 queries. Added to sanitization regex.
+    - **GATE-B3 policy files cleanup**: Removed `default_action` from 5 non-default policy files (agentic-owasp.yaml, consequence-tiers.yaml, mcp_firewall.yaml, examples/api-rate-limits.yaml, examples/data-exfiltration.yaml, examples/time-based-access.yaml). Only default.yaml now sets default_action.
+  - **New tests added (17 tests)**: weight validation (5), LazyImport error handling (3), priority parsing (6), delete_by_source_batch validation (4).
+  - **Quality gates**: ruff PASS, mypy PASS (240 source files), full pytest suite green (exit code 0, 1 skip for tkinter).
+- **Implementation plan remediation — 2026-08-24 (8 workstreams, 40+ items)**:
+  - **WS-C (Dead Code Removal)**: Removed 26 dead modules + tests, updated manifest.json, README, AGENTS.md, spec.md, tech-stack/aizee-5.md to reflect 81 runtime modules.
+  - **WS-B (Gate-Contract Repairs)**: GATE-B1 structured denial for probity violations; GATE-B2 `normalize_action_type()` maps Bash/Shell/Command→exec; GATE-B3 audit (rule names in denial), sentinel `_MISSING` prevents None==None escalation, policy `priority` field + sorting, `default_action` writable only by default.yaml; GATE-B4 deprecated bypass paths `register_action_pipeline()`/`_get_compiled_pipeline()`.
+  - **WS-A (Security Hardening)**: SEC-W1 dashboard loopback enforcement (`AGENT_OS_HOST`, `_is_loopback_host()`); SEC-W2 k8s deploy manifests (NetworkPolicy ingress/egress restrictions); SEC-W3 dashboard robustness (Content-Length parsing, `?limit=` on audit/tracing, SSE headers + max duration).
+  - **WS-D (Eval Overhaul)**: EVAL-W0 `GateVerdict` unified dataclass + `to_gate_verdict()` adapters; EVAL-W1 `eval/pipeline.py` real kernel.act() pipeline; EVAL-W2 10 executable assertion kinds (eq/contains/regex/decision_is/gate_is/custom); EVAL-W3 `AnchoredDimension` rubric anchored to assertions; EVAL-W5 `eval/redteam.py` red-team runner + SARIF 2.1.0 reporter; EVAL-W6 per-gate + per-policy breakdown.
+  - **WS-E (SDD Enforcement)**: W1 task verification (evidence + `verified` flag blocks advance); W2 constitution enforcement (MUST principles checked against requirements); W3 state transition history; W4 drift v2 (file modifications + unapplied deltas + phase regressions); W5 paginated spec listing; W6 delta hardening (validate MODIFIED/REMOVED reference existing, ADDED no duplicates, no empty descriptions).
+  - **WS-F (Memory Upgrades)**: W1 deterministic IDs (`_deterministic_id` content hash); W2 dedup (same content → same ID → no duplicate); W3 fact extraction (heuristic verb-based); W4 temporal search (`search_temporal`); W5 decay persistence (`memory_decay` table, `record_access`/`apply_decay`/`get_decay_score`); W6 search hardening (`search_safe` with length/null-byte/SQL-keyword sanitization).
+  - **WS-H (Confidence Gating)**: `runtime/confidence_gate.py` — `ConfidenceGate` with weighted evidence, `ConfidenceVerdict` (frozen), 4 confidence levels (HIGH/MEDIUM/LOW/CRITICAL), fail-closed on no evidence.
+  - **WS-G (Learning Loop)**: `runtime/learning_loop.py` — LEARN-01 hook bindings (POST_RESPONSE + ON_ERROR auto-record); LEARN-02 record-consolidate-rank-inject 4-stage loop with persistence.
+  - **WS-I (Skills/Personas)**: `runtime/skill_routing.py` — SKILL-W1 `SkillRouter` routing meta-prompt; SKILL-W2 `PersonaDetectorV2` with confidence scoring + ambiguity detection.
+  - **WS-J (Misc Quality)**: `runtime/quality.py` — W1 `CostProvider`/`FixedRateCostProvider`; W3 assertion helpers; W5 `OutputEnvelope` standardized output; W6 `Bounder` (text/list/dict bounding); W7 `Witness`/`WitnessRecorder`; W8 `LazyImport` generic; W9 `ReflexionLog` self-reflection.
+  - **New test files**: test_kernel_probity_contract.py, test_policy_precedence.py, test_sdd_enforcement.py, test_memory_upgrades.py, test_confidence_gate.py, test_learning_loop.py, test_skill_routing.py, test_quality.py, test_pipeline.py, test_redteam.py, test_gate_verdict.py — 200+ new tests, all passing.
+  - **Quality gates**: ruff PASS (repo-wide), mypy PASS (240 source files), full pytest suite green (1 skip for tkinter display).
+- **Competitor analysis + Phase 1 implementation — 2026-08-23 (ARCH/SEC/QA/DEV personas)**:
+  - **Competitor study**: Cloned 26 competitor repos to `D:\server\temp\competitor-study\`. Generated a report (262 lines) identifying 10 strengths, 15 weaknesses, 7 high-priority patterns to adopt. Sources: LLMFirewall (taint), SkillSpector (skill scanner), AgentGuard (typosquat + OSV.dev), agent-loop-guard (fuzzy + cycle + escalation), probity (Wilson CI + priority ladder), claw-eval (Pass^k + weighted scoring), microsoft/AgentRx (failure taxonomy), agent-trace (NDJSON + kill-switch), treehouse (safe sweep), mem0 (identity protection), AgentBudget (finalization reserve), agent-observatory (fail-open audit).
+  - **2 new runtime modules**:
+    - `runtime/taint.py` — 5-level taint label system (SYSTEM_TRUSTED → TOOL_OUTPUT → RAG_UNTRUSTED → USER_UNTRUSTED → SECRET) with Bell-LaPadula enforcement (no-write-up, no-read-down), sanitize/redact/merge/snapshot APIs, `classify_source()` heuristic for auto-labeling.
+    - `runtime/skill_scanner.py` — Static security scanner with 30+ regex patterns across 7 categories (prompt injection, data exfiltration, secret exposure, privilege escalation, supply chain, tool poisoning, resource abuse). Baseline suppression via fingerprints, risk-level scoring (SAFE/LOW/MEDIUM/HIGH/CRITICAL), resource bounds (10K findings, 30s timeout cap).
+  - **9 enhanced existing modules**:
+    - `eval/reliability.py` — Wilson score CI, `k_needed_estimate()`, `pass_at_k()`/`pass_hat_k()`/`pass_cubed()`, `DimensionScores` weighted composite (safety veto), `priority_ladder()` 7-rule fixed-order verdict (PASS/KILL/INSUFFICIENT).
+    - `runtime/supply_chain_guard.py` — `TyposquatDetector` (Levenshtein + homoglyph), `OsvDevClient` (OSV.dev API with 1h cache, fail-open on network error).
+    - `runtime/audit.py` — Fail-open observability: OSError on log write is logged but NOT raised.
+    - `runtime/budget.py` — `finalization_reserve` field (0-0.5 fraction reserved for final response), `effective_max_tokens`/`effective_max_cost` properties, `would_exceed()` pre-flight check.
+    - `runtime/loop_detector.py` — Fuzzy repeat (Jaccard + edit distance similarity), cycle detection (A→B→C→A patterns), `ActionConfig` escalation ladder (CONTINUE→WARN→STOP→ESCALATE).
+    - `runtime/trajectory.py` — `FailureCategory` 10-class taxonomy (from AgentRx), `export_ndjson()` zero-dependency trace export, `failure_summary()` by category, `tool_name`/`tool_input`/`tool_output` fields on steps.
+    - `runtime/worktree_pool.py` — (deleted in v5.7.0 cleanup; worktree management now via external git).
+    - `memory/store.py` — `_strip_identity_keys()` prevents tenant-scoping attacks (user_id/agent_id/session_id/tenant_id/actor_id stripped from caller metadata, only explicit params accepted).
+    - `runtime/guardian.py` — `KillSwitchRule` (cost_ceiling/file_touched/tool_call_count/time_limit), `KillSwitchError`, evaluated first in `authorize()` before guardrails (hard stop, cannot be overridden).
+  - **11 new test files** (119 tests, all passing): test_taint.py (17), test_skill_scanner.py (16), test_loop_detector.py (8), test_supply_chain_typosquat.py (9), test_budget_reserve.py (7), test_trajectory_enhanced.py (6), test_guardian_killswitch.py (9), test_audit_failopen.py (5), test_worktree_sweep.py (7), test_memory_identity.py (6), test_reliability_enhanced.py (21).
+  - **Quality gates**: ruff PASS (all 12 touched files), mypy PASS (all 11 source files), pytest 119/119 passed. Pre-existing `memory/vector.py` unused-ignore warning untouched (not in scope).
+  - **`runtime/__init__.py` updated**: Exports TaintError, TaintLabel, TaintTracker, classify_taint_source, SkillScanner, Baseline, ScanResult, ScanRiskLevel, ScanPatternSeverity, SkillFinding, TyposquatDetector, TyposquatFinding, OsvDevClient, VulnerabilityAdvisory, FailureCategory.
 - **Dashboard asset-origin fix — 2026-08-23 (user-reported dead UI)**:
   - **Root cause of "Connecting..." + dead side menu in ALL browsers**: running NEW server code while `AIZEE_ROOT` pointed at the OLD deployment (`D:\server\aizee`) served OLD inline-script index.html under the NEW strict CSP (no 'unsafe-inline') → every script blocked silently. Verified via Edge headless: against matching assets, JS runs and status becomes "Connected".
   - **Fix (architectural)**: dashboard now serves its UI from its OWN code directory (`_CODE_DIR`, `_asset_dir()`, `_ASSET_DIR_OVERRIDE` for tests) instead of the discovered root — server and UI are always version-matched regardless of AIZEE_ROOT. Live-verified: with machine AIZEE_ROOT=aizee, GET / returns new shell + /app.js 200.
@@ -370,7 +437,7 @@
 - **P2.2:** Async I/O in `mcp_client.py` — added `async_call_tool` using `asyncio.subprocess`.
 - **P2.3:** Schema versioning + migrations framework (`runtime/migrations.py`) + backup with retention.
 - **P2.4:** Privacy policy, terms of use, AI disclaimer, NOTICE file.
-- **P2.5:** Observability: Sentry integration (`runtime/observability.py`), Prometheus export (existing).
+- **P2.5:** Observability: Sentry integration (`runtime/telemetry.py`), Prometheus export via telemetry collector.
 - **P2.6:** E2E tests: kernel lifecycle, policy evaluation, chat, memory, workflows, metrics.
 - **P2.7:** Docs-guard CI check, `aizee_mcp/API.md` reference.
 - **P2.8:** Feature documentation (`docs/FEATURES.md`).

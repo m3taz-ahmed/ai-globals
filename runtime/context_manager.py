@@ -26,6 +26,7 @@ Usage::
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -189,7 +190,7 @@ class ContextManager:
 
 def compress_with_llm(
     messages: list[Message],
-    llm_fn: Any,
+    llm_fn: Callable[[str], str],
 ) -> str:
     """Semantic compression via an LLM callable.
 

@@ -343,12 +343,29 @@ class Budget:
     rollout_reminder_threshold: float | None = None
     token_weight_input: float = 1.0
     token_weight_output: float = 1.0
+    finalization_reserve: float = 0.0  # Fraction of budget reserved for final response
 
     def __post_init__(self) -> None:
         if self.period not in ALLOWED_PERIODS:
             self.period = "session"
         if self.on_exceed not in ALLOWED_EXCEED:
             self.on_exceed = "block"
+        if self.finalization_reserve < 0 or self.finalization_reserve > 0.5:
+            self.finalization_reserve = 0.0
+
+    @property
+    def effective_max_tokens(self) -> int | None:
+        """Max tokens minus the finalization reserve."""
+        if self.max_tokens is None:
+            return None
+        return int(self.max_tokens * (1.0 - self.finalization_reserve))
+
+    @property
+    def effective_max_cost(self) -> float | None:
+        """Max cost minus the finalization reserve."""
+        if self.max_cost_usd is None:
+            return None
+        return self.max_cost_usd * (1.0 - self.finalization_reserve)
 
 
 class BudgetManager:
@@ -417,7 +434,8 @@ class BudgetManager:
                     f.write(encrypted)
                 os.replace(tmp_path, self.state_file)
                 self._dirty = False
-            except Exception:
+            except Exception as exc:
+                _logger.debug("budget state save failed: %s", exc, exc_info=True)
                 os.remove(tmp_path)
                 raise
 
@@ -579,9 +597,9 @@ class BudgetManager:
             }
 
             exceeded = []
-            if budget.max_tokens and projected["tokens"] >= budget.max_tokens:
+            if budget.effective_max_tokens and projected["tokens"] >= budget.effective_max_tokens:
                 exceeded.append("tokens")
-            if budget.max_cost_usd and projected["cost"] >= budget.max_cost_usd:
+            if budget.effective_max_cost and projected["cost"] >= budget.effective_max_cost:
                 exceeded.append("cost")
             if budget.max_calls and projected["calls"] >= budget.max_calls:
                 exceeded.append("calls")
@@ -649,3 +667,32 @@ class BudgetManager:
                 result["rollout"] = rollout_result
                 result["reminder"] = rollout_result["reminder"]
             return result
+
+    def would_exceed(
+        self,
+        scope: str,
+        estimated_cost: float = 0.0,
+        estimated_tokens: int = 0,
+        session_id: str | None = None,
+    ) -> bool:
+        """Check if adding estimated cost/tokens would exceed the budget.
+
+        Accounts for the finalization reserve: the hard limit fires at
+        ``effective_max_*`` (i.e., ``max * (1 - reserve)``), leaving the
+        reserved fraction free for the agent's final response/summary.
+
+        This enables graceful degradation — agents can check before
+        starting a costly operation and return partial results instead
+        of being cut off mid-task.
+        """
+        with self._lock:
+            budget = self.budgets.get(scope)
+            if not budget:
+                return False
+            self._reset_if_needed(scope, budget, session_id)
+            u = self.usage[scope]
+            eff_tokens = budget.effective_max_tokens
+            eff_cost = budget.effective_max_cost
+            if eff_tokens and (u["tokens"] + estimated_tokens) >= eff_tokens:
+                return True
+            return bool(eff_cost and (u["cost"] + estimated_cost) >= eff_cost)

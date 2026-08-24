@@ -5,10 +5,9 @@ Inspired by Decapod's ``decapod eval --stdin``: every incoming prompt is
 scanned for instruction-injection and unsafe patterns *before* any action
 is taken. This is a deterministic, model-free safety layer — no LLM calls.
 
-The gate reuses the detection patterns from ``runtime/mcp_security.py``
-(prompt injection, data exfiltration, privilege escalation, destructive
-commands) and adds prompt-specific checks (jailbreak attempts, system
-prompt overrides, role-reset attacks).
+The gate inlines detection patterns for prompt injection, data exfiltration,
+privilege escalation, and destructive commands, and adds prompt-specific
+checks (jailbreak attempts, system prompt overrides, role-reset attacks).
 
 Usage::
 
@@ -27,7 +26,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import ClassVar
 
-from runtime.schemas import AizeeError, ErrorSeverity
+from runtime.schemas import AizeeError, ErrorSeverity, GateDecision, GateVerdict
 
 
 class PromptRisk(str, Enum):
@@ -46,6 +45,23 @@ class PromptVerdict:
     reason: str = ""
     matched_patterns: list[str] = field(default_factory=list)
     score: int = 0
+
+    def to_gate_verdict(self) -> GateVerdict:
+        """Convert to unified GateVerdict (EVAL-W0)."""
+        if self.risk is PromptRisk.BLOCKED:
+            return GateVerdict.block(
+                "prompt_gate", self.reason, score=self.score, patterns=self.matched_patterns
+            )
+        if self.risk is PromptRisk.SUSPICIOUS:
+            return GateVerdict(
+                gate="prompt_gate",
+                decision=GateDecision.REQUIRE_APPROVAL,
+                reason=self.reason,
+                metadata={"score": self.score, "patterns": self.matched_patterns},
+            )
+        return GateVerdict.allow(
+            "prompt_gate", self.reason, score=self.score, patterns=self.matched_patterns
+        )
 
 
 # --- Pattern categories (compiled once) ------------------------------------

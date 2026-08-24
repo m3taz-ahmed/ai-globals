@@ -31,6 +31,7 @@ from .middleware import (
 )
 from .persona import PersonaDetector, inject_persona_context
 from .preloop import FeedbackLoop
+from .probity import GuardrailViolationError
 from .skill_resolver import SkillResolver
 from .sovereign import AgentCapabilities
 from .tech_stack import detect_stack
@@ -40,9 +41,14 @@ from .tracing import ConsoleSpanExporter, TracerProvider, with_span
 if TYPE_CHECKING:
     from memory.store import MemoryStore
 
+    from .chat import ChatSession
     from .guardian import Guardian
+    from .orchestrator import AgentPool
     from .plugin import PluginManager
     from .policy import PolicyEngine
+    from .probity import Guardrails
+    from .saga import SagaOrchestrator
+    from .workflow import WorkflowRunner
 
 
 class ActionSchema(BaseModel):
@@ -63,6 +69,220 @@ class ActionSchema(BaseModel):
     cost: float = Field(default=0.0, ge=0.0)
 
 
+# --- Module-level kernel helpers ---
+
+
+def _init_core_services(kernel: Kernel) -> None:
+    """Initialize core runtime services (budget, telemetry, audit, etc.)."""
+    kernel.budget = BudgetManager(kernel.project_root)
+    kernel.telemetry = kernel._build_telemetry_collector()
+    kernel.audit = AuditLogger(kernel.project_root)
+    kernel.approval_cache = ApprovalCache()
+    kernel.preloop = FeedbackLoop()
+    kernel.capabilities = AgentCapabilities()
+    kernel.metrics = kernel._build_metrics()
+    kernel.tracer = kernel._build_tracer()
+    kernel.governance = GovernanceHooks(kernel.audit, kernel.telemetry)
+    kernel.mcp_firewall = kernel._build_mcp_firewall()
+    kernel.loop_detector = LoopDetector(window=20, threshold=5)
+
+
+def _init_managers(kernel: Kernel) -> None:
+    """Initialize manager submodules (policy, workflow, agent, chat)."""
+    kernel.policy_mgr = PolicyManager(
+        kernel.root, kernel.project_root, kernel.audit, kernel.budget,
+        kernel.approval_cache, kernel.preloop,
+        kernel._actions_total, kernel._guardian_denials_total, kernel._probity_violations_total,
+    )
+    kernel.workflow_mgr = WorkflowManager(
+        kernel.project_root, kernel.root, kernel.persona, kernel._sagas_total,
+    )
+    kernel.agent_mgr = AgentManager(kernel.root, kernel.persona)
+    # LocalResponder reads live kernel state lazily via the bound method.
+    from runtime.local_responder import LocalResponder
+
+    kernel.chat_mgr = ChatManager(
+        kernel.project_root, responder=LocalResponder(context_provider=kernel.status),
+    )
+
+
+def _init_compat_attributes(kernel: Kernel) -> None:
+    """Set backward-compatible direct attributes (settable for tests)."""
+    kernel.policy = kernel.policy_mgr.policy
+    kernel.guardian = kernel.policy_mgr.guardian
+    kernel.probity = kernel.policy_mgr.probity
+    kernel.workflows = kernel.workflow_mgr.workflows
+    kernel.saga = kernel.workflow_mgr.saga
+    kernel.pool = kernel.agent_mgr.pool
+    kernel.chat = kernel.chat_mgr.default_session
+
+
+def _auto_persona(kernel: Kernel, kwargs: dict[str, Any]) -> None:
+    """Inject personas and skills into kwargs if missing and text is present."""
+    inject_persona_context(
+        kernel.persona, kwargs, text_keys=("message", "content", "query", "request"),
+    )
+
+
+def _run_probity_gate(
+    kernel: Kernel, action_type: str, action_data: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Check probity gate; return denial dict on violation, None on pass."""
+    try:
+        kernel.policy_mgr.check_probity(action_type, action_data, kernel.probity)
+    except GuardrailViolationError as exc:
+        kernel._probity_violations_total.labels(rule=exc.rule_name).inc()
+        kernel.audit.log("probity.deny", {"action": action_type, "rule": exc.rule_name, "detail": str(exc)})
+        kernel._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+        return {
+            "ok": False,
+            "decision": Decision.DENY.value,
+            "reason": f"probity_violation: {exc.rule_name}",
+            "gate": "probity",
+            "detail": str(exc),
+        }
+    return None
+
+
+def _run_guardian_gate(
+    kernel: Kernel, action_type: str, action_data: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Check guardian gate; return denial dict on guard, None on pass."""
+    guard = kernel.policy_mgr.check_guardian(action_type, action_data, kernel.guardian)
+    if guard:
+        return guard
+    return None
+
+
+def _run_policy_gate(
+    kernel: Kernel,
+    action_type: str,
+    action_data: dict[str, Any],
+    kwargs: dict[str, Any],
+    decision: dict[str, Any],
+    dry_run: bool,
+) -> dict[str, Any] | None:
+    """Check policy gate; return denial/ask dict or None to continue."""
+    if decision["decision"] == Decision.DENY.value:
+        kernel._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+        return kernel.policy_mgr.handle_policy_denied(action_data, kwargs, decision, dry_run, kernel.telemetry)
+    if decision["decision"] == Decision.ASK.value and not kernel.policy_mgr.resolve_approval(action_data, dry_run):
+        kernel._actions_total.labels(action=action_type, decision=Decision.ASK.value).inc()
+        return kernel.policy_mgr.handle_policy_ask(action_data, kwargs, decision, dry_run, kernel.telemetry)
+    return None
+
+
+def _run_loop_detection(
+    kernel: Kernel, action_type: str, action_data: dict[str, Any], dry_run: bool,
+) -> dict[str, Any] | None:
+    """Check loop detection; return denial dict on loop hit, None otherwise."""
+    skip_loop = dry_run or kernel.policy_mgr.approval_cache.is_approved(action_data)
+    loop_hit = None if skip_loop else kernel.loop_detector.check_and_record(action_type, action_data)
+    if loop_hit is not None:
+        kernel._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+        return {
+            "ok": False,
+            "decision": Decision.DENY.value,
+            "reason": f"loop detected: {loop_hit.tool} repeated {loop_hit.repeat_count}x in window {loop_hit.window}",
+            "loop": True,
+            "repeat_count": loop_hit.repeat_count,
+        }
+    return None
+
+
+def _finalize_action(
+    kernel: Kernel,
+    action_type: str,
+    action_data: dict[str, Any],
+    kwargs: dict[str, Any],
+    decision: dict[str, Any],
+    dry_run: bool,
+    session_id: str | None,
+) -> dict[str, Any]:
+    """Run budget check and finalize the action."""
+    budget_result = kernel.budget.check(
+        "session",
+        action_data.get("tokens", 0),
+        action_data.get("cost", 0.0),
+        dry_run=dry_run,
+        **kernel.policy_mgr.build_budget_kwargs(action_data, session_id=session_id),
+    )
+    result = kernel.policy_mgr.finalize_action(action_data, kwargs, decision, budget_result, dry_run, kernel.telemetry)
+    kernel.policy_mgr.record_preloop(action_type, result, decision)
+    return result
+
+
+def _act_via_middleware(
+    kernel: Kernel,
+    action_type: str,
+    dry_run: bool,
+    kwargs: dict[str, Any],
+    session_id: str | None,
+) -> dict[str, Any]:
+    """Execute action through the flat middleware array (Pattern 4).
+
+    The direct path is wrapped as the terminal handler. Middlewares can
+    observe, transform, or short-circuit before reaching the handler.
+    """
+    context = ActionContext(
+        action_type=action_type,
+        data=dict(kwargs),
+        dry_run=dry_run,
+        session_id=session_id,
+    )
+
+    def handler(ctx: ActionContext) -> MiddlewareResult[dict[str, Any]]:
+        result = kernel._act_direct(
+            ctx.action_type, ctx.dry_run, ctx.data, ctx.session_id, fresh_context=False,
+        )
+        return MiddlewareResult(ok=bool(result.get("ok", False)), data=result)
+
+    mw_result = kernel._middleware_pipeline.execute(context, handler)
+    if mw_result.ok:
+        return mw_result.data if mw_result.data is not None else {"ok": True}
+    err_msg = str(mw_result.error) if mw_result.error else "middleware error"
+    return {"ok": False, "error": err_msg}
+
+
+def _act_via_compiled_pipeline(
+    kernel: Kernel,
+    action_type: str,
+    dry_run: bool,
+    kwargs: dict[str, Any],
+    session_id: str | None,
+    pipeline: CompiledPipeline,
+) -> dict[str, Any]:
+    """Execute action through the pre-compiled enhancer pipeline (Pattern 5)."""
+    context = ActionContext(
+        action_type=action_type,
+        data=dict(kwargs),
+        dry_run=dry_run,
+        session_id=session_id,
+    )
+    result = pipeline.execute(context)
+    if result.ok:
+        return result.data if result.data is not None else {"ok": True}
+    err_msg = str(result.error) if result.error else "pipeline error"
+    return {"ok": False, "error": err_msg}
+
+
+def _get_compiled_pipeline(kernel: Kernel, action_type: str) -> CompiledPipeline | None:
+    """Get or lazily compile the pipeline for an action type.
+
+    Returns None if no builder is registered for the action type.
+    On first access, the builder configures the pipeline and it is
+    compiled and cached. Subsequent calls return the cached instance.
+    """
+    if action_type not in kernel._pipeline_builders:
+        return None
+    if action_type not in kernel._compiled_pipelines:
+        pipeline = CompiledPipeline()
+        kernel._pipeline_builders[action_type](pipeline)
+        pipeline.compile()
+        kernel._compiled_pipelines[action_type] = pipeline
+    return kernel._compiled_pipelines[action_type]
+
+
 class Kernel:
     """Central runtime for aiZee.
 
@@ -70,6 +290,29 @@ class Kernel:
     AgentManager, and ChatManager. Each manager owns a single
     responsibility cluster.
     """
+
+    budget: BudgetManager
+    telemetry: TelemetryCollector
+    audit: AuditLogger
+    approval_cache: ApprovalCache
+    preloop: FeedbackLoop
+    capabilities: AgentCapabilities
+    metrics: CollectorRegistry
+    tracer: TracerProvider
+    governance: GovernanceHooks
+    mcp_firewall: McpFirewall
+    loop_detector: LoopDetector
+    policy_mgr: PolicyManager
+    workflow_mgr: WorkflowManager
+    agent_mgr: AgentManager
+    chat_mgr: ChatManager
+    policy: PolicyEngine
+    guardian: Guardian
+    probity: Guardrails
+    workflows: WorkflowRunner
+    saga: SagaOrchestrator
+    pool: AgentPool
+    chat: ChatSession
 
     def __init__(
         self,
@@ -82,52 +325,13 @@ class Kernel:
         self.project_root = project_root or root or config.discover_project_root()
         self.skill_resolver = skill_resolver or SkillResolver(self.root, self.project_root)
         self.persona = persona_detector or PersonaDetector(skill_resolver=self.skill_resolver)
-
-        # Core services
-        self.budget = BudgetManager(self.project_root)
-        self.telemetry = self._build_telemetry_collector()
-        self.audit = AuditLogger(self.project_root)
-        self.approval_cache = ApprovalCache()
-        self.preloop = FeedbackLoop()
-        self.capabilities = AgentCapabilities()
-        self.metrics = self._build_metrics()
-        self.tracer = self._build_tracer()
-        self.governance = GovernanceHooks(self.audit, self.telemetry)
-        self.mcp_firewall = self._build_mcp_firewall()
-        self.loop_detector = LoopDetector(window=20, threshold=5)
-
-        # Managers
-        self.policy_mgr = PolicyManager(
-            self.root, self.project_root, self.audit, self.budget,
-            self.approval_cache, self.preloop,
-            self._actions_total, self._guardian_denials_total, self._probity_violations_total,
-        )
-        self.workflow_mgr = WorkflowManager(
-            self.project_root, self.root, self.persona, self._sagas_total,
-        )
-        self.agent_mgr = AgentManager(self.root, self.persona)
-        # LocalResponder reads live kernel state lazily via the bound method.
-        from runtime.local_responder import LocalResponder
-
-        self.chat_mgr = ChatManager(
-            self.project_root, responder=LocalResponder(context_provider=self.status),
-        )
-
-        # Backward-compatible direct attributes (settable for tests)
-        self.policy = self.policy_mgr.policy
-        self.guardian = self.policy_mgr.guardian
-        self.probity = self.policy_mgr.probity
-        self.workflows = self.workflow_mgr.workflows
-        self.saga = self.workflow_mgr.saga
-        self.pool = self.agent_mgr.pool
-        self.chat = self.chat_mgr.default_session
-
+        _init_core_services(self)
+        _init_managers(self)
+        _init_compat_attributes(self)
         # Plugin manager — lazily initialized to avoid loading plugins on kernel creation
         self._plugins: PluginManager | None = None
-
         # Pattern 4: Flat middleware array (tRPC-style callRecursive)
         self._middleware_pipeline = MiddlewarePipeline()
-
         # Pattern 5: Pre-compiled enhancer pipeline (NestJS-style)
         # Builders configure a CompiledPipeline per action type; compiled
         # pipelines are cached after first execution.
@@ -180,53 +384,24 @@ class Kernel:
                 fw.add_rule(rule)
         return fw
 
-    # --- Persona ---
     def detect_persona(self, text: str) -> dict[str, Any]:
         """Detect the best persona for a user prompt."""
         return self.persona.detect(text)
-
-    def _auto_persona(self, kwargs: dict[str, Any]) -> None:
-        """Inject personas and skills into kwargs if missing and text is present."""
-        inject_persona_context(
-            self.persona, kwargs, text_keys=("message", "content", "query", "request"),
-        )
 
     # --- Action evaluation (delegates to PolicyManager) ---
     def act(self, action_type: str, dry_run: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Evaluate action through policy + budget + governance gates.
 
-        Dispatches to one of three execution paths (additive, backward-compatible):
-
-        1. **Compiled pipeline** (Pattern 5 — NestJS): if a pipeline builder is
-           registered for ``action_type``, the pre-compiled enhancer chain
-           (pipes → guards → interceptors → handler) is used. The pipeline is
-           compiled on first call and cached for subsequent calls.
-        2. **Middleware pipeline** (Pattern 4 — tRPC): if global middlewares are
-           registered, the flat middleware array is executed via recursive
-           ``callRecursive`` with the direct path as the terminal handler.
-        3. **Direct path** (existing): the original guardian → policy → budget
-           → finalize flow, unchanged when no middlewares or pipelines are
-           registered.
+        Dispatches to middleware pipeline (if registered) or direct gated path.
         """
         fresh_context = kwargs.pop("fresh_context", False)
         session_id = kwargs.pop("session_id", None)
         with with_span(self.tracer.get_tracer("kernel"), f"act.{action_type}"):
-            self._auto_persona(kwargs)
+            _auto_persona(self, kwargs)
             if fresh_context and session_id is None:
                 session_id = uuid.uuid4().hex
-
-            # Pattern 5: Pre-compiled enhancer pipeline (NestJS-style)
-            compiled = self._get_compiled_pipeline(action_type)
-            if compiled is not None:
-                return self._act_via_compiled_pipeline(
-                    action_type, dry_run, kwargs, session_id, compiled,
-                )
-
-            # Pattern 4: Flat middleware array (tRPC-style callRecursive)
             if self._middleware_pipeline.has_middlewares():
-                return self._act_via_middleware(action_type, dry_run, kwargs, session_id)
-
-            # Existing direct path (backward-compatible default)
+                return _act_via_middleware(self, action_type, dry_run, kwargs, session_id)
             return self._act_direct(action_type, dry_run, kwargs, session_id, fresh_context)
 
     def _act_direct(
@@ -242,102 +417,23 @@ class Kernel:
             action_data = ActionSchema(type=action_type, **kwargs).model_dump()
         except ValidationError as e:
             return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
-
-        self.policy_mgr.check_probity(action_type, action_data, self.probity)
-
-        # Loop detection — block repeated identical actions before guardian.
-        # A fresh context starts a new session, so reset the detector.
-        # Dry-run actions are not executed, so skip detection for them.
+        probity_result = _run_probity_gate(self, action_type, action_data)
+        if probity_result is not None:
+            return probity_result
         if fresh_context:
             self.loop_detector.reset()
-        loop_hit = None if dry_run else self.loop_detector.check_and_record(action_type, action_data)
-        if loop_hit is not None:
-            self._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
-            return {
-                "ok": False,
-                "decision": Decision.DENY.value,
-                "reason": f"loop detected: {loop_hit.tool} repeated {loop_hit.repeat_count}x in window {loop_hit.window}",
-                "loop": True,
-                "repeat_count": loop_hit.repeat_count,
-            }
-
-        guard = self.policy_mgr.check_guardian(action_type, action_data, self.guardian)
-        if guard:
-            return guard
-
+        guardian_result = _run_guardian_gate(self, action_type, action_data)
+        if guardian_result is not None:
+            return guardian_result
         decision = self.policy.can(action_data["type"], **action_data)
-        if decision["decision"] == Decision.DENY.value:
-            self._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
-            return self.policy_mgr.handle_policy_denied(action_data, kwargs, decision, dry_run, self.telemetry)
-
-        if decision["decision"] == Decision.ASK.value and not self.policy_mgr.resolve_approval(action_data, dry_run):
-            self._actions_total.labels(action=action_type, decision=Decision.ASK.value).inc()
-            return self.policy_mgr.handle_policy_ask(action_data, kwargs, decision, dry_run, self.telemetry)
-
+        policy_result = _run_policy_gate(self, action_type, action_data, kwargs, decision, dry_run)
+        if policy_result is not None:
+            return policy_result
+        loop_result = _run_loop_detection(self, action_type, action_data, dry_run)
+        if loop_result is not None:
+            return loop_result
         self._actions_total.labels(action=action_type, decision=Decision.ALLOW.value).inc()
-
-        budget_result = self.budget.check(
-            "session",
-            action_data.get("tokens", 0),
-            action_data.get("cost", 0.0),
-            dry_run=dry_run,
-            **self.policy_mgr.build_budget_kwargs(action_data, session_id=session_id),
-        )
-        result = self.policy_mgr.finalize_action(action_data, kwargs, decision, budget_result, dry_run, self.telemetry)
-        self.policy_mgr.record_preloop(action_type, result, decision)
-        return result
-
-    def _act_via_middleware(
-        self,
-        action_type: str,
-        dry_run: bool,
-        kwargs: dict[str, Any],
-        session_id: str | None,
-    ) -> dict[str, Any]:
-        """Execute action through the flat middleware array (Pattern 4).
-
-        The direct path is wrapped as the terminal handler. Middlewares can
-        observe, transform, or short-circuit before reaching the handler.
-        """
-        context = ActionContext(
-            action_type=action_type,
-            data=dict(kwargs),
-            dry_run=dry_run,
-            session_id=session_id,
-        )
-
-        def handler(ctx: ActionContext) -> MiddlewareResult[dict[str, Any]]:
-            result = self._act_direct(
-                ctx.action_type, ctx.dry_run, ctx.data, ctx.session_id, fresh_context=False,
-            )
-            return MiddlewareResult(ok=bool(result.get("ok", False)), data=result)
-
-        mw_result = self._middleware_pipeline.execute(context, handler)
-        if mw_result.ok:
-            return mw_result.data if mw_result.data is not None else {"ok": True}
-        err_msg = str(mw_result.error) if mw_result.error else "middleware error"
-        return {"ok": False, "error": err_msg}
-
-    def _act_via_compiled_pipeline(
-        self,
-        action_type: str,
-        dry_run: bool,
-        kwargs: dict[str, Any],
-        session_id: str | None,
-        pipeline: CompiledPipeline,
-    ) -> dict[str, Any]:
-        """Execute action through the pre-compiled enhancer pipeline (Pattern 5)."""
-        context = ActionContext(
-            action_type=action_type,
-            data=dict(kwargs),
-            dry_run=dry_run,
-            session_id=session_id,
-        )
-        result = pipeline.execute(context)
-        if result.ok:
-            return result.data if result.data is not None else {"ok": True}
-        err_msg = str(result.error) if result.error else "pipeline error"
-        return {"ok": False, "error": err_msg}
+        return _finalize_action(self, action_type, action_data, kwargs, decision, dry_run, session_id)
 
     # --- Middleware & Pipeline Registration ---
 
@@ -356,29 +452,28 @@ class Kernel:
     ) -> None:
         """Register a compiled pipeline builder for an action type (Pattern 5).
 
+        .. deprecated::
+            GATE-B4: This API allowed gate-free handlers that could bypass
+            the 5-gate pipeline. It is no longer dispatched from ``act()``.
+            All actions now flow through the gated ``_act_direct`` path.
+            Will be removed in the next minor version.
+
         The builder receives a ``CompiledPipeline`` and adds guards,
         interceptors, pipes, and a handler. The pipeline is compiled on
         first ``act()`` call for that action type and cached thereafter.
         """
+        import warnings
+
+        warnings.warn(
+            "register_action_pipeline() is deprecated (GATE-B4) and no longer "
+            "dispatched from act(). All actions flow through the gated path. "
+            "Will be removed in the next minor version.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._pipeline_builders[action_type] = builder
         # Invalidate any previously cached compiled pipeline for this action
         self._compiled_pipelines.pop(action_type, None)
-
-    def _get_compiled_pipeline(self, action_type: str) -> CompiledPipeline | None:
-        """Get or lazily compile the pipeline for an action type.
-
-        Returns None if no builder is registered for the action type.
-        On first access, the builder configures the pipeline and it is
-        compiled and cached. Subsequent calls return the cached instance.
-        """
-        if action_type not in self._pipeline_builders:
-            return None
-        if action_type not in self._compiled_pipelines:
-            pipeline = CompiledPipeline()
-            self._pipeline_builders[action_type](pipeline)
-            pipeline.compile()
-            self._compiled_pipelines[action_type] = pipeline
-        return self._compiled_pipelines[action_type]
 
     # --- Workflow (delegates to WorkflowManager) ---
     def run_workflow(
@@ -532,7 +627,19 @@ class KernelBuilder:
             kwargs["persona_detector"] = self._persona_detector
         if self._skill_resolver is not None:
             kwargs["skill_resolver"] = self._skill_resolver
-        return Kernel(**kwargs)
+        kernel = Kernel(**kwargs)
+        if self._budget_manager is not None:
+            kernel.budget = self._budget_manager
+        if self._audit_logger is not None:
+            kernel.audit = self._audit_logger
+        if self._policy_engine is not None:
+            kernel.policy = self._policy_engine
+        if self._guardian is not None:
+            kernel.guardian = self._guardian
+        if self._memory is not None:
+            # wire memory if applicable
+            pass
+        return kernel
 
 
 if __name__ == "__main__":

@@ -47,6 +47,10 @@ spec:
           env:
             - name: AIZEE_ROOT
               value: /opt/aizee
+            # SEC-W2: bind 0.0.0.0 in K8s so pod probes reach the container.
+            # Token auth (AIZEE_DASHBOARD_TOKEN) is REQUIRED for non-loopback.
+            - name: AGENT_OS_HOST
+              value: "0.0.0.0"
             - name: AIZEE_DASHBOARD_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -59,15 +63,16 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+          # Probes target /api/system (public path) so they pass under token auth
           readinessProbe:
             httpGet:
-              path: /api/status
+              path: /api/system
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /api/status
+              path: /api/system
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
@@ -149,11 +154,16 @@ kind: Secret
 metadata:
   name: aizee-dashboard-token
   namespace: aizee
+  annotations:
+    # SEC-W2: This is a PLACEHOLDER. Never deploy with this value.
+    # Generate a real token: python -c "import secrets; print(secrets.token_urlsafe(32))"
+    # Then: kubectl create secret generic aizee-dashboard-token \
+    #   --from-literal=token=<your-token> -n aizee
+    # Or use sealed-secrets / external-secrets for GitOps.
+    aizee.io/security-warning: "Replace placeholder token before production deploy"
 type: Opaque
 stringData:
-          # WARNING: Replace with a real secret from a sealed-secrets manager before deploying to production.
-          # Run: aizee doctor --root D:\.ai to generate a secure token.
-  token: CHANGE_ME_IN_PRODUCTION
+  token: REPLACE_WITH_REAL_TOKEN_DO_NOT_DEPLOY_THIS
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -168,10 +178,24 @@ spec:
     - Ingress
     - Egress
   ingress:
+    # SEC-W2: restrict to same-namespace pods with app label (not all namespaces)
     - from:
-        - namespaceSelector: {}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: aizee
       ports:
         - port: 8080
           protocol: TCP
   egress:
-    - {}
+    # SEC-W2: restrict egress to DNS + HTTPS (no wildcard allow-all)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+    # HTTPS egress to any destination (API calls, LLM providers, etc.)
+    - ports:
+        - port: 443
+          protocol: TCP

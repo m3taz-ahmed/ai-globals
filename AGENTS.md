@@ -12,8 +12,8 @@ license: MIT
 
 ## Working Directory [DIR-01]
 - **Working directory: D:\server\.ai ONLY.** All edits, new files, and modifications go here.
-- **D:\server\aizee is READ-ONLY.** Never edit files in izee directly. It is the deployment/usage folder, updated only via the batch update script. If you need to sync changes from .ai to izee, use the batch script.
-- When the IDE opens files from izee, copy them to .ai first, edit in .ai, then sync back via the batch script.
+- **D:\server\aizee is READ-ONLY.** Never edit files in aizee directly. It is the deployment/usage folder, updated only via the batch update script. If you need to sync changes from .ai to aizee, use the batch script.
+- When the IDE opens files from aizee, copy them to .ai first, edit in .ai, then sync back via the batch script.
 
 ## Cold Start
 1. Read `global-roles.md`, `global-workflow.md`, and `Memory.md`.
@@ -68,8 +68,8 @@ aiZee follows a layered design:
 - **CLI / Entry Point** — `aizee_cli.py` parses commands, delegates to kernel.
 - **Kernel (Facade)** — `runtime/kernel.py` routes to managers.
 - **Managers** — `runtime/managers/` (PolicyManager, WorkflowManager, AgentManager, ChatManager).
-- **Runtime Modules** — 105 governance modules in `runtime/`.
-- **MCP Server** — `aizee_mcp/` exposes 35 tools via FastMCP.
+- **Runtime Modules** — 85 governance modules in `runtime/`.
+- **MCP Server** — `aizee_mcp/` exposes 36 tools via FastMCP.
 - **Memory** — `memory/` SQLite + FTS5 + vector store.
 - **Skills / Workflows / Tech-Stack** — declarative `.md` files loaded at runtime.
 
@@ -95,16 +95,16 @@ aiZee follows a layered design:
 aizee/                         # Sovereign root (AIZEE_ROOT)
 ├── aizee_cli.py               # CLI entry point
 ├── config.py                  # Root discovery + version
-├── runtime/                   # Kernel + 105 governance modules
+├── runtime/                   # Kernel + 85 governance modules
 │   ├── kernel.py              # Facade
 │   ├── managers/              # Policy/Workflow/Agent/Chat managers
 │   ├── storage_backend.py     # StorageBackend protocol + factory
 │   ├── service_catalog.py     # ServiceDescriptor + multi-index catalog
 │   ├── schemas.py             # Pydantic + exceptions + pagination
-│   └── ...                    # 105 governance modules
-├── aizee_mcp/                 # MCP server (35 tools)
+│   └── ...                    # 85 governance modules
+├── aizee_mcp/                 # MCP server (36 tools)
 ├── memory/                    # SQLite + FTS5 + vector
-├── skills/                    # 73 persona + lord skills
+├── skills/                    # 72 persona + lord skills
 ├── workflows/                 # 36 trigger-based execution protocols
 ├── rules/                     # Compressed behavioral rules
 ├── tech-stack/                # 163 version-locked stack references

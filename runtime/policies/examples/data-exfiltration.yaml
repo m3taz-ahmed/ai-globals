@@ -1,6 +1,6 @@
 name: data-exfiltration-prevention
 apiVersion: governance.aizee/v1
-default_action: ask
+# default_action moved to default.yaml per GATE-B3
 rules:
   - name: block-external-post
     condition: "type in ['curl', 'http', 'send_email', 'sms'] or ('curl' in command and ('-X POST' in command or '-X PUT' in command))"

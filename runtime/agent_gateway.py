@@ -17,6 +17,7 @@ agent's request and response path."
 
 from __future__ import annotations
 
+import logging
 import re
 import threading
 from collections.abc import Callable
@@ -24,7 +25,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from runtime.schemas import AizeeError, ErrorSeverity
+from runtime.schemas import AizeeError, ErrorSeverity, GateVerdict
+
+_logger = logging.getLogger(__name__)
 
 
 class Verdict(str, Enum):
@@ -75,6 +78,29 @@ class GuardrailResult:
             "redacted_fields": list(self.redacted_fields),
             "severity": self.severity.value,
         }
+
+    def to_gate_verdict(self) -> GateVerdict:
+        """Convert to unified GateVerdict (EVAL-W0).
+
+        REDACT requires spans; we synthesize placeholder spans from
+        redacted_fields since the gateway doesn't track char offsets.
+        """
+        if self.verdict is Verdict.BLOCK:
+            return GateVerdict.block(
+                "agent_gateway", self.reason, guardrail=self.guardrail_name, severity=self.severity.value
+            )
+        if self.verdict is Verdict.REDACT:
+            spans = tuple((0, 0, f) for f in self.redacted_fields)
+            return GateVerdict.redact(
+                "agent_gateway",
+                self.reason,
+                spans=spans,
+                guardrail=self.guardrail_name,
+                redacted_fields=list(self.redacted_fields),
+            )
+        return GateVerdict.allow(
+            "agent_gateway", self.reason, guardrail=self.guardrail_name
+        )
 
 
 # A guardrail is a callable: context → result.
@@ -232,6 +258,7 @@ class AgentGateway:
                 res = fn(ctx)
                 results.append(res)
             except Exception as exc:
+                _logger.debug("guardrail %s failed: %s", name, exc, exc_info=True)
                 results.append(GuardrailResult(
                     Verdict.BLOCK, name,
                     reason=f"Guardrail error: {exc}",

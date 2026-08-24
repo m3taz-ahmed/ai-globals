@@ -7,12 +7,15 @@ wrap actions with audit, telemetry, policy, and tracing checks.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from typing import Any
 
 from runtime.audit import AuditLogger
 from runtime.telemetry import TelemetryCollector
+
+_logger = logging.getLogger(__name__)
 
 
 class GovernanceHooks:
@@ -29,6 +32,7 @@ class GovernanceHooks:
         try:
             yield self
         except Exception as exc:
+            _logger.debug("governance action %s failed: %s", action, exc, exc_info=True)
             self.telemetry.record(
                 event_type="action",
                 action=action,

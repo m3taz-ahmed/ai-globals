@@ -28,7 +28,7 @@ jobs:
       - name: Run quality gates
         run: |
           ruff check .
-          mypy runtime memory aizee_mcp
+          mypy runtime memory aizee_mcp aizee_cli.py config.py dashboard/server.py eval/harness.py eval/pipeline.py eval/reliability.py eval/redteam.py scripts/guard_invariants.py scripts/sync_docs.py
           pytest -q --cov-fail-under=80
       - name: Extract version
         id: version
@@ -51,7 +51,7 @@ jobs:
       - name: Build package
         run: python -m build
       - name: Publish to PyPI (OIDC keyless)
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           attestations: true
           skip-existing: true
@@ -93,6 +93,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           provenance: true
           sbom: true
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Sign Docker image with Cosign (keyless OIDC)
+        run: |
+          cosign sign --yes ghcr.io/${{ github.repository }}@${{ steps.meta.outputs.version }}
 
   generate-sbom:
     name: Generate & Sign SBOM

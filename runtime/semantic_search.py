@@ -20,9 +20,12 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from runtime.codegraph import CodeGraphBuilder, FunctionNode
+
+if TYPE_CHECKING:
+    from memory.vector import VectorStore
 
 
 @dataclass
@@ -157,12 +160,12 @@ class HybridSearchResult:
 # Module-level backends so hybrid_search() can be called without explicit
 # wiring. Tests can replace these via set_hybrid_backends().
 _default_keyword_search: SemanticCodeSearch | None = None
-_default_vector_store: Any = None
+_default_vector_store: VectorStore | None = None
 
 
 def set_hybrid_backends(
     keyword_search: SemanticCodeSearch | None = None,
-    vector_store: Any = None,
+    vector_store: VectorStore | None = None,
 ) -> None:
     """Configure the default backends used by hybrid_search()."""
     global _default_keyword_search, _default_vector_store

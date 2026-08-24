@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """JSON structure constants for MCP tool responses.
 
 Inspired by Koel's ``SongResource::JSON_STRUCTURE`` pattern: each API

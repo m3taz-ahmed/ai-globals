@@ -9,6 +9,7 @@ their schema via ``_schema_sql`` and implement domain-specific queries.
 from __future__ import annotations
 
 import contextlib
+import logging
 import queue
 import sqlite3
 import threading
@@ -16,6 +17,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import ClassVar
+
+_logger = logging.getLogger(__name__)
 
 
 class BaseRepository:
@@ -69,7 +72,8 @@ class BaseRepository:
         try:
             yield conn
             conn.commit()
-        except Exception:
+        except Exception as exc:
+            _logger.debug("transaction failed, rolling back: %s", exc, exc_info=True)
             conn.rollback()
             raise
         finally:

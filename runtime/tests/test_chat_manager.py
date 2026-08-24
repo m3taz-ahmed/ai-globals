@@ -317,11 +317,13 @@ class TestSessionRetrieval:
 class TestErrorHandling:
     """ChatManager handles error conditions gracefully."""
 
-    def test_act_fn_none_raises_type_error(self, tmp_root: Path) -> None:
-        """Calling chat_message without act_fn raises a TypeError."""
+    def test_act_fn_none_returns_deny(self, tmp_root: Path) -> None:
+        """Calling chat_message without act_fn returns a graceful deny result."""
         cm = ChatManager(tmp_root)
-        with pytest.raises(TypeError):
-            cm.chat_message("no act fn")
+        result = cm.chat_message("no act fn")
+        assert not result["ok"]
+        assert result["decision"] == "deny"
+        assert "act_fn" in result["reason"]
 
     def test_denied_result_propagates_error(self, tmp_root: Path) -> None:
         """A denied result includes the error from act_fn."""

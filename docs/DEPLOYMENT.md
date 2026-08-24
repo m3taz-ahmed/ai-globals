@@ -115,7 +115,7 @@ Returns: `{"ok": true, "root": "...", "version": "..."}`
 ### Continuous Monitoring
 
 - **Sentry:** Set `SENTRY_DSN` to capture exceptions and errors automatically.
-- **Prometheus:** Metrics exported via `runtime/observability.py` `prometheus_export()`.
+- **Prometheus:** Metrics exported via `runtime/telemetry.py` collector and `runtime/tracing.py` spans.
 - **Audit log:** Monitor `state/audit.log` for policy denials and probity violations.
 
 ## Rollback Procedures

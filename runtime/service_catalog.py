@@ -25,6 +25,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 
@@ -206,7 +207,7 @@ class ServiceCatalog:
 
 
 def build_catalog_from_directory(
-    skills_dir: Any,
+    skills_dir: Path,
     kind: str = "skill",
 ) -> ServiceCatalog:
     """Build a ServiceCatalog by scanning a directory for skill files.
@@ -218,9 +219,7 @@ def build_catalog_from_directory(
     This is a convenience builder — for full metadata (personas, tech_stack),
     construct ServiceDescriptor instances explicitly.
     """
-    from pathlib import Path
-
-    skills_path = Path(skills_dir) if not isinstance(skills_dir, Path) else skills_dir
+    skills_path = skills_dir if isinstance(skills_dir, Path) else Path(skills_dir)
     descriptors: list[ServiceDescriptor] = []
     if not skills_path.is_dir():
         return ServiceCatalog(descriptors)

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Tests for runtime.guardian."""
 
 from __future__ import annotations

@@ -3,7 +3,10 @@
 # Python expressions evaluated against the tool call arguments dict.
 # Missing names evaluate to None; conditions must tolerate that.
 # Actions: allow | deny | require_approval
-default_action: allow
+# Note: default_action moved to default.yaml per GATE-B3.
+# SECURITY: the catch-all below defaults to require_approval (fail-safe).
+# To restore the original "allow by default" semantics for local dev,
+# change the catch-all action to `allow`.
 rules:
   - name: deny-destructive-command
     tool: "*"
@@ -38,3 +41,9 @@ rules:
     condition: 'action and (action == "read" or action == "search" or action == "query")'
     priority: 10
     description: Read-only tool calls are allowed by default
+
+  - name: mcp-default-gate
+    tool: "*"
+    action: require_approval
+    priority: 0
+    description: "Catch-all gate for MCP tool calls — require approval for unmatched tools (fail-safe). Change to allow for local dev if needed."

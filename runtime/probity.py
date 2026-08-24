@@ -10,9 +10,35 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 from runtime.schemas import AizeeError, ErrorSeverity
+
+# Action type aliases — normalize diverse action labels to canonical probity
+# types so that rules matching "command"/"write"/"edit" also catch "Bash",
+# "Shell", "Apply", "Patch", etc. (fixes GATE-02: "Bash" bypassed Probity).
+ACTION_TYPE_ALIASES: Final[dict[str, str]] = {
+    "bash": "exec",
+    "shell": "exec",
+    "command": "exec",
+    "run": "exec",
+    "cmd": "exec",
+    "write": "write",
+    "edit": "write",
+    "apply": "write",
+    "patch": "write",
+    "save": "write",
+}
+
+
+def normalize_action_type(raw: str) -> str:
+    """Normalize an action type to a canonical probity type.
+
+    Maps case-insensitive aliases (e.g. "Bash" → "exec", "Apply" → "write")
+    so that probity rules match regardless of the caller's naming convention.
+    """
+    t = raw.strip().lower()
+    return ACTION_TYPE_ALIASES.get(t, t)
 
 
 class GuardrailViolationError(AizeeError):
@@ -55,7 +81,7 @@ class ForbidCommandPattern(GuardrailRule):
 
     def check(self, event: dict[str, Any]) -> GuardrailViolationError | None:
         command = event.get("command", "")
-        if event.get("type") == "command" and isinstance(command, str) and self._pattern.search(command):
+        if event.get("type") == "exec" and isinstance(command, str) and self._pattern.search(command):
             return GuardrailViolationError(self.name, self._message)
         return None
 
@@ -70,7 +96,7 @@ class RequireCommand(GuardrailRule):
         self._message = message
 
     def check(self, event: dict[str, Any]) -> GuardrailViolationError | None:
-        if event.get("type") != "command":
+        if event.get("type") != "exec":
             return None
         command = event.get("command", "")
         if not isinstance(command, str) or not self._after.search(command):
@@ -108,7 +134,7 @@ class EnforceFilenameCasing(GuardrailRule):
         self._message = message
 
     def check(self, event: dict[str, Any]) -> GuardrailViolationError | None:
-        if event.get("type") not in ("write", "edit"):
+        if normalize_action_type(str(event.get("type", ""))) != "write":
             return None
         path = event.get("path", "")
         if not isinstance(path, str):
@@ -131,7 +157,7 @@ class EnforceTdd(GuardrailRule):
         self._test_pattern = re.compile("|".join(re.escape(p) for p in test_files))
 
     def check(self, event: dict[str, Any]) -> GuardrailViolationError | None:
-        if event.get("type") not in ("write", "edit"):
+        if normalize_action_type(str(event.get("type", ""))) != "write":
             return None
         path = str(event.get("path", ""))
         if not self._source_pattern.search(path):
@@ -175,6 +201,10 @@ class Guardrails:
                     self.rules.append(rule)
 
     def check(self, event: dict[str, Any]) -> None:
+        # GATE-B2: Normalize action type before checking rules
+        raw_type = event.get("type", "")
+        if isinstance(raw_type, str):
+            event = {**event, "type": normalize_action_type(raw_type)}
         for rule in self.rules:
             violation = rule.check(event)
             if violation:

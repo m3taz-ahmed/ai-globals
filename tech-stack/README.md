@@ -42,7 +42,7 @@ Files for **unreleased or preview versions** are marked with `[!SPECULATIVE]` at
 | `filament-5.md` | 🔮 Speculative — skip by default |
 | `mysql-9-7.md` | 🔮 Speculative — skip by default |
 
-## Current Coverage (74 files)
+## Current Coverage (163 files)
 
 | Category | Files |
 |---|---|

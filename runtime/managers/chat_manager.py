@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +36,7 @@ class ChatManager:
         message: str,
         session_id: str | None = None,
         fresh_context: bool = False,
-        act_fn: Any = None,
+        act_fn: Callable[..., dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Record a chat message and evaluate via policy gates.
 
@@ -68,6 +69,12 @@ class ChatManager:
         # ChatMessage, it will be blocked. The guardian also evaluates
         # write/exec actions triggered by the chat, but ChatMessage itself
         # is treated as read-only (see _READ_ONLY_ACTIONS in PolicyManager).
+        if act_fn is None:
+            return {
+                "ok": False,
+                "decision": "deny",
+                "reason": "No action function provided (act_fn is None)",
+            }
         result: dict[str, Any] = act_fn(
             "ChatMessage",
             content=message,

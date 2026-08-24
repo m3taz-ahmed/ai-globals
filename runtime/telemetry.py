@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -134,7 +137,8 @@ def system_metrics() -> dict[str, Any]:
             "memory_used_mb": mem.used // (1024 * 1024),
             "memory_total_mb": mem.total // (1024 * 1024),
         }
-    except Exception:
+    except Exception as exc:
+        _logger.debug("system metrics collection failed: %s", exc, exc_info=True)
         return {
             "cpu_percent": 0.0,
             "memory_percent": 0.0,

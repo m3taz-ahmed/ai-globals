@@ -11,12 +11,15 @@ Re-implements patterns from mcp-orchestrator and shackleai/orchestrator:
 from __future__ import annotations
 
 import asyncio
+import logging
 import traceback
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 from aizee_mcp.agent import McpAgent
+
+_logger = logging.getLogger(__name__)
 
 
 class StepStatus(str, Enum):
@@ -91,6 +94,7 @@ class McpOrchestrator:
                 return StepResult(step_id=step.id, status=StepStatus.FAILED, error=call.error)
             return StepResult(step_id=step.id, status=StepStatus.COMPLETED, output=call.result)
         except Exception as exc:
+            _logger.debug("orchestrator step failed: %s", exc, exc_info=True)
             return StepResult(step_id=step.id, status=StepStatus.FAILED, error=f"{exc!s}\n{traceback.format_exc()}")
 
     async def _rollback_step(self, step: Step) -> StepResult:
@@ -105,6 +109,7 @@ class McpOrchestrator:
                 rollback_error=call.error,
             )
         except Exception as exc:
+            _logger.debug("orchestrator rollback failed: %s", exc, exc_info=True)
             return StepResult(
                 step_id=step.id,
                 status=StepStatus.ROLLED_BACK,
@@ -139,7 +144,8 @@ class McpOrchestrator:
                 self._results[result.step_id] = result
                 if result.status == StepStatus.FAILED:
                     for step in reversed(plan.steps):
-                        if (step.id == result.step_id and step.rollback_tool) or (self._results[step.id].status == StepStatus.COMPLETED and step.rollback_tool):
+                        step_result = self._results.get(step.id)
+                        if step.rollback_tool and step_result is not None and step_result.status == StepStatus.COMPLETED:
                             self._results[step.id] = await self._rollback_step(step)
                     return self._results
 

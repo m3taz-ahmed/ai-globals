@@ -6,12 +6,15 @@ single responsibility than monolithic service methods.
 """
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 from runtime.schemas import AizeeError, ErrorSeverity
+
+_logger = logging.getLogger(__name__)
 
 
 class CommandStatus(str, Enum):
@@ -108,6 +111,7 @@ class CommandBus:
             except CommandError:
                 raise
             except Exception as exc:
+                _logger.debug("command execution failed: %s", exc, exc_info=True)
                 raise CommandError(cmd.name or cmd.__class__.__name__, str(exc)) from exc
 
             results.append(result)
@@ -131,6 +135,7 @@ class CommandBus:
                 rb = cmd.rollback(ctx)
                 results.append(rb)
             except Exception as exc:
+                _logger.debug("command rollback failed: %s", exc, exc_info=True)
                 results.append(
                     CommandResult(status=CommandStatus.FAILED, error=f"rollback error: {exc}")
                 )

@@ -22,6 +22,7 @@ Inspired by Elastra's centralized rules + materialization pattern.
 
 from __future__ import annotations
 
+import logging
 import re
 import threading
 from dataclasses import dataclass, field
@@ -30,6 +31,8 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from runtime.schemas import ValidationError
+
+_logger = logging.getLogger(__name__)
 
 # Safe glob pattern: word chars, hyphen, dot, star, slash, question mark,
 # square brackets, curly braces. Rejects shell metacharacters and quotes.
@@ -299,6 +302,7 @@ class RulesMaterializer:
             except OSError as exc:
                 result.errors.append(f"Write failed {out_path}: {exc}")
             except Exception as exc:
+                _logger.debug("rules emit failed for %s: %s", target.value, exc, exc_info=True)
                 result.errors.append(f"Emit failed {target.value}: {exc}")
             return result
 

@@ -1,5 +1,5 @@
 [TECH] aizee-5
-[OBJ] aiZee v5.6.0 — sovereign AI engineering control plane. Internal standards for self-reference (dogfooding).
+[OBJ] aiZee v5.7.1 — sovereign AI engineering control plane. Internal standards for self-reference (dogfooding).
 [RULES]
 1. [REQ] Root discovery via `config.discover_root()` or `AIZEE_ROOT` env. NEVER hardcode paths (`[OS-ROOT-01]`).
 2. [REQ] Route ALL actions through `runtime/kernel.py` → `Kernel.act()` (Policy + Budget + Audit). No direct destructive action (`[OS-RUN-01]`).
@@ -24,14 +24,14 @@
 [ARCH]
 - CLI: `aizee_cli.py` → `runtime/commands.py` → Kernel.
 - Kernel: `runtime/kernel.py` (facade) → 4 managers in `runtime/managers/`.
-- Runtime: 105 governance modules in `runtime/` (commands, scoped_manager, hook_lifecycle, layers, contract_emitter, middleware, checkpoint, schema_contract, local_responder, spec/ package).
-- MCP: `aizee_mcp/` (35 tools via FastMCP) + `aizee_mcp/tools/` (5 tool modules).
+- Runtime: 85 governance modules in `runtime/` (commands, scoped_manager, hook_lifecycle, layers, contract_emitter, middleware, checkpoint, schema_contract, local_responder, spec/ package).
+- MCP: `aizee_mcp/` (36 tools via FastMCP) + `aizee_mcp/tools/` (5 tool modules).
 - Memory: `memory/` (SQLite + FTS5 + vector).
-- Skills: 73 persona + lord skills in `skills/`.
-- Workflows: 36 trigger-based protocols in `workflows/`.
+- Skills: 72 persona + lord skills in `skills/`.
+- Workflows: 50 trigger-based protocols in `workflows/`.
 - Tech-stack: 163 version-locked stack references in `tech-stack/`.
 [COMPAT]
-- v5.6.0: local_responder, spec/ package (split from spec_engine.py), inject_persona_context, READ_ACTIONS canonical, sync_docs.py, dashboard open-access + CSP hardening, policy evaluator security fix, guardian fail-closed. 105 runtime modules, 35 MCP tools, 73 skills, 36 workflows.
+- v5.7.1: local_responder, spec/ package (split from spec_engine.py), inject_persona_context, READ_ACTIONS canonical, sync_docs.py, dashboard open-access + CSP hardening, policy evaluator security fix, guardian fail-closed. 85 runtime modules (26 dead-code removed), 36 MCP tools, 72 skills, 50 workflows.
 - v5.5.0: commands module, scoped_manager, hook_lifecycle, layers, contract_emitter, middleware, checkpoint, schema_contract. 88 runtime modules, 35 MCP tools, 66 skills, 30 workflows.
 - v5.0.0: Floci-style storage/catalog, spec-kit SDD templates, Flutter skills.
 - Backward-compat: `kernel.policy`/`kernel.guardian`/`kernel.probity` attributes preserved.

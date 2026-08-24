@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -15,6 +16,8 @@ from runtime.metrics import Counter
 from runtime.policy import READ_ACTIONS, PolicyEngine
 from runtime.preloop import FeedbackLoop, Outcome
 from runtime.probity import Guardrails
+
+_logger = logging.getLogger(__name__)
 
 
 class PolicyManager:
@@ -46,10 +49,18 @@ class PolicyManager:
         self.probity = self._build_probity()
 
     def _build_guardian(self) -> Guardian:
-        path = self.project_root / "runtime" / "policies" / "guardian.yaml"
-        if path.exists():
-            return Guardian.from_yaml(path)
-        return Guardian([])
+        import yaml
+
+        rules: list[dict[str, Any]] = []
+        roots = [self.root]
+        if self.project_root and self.project_root != self.root:
+            roots.append(self.project_root)
+        for root in roots:
+            path = root / "runtime" / "policies" / "guardian.yaml"
+            if path.exists():
+                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                rules.extend(data.get("rules", []))
+        return Guardian(rules)
 
     def _build_probity(self) -> Guardrails:
         path = self.project_root / "runtime" / "policies" / "probity.yaml"
@@ -92,6 +103,7 @@ class PolicyManager:
             }
         if decision.status == DecisionStatus.DENY:
             self._guardian_denials_total.labels(rule=decision.rule_name).inc()
+            self.audit.log("guardian.deny", {"action": action_type, "rule": decision.rule_name, "reason": decision.reason})
             return {
                 "ok": False,
                 "error": f"Guardian denied by {decision.rule_name}",
@@ -109,17 +121,27 @@ class PolicyManager:
     def check_probity(
         self, action_type: str, action_data: dict[str, Any], probity: Guardrails | None = None
     ) -> None:
-        """Run probity guardrails for write and command actions."""
-        event: dict[str, Any] = {"type": action_type, "history": []}
-        if action_type in ("write", "edit"):
+        """Run probity guardrails for write and command actions.
+
+        Action types are normalized so that aliases like "Bash", "Shell",
+        "Apply", "Patch" are mapped to canonical types ("exec", "write")
+        before rule evaluation. This ensures probity cannot be bypassed by
+        using a different action label (GATE-02).
+        """
+        from runtime.probity import normalize_action_type
+
+        normalized = normalize_action_type(action_type)
+        event: dict[str, Any] = {"type": normalized, "raw_type": action_type, "history": []}
+        if normalized == "write":
             event["path"] = str(action_data.get("path", ""))
             event["content"] = str(action_data.get("content", ""))
-        elif action_type in ("exec", "command", "shell"):
+        elif normalized == "exec":
             event["command"] = str(action_data.get("command", ""))
         try:
             p = probity if probity is not None else self.probity
             p.check(event)
         except Exception as exc:
+            _logger.debug("probity check failed: %s", exc, exc_info=True)
             rule = getattr(exc, "rule_name", "unknown")
             self._probity_violations_total.labels(rule=rule).inc()
             raise

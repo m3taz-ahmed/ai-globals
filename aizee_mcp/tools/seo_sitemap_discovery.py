@@ -155,20 +155,21 @@ def fetch_sitemap(
     child_sitemap_urls: list[str] = []
 
     try:
-        # Use defusedxml if available (XXE protection), else fall back to
-        # ET.fromstring with a manual entity check. defusedxml blocks
+        # Use defusedxml if available (XXE protection). defusedxml blocks
         # external entity expansion, preventing XXE attacks.
         try:
             from defusedxml import ElementTree as DefusedET
             root = DefusedET.fromstring(text)
         except ImportError:
-            # Fallback: stdlib ET is vulnerable to XXE, but we only
-            # parse sitemap XML from trusted origins. Still, strip
-            # DOCTYPE declarations as a basic mitigation.
-            if "<!DOCTYPE" in text or "<!ENTITY" in text:
-                _logger.warning("Sitemap %s contains DOCTYPE/ENTITY, skipped", url)
-                return [], []
-            root = ET.fromstring(text)
+            # Fail-closed: stdlib ET is vulnerable to XXE. Rather than
+            # attempting a partial manual mitigation, refuse to parse
+            # untrusted XML without defusedxml. Install defusedxml to
+            # enable sitemap parsing.
+            _logger.warning(
+                "Sitemap %s skipped — defusedxml not installed (XXE protection required)",
+                url,
+            )
+            return [], []
     except ET.ParseError as exc:
         _logger.warning("Failed to parse sitemap XML at %s: %s", url, exc)
         return [], []

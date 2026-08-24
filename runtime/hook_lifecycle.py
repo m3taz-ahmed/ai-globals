@@ -6,12 +6,15 @@ a single middleware pipeline. Applied to aiZee's guardian/action pipeline.
 """
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 from runtime.schemas import AizeeError, ErrorSeverity
+
+_logger = logging.getLogger(__name__)
 
 
 class HookPhase(str, Enum):
@@ -108,6 +111,7 @@ class HookRegistry:
             except HookError:
                 raise
             except Exception as exc:
+                _logger.debug("hook phase %s failed: %s", phase.value, exc, exc_info=True)
                 raise HookError(phase.value, str(exc)) from exc
 
     def run_lifecycle(self, action: str, attributes: dict[str, Any] | None = None) -> HookContext:

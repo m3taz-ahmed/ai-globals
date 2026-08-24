@@ -164,6 +164,81 @@ class TestGrants:
         assert len(grants) == 2
         assert all(g.server_id == "fs" for g in grants)
 
+    def test_register_permission_grant_and_check(
+        self, registry: McpSecurableRegistry,
+    ) -> None:
+        registry.grant(Grant(
+            server_id="s1", principal="alice",
+            permission=McpPermission.REGISTER,
+        ))
+        assert registry.check_permission(
+            "s1", "alice", McpPermission.REGISTER,
+        ) is True
+
+    def test_use_does_not_imply_admin(
+        self, registry: McpSecurableRegistry,
+    ) -> None:
+        registry.grant(Grant(
+            server_id="s1", principal="alice", permission=McpPermission.USE,
+        ))
+        assert registry.check_permission(
+            "s1", "alice", McpPermission.ADMIN,
+        ) is False
+
+    def test_register_does_not_imply_use(
+        self, registry: McpSecurableRegistry,
+    ) -> None:
+        registry.grant(Grant(
+            server_id="s1", principal="alice",
+            permission=McpPermission.REGISTER,
+        ))
+        assert registry.check_permission(
+            "s1", "alice", McpPermission.USE,
+        ) is False
+
+    def test_different_principals_isolated(
+        self, registry: McpSecurableRegistry,
+    ) -> None:
+        registry.grant(Grant(
+            server_id="s1", principal="alice", permission=McpPermission.USE,
+        ))
+        assert registry.check_permission(
+            "s1", "bob", McpPermission.USE,
+        ) is False
+
+    def test_revoke_one_permission_keeps_others(
+        self, registry: McpSecurableRegistry,
+    ) -> None:
+        registry.grant(Grant(
+            server_id="s1", principal="alice", permission=McpPermission.USE,
+        ))
+        registry.grant(Grant(
+            server_id="s1", principal="alice", permission=McpPermission.ADMIN,
+        ))
+        assert registry.revoke("s1", "alice", McpPermission.USE) is True
+        assert registry.check_permission(
+            "s1", "alice", McpPermission.USE,
+        ) is False
+        assert registry.check_permission(
+            "s1", "alice", McpPermission.ADMIN,
+        ) is True
+
+    def test_list_grants_for_missing_server_returns_empty(
+        self, populated_registry: McpSecurableRegistry,
+    ) -> None:
+        assert populated_registry.list_grants("nonexistent") == []
+
+    def test_grant_preserves_granted_by(
+        self, registry: McpSecurableRegistry,
+    ) -> None:
+        registry.grant(Grant(
+            server_id="s1", principal="alice",
+            permission=McpPermission.USE, granted_by="admin",
+        ))
+        grants = registry.list_grants("s1")
+        assert len(grants) == 1
+        assert grants[0].granted_by == "admin"
+
 
 # -- tool gating ----------------------------------------------------------
 

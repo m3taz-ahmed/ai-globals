@@ -51,7 +51,7 @@ class OutputSchemaError(AizeeError):
         )
 
 
-def validate_output(  # noqa: UP047
+def validate_output(
     data: dict[str, Any],
     schema: type[T],
     tool_name: str,
@@ -91,7 +91,7 @@ def validate_output(  # noqa: UP047
             raise OutputSchemaError(tool_name, exc2.errors()) from exc2
 
 
-def validate_json_output(  # noqa: UP047
+def validate_json_output(
     json_str: str,
     schema: type[T],
     tool_name: str,

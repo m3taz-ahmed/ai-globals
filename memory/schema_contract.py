@@ -183,9 +183,12 @@ def detect_schema_drift(
                 SchemaDrift("column_mismatch", tname, expected_ddl, actual_tables[tname])
             )
 
-    # Extra tables
+    # Extra tables — ignore FTS5 shadow tables (memories_fts, memories_fts_data,
+    # memories_fts_idx, memories_fts_docsize, memories_fts_config) which SQLite
+    # creates automatically alongside the virtual table and are not part of the
+    # contract. Also ignore sqlite_* internal tables (already filtered in _read_db_schema).
     for tname, actual_ddl in actual_tables.items():
-        if tname not in expected.tables:
+        if tname not in expected.tables and not tname.startswith("memories_fts"):
             drifts.append(SchemaDrift("extra_table", tname, "", actual_ddl))
 
     # Missing indexes
@@ -257,6 +260,15 @@ def default_memory_contract() -> SchemaContract:
                 created_at TEXT NOT NULL
             )
         """,
+        "memory_decay": """
+            CREATE TABLE IF NOT EXISTS memory_decay (
+                mem_id TEXT PRIMARY KEY,
+                decay_score REAL NOT NULL DEFAULT 1.0,
+                last_accessed TEXT NOT NULL,
+                access_count INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (mem_id) REFERENCES memories(id)
+            )
+        """,
     }
     indexes: dict[str, str] = {
         "idx_mem_kind": "CREATE INDEX IF NOT EXISTS idx_mem_kind ON memories(kind)",
@@ -264,6 +276,7 @@ def default_memory_contract() -> SchemaContract:
         "idx_mem_valid_to": "CREATE INDEX IF NOT EXISTS idx_mem_valid_to ON memories(valid_to)",
         "idx_rel_source": "CREATE INDEX IF NOT EXISTS idx_rel_source ON relations(source_id)",
         "idx_rel_target": "CREATE INDEX IF NOT EXISTS idx_rel_target ON relations(target_id)",
+        "idx_decay_last_accessed": "CREATE INDEX IF NOT EXISTS idx_decay_last_accessed ON memory_decay(last_accessed)",
     }
     contract = SchemaContract(tables=tables, indexes=indexes, version="v2")
     contract.content_hash = contract.compute_hash()

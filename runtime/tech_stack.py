@@ -274,10 +274,10 @@ def _parse_composer_json(path: Path) -> dict[str, str]:
 def _parse_pyproject_toml(path: Path) -> dict[str, str]:
     """Parse pyproject.toml and return package names with cleaned versions."""
     try:
-        import tomllib  # pyright: ignore[reportMissingImports]
+        import tomllib  # type: ignore[import-not-found,unused-ignore]
     except ImportError:
         try:
-            import tomli as tomllib  # type: ignore[no-redef]
+            import tomli as tomllib  # type: ignore[unused-ignore]
         except ImportError:
             # Fallback: regex-based extraction if no TOML parser available.
             return _parse_pyproject_regex(path)

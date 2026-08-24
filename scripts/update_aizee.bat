@@ -7,8 +7,11 @@ REM [DIR-01] .ai is the ONLY working directory. aizee is READ-ONLY except via th
 
 setlocal enabledelayedexpansion
 
-set "SOURCE=D:\server\.ai"
-set "TARGET=D:\server\aizee"
+REM Derive paths relative to this script's location (portable across machines).
+REM Source = parent of scripts/ dir (the .ai working directory).
+REM Target = sibling "aizee" deployment folder (override via AIZEE_DEPLOY env if needed).
+set "SOURCE=%~dp0.."
+if defined AIZEE_DEPLOY (set "TARGET=%AIZEE_DEPLOY%") else (set "TARGET=%~dp0..\..\aizee")
 
 echo === aiZee Sync: %SOURCE% -^> %TARGET% ===
 

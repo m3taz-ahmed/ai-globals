@@ -30,10 +30,11 @@ class TestYamlLiteralResolution:
         ev = _SafeEvaluator({"type": "edit", "dry_run": False})
         assert ev.evaluate("dry_run == false") is True
 
-    def test_ne_true_with_missing_attr_matches(self) -> None:
-        # force_push(None) != true(True) -> True
+    def test_ne_true_with_missing_attr_does_not_match(self) -> None:
+        # GATE-B3 fix: force_push is MISSING, so != must fail-closed (False),
+        # not match (None != True -> True was the old allow-by-absence bug).
         ev = _SafeEvaluator({"command": "git push"})
-        assert ev.evaluate("force_push != true") is True
+        assert ev.evaluate("force_push != true") is False
 
     def test_null_literal(self) -> None:
         ev = _SafeEvaluator({"token": None})

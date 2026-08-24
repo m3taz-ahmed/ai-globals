@@ -126,8 +126,8 @@ class TestEmbedder:
         with patch.object(vector_module, "SentenceTransformer", None):
             emb = Embedder()
             emb.model = None
-        with pytest.raises(RuntimeError, match="SentenceTransformer"):
-            emb.embed(["test"])
+            with pytest.raises(RuntimeError, match="SentenceTransformer"):
+                emb.embed(["test"])
 
     def test_is_available_true(self):
         st_instance = _make_st_mock()
@@ -139,15 +139,16 @@ class TestEmbedder:
     def test_is_available_false_when_no_model(self):
         with patch.object(vector_module, "SentenceTransformer", None):
             emb = Embedder()
-        assert emb.is_available() is False
+            assert emb.is_available() is False
 
     def test_reset_singleton_clears_cached_model(self):
         """Lines 75-76: _reset_singleton sets _singleton and _singleton_model_name to None."""
         st_instance = _make_st_mock()
         mock_st_cls = MagicMock(return_value=st_instance)
         with patch.object(vector_module, "SentenceTransformer", mock_st_cls):
-            Embedder()
-            # Singleton should be set after instantiation
+            emb = Embedder()
+            emb.embed(["trigger lazy load"])  # model loads lazily on first embed
+            # Singleton should be set after first embed
             assert Embedder._singleton is not None
             assert Embedder._singleton_model_name is not None
         # Reset
@@ -232,7 +233,8 @@ class TestVectorMemoryAdd:
             vm = _mock_vm(tmp)
             vm.embedder.model = None  # causes RuntimeError in embed()
             uid = str(uuid.uuid4())
-            vm.add_batch([uid], ["text"])  # should not raise
+            with patch.object(vector_module, "SentenceTransformer", None):
+                vm.add_batch([uid], ["text"])  # should not raise
             vm.index.add_with_ids.assert_not_called()
         finally:
             shutil.rmtree(tmp, ignore_errors=True)

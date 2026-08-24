@@ -37,7 +37,7 @@ from typing import Any
 import yaml
 
 from runtime.enums import Decision
-from runtime.schemas import AizeeError, ErrorSeverity, PolicyDeniedError
+from runtime.schemas import AizeeError, ErrorSeverity, GateVerdict, PolicyDeniedError
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +58,20 @@ class FirewallVerdict:
     rule_name: str
     reason: str = ""
     matched_condition: str | None = None
+
+    def to_gate_verdict(self) -> GateVerdict:
+        """Convert to unified GateVerdict (EVAL-W0)."""
+        if self.action is FirewallAction.DENY:
+            return GateVerdict.block(
+                "mcp_firewall", self.reason, rule=self.rule_name, condition=self.matched_condition
+            )
+        if self.action is FirewallAction.REQUIRE_APPROVAL:
+            return GateVerdict.require_approval(
+                "mcp_firewall", self.reason, rule=self.rule_name, condition=self.matched_condition
+            )
+        return GateVerdict.allow(
+            "mcp_firewall", self.reason, rule=self.rule_name, condition=self.matched_condition
+        )
 
 
 @dataclass

@@ -1,5 +1,98 @@
 # Changelog
 
+## [5.7.1] - 2026-08-24 (Comprehensive Review: 17 Fixes Across 125 Files)
+
+### Critical Fixes (3)
+- **k8s NetworkPolicy egress** (`deploy/k8s/deployment.yaml`): `to: []` blocked ALL outbound traffic. Fixed to allow HTTPS egress to any destination.
+- **schema_contract missing memory_decay** (`memory/schema_contract.py`): `memory_decay` table created in `store.py` but missing from `default_memory_contract()` → schema drift warnings on every init. Added table + index to contract.
+- **mcp_firewall.yaml default_action silently ignored** (`runtime/policies/mcp_firewall.yaml`): GATE-B3 restriction caused `default_action: allow` to be silently dropped → MCP tools became `ask` instead of `allow`. Fixed by removing `default_action` and adding catch-all allow rule with priority 0. Also fixed YAML parsing error (unquoted colon in description).
+
+### High Priority Fixes (3)
+- **Missing runtime exports** (`runtime/__init__.py`): 12 new module exports missing (ConfidenceGate, LearningLoop, SkillRouter, Bounder, Witness, LazyImport, ReflexionLog, OutputEnvelope, CostProvider, etc.). Added all exports + `__all__` entries.
+- **Probity normalization inconsistency** (`runtime/probity.py`): `EnforceFilenameCasing` and `EnforceTdd` checked `("write", "edit")` directly instead of using `normalize_action_type()`. Fixed to use consistent normalization.
+- **Constitution regex too narrow** (`runtime/spec/engine.py`): `r"MUST\s+(.+?)(?:\.|$)"` missed principles ending with `!`, `?`, `;`, `:`, or newlines. Fixed to `r"MUST\s+(.+?)(?:[.!?;:]|\n|$)"`.
+
+### Medium Priority Fixes (5)
+- **delete_by_source_batch length validation** (`memory/store.py`): No length limit on source strings. Added 1000-char max validation.
+- **ConfidenceGate weight validation** (`runtime/confidence_gate.py`): No validation that weights are in [0.0, 1.0]. Added validation with ValueError on out-of-range.
+- **LazyImport error handling** (`runtime/quality.py`): Malformed import paths raised cryptic errors. Added path validation + try/except with clear error messages.
+- **Priority parsing error handling** (`runtime/policy.py`): `int(r.get("priority", 0))` crashed on non-numeric strings. Added `_safe_priority()` helper with try/except + warning.
+- **FTS5 sanitization enhanced** (`memory/store.py`): Parentheses and hyphens not stripped from FTS5 queries. Added to sanitization regex.
+
+### Policy Files Cleanup (6 files)
+- Removed `default_action` from 5 non-default policy files (agentic-owasp.yaml, consequence-tiers.yaml, mcp_firewall.yaml, examples/api-rate-limits.yaml, examples/data-exfiltration.yaml, examples/time-based-access.yaml). Only default.yaml now sets default_action per GATE-B3.
+
+### New Tests (17)
+- Weight validation tests (5) in test_confidence_gate.py
+- LazyImport error handling tests (3) in test_quality.py
+- Priority parsing tests (6) in test_policy.py
+- delete_by_source_batch validation tests (4) in test_memory_upgrades.py
+
+### Quality Gates
+- ruff: PASS (repo-wide, 0 errors)
+- mypy: PASS (240 source files, 0 errors)
+- pytest: Full suite green (exit code 0, 1 skip for tkinter)
+
+## [5.7.0] — 2026-08-24 (Implementation Plan Remediation: 8 Workstreams, 40+ Items)
+
+### WS-C: Dead Code Removal
+- Removed 26 dead runtime modules + their test files
+- Updated manifest.json, README.md, README-AR.md, AGENTS.md, spec.md, tech-stack/aizee-5.md
+- Runtime module count: 105 → 81
+
+### WS-B: Gate-Contract Repairs
+- **GATE-B1**: Structured denial for probity violations (catch `GuardrailViolationError` → structured dict)
+- **GATE-B2**: `normalize_action_type()` maps Bash/Shell/Command → exec, Apply/Patch → write
+- **GATE-B3**: Audit (rule names in denial), `_MISSING` sentinel prevents None==None escalation, policy `priority` field + sorting, `default_action` writable only by default.yaml
+- **GATE-B4**: Deprecated bypass paths `register_action_pipeline()` / `_get_compiled_pipeline()`
+
+### WS-A: Security Hardening
+- **SEC-W1**: Dashboard loopback enforcement (`AGENT_OS_HOST`, `_is_loopback_host()`)
+- **SEC-W2**: K8s deploy manifests (NetworkPolicy ingress/egress restrictions, README)
+- **SEC-W3**: Dashboard robustness (Content-Length parsing, `?limit=` on audit/tracing, SSE headers + max duration)
+
+### WS-D: Eval Overhaul
+- **EVAL-W0**: `GateVerdict` unified dataclass + `to_gate_verdict()` adapters (prompt_gate, mcp_firewall, agent_gateway)
+- **EVAL-W1**: `eval/pipeline.py` — real kernel.act() pipeline (no vibe checks)
+- **EVAL-W2**: 10 executable assertion kinds (eq, contains, not_contains, regex, key_exists, ok_true, ok_false, decision_is, gate_is, custom)
+- **EVAL-W3**: `AnchoredDimension` rubric anchored to executable assertions
+- **EVAL-W5**: `eval/redteam.py` — red-team runner + SARIF 2.1.0 reporter
+- **EVAL-W6**: Per-gate + per-policy breakdown in pipeline results
+
+### WS-E: SDD Enforcement
+- **W1**: Task verification (evidence + `verified` flag blocks phase advance)
+- **W2**: Constitution enforcement (MUST principles checked against requirements)
+- **W3**: State transition history (audit trail in `state_history`)
+- **W4**: Drift v2 (file modifications + unapplied deltas + phase regressions)
+- **W5**: Paginated spec listing (`list_specs_paginated`)
+- **W6**: Delta hardening (validate references, duplicates, empty descriptions)
+
+### WS-F: Memory Upgrades
+- **W1**: Deterministic IDs (content hash → stable `mem_XXXX` IDs)
+- **W2**: Deduplication (same content → same ID → no-op on re-add)
+- **W3**: Fact extraction (heuristic verb-based sentence extraction)
+- **W4**: Temporal search (`search_temporal` by valid_from range)
+- **W5**: Decay persistence (`memory_decay` table, `record_access`/`apply_decay`/`get_decay_score`)
+- **W6**: Search hardening (`search_safe` with length/null-byte/SQL-keyword sanitization)
+
+### WS-H: Confidence Gating
+- `runtime/confidence_gate.py` — `ConfidenceGate` with weighted evidence, `ConfidenceVerdict` (frozen), 4 confidence levels, fail-closed
+
+### WS-G: Learning Loop
+- `runtime/learning_loop.py` — LEARN-01 hook bindings (auto-record via POST_RESPONSE + ON_ERROR); LEARN-02 record-consolidate-rank-inject with persistence
+
+### WS-I: Skills/Personas
+- `runtime/skill_routing.py` — SKILL-W1 `SkillRouter` routing meta-prompt; SKILL-W2 `PersonaDetectorV2` with confidence + ambiguity detection
+
+### WS-J: Misc Quality
+- `runtime/quality.py` — W1 `CostProvider`/`FixedRateCostProvider`; W3 assertion helpers; W5 `OutputEnvelope`; W6 `Bounder`; W7 `Witness`/`WitnessRecorder`; W8 `LazyImport`; W9 `ReflexionLog`
+
+### Quality Gates
+- ruff: PASS (repo-wide, 0 errors)
+- mypy: PASS (240 source files, 0 errors)
+- pytest: Full suite green (1 skip for tkinter display)
+- 200+ new tests across 11 new test files
+
 ## [5.6.0] — 2026-08-23 (Security Hardening + Quality Gates Zeroed + Docs Sync Automation)
 
 ### Critical Security Fixes (3)

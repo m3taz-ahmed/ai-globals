@@ -215,7 +215,7 @@ class TestSpecEngine:
         engine.advance("auth")
         engine.add_task("auth", "task1")
         engine.advance("auth")  # -> implement
-        engine.update_task_status("auth", "TASK-001", "done")
+        engine.verify_task("auth", "TASK-001", "tests passed")
         spec = engine.advance("auth")
         assert spec.phase == SpecPhase.DONE
 
@@ -238,7 +238,7 @@ class TestSpecEngine:
         engine.advance("auth")
         engine.add_task("auth", "task1")
         engine.advance("auth")
-        engine.update_task_status("auth", "TASK-001", "done")
+        engine.verify_task("auth", "TASK-001", "tests passed")
         engine.advance("auth")  # -> done
         with pytest.raises(ValueError, match="already done"):
             engine.advance("auth")
@@ -349,7 +349,7 @@ class TestSpecEngine:
         engine.advance("auth")  # -> tasks
         engine.add_task("auth", "task1")
         engine.advance("auth")  # -> implement
-        engine.update_task_status("auth", "TASK-001", "done")
+        engine.verify_task("auth", "TASK-001", "tests passed")
         engine.advance("auth")  # -> done
         can, msg = engine.can_advance("auth")
         assert can is False

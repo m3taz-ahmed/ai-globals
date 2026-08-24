@@ -117,6 +117,89 @@ class PaginatedResult:
         return self.next_token is not None
 
 
+# -- GateVerdict (EVAL-W0: unified gate verdict object) ---------------------
+# Inspired by NEMO Guardrails RailOutcome (frozen dataclass + decision enum
+# + invariant) and GUARDRAILS_AI FailResult.error_spans (char-range evidence).
+# The three existing gates (prompt_gate, mcp_firewall, agent_gateway) speak
+# incompatible dialects; GateVerdict is the canonical cross-gate verdict.
+
+
+class GateDecision(str, Enum):
+    """Unified decision enum for all gates."""
+
+    ALLOW = "allow"
+    BLOCK = "block"
+    REDACT = "redact"
+    TRANSFORM = "transform"
+    REQUIRE_APPROVAL = "require_approval"
+
+
+@dataclass(frozen=True)
+class GateVerdict:
+    """The canonical, gate-agnostic verdict of a single gate check.
+
+    Fields:
+        gate: which gate produced this ("prompt_gate" | "mcp_firewall" | "agent_gateway").
+        decision: ALLOW / BLOCK / REDACT / TRANSFORM / REQUIRE_APPROVAL.
+        reason: human-readable explanation.
+        metadata: neutral evidence (scores, rule names, etc.).
+        spans: char ranges for REDACT/BLOCK evidence as (start, end, label) tuples.
+
+    Invariant: decision == REDACT implies spans is non-empty.
+    """
+
+    gate: str
+    decision: GateDecision
+    reason: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+    spans: tuple[tuple[int, int, str], ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "decision", GateDecision(self.decision))
+        if not isinstance(self.reason, str):
+            raise TypeError("reason must be a string")
+        if not isinstance(self.metadata, dict):
+            raise TypeError("metadata must be a dict")
+        object.__setattr__(self, "spans", tuple(self.spans))
+        if self.decision is GateDecision.REDACT and not self.spans:
+            raise ValueError("REDACT verdict must have non-empty spans")
+
+    @property
+    def is_blocked(self) -> bool:
+        return self.decision is GateDecision.BLOCK
+
+    @property
+    def is_allowed(self) -> bool:
+        return self.decision is GateDecision.ALLOW
+
+    @classmethod
+    def allow(cls, gate: str, reason: str = "", **metadata: Any) -> GateVerdict:
+        return cls(gate=gate, decision=GateDecision.ALLOW, reason=reason, metadata=metadata)
+
+    @classmethod
+    def block(cls, gate: str, reason: str = "", **metadata: Any) -> GateVerdict:
+        return cls(gate=gate, decision=GateDecision.BLOCK, reason=reason, metadata=metadata)
+
+    @classmethod
+    def redact(
+        cls, gate: str, reason: str, spans: tuple[tuple[int, int, str], ...], **metadata: Any
+    ) -> GateVerdict:
+        return cls(gate=gate, decision=GateDecision.REDACT, reason=reason, spans=spans, metadata=metadata)
+
+    @classmethod
+    def require_approval(cls, gate: str, reason: str = "", **metadata: Any) -> GateVerdict:
+        return cls(gate=gate, decision=GateDecision.REQUIRE_APPROVAL, reason=reason, metadata=metadata)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "gate": self.gate,
+            "decision": self.decision.value,
+            "reason": self.reason,
+            "metadata": self.metadata,
+            "spans": [list(s) for s in self.spans],
+        }
+
+
 class BudgetSchema(BaseModel):
     """Budget configuration schema."""
 

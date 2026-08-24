@@ -14,16 +14,16 @@ CLI (aizee_cli.py)
         │     ├── WorkflowManager — saga orchestration + workflows
         │     ├── AgentManager    — agent pool + personas
         │     └── ChatManager     — chat sessions
-        ├── Runtime Modules (runtime/) — 88 governance modules
+        ├── Runtime Modules (runtime/) — 85 governance modules
         │     ├── policy.py, guardian.py, probity.py — gates
         │     ├── budget.py — token/cost/call tracking
         │     ├── audit.py — hash-chained append-only audit log
         │     ├── crypto.py — Fernet at-rest encryption
         │     ├── migrations.py — SQLite schema versioning
-        │     ├── observability.py — Sentry + Prometheus
-        │     ├── telemetry.py, tracing.py — telemetry + spans
+        │     ├── telemetry.py, tracing.py — telemetry + spans + Prometheus
+        │     ├── sentry_init.py — Sentry auto-init
         │     └── persona.py, skill_resolver.py — persona/skill detection
-        ├── MCP Server (aizee_mcp/) — 35 tools via FastMCP
+        ├── MCP Server (aizee_mcp/) — 36 tools via FastMCP
         └── Memory (memory/) — SQLite + FTS5 + vector store
 ```
 
@@ -31,7 +31,7 @@ CLI (aizee_cli.py)
 
 | Path | Purpose |
 |------|---------|
-| `runtime/` | Kernel + 88 governance modules |
+| `runtime/` | Kernel + 85 governance modules |
 | `runtime/managers/` | Policy/Workflow/Agent/Chat managers |
 | `aizee_mcp/` | MCP server + tools |
 | `memory/` | SQLite DB, FTS5, vector index |
@@ -66,7 +66,7 @@ The dashboard server (`dashboard/server.py`) provides real-time monitoring of ag
    SENTRY_TRACES_SAMPLE_RATE=0.1
    SENTRY_ENVIRONMENT=production
    ```
-2. Sentry auto-initializes on kernel startup via `runtime/observability.py`.
+2. Sentry auto-initializes on kernel startup via `runtime/telemetry.py`.
 3. Exceptions captured via `capture_exception()`, messages via `capture_message()`.
 4. Verify: check Sentry dashboard for incoming events after deployment.
 
@@ -85,12 +85,12 @@ Metrics are registered in `Kernel._build_metrics()` and exported via `prometheus
 
 | Metric | Type | Labels |
 |--------|------|--------|
-| `aios_actions_total` | Counter | action, decision |
-| `aios_workflows_total` | Counter | status |
-| `aios_sagas_total` | Counter | status |
-| `aios_guardian_denials` | Counter | rule |
-| `aios_probity_violations` | Counter | rule |
-| `aios_budget_remaining` | Gauge | scope |
+| `aizee_actions_total` | Counter | action, decision |
+| `aizee_workflows_total` | Counter | status |
+| `aizee_sagas_total` | Counter | status |
+| `aizee_guardian_denials` | Counter | rule |
+| `aizee_probity_violations` | Counter | rule |
+| `aizee_budget_remaining` | Gauge | scope |
 
 ## Alert Configuration
 
@@ -98,9 +98,9 @@ Metrics are registered in `Kernel._build_metrics()` and exported via `prometheus
 
 | Alert | Condition | Severity |
 |-------|-----------|----------|
-| Guardian denials spike | `rate(aios_guardian_denials[5m]) > 10` | Warning |
-| Probity violations | `aios_probity_violations > 0` | Critical |
-| Budget exhausted | `aios_budget_remaining == 0` | Warning |
+| Guardian denials spike | `rate(aizee_guardian_denials[5m]) > 10` | Warning |
+| Probity violations | `aizee_probity_violations > 0` | Critical |
+| Budget exhausted | `aizee_budget_remaining == 0` | Warning |
 | Dashboard down | `/api/health` fails 3x consecutive | Critical |
 | Encryption key missing | `aizee doctor` encryption check fails | Critical |
 | Disk usage | `> 90%` on aiZee root volume | Warning |
@@ -171,3 +171,74 @@ aizee doctor
 ```
 
 Migrations track version in `.aizee-version` and target version in `pyproject.toml`. Schema migrations run on `brain/memory.db` via `runtime/migrations.py`.
+
+### Budget Finalization Reserve
+
+The `BudgetManager` supports a `finalization_reserve` field (0.0–0.5) that reserves
+a fraction of the token/cost budget for the final response. This prevents the agent
+from exhausting the budget mid-task and being unable to produce a summary.
+
+```python
+# In Kernel config or policy:
+budget = BudgetManager(max_tokens=10000, finalization_reserve=0.2)
+# effective_max_tokens = 8000 (80% for work, 20% reserved for final response)
+# would_exceed() checks against effective_max_tokens, not max_tokens
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `finalization_reserve` | float | 0.0 | Fraction [0.0, 0.5] reserved for final response |
+| `effective_max_tokens` | int | `max_tokens * (1 - reserve)` | Usable tokens for work |
+| `effective_max_cost` | float | `max_cost * (1 - reserve)` | Usable cost for work |
+| `would_exceed(tokens)` | bool | — | Pre-flight check against effective limits |
+
+### Kill Switch
+
+The `Guardian` evaluates `KillSwitchRule` objects **first** (before any guardrail),
+providing a hard-stop mechanism that cannot be overridden by policy. If any kill
+switch triggers, a `KillSwitchError` is raised immediately.
+
+```python
+from runtime.guardian import KillSwitchRule, KillSwitchError
+
+# Define kill switches (evaluated in order, first match wins)
+rules = [
+    KillSwitchRule(name="cost-ceiling", cost_ceiling=10.0),
+    KillSwitchRule(name="file-touched-limit", file_touched_count=500),
+    KillSwitchRule(name="tool-call-limit", tool_call_count=1000),
+    KillSwitchRule(name="time-limit", time_limit_seconds=3600),
+]
+# Guardian.authorize() checks these before any policy/probity gate
+```
+
+| Rule Field | Type | Description |
+|------------|------|-------------|
+| `cost_ceiling` | float | Total cost in USD — kill if exceeded |
+| `file_touched_count` | int | Max files touched in a single rollout |
+| `tool_call_count` | int | Max tool calls in a single rollout |
+| `time_limit_seconds` | int | Wall-clock time limit for the rollout |
+
+### Dashboard Security
+
+The dashboard (`dashboard/server.py`) runs on localhost by default. For production
+deployments, set `AIZEE_DASHBOARD_TOKEN` to require authentication:
+
+```powershell
+# Development (loopback only, no token — default)
+$env:AIZEE_DASHBOARD_HOST = "127.0.0.1"
+$env:AIZEE_DASHBOARD_PORT = "7777"
+
+# Production (require token)
+$env:AIZEE_DASHBOARD_TOKEN = "aizee-<random-32-char-string>"
+$env:AIZEE_DASHBOARD_HOST = "0.0.0.0"
+```
+
+| Env Var | Default | Description |
+|---------|---------|-------------|
+| `AIZEE_DASHBOARD_HOST` | `127.0.0.1` | Bind address (use `0.0.0.0` for external) |
+| `AIZEE_DASHBOARD_PORT` | `7777` | HTTP port |
+| `AIZEE_DASHBOARD_TOKEN` | _(none)_ | Bearer token for auth (required for non-loopback) |
+
+> **Warning:** If `AIZEE_DASHBOARD_HOST` is set to a non-loopback address without
+> `AIZEE_DASHBOARD_TOKEN`, the dashboard will refuse to start. This is a fail-closed
+> security measure.

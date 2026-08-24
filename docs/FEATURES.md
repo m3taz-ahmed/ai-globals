@@ -181,7 +181,7 @@ backup_database(Path("brain/memory.db"), Path("backups"), max_backups=5)
 
 Optional Sentry integration and Prometheus metrics export.
 
-**Location:** `runtime/observability.py`
+**Location:** `runtime/telemetry.py`
 
 **Sentry:**
 - Set `SENTRY_DSN` to enable error tracking.

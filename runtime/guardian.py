@@ -14,6 +14,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -25,6 +26,8 @@ import yaml
 
 from runtime.policy import GuardrailRegistry, default_guardrail_registry
 from runtime.schemas import AizeeError, ErrorSeverity, PolicyDeniedError
+
+_logger = logging.getLogger(__name__)
 
 
 class DecisionStatus(str, Enum):
@@ -47,6 +50,73 @@ class ApprovalRequiredError(AizeeError):
             ErrorSeverity.MEDIUM,
             {"rule_name": rule_name},
         )
+
+
+class KillSwitchError(AizeeError):
+    """Raised when a kill-switch rule fires (from agent-trace).
+
+    Kill-switch rules are hard stops that immediately halt the agent.
+    Unlike regular policy rules, they cannot be overridden and always
+    result in a DENY decision.
+    """
+
+    def __init__(self, rule_type: str, message: str, context: dict[str, Any] | None = None) -> None:
+        self.rule_type = rule_type
+        super().__init__(
+            "KILL_SWITCH",
+            f"Kill-switch triggered: {rule_type} — {message}",
+            ErrorSeverity.CRITICAL,
+            context or {"rule_type": rule_type},
+        )
+
+
+@dataclass
+class KillSwitchRule:
+    """A kill-switch rule that immediately stops the agent (from agent-trace).
+
+    Supported rule types:
+    - cost_ceiling: Stop when total cost exceeds a limit.
+    - file_touched: Stop when a protected file pattern is touched.
+    - tool_call_count: Stop when total tool calls exceed a limit.
+    - time_limit: Stop when elapsed time exceeds a limit (seconds).
+    """
+
+    rule_type: str  # "cost_ceiling", "file_touched", "tool_call_count", "time_limit"
+    limit: float = 0.0
+    pattern: str = ""  # For file_touched: glob pattern (e.g., "protected/*")
+    description: str = ""
+
+    def evaluate(self, context: dict[str, Any]) -> tuple[bool, str]:
+        """Evaluate the kill-switch rule against the context.
+
+        Returns (triggered, reason). If triggered is True, the agent
+        must stop immediately.
+        """
+        if self.rule_type == "cost_ceiling":
+            total_cost = float(context.get("total_cost", 0.0))
+            if total_cost >= self.limit:
+                return True, f"Cost {total_cost:.2f} exceeded ceiling {self.limit:.2f}"
+        elif self.rule_type == "file_touched":
+            files_touched = context.get("files_touched", [])
+            if isinstance(files_touched, list):
+                for f in files_touched:
+                    if isinstance(f, str) and _glob_match(self.pattern, f):
+                        return True, f"Protected file {f!r} touched (pattern {self.pattern!r})"
+        elif self.rule_type == "tool_call_count":
+            call_count = int(context.get("tool_call_count", 0))
+            if call_count >= int(self.limit):
+                return True, f"Tool call count {call_count} exceeded limit {int(self.limit)}"
+        elif self.rule_type == "time_limit":
+            elapsed = float(context.get("elapsed_seconds", 0.0))
+            if elapsed >= self.limit:
+                return True, f"Elapsed {elapsed:.1f}s exceeded time limit {self.limit:.1f}s"
+        return False, ""
+
+
+def _glob_match(pattern: str, path: str) -> bool:
+    """Simple glob match using fnmatch (stdlib)."""
+    import fnmatch
+    return fnmatch.fnmatch(path, pattern)
 
 
 class GuardConfig:
@@ -150,6 +220,7 @@ class Guardian:
         config: GuardConfig | None = None,
         permission_dependencies: dict[str, list[str]] | None = None,
         guardrail_registry: GuardrailRegistry | None = None,
+        kill_switch_rules: list[KillSwitchRule] | None = None,
     ) -> None:
         self.rules = rules
         self.config = config or GuardConfig()
@@ -161,6 +232,8 @@ class Guardian:
         # / @output_guardrail decorators. Pass a custom registry for isolation
         # in tests or for per-agent guardrail sets.
         self.guardrail_registry = guardrail_registry or default_guardrail_registry
+        # Kill-switch rules (from agent-trace): hard stops that cannot be overridden.
+        self.kill_switch_rules = kill_switch_rules or []
 
     @classmethod
     def from_yaml(cls, path: str | Path, config: GuardConfig | None = None) -> Guardian:
@@ -190,7 +263,8 @@ class Guardian:
                     matched = evaluator.evaluate_predicate(rule["predicate"])
                 else:
                     matched = True
-            except Exception:
+            except Exception as exc:
+                _logger.debug("rule evaluation failed: %s", exc, exc_info=True)
                 if self.config.on_evaluation_error == DecisionStatus.DENY:
                     return Decision(DecisionStatus.DENY, name, self.EVALUATION_ERROR_REASON)
                 if self.config.on_evaluation_error == DecisionStatus.REQUIRE_APPROVAL:
@@ -204,6 +278,17 @@ class Guardian:
         return None
 
     def authorize(self, request: ActionRequest) -> Decision:
+        # Kill-switch rules (from agent-trace): evaluated first, always DENY.
+        # These are hard stops that cannot be overridden by any other rule.
+        for ks_rule in self.kill_switch_rules:
+            triggered, reason = ks_rule.evaluate(request.attributes)
+            if triggered:
+                return Decision(
+                    DecisionStatus.DENY,
+                    f"kill_switch:{ks_rule.rule_type}",
+                    reason,
+                )
+
         # Guardrail tripwire layer (input phase): runs before the predicate
         # rule engine. Any tripwire_triggered=True blocks the action.
         guardrail_context: dict[str, Any] = {"tool": request.tool, **request.attributes}

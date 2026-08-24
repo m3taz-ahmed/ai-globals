@@ -26,10 +26,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
+
+_logger = logging.getLogger(__name__)
 
 # Invariants (Hazem R1-R15, adapted — see rules/architecture-review.md):
 #   R1: no high-consequence action without an admitted output record.
@@ -226,12 +229,10 @@ class AdmissionGate:
         *,
         min_evidence_coverage: float = 0.0,
         require_schema_valid: bool = True,
-        fail_closed: bool = True,
     ) -> None:
         self.admission_policy_version = admission_policy_version
         self.min_evidence_coverage = min_evidence_coverage
         self.require_schema_valid = require_schema_valid
-        self.fail_closed = fail_closed
         self._checks: list[tuple[str, CheckFn]] = []
         self._records: list[AdmissionRecord] = []
 
@@ -276,51 +277,37 @@ class AdmissionGate:
             context_hash, runtime_key, stop_reason, self.admission_policy_version
         )
         ctx = output_context or {}
+        common = (request_id, context_hash, runtime_key, out_key, stop_reason,
+                  schema_valid, evidence_coverage, policy_verdict)
+        reject = self._evaluate_gates(ctx, schema_valid, evidence_coverage, policy_verdict)
+        if reject is not None:
+            return self._build_record(*common, "reject", reject)
+        return self._build_record(*common, "admit", "")
 
-        # Fail-closed: if policy verdict is deny, never admit.
+    def _evaluate_gates(
+        self, ctx: dict[str, Any], schema_valid: bool,
+        evidence_coverage: float, policy_verdict: str,
+    ) -> str | None:
+        """Run all admission gates. Returns reason_code if rejected, None if ok."""
         if policy_verdict == "deny":
-            return self._build_record(
-                request_id, context_hash, runtime_key, out_key, stop_reason,
-                schema_valid, evidence_coverage, policy_verdict,
-                "reject", "policy_verdict_deny",
-            )
-
-        # Schema validity gate.
+            return "policy_verdict_deny"
         if self.require_schema_valid and not schema_valid:
-            return self._build_record(
-                request_id, context_hash, runtime_key, out_key, stop_reason,
-                schema_valid, evidence_coverage, policy_verdict,
-                "reject", "schema_invalid",
-            )
-
-        # Evidence coverage gate.
+            return "schema_invalid"
         if evidence_coverage < self.min_evidence_coverage:
-            return self._build_record(
-                request_id, context_hash, runtime_key, out_key, stop_reason,
-                schema_valid, evidence_coverage, policy_verdict,
-                "reject", "evidence_coverage_below_threshold",
-            )
+            return "evidence_coverage_below_threshold"
+        return self._run_custom_checks(ctx)
 
-        # Custom checks — first failure rejects.
+    def _run_custom_checks(self, ctx: dict[str, Any]) -> str | None:
+        """Run custom checks — first failure rejects."""
         for name, fn in self._checks:
             try:
                 passed, reason = fn(ctx)
             except Exception as exc:
-                # A check raising is treated as a failure (fail-closed).
+                _logger.debug("admission check %s failed: %s", name, exc, exc_info=True)
                 passed, reason = False, f"check_{name}_exception:{exc}"
             if not passed:
-                return self._build_record(
-                    request_id, context_hash, runtime_key, out_key, stop_reason,
-                    schema_valid, evidence_coverage, policy_verdict,
-                    "reject", f"check_{name}_failed:{reason}",
-                )
-
-        # All gates passed → admit.
-        return self._build_record(
-            request_id, context_hash, runtime_key, out_key, stop_reason,
-            schema_valid, evidence_coverage, policy_verdict,
-            "admit", "",
-        )
+                return f"check_{name}_failed:{reason}"
+        return None
 
     def _build_record(
         self,

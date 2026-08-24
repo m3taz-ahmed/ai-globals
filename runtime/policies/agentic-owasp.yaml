@@ -1,6 +1,6 @@
 name: agentic-owasp
 apiVersion: governance.aizee/v1
-default_action: ask
+# default_action moved to default.yaml per GATE-B3
 description: >
   OWASP Agentic Top 10 (2026) compliance policy. Enforces controls for
   prompt injection, sensitive data, supply chain, excessive agency,
@@ -16,9 +16,9 @@ rules:
 
   # A02 — Sensitive Information Disclosure: block commands that expose secrets
   - name: block-secret-exposure
-    condition: "'api_key=' in command or 'password=' in command or 'secret=' in command or 'token=' in command"
+    condition: "'api_key=' in command or 'password=' in command or 'secret=' in command or 'token=' in command or 'api_key:' in command or 'password:' in command or 'secret:' in command or 'token:' in command"
     action: deny
-    description: A02 — Block commands that expose secrets in plaintext.
+    description: "A02 — Block commands that expose secrets in plaintext (= or : assignment)."
 
   # A04 — Excessive Agency: block auto-destructive actions
   - name: block-auto-destructive

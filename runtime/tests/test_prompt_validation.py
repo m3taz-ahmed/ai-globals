@@ -1,21 +1,12 @@
 """Tests for Pattern 8: Assertion-Based Prompt Validation.
 
 Covers assertion functions, guardrails, adaptive rewriting, the prompt test
-suite with ELO ranking, and red-team plugins/strategies/results.
+suite with ELO ranking.
 No LLM APIs are called — all model functions are mocked.
 """
 
 from __future__ import annotations
 
-from runtime.fuzz_testing import (
-    RedTeamPlugin,
-    RedTeamResult,
-    RedTeamStrategy,
-    data_exfil_plugin,
-    jailbreak_plugin,
-    pii_leak_plugin,
-    prompt_injection_plugin,
-)
 from runtime.prompt_gate import (
     AdaptiveResult,
     PromptTestCase,
@@ -306,82 +297,3 @@ class TestPromptTestSuite:
         )
         ranked = suite.elo_rank(["a", "b", "c"], mock_model)
         assert all(isinstance(score, float) for _, score in ranked)
-
-
-# ---------------------------------------------------------------------------
-# Red-team plugins, strategies, results
-# ---------------------------------------------------------------------------
-
-
-class TestRedTeamPlugin:
-    def test_prompt_injection_generates_attacks(self) -> None:
-        attacks = prompt_injection_plugin.generate_attacks(3)
-        assert len(attacks) == 3
-        assert all(isinstance(a, str) for a in attacks)
-        assert prompt_injection_plugin.name == "prompt_injection"
-
-    def test_jailbreak_generates_attacks(self) -> None:
-        attacks = jailbreak_plugin.generate_attacks(2)
-        assert len(attacks) == 2
-        assert jailbreak_plugin.name == "jailbreak"
-
-    def test_pii_leak_generates_attacks(self) -> None:
-        attacks = pii_leak_plugin.generate_attacks(4)
-        assert len(attacks) == 4
-
-    def test_data_exfil_generates_attacks(self) -> None:
-        attacks = data_exfil_plugin.generate_attacks(3)
-        assert len(attacks) == 3
-
-    def test_custom_plugin(self) -> None:
-        def gen(n: int) -> list[str]:
-            return [f"attack {i}" for i in range(n)]
-
-        plugin = RedTeamPlugin(name="custom", description="test", generate_attacks=gen)
-        attacks = plugin.generate_attacks(5)
-        assert len(attacks) == 5
-        assert attacks[0] == "attack 0"
-
-
-class TestRedTeamStrategy:
-    def test_compose_combines_plugins(self) -> None:
-        strategy = RedTeamStrategy(
-            name="full",
-            plugins=[prompt_injection_plugin, jailbreak_plugin],
-        )
-        attacks = strategy.compose(count_per_plugin=3)
-        assert len(attacks) == 6  # 3 from each plugin
-
-    def test_compose_default_count(self) -> None:
-        strategy = RedTeamStrategy(
-            name="default",
-            plugins=[prompt_injection_plugin],
-        )
-        attacks = strategy.compose()
-        assert len(attacks) == 5
-
-    def test_compose_all_four_plugins(self) -> None:
-        strategy = RedTeamStrategy(
-            name="all",
-            plugins=[prompt_injection_plugin, jailbreak_plugin, pii_leak_plugin, data_exfil_plugin],
-        )
-        attacks = strategy.compose(count_per_plugin=2)
-        assert len(attacks) == 8
-
-
-class TestRedTeamResult:
-    def test_tracking(self) -> None:
-        result = RedTeamResult(
-            attacks=10,
-            passed=7,
-            failed=3,
-            failures=["attack1", "attack2", "attack3"],
-        )
-        assert result.attacks == 10
-        assert result.passed == 7
-        assert result.failed == 3
-        assert len(result.failures) == 3
-
-    def test_defaults(self) -> None:
-        result = RedTeamResult(attacks=0, passed=0, failed=0)
-        assert result.failures == []

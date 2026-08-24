@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -12,6 +13,8 @@ from typing import Any, ClassVar
 
 from .enums import ActionResultStatus, SagaStatus
 from .repository import BaseRepository
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -142,6 +145,7 @@ class SagaOrchestrator(BaseRepository):
         try:
             result = act(step.action, **merged)
         except Exception as exc:
+            _logger.debug("saga step execution failed: %s", exc, exc_info=True)
             result = {"ok": False, "error": f"Exception: {exc!s}"}
         result.setdefault("status", ActionResultStatus.ALLOWED.value if result.get("ok") else ActionResultStatus.DENIED.value)
         return result
@@ -162,6 +166,7 @@ class SagaOrchestrator(BaseRepository):
         try:
             result = act(comp_action, **comp_args)
         except Exception as exc:
+            _logger.debug("saga compensation failed: %s", exc, exc_info=True)
             result = {"ok": False, "error": f"Compensation exception: {exc!s}"}
         result.setdefault("status", SagaStatus.COMPENSATED.value if result.get("ok") else "compensation_failed")
         return result

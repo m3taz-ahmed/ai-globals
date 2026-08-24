@@ -4,15 +4,15 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.6.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.6.0">
+    <img src="https://img.shields.io/badge/Version-5.7.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.7.1">
     <img src="https://img.shields.io/badge/Tests-4028%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 4028 passed">
     <img src="https://img.shields.io/badge/Coverage-96%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 96%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 Personas">
-    <img src="https://img.shields.io/badge/Skills-73-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="73 Skills">
-    <img src="https://img.shields.io/badge/Workflows-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 Workflows">
+    <img src="https://img.shields.io/badge/Skills-72-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="72 Skills">
+    <img src="https://img.shields.io/badge/Workflows-50-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="50 Workflows">
     <img src="https://img.shields.io/badge/Tech--Stack-163-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="163 Tech-Stack refs">
   </p>
 </div>
@@ -35,7 +35,7 @@ A **zero-compromise, version-controlled operating system** that sits between you
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
 | Raw SQL, missing XSS, weak secrets | OWASP, zero-trust, RBAC enforced by default |
 | Random drive-by refactoring | Surgical changes through policy + budget + audit gates |
-| One-size-fits-all AI answers | 22 personas + 73 skills auto-selected per task |
+| One-size-fits-all AI answers | 22 personas + 72 skills auto-selected per task |
 
 ---
 
@@ -87,12 +87,12 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 22 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 105 modules
+├── runtime/                 # Kernel: policy, budget, audit, 85 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
-├── aizee_mcp/                # MCP server (35 tools, 3 resources)
+├── aizee_mcp/                # MCP server (36 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 73 persona + lord skill files
-├── workflows/               # 36 trigger-based execution protocols
+├── skills/                  # 72 persona + lord skill files
+├── workflows/               # 50 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -249,23 +249,10 @@ From competitive analysis of AI agent OS and coding governance tools:
 | Feature | Module | Purpose |
 | :--- | :--- | :--- |
 | Hash-chained audit log | `runtime/audit.py` | Tamper-evident action trail |
-| AST validation | `runtime/ast_validator.py` | Plan/diff validation before & after edits |
 | Agent benchmark engine | `eval/agent_benchmark.py` | Persona performance scoring |
 | OWASP Agentic Top 10 | `runtime/agentic_security.py` | 10 security controls for agentic systems |
-| MCP security scanner | `runtime/mcp_security.py` | Static analysis for MCP servers & skills |
-| Skills marketplace | `runtime/skills_marketplace.py` | Community skill registry with security scanning |
-| AI code review engine | `runtime/review_engine.py` | Multi-dimensional review with confidence scoring |
 | Git-backed memory | `memory/git_memory.py` | Versioned memory with git branches per persona |
-| Code compression | `runtime/code_compressor.py` | AST-based ~70% token reduction |
-| OpenTelemetry exporter | `runtime/otel_exporter.py` | OTLP/JSON trace export with fallback |
-| Parallel agents | `runtime/worktree_pool.py` | Git worktree-based parallel execution |
 | Spec-driven development | `runtime/spec_engine.py` | 4-phase: Specify → Plan → Tasks → Implement |
-| Dynamic personas | `runtime/dynamic_persona.py` | 3-layer evolution with experience tracking |
-| Issue tracker integration | `runtime/issue_tracker.py` | Linear/Jira/Notion unified client |
-| Command Center | `runtime/command_center.py` | Fleet management Kanban dashboard |
-| AI slop detector | `runtime/ai_slop_detector.py` | Detects AI-generated code quality issues |
-| Voice interface | `runtime/voice_interface.py` | Cross-platform STT/TTS |
-| ACP protocol | `runtime/acp_protocol.py` | Inter-agent communication broker |
 
 ### 45 New Enhancements (Repo Research Driven)
 
@@ -275,16 +262,9 @@ Deep analysis of 22 GitHub repositories (agent-governance-toolkit, OpenMemory, m
 
 | Feature | Module | Source |
 | :--- | :--- | :--- |
-| Parameterized policy conditions | `runtime/authorization.py` | DAE Standard |
-| Lease generation (fencing token) | `runtime/authorization.py` | agent-policy-engine |
-| 3 enforcement modes (DISABLED/OBSERVE/ENFORCE) | `runtime/authorization.py` | agent-policy-engine |
 | 5-gate evidence-based evaluation | `eval/harness.py` | agentic-os |
-| Single-writer atomic file locking | `runtime/file_lock.py` | agentic-os |
 | SimHash deduplication | `memory/simhash.py` | OpenMemory |
 | Heat-based memory prioritization | `memory/heat.py` | MemoryOS |
-| Stall detection (output hashing) | `runtime/worktree_pool.py` | sol sentinel |
-| Tether files (crash recovery) | `runtime/worktree_pool.py` | sol |
-| 5-gate deterministic file filter | `runtime/review_engine.py` | open-code-review |
 | Hash-tracked spec manifests | `runtime/spec_engine.py` | spec-kit |
 | Delta-based specs (ADDED/MODIFIED/REMOVED) | `runtime/spec_engine.py` | OpenSpec |
 
@@ -292,33 +272,19 @@ Deep analysis of 22 GitHub repositories (agent-governance-toolkit, OpenMemory, m
 
 | Feature | Module | Source |
 | :--- | :--- | :--- |
-| Execution rings (4 privilege levels) | `runtime/execution_rings.py` | agent-governance-toolkit |
 | 3-stage evaluation gate | `eval/stages.py` | ouroboros |
-| Saga compensation (multi-step rollback) | `runtime/saga_compensation.py` | agent-governance-toolkit |
 | Memory consolidation primitives | `memory/consolidation.py` | agent-memory |
 | 5 cognitive sector classification | `memory/sectors.py` | OpenMemory HMD v2 |
 | Temporal knowledge graph | `memory/temporal.py` | OpenMemory |
-| 3-mode delegation (inherit/narrow/none) | `runtime/authorization.py` | caracal |
-| Runtime state machine | `runtime/authorization.py` | agent-policy-engine |
-| Provenance tracking | `runtime/authorization.py` | agent-policy-engine |
-| Three-zone memory compression | `runtime/memory_compression.py` | open-code-review |
 | CodeGraph builder (AST-based) | `runtime/codegraph.py` | metis |
 | CodeGraph reachability analysis | `runtime/codegraph.py` | metis |
-| Budget rate limiting (token bucket) | `runtime/rate_limiter.py` | agent-governance-toolkit |
 | Self-healing runtime (crash recovery) | `runtime/self_healing.py` | sol sentinel |
-| Spec constitution validation | `runtime/spec_validation.py` | spec-kit |
-| Spec test scenarios (Gherkin) | `runtime/spec_validation.py` | spec-kit |
-| Spec linkage graph (impact analysis) | `runtime/spec_validation.py` | spec-kit |
-| Fuzz testing harness | `runtime/fuzz_testing.py` | agent-policy-engine |
 
 #### Phase 3 — High-Impact, High-Complexity (15 features)
 
 | Feature | Module | Source |
 | :--- | :--- | :--- |
 | Tree-sitter symbol provider | `runtime/tree_sitter_provider.py` | metis |
-| Diff-based code review | `runtime/diff_review.py` | open-code-review |
-| Budget anomaly detection (z-score) | `runtime/budget_anomaly.py` | agent-governance-toolkit |
-| Policy decision caching (TTL) | `runtime/policy_cache.py` | agent-policy-engine |
 | Memory decay scheduler | `memory/decay_scheduler.py` | OpenMemory |
 | Semantic code search (TF-IDF) | `runtime/semantic_search.py` | metis |
 
@@ -394,7 +360,7 @@ The installer auto-symlinks these to the correct global locations.
 
 | Server | Purpose | Requires |
 | :--- | :--- | :--- |
-| `aizee` | Core OS tools (35 tools) | Python |
+| `aizee` | Core OS tools (36 tools) | Python |
 | `graphify` | Codebase knowledge graph | Python + graphify |
 | `context7` | Live library documentation | Node.js 18+ |
 | `upwork` | Upwork job search + proposals | Node.js + OAuth |
@@ -439,7 +405,7 @@ python dashboard/server.py 8080
 # → http://127.0.0.1:8080
 ```
 
-Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, status pills, glass panels. Optional Bearer auth via `AGENT_OS_DASHBOARD_TOKEN`.
+Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, status pills, glass panels. Optional Bearer auth via `AIZEE_DASHBOARD_TOKEN`.
 
 ---
 
@@ -460,7 +426,7 @@ Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, st
 
 - **Core:** Pure Python 3.10+ (no Node.js required for core OS)
 - **Memory:** SQLite + FTS5 + optional SentenceTransformers vectors
-- **MCP:** FastMCP server with 35 tools
+- **MCP:** FastMCP server with 36 tools
 - **Dashboard:** Python stdlib HTTP server + SQLite
 - **Knowledge graph:** graphify (optional)
 - **Dependencies:** pyyaml, pydantic, rich, cryptography, numpy, turbovec
