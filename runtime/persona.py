@@ -64,6 +64,16 @@ class PersonaDetector:
     PERSONA_LORD_BONUS: ClassVar[float] = _DATA["persona_lord_bonus"]
     PERSONAS: ClassVar[dict[str, dict[str, Any]]] = _DATA["personas"]
     LORD_SKILLS: ClassVar[dict[str, list[str]]] = _DATA["lord_skills"]
+    # Pre-compiled regex cache for keyword matching (compiled once at class load)
+    _COMPILED_KEYWORDS: ClassVar[dict[str, re.Pattern[str]]] = {
+        kw.lower(): re.compile(r"\b" + re.escape(kw) + r"\b", re.IGNORECASE)
+        for info in _DATA["personas"].values()
+        for kw in info.get("keywords", [])
+    } | {
+        kw.lower(): re.compile(r"\b" + re.escape(kw) + r"\b", re.IGNORECASE)
+        for kws in _DATA.get("lord_skills", {}).values()
+        for kw in kws
+    }
 
     def __init__(self, default: str = DEFAULT, skill_resolver: SkillResolver | None = None) -> None:
         if default not in self.PERSONAS:
@@ -91,6 +101,10 @@ class PersonaDetector:
 
     def _keyword_match(self, text: str, keyword: str) -> bool:
         """Match a keyword as a whole word/phrase to avoid substring false positives."""
+        pat = self._COMPILED_KEYWORDS.get(keyword.lower())
+        if pat is not None:
+            return bool(pat.search(text))
+        # Fallback for keywords not in cache (dynamic lord skills)
         pattern = r"\b" + re.escape(keyword) + r"\b"
         return bool(re.search(pattern, text, re.IGNORECASE))
 

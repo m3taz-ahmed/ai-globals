@@ -85,6 +85,14 @@ def _init_core_services(kernel: Kernel) -> None:
     kernel.governance = GovernanceHooks(kernel.audit, kernel.telemetry)
     kernel.mcp_firewall = kernel._build_mcp_firewall()
     kernel.loop_detector = LoopDetector(window=20, threshold=5)
+    # Ensure taint guardrail is registered (import triggers auto-registration)
+    try:
+        import runtime.taint as _taint  # noqa: F401
+        from runtime.taint import get_default_tracker
+
+        kernel.taint_tracker = get_default_tracker()  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
 
 def _init_managers(kernel: Kernel) -> None:

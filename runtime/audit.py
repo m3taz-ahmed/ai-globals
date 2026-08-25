@@ -40,6 +40,10 @@ class AuditLogger:
         self.log_file = root / "state" / "audit.log"
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
+        # Cache last hash in memory to avoid O(n) file scan on every log() call.
+        # Initialized lazily on first use; invalidated only on rotation.
+        self._cached_last_hash: str | None = None
+        self._cache_lock = threading.Lock()
 
     def _rotate_if_needed(self) -> None:
         """Rotate the audit log if it exceeds the max size."""
@@ -53,6 +57,9 @@ class AuditLogger:
                         old.rename(new)
                 rotated = self.log_file.with_suffix(".log.1")
                 self.log_file.rename(rotated)
+                # Invalidate cache after rotation — new file starts from genesis
+                with self._cache_lock:
+                    self._cached_last_hash = None
         except OSError:
             pass  # Best-effort rotation
 
@@ -75,20 +82,45 @@ class AuditLogger:
         return value
 
     def _last_hash(self) -> str:
-        """Return the hash of the last entry in the log, or genesis if empty."""
+        """Return the hash of the last entry in the log, or genesis if empty.
+
+        Uses in-memory cache for O(1) after first read; falls back to
+        tail-scan only on cache-miss (first init or after rotation).
+        """
+        with self._cache_lock:
+            if self._cached_last_hash is not None:
+                return self._cached_last_hash
         if not self.log_file.exists():
             return _GENESIS_HASH
+        # Tail-scan: read only last line instead of full file iteration optimization
+        # for first cold-start; cached thereafter.
         last_line: str | None = None
-        with self.log_file.open("r", encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
-                if stripped:
-                    last_line = stripped
+        try:
+            # Efficient tail: read last 8KB and find last line
+            with self.log_file.open("rb") as f:
+                f.seek(0, 2)
+                size = f.tell()
+                read_size = min(size, 8192)
+                f.seek(size - read_size)
+                chunk = f.read().decode("utf-8", errors="ignore")
+                lines = [ln.strip() for ln in chunk.splitlines() if ln.strip()]
+                if lines:
+                    last_line = lines[-1]
+        except OSError:
+            # Fallback to full scan on error
+            with self.log_file.open("r", encoding="utf-8") as fh:
+                for line in fh:
+                    stripped = line.strip()
+                    if stripped:
+                        last_line = stripped
         if last_line is None:
             return _GENESIS_HASH
         try:
             entry = json.loads(last_line)
-            return str(entry.get("hash", _GENESIS_HASH))
+            h = str(entry.get("hash", _GENESIS_HASH))
+            with self._cache_lock:
+                self._cached_last_hash = h
+            return h
         except (json.JSONDecodeError, KeyError):
             return _GENESIS_HASH
 
@@ -119,6 +151,9 @@ class AuditLogger:
                 entry["hash"] = self._compute_hash(entry)
                 with self.log_file.open("a", encoding="utf-8") as f:
                     f.write(json.dumps(entry, default=str) + "\n")
+                # Update cache with the new hash for O(1) next call
+                with self._cache_lock:
+                    self._cached_last_hash = entry["hash"]
             except OSError as exc:
                 _logger.warning(
                     "Audit log write failed (fail-open): %s — event_type=%s",

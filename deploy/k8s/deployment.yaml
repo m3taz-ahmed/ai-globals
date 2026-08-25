@@ -63,16 +63,16 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-          # Probes target /api/system (public path) so they pass under token auth
+          # Probes target /api/health (public, no auth) so they pass when AIZEE_DASHBOARD_TOKEN is set
           readinessProbe:
             httpGet:
-              path: /api/system
+              path: /api/health
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /api/system
+              path: /api/health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20

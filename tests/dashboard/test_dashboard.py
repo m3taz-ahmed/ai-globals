@@ -300,10 +300,13 @@ def test_dashboard_client_ip_trusted_proxy():
     try:
         handler = MagicMock()
         handler.client_address = ("127.0.0.1", 12345)
-        # _client_ip takes the last element of the comma-separated list
-        handler.headers.get.return_value = "127.0.0.1, 203.0.113.5"
+        # Per RFC 7239, X-Forwarded-For is "client, proxy1, proxy2" — first is client
+        handler.headers.get.return_value = "203.0.113.5, 127.0.0.1"
         ip = dash_server._client_ip(handler)
         assert ip == "203.0.113.5"
+        # Also single IP case
+        handler.headers.get.return_value = "203.0.113.7"
+        assert dash_server._client_ip(handler) == "203.0.113.7"
     finally:
         dash_server._TRUSTED_PROXIES = original_proxies
 

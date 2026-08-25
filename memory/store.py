@@ -99,7 +99,7 @@ class _DecayHelper:
             decay_score REAL NOT NULL DEFAULT 1.0,
             last_accessed TEXT NOT NULL,
             access_count INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (mem_id) REFERENCES memories(id)
+            FOREIGN KEY (mem_id) REFERENCES memories(id) ON DELETE CASCADE
         )
         """,
     ]
@@ -434,7 +434,7 @@ class MemoryStore(BaseRepository):
             decay_score REAL NOT NULL DEFAULT 1.0,
             last_accessed TEXT NOT NULL,
             access_count INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (mem_id) REFERENCES memories(id)
+            FOREIGN KEY (mem_id) REFERENCES memories(id) ON DELETE CASCADE
         )
         """,
     ]
@@ -442,6 +442,8 @@ class MemoryStore(BaseRepository):
         "CREATE INDEX IF NOT EXISTS idx_mem_kind ON memories(kind)",
         "CREATE INDEX IF NOT EXISTS idx_mem_source ON memories(source)",
         "CREATE INDEX IF NOT EXISTS idx_mem_valid_to ON memories(valid_to)",
+        "CREATE INDEX IF NOT EXISTS idx_mem_valid_from ON memories(valid_from)",
+        "CREATE INDEX IF NOT EXISTS idx_mem_created_at ON memories(created_at)",
         "CREATE INDEX IF NOT EXISTS idx_rel_source ON relations(source_id)",
         "CREATE INDEX IF NOT EXISTS idx_rel_target ON relations(target_id)",
         "CREATE INDEX IF NOT EXISTS idx_decay_last_accessed ON memory_decay(last_accessed)",
@@ -454,8 +456,33 @@ class MemoryStore(BaseRepository):
         self._decay = _DecayHelper(self)
         self._search = _SearchHelper(self)
         self._relations = _RelationHelper(self)
+        # Auto-migrate legacy decay table (add ON DELETE CASCADE) without data loss.
+        self._migrate_decay_table()
         # Additive schema-integrity check: warn on drift, never block init.
         self._verify_schema()
+
+    def _migrate_decay_table(self) -> None:
+        """Migrate legacy memory_decay table to add ON DELETE CASCADE if missing."""
+        try:
+            with self._conn() as conn:
+                row = conn.execute("SELECT sql FROM sqlite_master WHERE name='memory_decay'").fetchone()
+                if row is None or row["sql"] is None:
+                    return
+                sql = row["sql"]
+                if "ON DELETE CASCADE" in sql:
+                    return
+                # Recreate with new DDL preserving existing data
+                conn.execute("ALTER TABLE memory_decay RENAME TO memory_decay_legacy")
+                for ddl in _DecayHelper._decay_table_sql:
+                    conn.execute(ddl)
+                conn.execute(
+                    "INSERT OR IGNORE INTO memory_decay (mem_id, decay_score, last_accessed, access_count) "
+                    "SELECT mem_id, decay_score, last_accessed, access_count FROM memory_decay_legacy"
+                )
+                conn.execute("DROP TABLE memory_decay_legacy")
+                logger.info("Migrated memory_decay table to add ON DELETE CASCADE")
+        except Exception as exc:  # pragma: no cover - best effort
+            logger.warning("Failed to migrate memory_decay table: %s", exc)
 
     def _verify_schema(self) -> None:
         """Warn (do not block) if the on-disk schema drifted from the contract."""
@@ -614,6 +641,11 @@ class MemoryStore(BaseRepository):
                     f"DELETE FROM relations WHERE source_id IN ({id_placeholders}) OR target_id IN ({id_placeholders})",
                     mem_ids + mem_ids,
                 )
+                # Explicit decay cleanup for existing DBs where FK cascade is NO ACTION
+                conn.execute(
+                    f"DELETE FROM memory_decay WHERE mem_id IN ({id_placeholders})",
+                    mem_ids,
+                )
             conn.execute(f"DELETE FROM memories WHERE source IN ({placeholders})", sources)
         if self.vector and self.vector.is_available() and mem_ids:
             self.vector.remove_batch(mem_ids)
@@ -635,6 +667,8 @@ class MemoryStore(BaseRepository):
     def delete_hard(self, mem_id: str) -> bool:
         """Hard-delete a memory by ID (removes row + vector). Returns True if existed."""
         with self._conn() as conn:
+            # Explicit decay cleanup for existing DBs without CASCADE
+            conn.execute("DELETE FROM memory_decay WHERE mem_id = ?", (mem_id,))
             cur = conn.execute("DELETE FROM memories WHERE id = ?", (mem_id,))
             existed = cur.rowcount > 0
         if existed and self.vector and self.vector.is_available():

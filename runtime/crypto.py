@@ -44,13 +44,36 @@ def _get_fernet() -> Fernet | None:
         if stored:
             return Fernet(stored)
     import logging
+    import platform
+
     generated = Fernet.generate_key()
     key_file.write_bytes(generated)
-    with contextlib.suppress(OSError):
-        key_file.chmod(0o600)  # Windows doesn't support chmod the same way
+    try:
+        if platform.system() == "Windows":
+            # On Windows, chmod is a no-op; restrict via ACL if icacls is available
+            import getpass
+            import subprocess
+
+            try:
+                user = os.getlogin()
+            except OSError:
+                user = getpass.getuser()
+            subprocess.run(
+                ["icacls", str(key_file), "/inheritance:r", "/grant:r", f"{user}:(R,W)"],
+                capture_output=True,
+                timeout=5,
+                check=False,
+            )
+        else:
+            key_file.chmod(0o600)
+    except Exception:
+        with contextlib.suppress(OSError):
+            key_file.chmod(0o600)
     logging.getLogger(__name__).warning(
         "No AIOS_ENCRYPTION_KEY set — auto-generated key stored at %s. "
-        "Set AIOS_ENCRYPTION_KEY env var for production.", key_file
+        "Set AIOS_ENCRYPTION_KEY env var for production. "
+        "Back up this file — loss means encrypted state is unrecoverable.",
+        key_file,
     )
     return Fernet(generated)
 

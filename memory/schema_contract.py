@@ -266,7 +266,7 @@ def default_memory_contract() -> SchemaContract:
                 decay_score REAL NOT NULL DEFAULT 1.0,
                 last_accessed TEXT NOT NULL,
                 access_count INTEGER NOT NULL DEFAULT 0,
-                FOREIGN KEY (mem_id) REFERENCES memories(id)
+                FOREIGN KEY (mem_id) REFERENCES memories(id) ON DELETE CASCADE
             )
         """,
     }
@@ -274,10 +274,12 @@ def default_memory_contract() -> SchemaContract:
         "idx_mem_kind": "CREATE INDEX IF NOT EXISTS idx_mem_kind ON memories(kind)",
         "idx_mem_source": "CREATE INDEX IF NOT EXISTS idx_mem_source ON memories(source)",
         "idx_mem_valid_to": "CREATE INDEX IF NOT EXISTS idx_mem_valid_to ON memories(valid_to)",
+        "idx_mem_valid_from": "CREATE INDEX IF NOT EXISTS idx_mem_valid_from ON memories(valid_from)",
+        "idx_mem_created_at": "CREATE INDEX IF NOT EXISTS idx_mem_created_at ON memories(created_at)",
         "idx_rel_source": "CREATE INDEX IF NOT EXISTS idx_rel_source ON relations(source_id)",
         "idx_rel_target": "CREATE INDEX IF NOT EXISTS idx_rel_target ON relations(target_id)",
         "idx_decay_last_accessed": "CREATE INDEX IF NOT EXISTS idx_decay_last_accessed ON memory_decay(last_accessed)",
     }
-    contract = SchemaContract(tables=tables, indexes=indexes, version="v2")
+    contract = SchemaContract(tables=tables, indexes=indexes, version="v3")
     contract.content_hash = contract.compute_hash()
     return contract

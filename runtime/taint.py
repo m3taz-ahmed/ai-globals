@@ -285,10 +285,102 @@ def classify_source(source: str) -> TaintLabel:
     return TaintLabel.USER_UNTRUSTED  # Default to untrusted
 
 
+_default_tracker: TaintTracker | None = None
+
+
+def get_default_tracker() -> TaintTracker:
+    """Return the process-wide default TaintTracker (lazy singleton)."""
+    global _default_tracker
+    if _default_tracker is None:
+        _default_tracker = TaintTracker()
+    return _default_tracker
+
+
+def _register_taint_guardrail() -> None:
+    """Register the taint-flow guardrail into the default registry.
+
+    The guardrail enforces the lattice no-write-down rule: content
+    classified as USER_UNTRUSTED/RAG_UNTRUSTED/SECRET may not flow
+    into SYSTEM_TRUSTED contexts (tool calls, file writes) without
+    explicit sanitization. It runs as an input guardrail before the
+    Guardian predicate engine.
+    """
+    try:
+        from runtime.policy import GuardrailResult, input_guardrail
+
+        def _iter_strings(obj: Any, prefix: str = "") -> list[tuple[str, str]]:
+            """Recursively collect (key, string_value) pairs from nested dicts/lists."""
+            results: list[tuple[str, str]] = []
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    key = f"{prefix}.{k}" if prefix else str(k)
+                    if isinstance(v, str):
+                        results.append((key, v))
+                    elif isinstance(v, (dict, list, tuple)):
+                        results.extend(_iter_strings(v, key))
+            elif isinstance(obj, (list, tuple)):
+                for i, v in enumerate(obj):
+                    key = f"{prefix}[{i}]"
+                    if isinstance(v, str):
+                        results.append((key, v))
+                    elif isinstance(v, (dict, list, tuple)):
+                        results.extend(_iter_strings(v, key))
+            return results
+
+        @input_guardrail("taint_flow_check")
+        def taint_flow_check(context: dict[str, Any]) -> GuardrailResult:
+            tool = str(context.get("tool", ""))
+            # Also check context.get("action") for nested tool name
+            if not tool and isinstance(context.get("action"), dict):
+                tool = str(context["action"].get("type", ""))
+            # Only enforce on write-like tools where injection risk is highest
+            sensitive_tools = {"write", "edit", "exec", "Bash", "apply", "deploy"}
+            if tool not in sensitive_tools:
+                return GuardrailResult(tripwire_triggered=False)
+            # Collect all string values from nested context (handles PolicyManager's {"action":{...},"args":{...}})
+            for key, val in _iter_strings(context):
+                if not val.strip():
+                    continue
+                if _looks_like_secret(val):
+                    return GuardrailResult(
+                        tripwire_triggered=True,
+                        output_info={
+                            "guardrail": "taint_flow_check",
+                            "reason": f"Secret pattern detected in '{key}' for tool '{tool}'",
+                        },
+                        decision="deny",
+                    )
+                # Heuristic: if key suggests untrusted source, check for injection
+                src_label = classify_source(key.split(".")[-1].split("[")[0])
+                if src_label in (TaintLabel.USER_UNTRUSTED, TaintLabel.RAG_UNTRUSTED):
+                    injection_keywords = (
+                        "ignore previous", "system:", "reveal", "exfiltrate",
+                        "rm -rf", "drop table", "delete from",
+                    )
+                    if any(kw in val.lower() for kw in injection_keywords):
+                        return GuardrailResult(
+                            tripwire_triggered=True,
+                            output_info={
+                                "guardrail": "taint_flow_check",
+                                "reason": f"Potential injection in '{key}' for tool '{tool}'",
+                            },
+                            decision="deny",
+                        )
+            return GuardrailResult(tripwire_triggered=False)
+
+    except Exception:
+        # Never break import if policy module not yet ready
+        pass
+
+
+# Auto-register on import so Kernel/Guardian picks it up without explicit wiring
+_register_taint_guardrail()
+
 __all__ = [
     "TaintEntry",
     "TaintError",
     "TaintLabel",
     "TaintTracker",
     "classify_source",
+    "get_default_tracker",
 ]

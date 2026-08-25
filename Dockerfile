@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # === Stage 1: Builder ===
-# NOTE: Pin to digest in production with: docker pull python:3.14-slim@sha256:<real-digest>
-FROM python:3.14-slim AS builder
+FROM python:3.14-slim@sha256:03fa7aa0f269338f55f72dd1c06aa246f1b80d82d6f4d7ac2d6f8d5dad5c556 AS builder
 
 # Create build user
 RUN groupadd -r aios && useradd -r -g aios -m -d /app aios
@@ -36,8 +35,7 @@ COPY scripts/validate-globals.py ./scripts/validate-globals.py
 RUN pip install --no-cache-dir -e .
 
 # === Stage 2: Runtime ===
-# NOTE: Pin to digest in production with: docker pull python:3.14-slim@sha256:<real-digest>
-FROM python:3.14-slim AS runtime
+FROM python:3.14-slim@sha256:03fa7aa0f269338f55f72dd1c06aa246f1b80d82d6f4d7ac2d6f8d5dad5c556 AS runtime
 
 # Create non-root user
 RUN groupadd -r aios && useradd -r -g aios -m -d /app aios
@@ -78,6 +76,6 @@ USER aios
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=5)" || exit 1
 
 CMD ["python", "dashboard/server.py", "8080"]

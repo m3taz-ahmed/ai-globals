@@ -53,7 +53,6 @@ backups/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-aios.egg-info/
 
 # Personal utility scripts (not part of aiZee system)
 scripts/run-opencode-free.ps1

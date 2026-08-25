@@ -20,6 +20,8 @@ jobs:
         run: python -m ruff check .
       - name: Type check
         run: python -m mypy runtime memory aizee_mcp aizee_cli.py config.py dashboard/server.py eval/harness.py eval/pipeline.py eval/reliability.py eval/redteam.py scripts/guard_invariants.py scripts/sync_docs.py
+      - name: pip-audit (supply chain)
+        run: python -m pip_audit --desc || true
       - name: Test with coverage
         run: python -m pytest -q --cov-fail-under=80
       - name: Validate globals

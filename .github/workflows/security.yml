@@ -32,6 +32,10 @@ jobs:
         run: |
           python -m pip install bandit
           bandit -r runtime memory aizee_mcp dashboard -c .bandit -f json -o bandit-report.json
+      - name: Secret scanning (gitleaks)
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7  # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

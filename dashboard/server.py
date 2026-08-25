@@ -17,7 +17,7 @@ import time
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 # Allow direct execution (`python dashboard/server.py`) from any CWD:
 # Python puts the script's directory on sys.path, not the project root,
@@ -96,43 +96,62 @@ def _memory_instance() -> MemoryStore:
 def _check_rate_limit(client_ip: str) -> bool:
     if _rate_limit <= 0:
         return True  # Explicit 0 disables rate limiting (for tests); env var is clamped to >=1.
+    now = time.time()
+    needs_cleanup = False
     with _rate_lock:
-        now = time.time()
         count, window_start = _rate_state.get(client_ip, (0, now))
         if now - window_start > _rate_window:
             count, window_start = 0, now
         count += 1
         _rate_state[client_ip] = (count, window_start)
-        # Evict stale entries to prevent unbounded growth.
-        if len(_rate_state) > _rate_max_entries:
-            stale = [
-                ip for ip, (_, ws) in _rate_state.items()
-                if now - ws > _rate_window
-            ]
-            for ip in stale:
-                del _rate_state[ip]
-        # LRU eviction: when approaching the max, evict oldest by timestamp.
-        if len(_rate_state) > _rate_max_entries * 0.9:
-            # Sort by window_start (timestamp) ascending; evict oldest first.
-            sorted_ips = sorted(_rate_state.items(), key=lambda item: item[1][1])
-            excess = len(_rate_state) - int(_rate_max_entries * 0.9)
-            for ip, _ in sorted_ips[:max(excess, 1)]:
-                del _rate_state[ip]
-        return count <= _rate_limit
+        # Defer expensive cleanup outside lock to avoid blocking hot path.
+        needs_cleanup = len(_rate_state) > _rate_max_entries * 0.9
+        result = count <= _rate_limit
+    if needs_cleanup:
+        _evict_stale_entries(now)
+    return result
+
+
+def _evict_stale_entries(now: float) -> None:
+    """Evict stale/LRU entries without holding lock during sort."""
+    # Snapshot keys to avoid holding lock during O(n log n) sort.
+    with _rate_lock:
+        if len(_rate_state) <= _rate_max_entries * 0.9:
+            return
+        snapshot = list(_rate_state.items())
+    # Stale eviction outside lock
+    stale_ips = [ip for ip, (_, ws) in snapshot if now - ws > _rate_window]
+    if stale_ips:
+        with _rate_lock:
+            for ip in stale_ips:
+                _rate_state.pop(ip, None)
+            if len(_rate_state) <= _rate_max_entries * 0.9:
+                return
+    # LRU eviction: sort snapshot outside lock, then delete under lock
+    with _rate_lock:
+        if len(_rate_state) <= _rate_max_entries * 0.9:
+            return
+        # Re-snapshot after stale cleanup for accurate ordering
+        current = list(_rate_state.items())
+    current.sort(key=lambda item: item[1][1])
+    excess = len(current) - int(_rate_max_entries * 0.9)
+    to_evict = [ip for ip, _ in current[:max(excess, 1)]]
+    with _rate_lock:
+        for ip in to_evict:
+            _rate_state.pop(ip, None)
 
 
 def _client_ip(handler: DashboardHandler) -> str:
     """Resolve client IP when the direct peer is a trusted proxy.
 
-    Assumes a single trusted proxy (dashboard is localhost-only by default).
-    With a single proxy, X-Forwarded-For is either "client" or
-    "client, proxy" — taking the last element yields the original client.
-    For a chain of multiple proxies, a more robust implementation would
-    iterate from the right and return the first untrusted address.
+    Per RFC 7239, X-Forwarded-For is "client, proxy1, proxy2" — the
+    first element is the original client. For a chain of multiple
+    proxies, a more robust implementation would iterate from the right
+    and return the first untrusted address.
     """
     direct = handler.client_address[0]
     if direct in _TRUSTED_PROXIES:
-        forwarded = handler.headers.get("X-Forwarded-For", "").split(",")[-1].strip()
+        forwarded = handler.headers.get("X-Forwarded-For", "").split(",")[0].strip()
         if forwarded:
             # Validate that the forwarded value is a real IP address to prevent spoofing.
             try:
@@ -243,10 +262,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
     # secrets, and the token prompt lives inside app.js — requiring auth to
     # fetch the page that asks for the token is a chicken-and-egg deadlock.
     # Everything under /api/* (and any other path) stays token-protected.
+    # /api/health is public so K8s probes pass even when AIZEE_DASHBOARD_TOKEN is set
+    # (see deploy/k8s/deployment.yaml readinessProbe/livenessProbe).
     _PUBLIC_ASSETS: frozenset[str] = frozenset({
         "/", "/index.html", "/index.css", "/app.js",
         "/favicon.ico", "/favicon-32.png", "/favicon-16.png",
         "/apple-touch-icon.png", "/logo.png",
+    })
+    _PUBLIC_API_PATHS: frozenset[str] = frozenset({
+        "/api/health",
     })
 
     def _handle(self) -> None:
@@ -254,7 +278,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send(429, b"Rate limit exceeded", cors=True)
             return
         parsed = urllib.parse.urlparse(self.path)
-        is_public_asset = self.command == "GET" and parsed.path in self._PUBLIC_ASSETS
+        is_public_asset = (
+            (self.command == "GET" and parsed.path in self._PUBLIC_ASSETS)
+            or parsed.path in self._PUBLIC_API_PATHS
+        )
         if not is_public_asset and not self._auth():
             self._send(401, b"Unauthorized", cors=True)
             return
@@ -548,17 +575,56 @@ class DashboardHandler(BaseHTTPRequestHandler):
         ctype = content_type or mimetypes.guess_type(str(path))[0] or "text/plain"
         self._send(200, path.read_bytes(), ctype, cors=False)
 
+    # Simple in-memory cache for graph.json to avoid reading 2MB on every request
+    _graph_cache: ClassVar[dict[str, tuple[float, bytes]]] = {}
+    _graph_cache_lock: ClassVar[threading.Lock] = threading.Lock()
+
     def _send_graph(self) -> None:
-        """Serve the graphify graph.json (capped to 2MB for dashboard)."""
+        """Serve the graphify graph.json (capped to 2MB for dashboard) with ETag/mtime cache."""
         graph_path = self.root / "graphify-out" / "graph.json"
         if not graph_path.exists():
             self._send(200, json.dumps({"ok": False, "error": "graph.json not found"}).encode("utf-8"), "application/json")
             return
+        # Check If-None-Match / mtime cache
+        try:
+            mtime = graph_path.stat().st_mtime
+        except OSError:
+            mtime = 0
+        cache_key = str(graph_path)
+        # Handle ETag/If-None-Match
+        etag = f'W/"{int(mtime)}-{graph_path.stat().st_size if graph_path.exists() else 0}"'
+        if self.headers.get("If-None-Match") == etag:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.end_headers()
+            return
+        with self._graph_cache_lock:
+            cached = self._graph_cache.get(cache_key)
+            if cached and cached[0] == mtime:
+                data = cached[1]
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("ETag", etag)
+                self.send_header("Cache-Control", "public, max-age=30")
+                self._cors_headers()
+                self._security_headers()
+                self.end_headers()
+                self.wfile.write(data)
+                return
         data = graph_path.read_bytes()
         if len(data) > 2 * 1024 * 1024:
             self._send(200, json.dumps({"ok": False, "error": "graph too large for dashboard; use graphify MCP"}).encode("utf-8"), "application/json")
             return
-        self._send(200, data, "application/json", cors=True)
+        with self._graph_cache_lock:
+            self._graph_cache[cache_key] = (mtime, data)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("ETag", etag)
+        self.send_header("Cache-Control", "public, max-age=30")
+        self._cors_headers()
+        self._security_headers()
+        self.end_headers()
+        self.wfile.write(data)
 
     def _send_graph_stats(self) -> None:
         """Return summary stats from the graphify graph."""
@@ -580,12 +646,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (json.JSONDecodeError, OSError) as exc:
             self._send(200, json.dumps({"ok": False, "error": str(exc)}).encode("utf-8"), "application/json", cors=True)
 
+    _sse_clients: ClassVar[int] = 0
+    _sse_lock: ClassVar[threading.Lock] = threading.Lock()
+    _MAX_SSE_CLIENTS: ClassVar[int] = 20
+
     def _send_sse_events(self) -> None:
         """Server-Sent Events stream for real-time telemetry.
 
         SEC-04: routes through shared security headers, polls every 5s (not 1s),
         hard 10-min connection lifetime (EventSource auto-reconnects).
+        Limits concurrent SSE clients to prevent thread-pool exhaustion.
         """
+        with self._sse_lock:
+            if DashboardHandler._sse_clients >= DashboardHandler._MAX_SSE_CLIENTS:
+                self._send(503, b"Too many SSE clients", cors=True)
+                return
+            DashboardHandler._sse_clients += 1
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
@@ -616,8 +692,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f"data: {payload}\n\n".encode())
                 self.wfile.flush()
                 time.sleep(5)  # 5s poll interval (was 1s)
-        except (BrokenPipeError, ConnectionResetError):
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass
+        finally:
+            with self._sse_lock:
+                DashboardHandler._sse_clients = max(0, DashboardHandler._sse_clients - 1)
 
     def log_message(self, format: str, *args: object) -> None:
         """Log only errors and warnings, silence routine access logs."""
