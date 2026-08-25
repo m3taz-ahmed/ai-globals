@@ -24,6 +24,7 @@ license: MIT
 - Route every action through `runtime/kernel.py`.
 - Use `aizee check <action> --args '{"tokens":N}'` or `Kernel.act` to validate policy + budget.
 - No destructive action without explicit user approval.
+- Gate order: `Probity → Guardian → Policy → LoopDetector → Budget → Audit` (LoopDetector blocks repeated tool loops; Audit is hash-chained).
 
 ## Context & Memory
 - Detect stack from `package.json` / `composer.json` and load matching `tech-stack/<pkg>-<ver>.md` only after reading the lockfile for the exact version (`[VER-01]`).
@@ -34,10 +35,10 @@ license: MIT
 ## Quality Gate
 Before declaring done, run from the OS root:
 - `ruff check .`
-- `mypy`
-- `aizee test --full` (full suite with coverage, ~35s)
-- `python eval/harness.py`
-For quick iteration during development: `aizee test` (fast tier, ~12s, no coverage, skips slow/mcp/dashboard/vector).
+- `mypy` (strict, 345 files)
+- `aizee test --full` (full suite with coverage, ~180-300s, 3561 tests, 95% cov)
+- `python eval/harness.py` (read-only: ruff + mypy + pytest + validate-globals)
+For quick iteration: run ONLY targeted tests (`pytest path/to/test_file.py -q`) ~5s max. Full fast tier (`aizee test` — all non-slow, no cov) is ~60-120s on Linux / ~180s on Windows.
 No `eval` in policy code.
 
 ## Project Testing Protocol (ANY project under aiZee)

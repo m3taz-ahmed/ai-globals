@@ -5,14 +5,14 @@
 
   <p>
     <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.7.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.7.1">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-4028%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="4028 اختبار ناجح">
-    <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-96%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 96%">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-3561%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="3561 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 95%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 شخصية">
     <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-72-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="72 مهارة">
-    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-50-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="50 سير عمل">
+    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 سير عمل">
     <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-163-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="163 مرجع تقنية">
   </p>
 </div>
@@ -113,8 +113,8 @@ SQLite + FTS5 + فهرسة متجهة اختيارية. طبقات: عرضية،
 ### 5. بوابات الجودة (عيب صفر)
 ```bash
 ruff check .          # 0 تحذيرات
-mypy                  # 0 أخطاء (90+ ملف، strict)
-pytest -q             # 4028 اختبار، 96% تغطية
+mypy                  # 0 أخطاء (345 ملف، strict)
+pytest -q             # 3561 اختبار، 95% تغطية
 python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 ```
 
@@ -151,7 +151,7 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 - **`scripts/sync_docs.py`** (جديد): يزامن counts + جدول workflows من filesystem. `--check` مربوط بـ CI.
 - **`CONTRIBUTING.md`** (جديد): معايير الكود + وصفات module/skill/workflow.
 - **CLI**: أخطاء ودودة للـ JSON تالف بدلاً من tracebacks.
-- **Counts مُحدّثة**: 85 runtime modules، 72 skills، 50 workflows، 163 tech-stack refs.
+- **Counts مُحدّثة**: 85 runtime modules، 72 skills، 36 workflows، 163 tech-stack refs.
 
 ---
 

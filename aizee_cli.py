@@ -170,7 +170,7 @@ def cmd_memory(args: argparse.Namespace) -> int:
             snapshots = {}
             for d in watch_dirs:
                 if d.exists():
-                    snapshots[d] = {f.name: f.stat().st_mtime for f in d.rglob("*.md")}
+                    snapshots[d] = {str(f.relative_to(d)): (f.stat().st_mtime, f.stat().st_size) for f in d.rglob("*.md")}
             console.print("[cyan]Watching tech-stack/, rules/, workflows/ for changes...[/cyan]")
             console.print("[dim]Press Ctrl+C to stop.[/dim]")
             try:
@@ -179,7 +179,7 @@ def cmd_memory(args: argparse.Namespace) -> int:
                     for d in watch_dirs:
                         if not d.exists():
                             continue
-                        current = {f.name: f.stat().st_mtime for f in d.rglob("*.md")}
+                        current = {str(f.relative_to(d)): (f.stat().st_mtime, f.stat().st_size) for f in d.rglob("*.md")}
                         if current != snapshots.get(d):
                             changed = True
                             snapshots[d] = current

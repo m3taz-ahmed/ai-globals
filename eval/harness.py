@@ -138,13 +138,13 @@ class EvalHarness:
     def run(self) -> dict[str, Any]:
         results = {}
         results["ruff"] = self._run("ruff", ["python", "-m", "ruff", "check", "."])
-        results["mypy"] = self._run("mypy", ["python", "-m", "mypy", "runtime", "memory", "aizee_mcp", "aizee_cli.py", "config.py", "dashboard/server.py"])
+        results["mypy"] = self._run("mypy", ["python", "-m", "mypy", "runtime", "memory", "aizee_mcp", "aizee_cli.py", "config.py", "dashboard/server.py", "eval/harness.py", "eval/pipeline.py", "eval/reliability.py", "eval/redteam.py", "scripts/guard_invariants.py", "scripts/sync_docs.py"])
         results["pytest"] = self._run("pytest", [
             "python", "-m", "pytest", "-q",
             "--cov=runtime", "--cov=memory", "--cov=aizee_mcp",
             "--cov-report=term-missing", "--cov-fail-under=80",
         ])
-        results["validate-globals"] = self._run("validate-globals", ["python", "scripts/validate-globals.py", "--fix"])
+        results["validate-globals"] = self._run("validate-globals", ["python", "scripts/validate-globals.py"])
 
         all_pass = all(v["returncode"] == 0 for v in results.values())
         return {"results": results, "all_pass": all_pass}

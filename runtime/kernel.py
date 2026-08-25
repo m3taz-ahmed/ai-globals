@@ -330,6 +330,9 @@ class Kernel:
         _init_compat_attributes(self)
         # Plugin manager — lazily initialized to avoid loading plugins on kernel creation
         self._plugins: PluginManager | None = None
+        # Optional memory store wired via KernelBuilder.with_memory() — not created by default.
+        # Annotation is safe under `from __future__ import annotations` + TYPE_CHECKING import.
+        self._memory: MemoryStore | None = None
         # Pattern 4: Flat middleware array (tRPC-style callRecursive)
         self._middleware_pipeline = MiddlewarePipeline()
         # Pattern 5: Pre-compiled enhancer pipeline (NestJS-style)
@@ -637,8 +640,12 @@ class KernelBuilder:
         if self._guardian is not None:
             kernel.guardian = self._guardian
         if self._memory is not None:
-            # wire memory if applicable
-            pass
+            # Wire memory to kernel and plugins (used by load_plugins).
+            kernel._memory = self._memory
+            # If plugins already instantiated, update their memory reference.
+            if kernel._plugins is not None:
+                for _plugin in kernel._plugins._plugins.values():
+                    _plugin.memory = self._memory
         return kernel
 
 

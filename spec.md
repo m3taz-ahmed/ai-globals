@@ -14,7 +14,7 @@ aiZee is a sovereign, version-controlled operating system that sits between you 
 
 1. **Ground-Truth First** — Never write code without reading live docs (Context7 MCP) and codebase graph (graphify) first.
 2. **Zero-Defect Delivery** — ruff + mypy strict + pytest + eval/harness must be green before declaring done.
-3. **Policy-Governed Actions** — Every action passes through a 5-gate pipeline: Probity → Guardian → Policy → Budget → Audit.
+3. **Policy-Governed Actions** — Every action passes through a 6-gate pipeline: Probity → Guardian → Policy → LoopDetector → Budget → Audit. LoopDetector is an additional safety gate that blocks repeated tool loops; Audit is the append-only hash-chained trail.
 4. **Version-Locked Tech Stack** — Always read lockfiles before loading tech-stack references. Never assume framework versions.
 5. **Persona Composition** — Auto-detect the right persona + skills per task. No one-size-fits-all.
 6. **Token Efficiency** — Local persona detection (zero LLM tokens). Only relevant skill names returned.
@@ -60,10 +60,11 @@ aizee uninstall       # Interactive uninstall with backup
 | Gate | Command | Requirement |
 |------|---------|-------------|
 | Lint | `ruff check .` | 0 warnings |
-| Types | `mypy` | 0 errors (strict) |
-| Tests (fast) | `aizee test` | ~12s, targeted |
-| Tests (full) | `aizee test --full` | 80%+ coverage |
-| E2E | `python eval/harness.py` | all_pass: true |
+| Types | `mypy` | 0 errors (strict, 345 files) |
+| Tests (targeted) | `pytest path/to/test_file.py -q` | ~5s max, during iteration |
+| Tests (fast) | `aizee test` | ~60-120s Linux / ~180s Windows, no cov |
+| Tests (full) | `aizee test --full` | 3561 tests, 80%+ coverage (actual 96%), ~180-300s |
+| E2E | `python eval/harness.py` | all_pass: true (read-only) |
 
 ## Non-Goals
 

@@ -42,7 +42,6 @@ brain/
 graphify-out/
 .agents/
 temp/
-GRAPH_REPORT.md
 .ai/
 
 tmp/

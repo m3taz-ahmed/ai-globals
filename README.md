@@ -5,14 +5,14 @@
 
   <p>
     <img src="https://img.shields.io/badge/Version-5.7.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.7.1">
-    <img src="https://img.shields.io/badge/Tests-4028%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 4028 passed">
-    <img src="https://img.shields.io/badge/Coverage-96%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 96%">
+    <img src="https://img.shields.io/badge/Tests-3561%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3561 passed">
+    <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 Personas">
     <img src="https://img.shields.io/badge/Skills-72-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="72 Skills">
-    <img src="https://img.shields.io/badge/Workflows-50-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="50 Workflows">
+    <img src="https://img.shields.io/badge/Workflows-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 Workflows">
     <img src="https://img.shields.io/badge/Tech--Stack-163-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="163 Tech-Stack refs">
   </p>
 </div>
@@ -91,8 +91,8 @@ aizee status    # Current persona, skills, budget
 ├── memory/                  # SQLite + FTS5 + vector memory service
 ├── aizee_mcp/                # MCP server (36 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 72 persona + lord skill files
-├── workflows/               # 50 trigger-based execution protocols
+├── skills/                  # 72 persona + lord skills
+├── workflows/               # 36 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -139,8 +139,8 @@ aizee memory search "docker" # Full-text + vector search
 ### 5. Quality Gates (Zero Defect)
 ```bash
 ruff check .                 # 0 warnings
-mypy                         # Strict typing, 90+ files
-pytest -q                    # 4028 tests, 96% coverage
+mypy                         # Strict typing, 345 files
+pytest -q                    # 3561 tests, 95% coverage
 python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 ```
 
@@ -148,6 +148,24 @@ python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
 
 ---
+
+## What's New in v5.7.1
+
+### Comprehensive Review (17 fixes across 125 files) + Governance Hardening
+- **3 Critical fixes:** k8s NetworkPolicy egress (`to: []` → allow HTTPS), `memory_decay` missing from schema contract, `mcp_firewall.yaml` default_action silently ignored.
+- **3 High fixes:** missing `runtime/__init__.py` exports (12), probity normalization, constitution regex.
+- **5 Medium fixes:** source length validation, weight validation, LazyImport errors, priority parsing, FTS5 sanitization.
+- **Quality gates:** ruff PASS, mypy PASS (345 files), 3561 tests collected, validate-globals PASS, sync_docs PASS.
+- **Infra fixes (this release):** eval/harness `--fix` side-effect removed + mypy coverage unified, KernelBuilder memory wiring, dashboard X-Forwarded-For + env unification, config project-root shadowing fixed, budget save robustness, memory watch collision fix.
+
+## What's New in v5.7.0 — Implementation Plan Remediation (8 workstreams, 40+ items)
+- **WS-A Security:** dashboard loopback + k8s NetworkPolicy + dashboard robustness
+- **WS-B Gate-Contract:** probity structured denial, normalize_action_type, _MISSING sentinel, priority sorting
+- **WS-D Eval Overhaul:** GateVerdict + real kernel pipeline + 10 assertion kinds + redteam SARIF
+- **WS-E SDD:** task verification + constitution enforcement + drift v2
+- **WS-F Memory:** deterministic IDs + dedup + fact extraction + temporal search + decay + search hardening
+- **WS-H/I/J:** ConfidenceGate + LearningLoop + SkillRouter + Quality helpers
+- **Result:** 200+ new tests, all gates green
 
 ## What's New in v5.4.0
 

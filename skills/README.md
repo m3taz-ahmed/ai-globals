@@ -1,8 +1,6 @@
 # `skills/` — Persona & Lord Skills
 
-This directory contains **72 skills** (persona-specific and lord-level) that aiZee
-auto-selects based on the detected task context. Each skill is a compact rule set
-loaded lazily — only matching skills enter the AI's context window.
+This directory contains **72 skills** (38 directory-based `SKILL.md` + 34 flat `.md` = 72 logical skills; `glob skills/**/*.md` returns ~115 files because directory skills have `references/` and `templates/`). Each skill is a compact rule set loaded lazily — only matching skills enter the AI's context window.
 
 ## How It Works
 
@@ -40,7 +38,7 @@ skills/seo-lord/
 └── templates/            # Output templates
 ```
 
-## Current Skills (72 total)
+## Current Skills (72 total = 38 dir + 34 flat)
 
 | Skill | Type | Domain |
 |-------|------|--------|

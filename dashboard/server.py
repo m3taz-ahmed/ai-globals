@@ -47,9 +47,17 @@ _ASSET_DIR_OVERRIDE: Path | None = None
 def _asset_dir() -> Path:
     return _ASSET_DIR_OVERRIDE or _CODE_DIR
 
-_MAX_BODY_SIZE = int(os.environ.get("AGENT_OS_DASHBOARD_MAX_BODY_SIZE", "1048576"))
-_ALLOWED_ORIGINS = {o.strip() for o in os.environ.get("AGENT_OS_DASHBOARD_ORIGINS", "http://127.0.0.1:8080,http://localhost:8080").split(",") if o.strip()}
-_TRUSTED_PROXIES = {ip.strip() for ip in os.environ.get("AGENT_OS_DASHBOARD_TRUSTED_PROXIES", "").split(",") if ip.strip()}
+def _env_first(*names: str, default: str = "") -> str:
+    """Return first set env var among names, or default."""
+    for n in names:
+        v = os.environ.get(n)
+        if v:
+            return v
+    return default
+
+_MAX_BODY_SIZE = int(_env_first("AIZEE_DASHBOARD_MAX_BODY_SIZE", "AGENT_OS_DASHBOARD_MAX_BODY_SIZE", default="1048576"))
+_ALLOWED_ORIGINS = {o.strip() for o in _env_first("AIZEE_DASHBOARD_ORIGINS", "AGENT_OS_DASHBOARD_ORIGINS", default="http://127.0.0.1:8080,http://localhost:8080").split(",") if o.strip()}
+_TRUSTED_PROXIES = {ip.strip() for ip in _env_first("AIZEE_DASHBOARD_TRUSTED_PROXIES", "AGENT_OS_DASHBOARD_TRUSTED_PROXIES", default="").split(",") if ip.strip()}
 
 # Shared instances so state (budget, audit, chat) is consistent across requests.
 _kernel_cache: tuple[Path, Kernel] | None = None
@@ -58,12 +66,12 @@ _cache_lock = threading.Lock()
 
 # Simple per-IP fixed-window rate limiter.
 # Clamp to >=1 so a misconfigured env var (0 or negative) cannot disable rate limiting.
-_rate_limit = max(1, int(os.environ.get("AGENT_OS_DASHBOARD_RATE_LIMIT", "120")))
-_rate_window = max(1.0, float(os.environ.get("AGENT_OS_DASHBOARD_RATE_WINDOW", "60")))
+_rate_limit = max(1, int(_env_first("AIZEE_DASHBOARD_RATE_LIMIT", "AGENT_OS_DASHBOARD_RATE_LIMIT", default="120")))
+_rate_window = max(1.0, float(_env_first("AIZEE_DASHBOARD_RATE_WINDOW", "AGENT_OS_DASHBOARD_RATE_WINDOW", default="60")))
 _rate_state: dict[str, tuple[int, float]] = {}
 _rate_lock = threading.Lock()
 # Max number of tracked IPs; oldest entries evicted when exceeded. Clamp to >=1.
-_rate_max_entries = max(1, int(os.environ.get("AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES", "10000")))
+_rate_max_entries = max(1, int(_env_first("AIZEE_DASHBOARD_RATE_MAX_ENTRIES", "AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES", default="10000")))
 
 
 def _kernel_instance() -> Kernel:
@@ -87,7 +95,7 @@ def _memory_instance() -> MemoryStore:
 
 def _check_rate_limit(client_ip: str) -> bool:
     if _rate_limit <= 0:
-        return True
+        return True  # Explicit 0 disables rate limiting (for tests); env var is clamped to >=1.
     with _rate_lock:
         now = time.time()
         count, window_start = _rate_state.get(client_ip, (0, now))
@@ -114,6 +122,14 @@ def _check_rate_limit(client_ip: str) -> bool:
 
 
 def _client_ip(handler: DashboardHandler) -> str:
+    """Resolve client IP when the direct peer is a trusted proxy.
+
+    Assumes a single trusted proxy (dashboard is localhost-only by default).
+    With a single proxy, X-Forwarded-For is either "client" or
+    "client, proxy" — taking the last element yields the original client.
+    For a chain of multiple proxies, a more robust implementation would
+    iterate from the right and return the first untrusted address.
+    """
     direct = handler.client_address[0]
     if direct in _TRUSTED_PROXIES:
         forwarded = handler.headers.get("X-Forwarded-For", "").split(",")[-1].strip()
@@ -154,7 +170,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def _origin(self) -> str:
-        configured = os.environ.get("AIZEE_DASHBOARD_ORIGIN") or os.environ.get("AGENT_OS_DASHBOARD_ORIGIN")
+        configured = _env_first("AIZEE_DASHBOARD_ORIGIN", "AGENT_OS_DASHBOARD_ORIGIN")
         if configured:
             return configured
         request_origin = self.headers.get("Origin", "")
@@ -644,7 +660,7 @@ def _is_loopback_host(host: str) -> bool:
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
-    host = os.environ.get("AGENT_OS_HOST", "127.0.0.1")
+    host = _env_first("AIZEE_DASHBOARD_HOST", "AGENT_OS_HOST", default="127.0.0.1")
     token = _dashboard_token(Path(os.environ.get("AIZEE_ROOT", ".")))
     # SEC-W1: refuse to bind non-loopback host without authentication.
     # This enforces the "safe because bound to loopback" invariant that

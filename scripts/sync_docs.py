@@ -32,7 +32,11 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def count_runtime_modules(root: Path) -> int:
-    """Top-level governance modules in runtime/ (excluding __init__.py)."""
+    """Top-level governance modules in runtime/ (excluding __init__.py).
+
+    Note: `ls runtime/*.py | wc -l` returns 86 (85 modules + __init__.py).
+    The reported count is 85; do not confuse with file count.
+    """
     return len([p for p in (root / "runtime").glob("*.py") if p.name != "__init__.py"])
 
 
@@ -61,13 +65,46 @@ def count_tech_stack(root: Path) -> int:
     return len(list((root / "tech-stack").glob("*.md")))
 
 
-def gather_counts(root: Path) -> dict[str, int]:
+def count_tests(root: Path) -> int | None:
+    """Count total pytest tests via --collect-only (sum of per-file counts).
+
+    Returns ``None`` if pytest is not available or collection fails, so
+    callers can skip badge sync and warn instead of silently writing 0.
+    """
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "--collect-only", "-q"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+        total = 0
+        for line in result.stdout.splitlines():
+            m = re.search(r":\s*(\d+)\s*$", line)
+            if m:
+                total += int(m.group(1))
+        if total == 0:
+            print("WARNING: count_tests collected 0 tests — badge sync skipped", file=sys.stderr)
+            return None
+        return total
+    except Exception as exc:
+        print(f"WARNING: count_tests failed ({exc}) — badge sync skipped", file=sys.stderr)
+        return None
+
+
+def gather_counts(root: Path) -> dict[str, int | None]:
     return {
         "runtime": count_runtime_modules(root),
         "skills": count_skills(root),
         "numbered": len(numbered_workflows(root)),
         "workflows_total": count_workflows_md(root),
         "stack": count_tech_stack(root),
+        "tests": count_tests(root),
     }
 
 
@@ -123,6 +160,7 @@ def describe_workflow(path: Path) -> tuple[str, str]:
 # (pattern, template) applied to AGENTS.md and spec.md.
 _COUNT_SUBS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\b\d+ governance modules\b"), "{runtime} governance modules"),
+    # 86 files on disk = 85 modules + __init__.py; keep message as "85 governance modules"
     (re.compile(r"\b\d+ persona \+ lord skills?(?: files)?\b"), "{skills} persona + lord skills"),
     (
         re.compile(r"\b\d+ trigger-based(?: execution)? protocols\b"),
@@ -131,19 +169,57 @@ _COUNT_SUBS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\b\d+ version-locked stack references\b"), "{stack} version-locked stack references"),
 ]
 
+# Badge patterns for README.md / README-AR.md — kept in sync via sync_docs --check.
+# IMPORTANT: alt-text patterns are anchored to `alt="..."` to avoid matching
+# historical prose (e.g. "3 سير عمل جديد" in What's New sections must NOT change).
+_BADGE_SUBS: list[tuple[re.Pattern[str], str]] = [
+    # --- Tests badge URLs (percent-encoded, safe — no prose uses this form) ---
+    (re.compile(r"Tests-(\d+)%20passed"), "Tests-{tests}%20passed"),
+    (re.compile(r"%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-(\d+)%20"), "%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-{tests}%20"),
+    # --- Tests alt text (anchored to alt=" to avoid prose) ---
+    (re.compile(r'alt="Tests: (\d+) passed"'), 'alt="Tests: {tests} passed"'),
+    (re.compile(r'alt="(\d+) اختبار ناجح"'), 'alt="{tests} اختبار ناجح"'),
+    # --- Workflows badge URLs (English + Arabic percent-encoded) ---
+    (re.compile(r"Workflows-(\d+)-"), "Workflows-{numbered}-"),
+    (re.compile(r"%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-(\d+)-"), "%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-{numbered}-"),
+    # --- Workflows alt text (anchored to alt=") ---
+    (re.compile(r'alt="(\d+) Workflows"'), 'alt="{numbered} Workflows"'),
+    (re.compile(r'alt="(\d+) سير عمل"'), 'alt="{numbered} سير عمل"'),
+    # --- Skills badge URL (English; Arabic URL uses percent-encoded form) ---
+    (re.compile(r"Skills-(\d+)-"), "Skills-{skills}-"),
+    # --- Skills alt text (anchored to alt=") ---
+    (re.compile(r'alt="(\d+) Skills"'), 'alt="{skills} Skills"'),
+    (re.compile(r'alt="(\d+) مهارة"'), 'alt="{skills} مهارة"'),
+]
+
 _DOC_FILES = ("AGENTS.md", "spec.md")
 
 
-def _substitute_counts(text: str, counts: dict[str, int]) -> str:
+def _substitute_counts(text: str, counts: dict[str, int | None]) -> str:
+    # Filter out None values so .format() doesn't write "None" into badges.
+    safe_counts: dict[str, int] = {k: v for k, v in counts.items() if v is not None}
     for pattern, template in _COUNT_SUBS:
         def _repl(_m: re.Match[str], t: str = template) -> str:
-            return t.format(**counts)
+            return t.format(**safe_counts)
 
         text = pattern.sub(_repl, text)
+    # Sync badge counts (README files) — only badge URLs and alt="..." attributes,
+    # never historical prose. Skip a badge pattern if its required key is missing
+    # (e.g. tests=None when pytest collection failed).
+    for pattern, template in _BADGE_SUBS:
+        # Extract format keys from template to check availability.
+        fmt_keys = set(re.findall(r"\{(\w+)\}", template))
+        if not fmt_keys.issubset(safe_counts.keys()):
+            continue
+
+        def _badge_repl(_m: re.Match[str], t: str = template) -> str:
+            return t.format(**safe_counts)
+
+        text = pattern.sub(_badge_repl, text)
     return text
 
 
-def build_numbered_section(counts: dict[str, int], files: list[Path]) -> str:
+def build_numbered_section(counts: dict[str, int | None], files: list[Path]) -> str:
     """Render the full 'Numbered Workflows' README section."""
     last = files[-1].name[:2] if files else "00"
     lines = [
@@ -167,7 +243,7 @@ _SECTION_START = "## Numbered Workflows (Trigger-Based)"
 _SECTION_END = "## Standards & Reference Files"
 
 
-def rebuild_readme(root: Path, counts: dict[str, int]) -> str:
+def rebuild_readme(root: Path, counts: dict[str, int | None]) -> str:
     """Return the repaired workflows/README.md content."""
     readme = root / "workflows" / "README.md"
     text = readme.read_text(encoding="utf-8")
@@ -185,7 +261,7 @@ def sync(root: Path) -> dict[str, bool]:
     counts = gather_counts(root)
     changed: dict[str, bool] = {}
 
-    for name in _DOC_FILES:
+    for name in (*_DOC_FILES, "README.md", "README-AR.md"):
         doc = root / name
         if not doc.exists():
             continue
@@ -217,15 +293,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.check:
         drifted: list[str] = []
-        for name in (*_DOC_FILES, "workflows" + "/" + "README.md"):
+        for name in (*_DOC_FILES, "README.md", "README-AR.md", "workflows" + "/" + "README.md"):
             doc = root / name
             if not doc.exists():
                 continue
             original = doc.read_text(encoding="utf-8")
-            if name in _DOC_FILES:
-                updated = _substitute_counts(original, counts)
-            else:
+            if name == "workflows/README.md":
                 updated = rebuild_readme(root, counts)
+            else:
+                updated = _substitute_counts(original, counts)
             if updated != original:
                 drifted.append(name)
         if drifted:
@@ -233,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
             print("Run: python scripts/sync_docs.py")
             return 1
         print(f"In sync: runtime={counts['runtime']} skills={counts['skills']} "
-              f"workflows={counts['numbered']} tech-stack={counts['stack']}")
+              f"workflows={counts['numbered']} tech-stack={counts['stack']} tests={counts['tests']}")
         return 0
 
     changed = sync(root)

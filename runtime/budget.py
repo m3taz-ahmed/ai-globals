@@ -436,7 +436,8 @@ class BudgetManager:
                 self._dirty = False
             except Exception as exc:
                 _logger.debug("budget state save failed: %s", exc, exc_info=True)
-                os.remove(tmp_path)
+                with contextlib.suppress(OSError):
+                    os.remove(tmp_path)
                 raise
 
     def set_budget(self, scope: str, budget: Budget) -> None:

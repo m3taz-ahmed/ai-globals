@@ -22,8 +22,11 @@ def discover_project_root() -> Path:
     """Discover active project root.
 
     Order:
-    1. AGENT_PROJECT_ROOT environment variable.
-    2. AIZEE_ROOT environment variable.
+    1. AGENT_PROJECT_ROOT environment variable (explicit project override).
+    2. AIZEE_ROOT environment variable (OS root; takes precedence over CWD
+       to keep dashboard/tests isolated — see dashboard/server.py _serve).
+       For a different project checkout while AIZEE_ROOT is set, set
+       AGENT_PROJECT_ROOT to that project's path instead of relying on CWD.
     3. Current working directory if it contains `.ai/active-context.md`.
     4. The directory containing the current install (parent of config.py).
     """

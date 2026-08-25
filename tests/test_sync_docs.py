@@ -19,6 +19,7 @@ describe_workflow = _sync_docs.describe_workflow
 gather_counts = _sync_docs.gather_counts
 rebuild_readme = _sync_docs.rebuild_readme
 sync = _sync_docs.sync
+_substitute_counts = _sync_docs._substitute_counts
 
 
 @pytest.fixture
@@ -127,3 +128,61 @@ class TestSync:
         readme = mini_root / "workflows" / "README.md"
         readme.write_text("# Just a title\n", encoding="utf-8")
         assert rebuild_readme(mini_root, gather_counts(mini_root)) == "# Just a title\n"
+
+
+class TestBadgeSync:
+    """Badge URL/alt-text sync — must update badges but NOT historical prose."""
+
+    def test_updates_english_badge_urls(self) -> None:
+        counts = {"runtime": 85, "skills": 72, "numbered": 36, "workflows_total": 50, "stack": 163, "tests": 3561}
+        text = 'Workflows-50-0EA5E9" alt="50 Workflows"> Tests-4028%20passed'
+        out = _substitute_counts(text, counts)
+        assert "Workflows-36-0EA5E9" in out
+        assert 'alt="36 Workflows"' in out
+        assert "Tests-3561%20passed" in out
+
+    def test_updates_arabic_badge_urls(self) -> None:
+        counts = {"runtime": 85, "skills": 72, "numbered": 36, "workflows_total": 50, "stack": 163, "tests": 3561}
+        text = '%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-50-0EA5E9" alt="50 سير عمل">'
+        out = _substitute_counts(text, counts)
+        assert "%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-36-0EA5E9" in out
+        assert 'alt="36 سير عمل"' in out
+
+    def test_preserves_historical_prose_arabic(self) -> None:
+        """Historical What's New prose must NOT be touched by badge sync."""
+        counts = {"runtime": 85, "skills": 72, "numbered": 36, "workflows_total": 50, "stack": 163, "tests": 3561}
+        text = (
+            "- **2 مهارة محدّثة**: backend-frameworks-lord\n"
+            "- **3 سير عمل جديد**: 24-laravel-architecture-setup\n"
+            "- **982 اختبار ناجح**، تغطية 97%، 0 فشل\n"
+            "- **2773 اختبار ناجح**، تغطية 97%، 0 فشل\n"
+        )
+        out = _substitute_counts(text, counts)
+        assert "2 مهارة محدّثة" in out
+        assert "3 سير عمل جديد" in out
+        assert "982 اختبار ناجح" in out
+        assert "2773 اختبار ناجح" in out
+        # Must NOT inject current counts into historical prose.
+        assert "72 مهارة محدّثة" not in out
+        assert "36 سير عمل جديد" not in out
+        assert "3561 اختبار ناجح**، تغطية 97%" not in out
+
+    def test_preserves_historical_prose_english(self) -> None:
+        counts = {"runtime": 85, "skills": 72, "numbered": 36, "workflows_total": 50, "stack": 163, "tests": 3561}
+        text = "- **2 skills updated** and **3 new workflows** added in v5.3.0.\n"
+        out = _substitute_counts(text, counts)
+        assert "2 skills updated" in out
+        assert "3 new workflows" in out
+
+    def test_skips_badge_sync_when_tests_none(self) -> None:
+        """When tests count is None (collection failed), tests badges stay unchanged."""
+        counts: dict[str, int | None] = {"runtime": 85, "skills": 72, "numbered": 36, "workflows_total": 50, "stack": 163, "tests": None}
+        text = 'Tests-4028%20passed" alt="Tests: 4028 passed">'
+        out = _substitute_counts(text, counts)
+        # Tests badge must NOT be rewritten (tests key missing from safe_counts).
+        assert "Tests-4028%20passed" in out
+        assert "Tests: 4028 passed" in out
+        # But workflows/skills badges still sync (their keys are present).
+        wf_text = 'Workflows-50-0EA5E9" alt="50 Workflows">'
+        wf_out = _substitute_counts(wf_text, counts)
+        assert "Workflows-36-0EA5E9" in wf_out
