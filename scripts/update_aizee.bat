@@ -55,6 +55,8 @@ copy /Y "%SOURCE%\CHANGELOG.md" "%TARGET%\CHANGELOG.md" >nul
 copy /Y "%SOURCE%\AGENTS.md" "%TARGET%\AGENTS.md" >nul
 copy /Y "%SOURCE%\.aizee-version" "%TARGET%\.aizee-version" >nul
 copy /Y "%SOURCE%\.windsurfrules" "%TARGET%\.windsurfrules" >nul
+copy /Y "%SOURCE%\config.py" "%TARGET%\config.py" >nul
+copy /Y "%SOURCE%\aizee_cli.py" "%TARGET%\aizee_cli.py" >nul
 
 REM Sync .cursor/rules/ (updated rule files)
 echo Syncing .cursor/rules/...
@@ -73,6 +75,14 @@ xcopy "%SOURCE%\memory\*" "%TARGET%\memory\" /E /I /Y /Q >nul
 REM Sync eval/ (evaluation harness)
 echo Syncing eval/...
 xcopy "%SOURCE%\eval\*" "%TARGET%\eval\" /E /I /Y /Q >nul
+
+REM Sync dashboard/ (web UI server) — previously missing from sync (SYNC fix)
+echo Syncing dashboard/...
+xcopy "%SOURCE%\dashboard\*" "%TARGET%\dashboard\" /E /I /Y /Q >nul
+
+REM Sync plugins/ (plugin subsystem) — previously missing from sync (SYNC fix)
+echo Syncing plugins/...
+xcopy "%SOURCE%\plugins\*" "%TARGET%\plugins\" /E /I /Y /Q >nul
 
 echo.
 echo === Sync Complete ===

@@ -63,12 +63,19 @@ class PolicyManager:
         return Guardian(rules)
 
     def _build_probity(self) -> Guardrails:
-        path = self.project_root / "runtime" / "policies" / "probity.yaml"
-        if path.exists():
-            import yaml
+        # Load OS-level probity first, then project-level (B2 fix): previously
+        # only project_root was read, so in multi-project setups the rich OS
+        # probity rules were silently dropped, leaving a gap behind Guardian.
+        roots = [self.root]
+        if self.project_root and self.project_root != self.root:
+            roots.append(self.project_root)
+        for root in roots:
+            path = root / "runtime" / "policies" / "probity.yaml"
+            if path.exists():
+                import yaml
 
-            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-            return Guardrails(data)
+                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                return Guardrails(data)
         return Guardrails()
 
     # Read-only actions skip the guardian gate. Derived from the canonical
@@ -147,6 +154,16 @@ class PolicyManager:
             raise
 
     def resolve_approval(self, action_data: dict[str, Any], dry_run: bool) -> bool:
+        # NOTE (B7 / GATE-02): a caller-supplied `approved=True` is still
+        # honored here. The residual risk (an agent self-approving a non-read
+        # action to skip the Policy ASK gate) is mitigated because the
+        # Guardian and Probity gates run *before* this point and will deny
+        # destructive/forbidden commands regardless of `approved` (see the B1
+        # alias-aware Guardian fix). A stricter option — rejecting caller
+        # claims and trusting only `approval_cache` — is intentionally NOT
+        # applied because it would break the ChatMessage read-only path and
+        # existing approval flows; revisit if Guardian/Probity coverage gaps
+        # are found.
         if action_data.get("approved"):
             self._cache_approval(action_data, dry_run)
             return True

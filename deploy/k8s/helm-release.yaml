@@ -1,36 +1,12 @@
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
-metadata:
-  name: aizee
-  namespace: aizee
-spec:
-  interval: 5m
-  chart:
-    spec:
-      chart: ./deploy/k8s
-      sourceRef:
-        kind: GitRepository
-        name: aizee
-        namespace: flux-system
-  values:
-    image:
-      repository: ghcr.io/m3taz-ahmed/aizee
-      tag: latest
-      pullPolicy: IfNotPresent
-    dashboard:
-      port: 8080
-      tokenSecret: aizee-dashboard-token
-    persistence:
-      state:
-        size: 100Mi
-      memory:
-        size: 500Mi
-      brain:
-        size: 200Mi
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
+# NOTE: This is no longer a Flux HelmRelease.
+# The aiZee dashboard is now deployed via a real, self-contained Helm chart
+# located at ./deploy/k8s/aizee-chart (contains Chart.yaml + templates/).
+#
+# Install / upgrade with:
+#   helm upgrade --install aizee ./deploy/k8s/aizee-chart -n aizee --create-namespace
+#
+# Before installing, create the dashboard token Secret (referenced by the chart
+# via existingSecretName):
+#   kubectl create secret generic aizee-dashboard-token \
+#     --from-literal=token=$(python -c "import secrets; print(secrets.token_urlsafe(32))") \
+#     -n aizee

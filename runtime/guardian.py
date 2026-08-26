@@ -250,8 +250,15 @@ class Guardian:
         for rule in self.rules:
             name = rule.get("name", "unnamed")
             tool = rule.get("tool")
-            if tool is not None and tool != request.tool:
-                continue
+            if tool is not None:
+                # Alias-aware matching (GATE-02 / B1 fix): normalize both the
+                # rule's tool and the request's tool so "Bash"/"Shell"/"command"/
+                # "run"/"cmd" all match a rule keyed on "Bash". Without this an
+                # action labelled "exec"/"command" silently bypassed guardian.
+                from runtime.probity import normalize_action_type
+
+                if normalize_action_type(tool) != normalize_action_type(request.tool):
+                    continue
 
             matched = False
             try:

@@ -26,7 +26,7 @@ import threading
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Final
 
 
 class LoopAction(str, Enum):
@@ -54,9 +54,33 @@ class ActionConfig:
     escalate_threshold: int = 6
 
 
+# Fields that legitimately vary between otherwise-identical actions
+# (token counts, cost, approval flags, session ids). Excluded from the
+# loop hash so an attacker cannot evade detection by toggling them (B8).
+_VOLATILE_KEYS: Final[frozenset[str]] = frozenset(
+    {
+        "tokens",
+        "cost",
+        "approved",
+        "dry_run",
+        "token_weight",
+        "input_tokens",
+        "output_tokens",
+        "rollout_id",
+        "session_id",
+    }
+)
+
+
 def _action_hash(tool: str, args: dict[str, Any]) -> str:
-    """Stable hash of a tool call. Args are sorted for determinism."""
-    payload = json.dumps({"tool": tool, "args": args}, sort_keys=True, default=str)
+    """Stable hash of a tool call. Args are sorted for determinism.
+
+    Volatile fields (tokens, cost, approval flags, session ids) are excluded
+    so that logically-identical actions are still detected as loops even when
+    their accounting metadata differs (B8).
+    """
+    stable_args = {k: v for k, v in args.items() if k not in _VOLATILE_KEYS}
+    payload = json.dumps({"tool": tool, "args": stable_args}, sort_keys=True, default=str)
     return hashlib.md5(payload.encode("utf-8")).hexdigest()
 
 

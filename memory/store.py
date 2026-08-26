@@ -3,9 +3,12 @@
 
 from __future__ import annotations
 
+import hmac
 import json
 import logging
+import os
 import re
+import secrets
 import sqlite3
 import uuid
 from dataclasses import dataclass
@@ -30,6 +33,53 @@ logger = logging.getLogger(__name__)
 _IDENTITY_KEYS: frozenset[str] = frozenset({
     "user_id", "agent_id", "run_id", "session_id", "tenant_id", "actor_id",
 })
+
+# ---------------------------------------------------------------------------
+# Integrity (OWASP ASI06 — Memory Poisoning defense)
+# ---------------------------------------------------------------------------
+# Every memory entry is signed with HMAC-SHA256 over a canonical representation
+# of its core content. The signing key is derived from the AIZEE_INTEGRITY_KEY
+# environment variable when present, otherwise from a per-root key file
+# (state/integrity.key) generated on first use. Signing is additive: legacy
+# entries without a signature are still loaded, just flagged as "unsigned".
+
+_INTEGRITY_KEY_ENV = "AIZEE_INTEGRITY_KEY"
+_INTEGRITY_KEY_RELATIVE = Path("state") / "integrity.key"
+
+
+def _integrity_canonical(
+    content: str,
+    kind: str,
+    source: str,
+    meta: str,
+    created_at: str,
+) -> str:
+    """Build the canonical, deterministic signing payload for a memory entry."""
+    return json.dumps(
+        {
+            "content": content,
+            "kind": kind,
+            "source": source,
+            "meta": meta,
+            "created_at": created_at,
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+
+def _sign_memory(
+    content: str,
+    kind: str,
+    source: str,
+    meta: str,
+    created_at: str,
+    key: str,
+) -> str:
+    """Compute the HMAC-SHA256 integrity signature for a memory entry."""
+    payload = _integrity_canonical(content, kind, source, meta, created_at).encode("utf-8")
+    return hmac.new(key.encode("utf-8"), payload, sha256).hexdigest()
 
 
 def _deterministic_id(content: str, kind: str, source: str = "") -> str:
@@ -87,6 +137,8 @@ class Memory:
     created_at: str
     valid_from: str
     valid_to: str | None
+    integrity_sig: str | None = None  # HMAC-SHA256 over canonical content
+    integrity: str = "unsigned"  # ok | tampered | unsigned
 
 
 class _DecayHelper:
@@ -372,10 +424,28 @@ class _RelationHelper:
         return [(self.row_to_memory(row), row["relation"]) for row in rows]
 
     def row_to_memory(self, row: sqlite3.Row) -> Memory:
+        try:
+            raw_sig = row["integrity_sig"]
+        except IndexError:
+            raw_sig = None
+        sig: str | None = raw_sig if raw_sig else None
+        content = row["content"]
+        kind = row["kind"]
+        source = row["source"] or ""
+        meta = row["meta"] or ""
+        created_at = row["created_at"]
+        if sig is None:
+            integrity = "unsigned"
+        else:
+            expected = _sign_memory(
+                content, kind, source, meta, created_at, self._store._integrity_key
+            )
+            integrity = "ok" if hmac.compare_digest(expected, sig) else "tampered"
         return Memory(
-            id=row["id"], kind=row["kind"], content=row["content"],
-            source=row["source"], meta=row["meta"], created_at=row["created_at"],
+            id=row["id"], kind=kind, content=content,
+            source=row["source"], meta=row["meta"], created_at=created_at,
             valid_from=row["valid_from"], valid_to=row["valid_to"],
+            integrity_sig=sig, integrity=integrity,
         )
 
 
@@ -392,7 +462,8 @@ class MemoryStore(BaseRepository):
             meta TEXT,
             created_at TEXT NOT NULL,
             valid_from TEXT NOT NULL,
-            valid_to TEXT
+            valid_to TEXT,
+            integrity_sig TEXT
         )
         """,
         """
@@ -456,10 +527,44 @@ class MemoryStore(BaseRepository):
         self._decay = _DecayHelper(self)
         self._search = _SearchHelper(self)
         self._relations = _RelationHelper(self)
+        # Load (or generate) the integrity signing key.
+        self._integrity_key = self._load_integrity_key()
         # Auto-migrate legacy decay table (add ON DELETE CASCADE) without data loss.
         self._migrate_decay_table()
+        # Additive migration: ensure the integrity_sig column exists on old DBs.
+        self._ensure_integrity_column()
         # Additive schema-integrity check: warn on drift, never block init.
         self._verify_schema()
+
+    def _load_integrity_key(self) -> str:
+        """Resolve the HMAC key for memory signing.
+
+        Uses ``AIZEE_INTEGRITY_KEY`` if set; otherwise it reads (or atomically
+        generates and persists) ``state/integrity.key`` under the root.
+        """
+        env_key = os.environ.get(_INTEGRITY_KEY_ENV)
+        if env_key:
+            return env_key
+        key_path = self.root / _INTEGRITY_KEY_RELATIVE
+        if key_path.exists():
+            existing = key_path.read_text(encoding="utf-8").strip()
+            if existing:
+                return existing
+        new_key = secrets.token_hex(32)
+        key_path.parent.mkdir(parents=True, exist_ok=True)
+        key_path.write_text(new_key, encoding="utf-8")
+        return new_key
+
+    def _ensure_integrity_column(self) -> None:
+        """Additively add the integrity_sig column to existing memories tables."""
+        try:
+            with self._conn() as conn:
+                conn.execute(
+                    "ALTER TABLE memories ADD COLUMN integrity_sig TEXT"
+                )
+        except sqlite3.OperationalError:
+            # Column already exists — safe to ignore (SQLite ALTER has no IF NOT EXISTS).
+            pass
 
     def _migrate_decay_table(self) -> None:
         """Migrate legacy memory_decay table to add ON DELETE CASCADE if missing."""
@@ -555,30 +660,44 @@ class MemoryStore(BaseRepository):
     ) -> Memory:
         """Construct a Memory object from the given parameters."""
         now = datetime.now(timezone.utc).isoformat()
+        meta_str = json.dumps(safe_meta)
+        integrity_sig = _sign_memory(
+            content, kind, source, meta_str, now, self._integrity_key
+        )
         return Memory(
             id=mem_id,
             kind=kind,
             content=content,
             source=source,
-            meta=json.dumps(safe_meta),
+            meta=meta_str,
             created_at=now,
             valid_from=now,
             valid_to=valid_to,
+            integrity_sig=integrity_sig,
+            integrity="ok",
         )
 
     def add_batch(self, memories: list[Memory]) -> list[Memory]:
         """Insert a batch of memories in a single SQLite transaction and vector index write."""
         if not memories:
             return []
-        rows = [
-            (m.id, m.kind, m.content, m.source, m.meta, m.created_at, m.valid_from, m.valid_to)
-            for m in memories
-        ]
+        rows = []
+        for m in memories:
+            sig = m.integrity_sig
+            if sig is None:
+                sig = _sign_memory(
+                    m.content, m.kind, m.source or "", m.meta or "", m.created_at,
+                    self._integrity_key,
+                )
+            rows.append(
+                (m.id, m.kind, m.content, m.source, m.meta, m.created_at,
+                 m.valid_from, m.valid_to, sig)
+            )
         with self._conn() as conn:
             conn.executemany(
                 """
-                INSERT INTO memories (id, kind, content, source, meta, created_at, valid_from, valid_to)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO memories (id, kind, content, source, meta, created_at, valid_from, valid_to, integrity_sig)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 rows,
             )

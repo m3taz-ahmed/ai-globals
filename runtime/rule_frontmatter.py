@@ -20,6 +20,8 @@ class RuleFrontmatter:
     paths: list[str] | None = None
     personas: list[str] | None = None
     stack: list[str] | None = None
+    triggers: list[str] | None = None
+    tech_stack: list[str] | None = None
     always: bool = False
 
     def to_dict(self) -> dict[str, Any]:
@@ -28,6 +30,8 @@ class RuleFrontmatter:
             "paths": self.paths,
             "personas": self.personas,
             "stack": self.stack,
+            "triggers": self.triggers,
+            "tech_stack": self.tech_stack,
             "always": self.always,
         }
 
@@ -66,6 +70,8 @@ def parse_frontmatter(text: str) -> tuple[RuleFrontmatter, str]:
         paths=_as_str_list(data.get("paths")),
         personas=_as_str_list(data.get("personas")),
         stack=_as_str_list(data.get("stack")),
+        triggers=_as_str_list(data.get("triggers")),
+        tech_stack=_as_str_list(data.get("tech_stack")),
         always=bool(data.get("always", False)),
     ), body
 
@@ -121,11 +127,29 @@ def _match_stack(patterns: list[str], stack: list[Any]) -> bool:
     return False
 
 
+def _match_triggers(patterns: list[str], context: dict[str, Any]) -> bool:
+    """Return True if any trigger keyword appears in the task/query text.
+
+    Callers must pass the user task via ``context["task"]`` (or ``query``/
+    ``prompt``/``description``). Without task text the trigger cannot match,
+    so it returns False rather than silently activating (MCP-1 fix).
+    """
+    text = ""
+    for key in ("task", "query", "prompt", "description"):
+        value = context.get(key)
+        if isinstance(value, str):
+            text = (text + " " + value).strip()
+    if not text:
+        return False
+    text_lower = text.lower()
+    return any(p.lower() in text_lower for p in patterns)
+
+
 def matches_context(frontmatter: RuleFrontmatter, context: dict[str, Any] | None = None) -> bool:
     """Evaluate a frontmatter against a runtime context.
 
     A rule matches if ``always`` is True, if no conditions are set, or if any
-    condition group (paths, personas, stack) matches.
+    condition group (paths, personas, stack, triggers, tech_stack) matches.
     """
     if frontmatter.always:
         return True
@@ -144,6 +168,13 @@ def matches_context(frontmatter: RuleFrontmatter, context: dict[str, Any] | None
         if isinstance(stack, str):
             stack = [stack]
         conditions.append(_match_stack(frontmatter.stack, stack))
+    if frontmatter.tech_stack:
+        stack = ctx.get("stack", [])
+        if isinstance(stack, str):
+            stack = [stack]
+        conditions.append(_match_stack(frontmatter.tech_stack, stack))
+    if frontmatter.triggers:
+        conditions.append(_match_triggers(frontmatter.triggers, ctx))
     if not conditions:
         return True
     return any(conditions)

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   aios:
     build: .
@@ -14,6 +12,7 @@ services:
     volumes:
       - aios_state:/app/state
       - aios_brain:/app/brain
+      - aios_memory:/app/memory
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=5)"]
@@ -33,3 +32,4 @@ services:
 volumes:
   aios_state:
   aios_brain:
+  aios_memory:

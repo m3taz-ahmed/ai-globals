@@ -206,7 +206,11 @@ class PolicyEngine:
             # from the generic policy loader to avoid spurious "invalid action"
             # warnings.
             _excluded = {"default.yaml", "guardian.yaml", "probity.yaml", "mcp_firewall.yaml"}
-            others = sorted(p for p in policy_dir.rglob("*.yaml") if p.name not in _excluded)
+            others = sorted(
+                p
+                for p in policy_dir.rglob("*.yaml")
+                if p.name not in _excluded and "examples" not in p.parts
+            )
             if default.exists():
                 self._load_file(default, is_default=True)
             for path in others:
@@ -280,9 +284,12 @@ class PolicyEngine:
         # Otherwise, use the classified decision for known types, fall back to configured default.
         if self.default_action == "deny":
             fallback: Action = "deny"
-        elif classified != "ask" or action_type:
+        elif classified != "ask":
             fallback = classified
         else:
+            # classified == "ask" (a genuine ask-type OR an unrecognized type).
+            # Honor the configured default_action instead of always forcing
+            # "ask" — this fixes `default_action: allow` having no effect (B6).
             fallback = self.default_action
         return {
             "decision": fallback,

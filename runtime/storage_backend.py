@@ -357,7 +357,7 @@ class StorageFactory:
         if effective_mode == StorageMode.JSON:
             backend = JsonFileStorage(file_path)
         elif effective_mode == StorageMode.SQLITE:
-            db_path = file_path.with_suffix(".db" if file_path.suffix != ".db" else "")
+            db_path = file_path if file_path.suffix == ".db" else file_path.with_suffix(".db")
             backend = SqliteStorage(db_path, table_name=name.replace("-", "_"))
         else:
             raise ValueError(f"Unknown storage mode: {effective_mode}")

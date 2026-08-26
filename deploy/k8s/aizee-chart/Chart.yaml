@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aizee
+description: Sovereign AI engineering control plane (aiZee) dashboard
+type: application
+version: 5.0.0
+appVersion: "5.0.0"

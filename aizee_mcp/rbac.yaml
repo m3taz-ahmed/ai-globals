@@ -1,0 +1,17 @@
+# Explicit RBAC policy for aiZee MCP tools.
+#
+# Default behavior (backward-compatible): when AIZEE_MCP_ROLES is unset or
+# empty, every tool is allowed for everyone.
+#
+# When roles ARE configured via AIZEE_MCP_ROLES (comma-separated), each tool is
+# allowed for the implicit "user" role EXCEPT those listed below, which require
+# the "admin" role.
+#
+# List the names of tools that should be restricted to admins. Tool names that
+# do not exist in the running server are simply ignored.
+admin_required:
+  - run_workflow
+  - saga_run
+  - chat
+  - memory_search
+  - run_mcp_plan

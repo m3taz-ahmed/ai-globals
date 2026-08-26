@@ -611,10 +611,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(data)
                 return
-        data = graph_path.read_bytes()
-        if len(data) > 2 * 1024 * 1024:
+        # DASH-7 fix: check size before loading the whole file into memory to
+        # avoid a memory-exhaustion DoS on very large graph.json files.
+        if graph_path.stat().st_size > 2 * 1024 * 1024:
             self._send(200, json.dumps({"ok": False, "error": "graph too large for dashboard; use graphify MCP"}).encode("utf-8"), "application/json")
             return
+        data = graph_path.read_bytes()
         with self._graph_cache_lock:
             self._graph_cache[cache_key] = (mtime, data)
         self.send_response(200)
@@ -741,14 +743,30 @@ if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
     host = _env_first("AIZEE_DASHBOARD_HOST", "AGENT_OS_HOST", default="127.0.0.1")
     token = _dashboard_token(Path(os.environ.get("AIZEE_ROOT", ".")))
-    # SEC-W1: refuse to bind non-loopback host without authentication.
-    # This enforces the "safe because bound to loopback" invariant that
-    # the open-access mode relies on.
+    # SEC-W1: refuse to bind non-loopback host without authentication. When no
+    # token is configured we generate a cryptographically random one so the
+    # service still boots (e.g. `docker compose up`) instead of crash-looping,
+    # while remaining authenticated rather than open (P0 fix).
     if not _is_loopback_host(host) and token is None:
+        import secrets
+
+        token = secrets.token_urlsafe(32)
+        os.environ["AIZEE_DASHBOARD_TOKEN"] = token
+        print(
+            "NETWORK-EXPOSED MODE: no AIZEE_DASHBOARD_TOKEN set — generated a "
+            "random token. Pass it as `Authorization: Bearer <token>`. Set the "
+            "env var for a stable token across restarts."
+        )
+    # Fail-closed: never boot network-exposed with a known placeholder/empty
+    # token (e.g. the K8s secret shipped with REPLACE_WITH_REAL_TOKEN...).
+    # Empty token is only acceptable on loopback (local open-access dev).
+    if token in ("REPLACE_WITH_REAL_TOKEN_DO_NOT_DEPLOY_THIS",) or (
+        not token and not _is_loopback_host(host)
+    ):
         raise SystemExit(
-            "aiZee dashboard refuses to bind non-loopback host "
-            f"'{host}' without authentication. Set AIZEE_DASHBOARD_TOKEN "
-            "to enable network-exposed mode."
+            "aiZee dashboard refuses to start: AIZEE_DASHBOARD_TOKEN is a "
+            "placeholder or empty while binding a non-loopback host. Generate "
+            "a real token: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
         )
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)

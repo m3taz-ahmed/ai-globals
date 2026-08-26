@@ -48,14 +48,24 @@ def register_context_tools(mcp: FastMCP) -> None:
         skills_dir = r / "skills"
         if not skills_dir.is_dir():
             return json.dumps(results, indent=2)
+        # Skill layouts supported (MCP-5 fix):
+        #   * folder skill: <name>/SKILL.md  -> name = folder
+        #   * flat skill:    <name>.md        -> name = stem (incl. nested like
+        #     python/testing.md)
+        # Exclude README/EVAL/SKILL helper files and references/|templates/ dirs.
         for skill_file in sorted(skills_dir.rglob("*.md")):
+            if skill_file.parent.name in {"references", "templates", "node_modules", ".git"}:
+                continue
+            fname = skill_file.stem
+            if fname.lower() in {"readme", "eval", "skill"}:
+                continue
+            name = skill_file.parent.name if fname == "SKILL" else fname
             try:
                 content = skill_file.read_text(encoding="utf-8")
             except OSError:
                 continue
-            if query_lower in content.lower():
+            if query_lower in content.lower() or query_lower in name.lower():
                 rel = str(skill_file.relative_to(r)).replace("\\", "/")
-                name = skill_file.stem
                 description = ""
                 for line in content.splitlines():
                     if line.lower().startswith("description:"):

@@ -30,6 +30,7 @@ from .middleware import (
     MiddlewareResult,
 )
 from .persona import PersonaDetector, inject_persona_context
+from .policy import READ_ACTIONS
 from .preloop import FeedbackLoop
 from .probity import GuardrailViolationError
 from .skill_resolver import SkillResolver
@@ -93,6 +94,12 @@ def _init_core_services(kernel: Kernel) -> None:
         kernel.taint_tracker = get_default_tracker()  # type: ignore[attr-defined]
     except Exception:
         pass
+    # Ensure the prompt-injection input guardrail is registered (import
+    # triggers auto-registration into the default GuardrailRegistry).
+    import contextlib
+
+    with contextlib.suppress(Exception):
+        import runtime.guardrails.prompt_injection  # noqa: F401
 
 
 def _init_managers(kernel: Kernel) -> None:
@@ -188,6 +195,15 @@ def _run_loop_detection(
     loop_hit = None if skip_loop else kernel.loop_detector.check_and_record(action_type, action_data)
     if loop_hit is not None:
         kernel._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+        kernel.audit.log(
+            "loop.deny",
+            {
+                "action": action_type,
+                "repeat_count": loop_hit.repeat_count,
+                "window": loop_hit.window,
+                "detection": loop_hit.detection,
+            },
+        )
         return {
             "ok": False,
             "decision": Decision.DENY.value,
@@ -216,6 +232,12 @@ def _finalize_action(
         **kernel.policy_mgr.build_budget_kwargs(action_data, session_id=session_id),
     )
     result = kernel.policy_mgr.finalize_action(action_data, kwargs, decision, budget_result, dry_run, kernel.telemetry)
+    # Count the outcome only after the budget gate has actually been evaluated
+    # so a budget block is recorded as DENY, not ALLOW (B5).
+    if result.get("ok"):
+        kernel._actions_total.labels(action=action_type, decision=Decision.ALLOW.value).inc()
+    else:
+        kernel._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
     kernel.policy_mgr.record_preloop(action_type, result, decision)
     return result
 
@@ -436,6 +458,26 @@ class Kernel:
         guardian_result = _run_guardian_gate(self, action_type, action_data)
         if guardian_result is not None:
             return guardian_result
+        # Read-only / user-text actions (e.g. ChatMessage) skip the guardian
+        # gate above, so they would never run the input-phase guardrails that
+        # live inside Guardian.authorize. Run them here explicitly for those
+        # actions so untrusted text (prompt injection) is still inspected,
+        # without changing the guardian's existing logic for other actions.
+        if action_type in READ_ACTIONS or action_type == "ChatMessage":
+            gr_result = self.guardian.guardrail_registry.run_guardrails(
+                "input",
+                {"tool": action_type, "action": action_data, "args": action_data},
+            )
+            if gr_result.tripwire_triggered:
+                gr_name = str(gr_result.output_info.get("guardrail", "input_guardrail"))
+                reason = str(gr_result.output_info.get("reason", "guardrail tripwire triggered"))
+                self._guardian_denials_total.labels(rule=gr_name).inc()
+                self.audit.log("guardrail.deny", {"action": action_type, "rule": gr_name, "reason": reason})
+                return {
+                    "ok": False,
+                    "error": f"Guardrail blocked by {gr_name}",
+                    "decision": {"rule": gr_name, "reason": reason},
+                }
         decision = self.policy.can(action_data["type"], **action_data)
         policy_result = _run_policy_gate(self, action_type, action_data, kwargs, decision, dry_run)
         if policy_result is not None:
@@ -443,7 +485,6 @@ class Kernel:
         loop_result = _run_loop_detection(self, action_type, action_data, dry_run)
         if loop_result is not None:
             return loop_result
-        self._actions_total.labels(action=action_type, decision=Decision.ALLOW.value).inc()
         return _finalize_action(self, action_type, action_data, kwargs, decision, dry_run, session_id)
 
     # --- Middleware & Pipeline Registration ---

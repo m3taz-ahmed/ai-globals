@@ -248,7 +248,8 @@ def default_memory_contract() -> SchemaContract:
                 meta TEXT,
                 created_at TEXT NOT NULL,
                 valid_from TEXT NOT NULL,
-                valid_to TEXT
+                valid_to TEXT,
+                integrity_sig TEXT
             )
         """,
         "relations": """

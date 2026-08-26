@@ -132,21 +132,66 @@ class EvalHarness:
                 cmd, cwd=self.root, capture_output=True, text=True, encoding="utf-8", errors="replace"
             )
         except FileNotFoundError:
-            return {"ok": False, "output": f"Tool not found: {name}"}
+            # Include returncode so the aggregation below never raises KeyError
+            # when a tool (e.g. ruff/mypy/pytest) is missing on PATH (TEST-2 fix).
+            return {"ok": False, "output": f"Tool not found: {name}", "returncode": -1}
         return {"returncode": p.returncode, "output": (p.stdout + "\n" + p.stderr)[-4000:]}
 
     def run(self) -> dict[str, Any]:
         results = {}
-        results["ruff"] = self._run("ruff", ["python", "-m", "ruff", "check", "."])
-        results["mypy"] = self._run("mypy", ["python", "-m", "mypy", "runtime", "memory", "aizee_mcp", "aizee_cli.py", "config.py", "dashboard/server.py", "eval/harness.py", "eval/pipeline.py", "eval/reliability.py", "eval/redteam.py", "scripts/guard_invariants.py", "scripts/sync_docs.py"])
-        results["pytest"] = self._run("pytest", [
-            "python", "-m", "pytest", "-q",
-            "--cov=runtime", "--cov=memory", "--cov=aizee_mcp",
-            "--cov-report=term-missing", "--cov-fail-under=80",
-        ])
-        results["validate-globals"] = self._run("validate-globals", ["python", "scripts/validate-globals.py"])
+        py = sys.executable or "python"
+        results["ruff"] = self._run("ruff", [py, "-m", "ruff", "check", "."])
+        # Expanded mypy surface to cover previously-unchecked eval modules (TEST-3 fix).
+        results["mypy"] = self._run(
+            "mypy",
+            [
+                py,
+                "-m",
+                "mypy",
+                "runtime",
+                "memory",
+                "aizee_mcp",
+                "aizee_cli.py",
+                "config.py",
+                "dashboard/server.py",
+                "eval/harness.py",
+                "eval/pipeline.py",
+                "eval/reliability.py",
+                "eval/redteam.py",
+                "eval/agent_benchmark.py",
+                "eval/rubric.py",
+                "eval/stages.py",
+                "eval/vibe.py",
+                "scripts/guard_invariants.py",
+                "scripts/sync_docs.py",
+            ],
+        )
+        # Hermetic pytest: skip environment-dependent markers and close the
+        # coverage blind spot by including plugins/ and eval/ (TEST-3/TEST-4).
+        results["pytest"] = self._run(
+            "pytest",
+            [
+                py,
+                "-m",
+                "pytest",
+                "-q",
+                "-m",
+                "not integration and not mcp and not dashboard and not vector",
+                "--cov=runtime",
+                "--cov=memory",
+                "--cov=aizee_mcp",
+                "--cov=plugins",
+                "--cov=eval",
+                "--cov-report=term-missing",
+                "--cov-fail-under=80",
+            ],
+        )
+        # Supply-chain step: generate_sbom.py can be run beforehand to emit
+        # state/sbom.json (CycloneDX) covering OWASP LLM03; check_sbom.py then
+        # validates it against state/deny_list.txt. Logic below is unchanged.
+        results["validate-globals"] = self._run("validate-globals", [py, "scripts/validate-globals.py"])
 
-        all_pass = all(v["returncode"] == 0 for v in results.values())
+        all_pass = all(v.get("returncode", -1) == 0 for v in results.values())
         return {"results": results, "all_pass": all_pass}
 
     def run_evidence_gates(

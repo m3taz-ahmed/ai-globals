@@ -8,11 +8,13 @@ tool registration to the modules in ``aizee_mcp.tools``.
 from __future__ import annotations
 
 import importlib
+import json
 import logging
 import pkgutil
 from typing import Any
 
 from aizee_mcp._compat import FastMCP
+from aizee_mcp.rbac import check_tool_permission
 from aizee_mcp.tools import (
     register_context_tools,
     register_memory_tools,
@@ -24,7 +26,10 @@ from aizee_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-expo
 
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("aizee")
+# Typed as Any: the concrete class is resolved at runtime by ``_compat``
+# (FastMCP vs MCPServer depending on the installed MCP SDK version), so
+# pinning a static type would break across versions.
+mcp: Any = FastMCP("aizee")
 
 
 def _register_plugins() -> None:
@@ -104,6 +109,55 @@ def _get_tool_fn(name: str) -> Any:
     """Get a registered tool function by name."""
     tool = _tool_manager.get_tool(name)
     return tool.fn if tool else None
+
+
+def _wrap_tool_with_rbac(tool: Any) -> None:
+    """Wrap a registered tool's callable with an RBAC permission guard.
+
+    The original function's signature/schema (used for argument validation by
+    FastMCP) is left untouched; only the callable executed at call time is
+    replaced. The permission check is fail-open: if it raises, the call is
+    allowed so existing behavior is never broken.
+    """
+    original_fn = tool.fn
+    tool_name = tool.name
+    is_async = bool(getattr(tool, "is_async", False))
+
+    def _denied() -> str:
+        return json.dumps({"ok": False, "error": "permission denied"})
+
+    if is_async:
+        async def _guarded_async(**kwargs: Any) -> Any:
+            try:
+                if not check_tool_permission(tool_name):
+                    return _denied()
+            except Exception as exc:
+                logger.warning("RBAC check failed for %s (fail-open): %s", tool_name, exc)
+            return await original_fn(**kwargs)
+        guarded: Any = _guarded_async
+    else:
+        def _guarded_sync(**kwargs: Any) -> Any:
+            try:
+                if not check_tool_permission(tool_name):
+                    return _denied()
+            except Exception as exc:
+                logger.warning("RBAC check failed for %s (fail-open): %s", tool_name, exc)
+            return original_fn(**kwargs)
+        guarded = _guarded_sync
+
+    tool.fn = guarded
+
+
+def _apply_rbac_guard() -> None:
+    """Apply the RBAC guard to every currently-registered tool."""
+    for name in list(_tool_manager._tools.keys()):
+        tool = _tool_manager.get_tool(name)
+        if tool is not None:
+            _wrap_tool_with_rbac(tool)
+
+
+_apply_rbac_guard()
+
 
 
 # Resource functions are also closures; expose them for direct-call tests.

@@ -7,8 +7,8 @@ data — no DOM, no fetching. The engine works over any crawl source
 that can produce a :class:`PageData` record.
 
 Cross-page checks (duplicates, broken links, orphans, redirect chains)
-live in :mod:`aizee_mcp.tools.seo_multipage_checks` and run over a
-collection of pages after the crawl completes.
+were previously in a separate module and have been consolidated into the
+SEO audit engine; they run over a collection of pages after the crawl.
 """
 
 from __future__ import annotations

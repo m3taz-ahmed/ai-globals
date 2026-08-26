@@ -38,7 +38,15 @@ spec:
         fsGroup: 1000
       containers:
         - name: dashboard
-          image: ghcr.io/m3taz-ahmed/aizee:latest
+          # Pin a specific version instead of :latest for reproducible,
+          # auditable deployments (supply-chain hygiene).
+          image: ghcr.io/m3taz-ahmed/aizee:5.0.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

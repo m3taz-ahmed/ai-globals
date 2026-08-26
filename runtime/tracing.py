@@ -100,6 +100,16 @@ class ConsoleSpanExporter(SpanProcessor):
         else:
             print(line)
 
+        # Additive OTLP export: never affects the JSONL path above. The import
+        # is lazy and record_span is a no-op unless an OTLP endpoint is set.
+        from runtime.tracing_otel import get_tracer, record_span
+
+        if get_tracer() is not None:
+            duration_s = None
+            if span.end_time is not None:
+                duration_s = max(0.0, span.end_time - span.start_time)
+            record_span(span.name, attributes=span.attributes, duration_s=duration_s)
+
 
 class _MultiProcessor(SpanProcessor):
     def __init__(self, processors: list[SpanProcessor]) -> None:

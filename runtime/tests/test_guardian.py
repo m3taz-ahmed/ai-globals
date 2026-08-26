@@ -226,6 +226,20 @@ def test_tool_mismatch_continues_to_next_rule():
     assert d.rule_name == "rule_b"
 
 
+def test_alias_aware_tool_matching_b1():
+    """GATE-02/B1 regression: a rule keyed on 'Bash' must also match alias
+    labels ('exec', 'command', 'shell', 'run', 'cmd'). An action using a raw
+    canonical label must not silently bypass the guardian gate."""
+    g = Guardian([{"name": "block_bash", "tool": "Bash", "decision": "deny"}])
+    for alias in ("Bash", "bash", "exec", "command", "shell", "run", "cmd"):
+        d = g.authorize(ActionRequest(tool=alias))
+        assert d.status == DecisionStatus.DENY, alias
+        assert d.rule_name == "block_bash", alias
+    # A non-matching tool falls through to the default decision.
+    d = g.authorize(ActionRequest(tool="write"))
+    assert d.status == DecisionStatus.ALLOW
+
+
 # ---------------------------------------------------------------------------
 # Single predicate rule -€” line 152
 # ---------------------------------------------------------------------------

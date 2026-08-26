@@ -1,0 +1,64 @@
+# Default values for the aizee chart.
+# Override these via --values or --set when running `helm upgrade --install`.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/m3taz-ahmed/aizee
+  # Pinned tag for reproducible, auditable deployments (supply-chain hygiene).
+  tag: "5.0.0"
+  pullPolicy: IfNotPresent
+
+dashboard:
+  host: "0.0.0.0"
+  port: 8080
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+# Name of a pre-existing Secret that contains the dashboard token.
+# The chart does NOT create the token; create it before installing:
+#   kubectl create secret generic aizee-dashboard-token \
+#     --from-literal=token=$(python -c "import secrets; print(secrets.token_urlsafe(32))") \
+#     -n aizee
+existingSecretName: aizee-dashboard-token
+# Key inside the secret that holds the token value.
+existingSecretKey: token
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  readiness:
+    path: /api/health
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  liveness:
+    path: /api/health
+    port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+
+# Persistence is intentionally left out of this chart. The standalone
+# deploy/k8s/deployment.yaml keeps its PVCs; adjust here if needed.
