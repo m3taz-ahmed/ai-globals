@@ -7,6 +7,11 @@ import config
 __version__ = config.VERSION
 
 # Re-export new governance modules for convenient access.
+from runtime.agent_baseline import AgentAction as AgentAction
+from runtime.agent_baseline import AgentBaseline as AgentBaseline
+from runtime.agent_baseline import AnomalyAlert as AnomalyAlert
+from runtime.agent_baseline import AnomalyType as AnomalyType
+from runtime.agent_baseline import BaselineRegistry as BaselineRegistry
 from runtime.agent_catalog import AgentCatalog as AgentCatalog
 from runtime.agent_catalog import CatalogAgent as CatalogAgent
 from runtime.agent_catalog import CatalogFlow as CatalogFlow
@@ -40,9 +45,33 @@ from runtime.cost_attribution import CostAnomaly as CostAnomaly
 from runtime.cost_attribution import CostAnomalyType as CostAnomalyType
 from runtime.cost_attribution import CostAttribution as CostAttribution
 from runtime.cost_attribution import CostRecord as CostRecord
+from runtime.defensive_injection import DefenseResult as DefenseResult
+from runtime.defensive_injection import DefenseStrategy as DefenseStrategy
+from runtime.defensive_injection import DefensiveInjector as DefensiveInjector
+from runtime.design_library import BrandDesignSystem as BrandDesignSystem
+from runtime.design_library import DesignLibrary as DesignLibrary
+from runtime.design_library import DesignLibraryError as DesignLibraryError
+from runtime.design_library import DesignSection as DesignSection
+from runtime.design_library import FusionResult as FusionResult
+from runtime.design_library import ProjectType as ProjectType
+from runtime.design_slop_verifier import DesignSlopError as DesignSlopError
+from runtime.design_slop_verifier import DesignSlopVerifier as DesignSlopVerifier
+from runtime.design_slop_verifier import SlopCategory as SlopCategory
+from runtime.design_slop_verifier import SlopFinding as SlopFinding
+from runtime.design_slop_verifier import SlopSeverity as SlopSeverity
+from runtime.design_slop_verifier import SlopVerdict as SlopVerdict
+from runtime.dual_llm import DualLLMError as DualLLMError
+from runtime.dual_llm import DualLLMOrchestrator as DualLLMOrchestrator
+from runtime.dual_llm import DualLLMResult as DualLLMResult
+from runtime.dual_llm import LLMRole as LLMRole
 from runtime.hook_lifecycle import HookContext as HookContext
 from runtime.hook_lifecycle import HookPhase as HookPhase
 from runtime.hook_lifecycle import HookRegistry as HookRegistry
+from runtime.injection_detector import InjectionDetector as InjectionDetector
+from runtime.injection_detector import InjectionSeverity as InjectionSeverity
+from runtime.injection_detector import InjectionSignal as InjectionSignal
+from runtime.injection_detector import InjectionTechnique as InjectionTechnique
+from runtime.injection_detector import InjectionVerdict as InjectionVerdict
 from runtime.layers import Layer as Layer
 from runtime.layers import LayerManifest as LayerManifest
 from runtime.learning_loop import LearningLoop as LearningLoop
@@ -67,7 +96,16 @@ from runtime.plan_diff_validator import Finding as Finding
 from runtime.plan_diff_validator import PlanDiffValidator as PlanDiffValidator
 from runtime.plan_diff_validator import ValidationLevel as ValidationLevel
 from runtime.plan_diff_validator import ValidationResult as ValidationResult
+from runtime.plugin_system import Plugin as Plugin
+from runtime.plugin_system import PluginError as PluginError
+from runtime.plugin_system import PluginManifest as PluginManifest
+from runtime.plugin_system import PluginRegistry as PluginRegistry
+from runtime.plugin_system import PluginStatus as PluginStatus
+from runtime.plugin_system import PluginType as PluginType
 from runtime.prompt_gate import PromptGate as PromptGate
+from runtime.prompt_injection_detector import DetectionLevel as DetectionLevel
+from runtime.prompt_injection_detector import PromptInjectionDetector as PromptInjectionDetector
+from runtime.prompt_injection_detector import SemanticDetectionResult as SemanticDetectionResult
 from runtime.quality import Bounder as Bounder
 from runtime.quality import CostProvider as CostProvider
 from runtime.quality import FixedRateCostProvider as FixedRateCostProvider
@@ -107,17 +145,25 @@ from runtime.taint import TaintError as TaintError
 from runtime.taint import TaintLabel as TaintLabel
 from runtime.taint import TaintTracker as TaintTracker
 from runtime.taint import classify_source as classify_taint_source
+from runtime.tool_output_sanitizer import ToolOutputSanitizer as ToolOutputSanitizer
+from runtime.tool_output_sanitizer import ToolSanitizeResult as ToolSanitizeResult
 from runtime.trajectory import FailureCategory as FailureCategory
 from runtime.trajectory import TrajectoryTracker as TrajectoryTracker
 
 __all__ = [
     "ActionContext",
+    "AgentAction",
+    "AgentBaseline",
     "AgentCatalog",
     "AgentDiscovery",
     "AgentGateway",
+    "AnomalyAlert",
+    "AnomalyType",
     "ApprovalService",
     "Baseline",
+    "BaselineRegistry",
     "Bounder",
+    "BrandDesignSystem",
     "CatalogAgent",
     "CatalogFlow",
     "CatalogModel",
@@ -140,12 +186,25 @@ __all__ = [
     "CostProvider",
     "CostRecord",
     "DeclaredDependency",
+    "DefenseResult",
+    "DefenseStrategy",
+    "DefensiveInjector",
     "DependencyEcosystem",
+    "DesignLibrary",
+    "DesignLibraryError",
+    "DesignSection",
+    "DesignSlopError",
+    "DesignSlopVerifier",
+    "DetectionLevel",
+    "DualLLMError",
+    "DualLLMOrchestrator",
+    "DualLLMResult",
     "EnhancerType",
     "Evidence",
     "FailureCategory",
     "Finding",
     "FixedRateCostProvider",
+    "FusionResult",
     "Grant",
     "GuardianClosureEvaluator",
     "GuardrailContext",
@@ -154,6 +213,12 @@ __all__ = [
     "HookContext",
     "HookPhase",
     "HookRegistry",
+    "InjectionDetector",
+    "InjectionSeverity",
+    "InjectionSignal",
+    "InjectionTechnique",
+    "InjectionVerdict",
+    "LLMRole",
     "Layer",
     "LayerManifest",
     "LazyImport",
@@ -177,9 +242,17 @@ __all__ = [
     "PersonaDetectionResult",
     "PersonaDetectorV2",
     "PlanDiffValidator",
+    "Plugin",
+    "PluginError",
+    "PluginManifest",
+    "PluginRegistry",
+    "PluginStatus",
+    "PluginType",
     "Principal",
     "PrincipalRole",
+    "ProjectType",
     "PromptGate",
+    "PromptInjectionDetector",
     "ReasoningGraph",
     "ReflexionEntry",
     "ReflexionLog",
@@ -191,13 +264,20 @@ __all__ = [
     "ScopeLevel",
     "ScopedManager",
     "ScopedRegistry",
+    "SemanticDetectionResult",
     "SkillFinding",
     "SkillRouter",
     "SkillScanner",
+    "SlopCategory",
+    "SlopFinding",
+    "SlopSeverity",
+    "SlopVerdict",
     "SupplyChainGuard",
     "TaintError",
     "TaintLabel",
     "TaintTracker",
+    "ToolOutputSanitizer",
+    "ToolSanitizeResult",
     "ToolTarget",
     "TrajectoryTracker",
     "TyposquatDetector",

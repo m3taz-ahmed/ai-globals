@@ -4,8 +4,46 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-08-24
+[UPDATED] 2026-08-28
 [NOTES]
+- **Claude Code Skills Import + Design Tooling Stack — 2026-08-28 (UX + DEVX personas)**:
+  - **8 new skills** imported from Claude Code ecosystem study:
+    - `skills/web-design-guidelines.md` — 100+ rules from Vercel (a11y, forms, dark mode, typography, animation, images, performance, navigation, touch, i18n)
+    - `skills/design-taste.md` — Design DNA extractor (4-phase pipeline: Playwright capture → measure tokens → extract Taste DNA → write {domain}.md + .json). Requires Playwright MCP.
+    - `skills/image-to-code.md` — Image-first design-to-code workflow (generate images → analyze → implement). DESIGN_VARIANCE=8, MOTION_INTENSITY=5, VISUAL_DENSITY=6.
+    - `skills/backend-design.md` — 13 senior backend reflexes (think-before-coding, data-modeling-discipline, migration-safety, query-discipline, idempotency, error-handling, observability, security, auth, performance, debugging, testing, boring-by-default)
+    - `skills/accessibility-auditor.md` — 11 WCAG 2.2 AA specialist agents (ARIA, contrast, keyboard, cognitive, forms, images, media, structure, motion, touch, i18n)
+    - `skills/web-quality.md` — Lighthouse + Core Web Vitals (LCP <2.5s, INP <200ms, CLS <0.1, FCP, TTFB, SEO, Best Practices)
+    - `skills/motion-design.md` — Animation audit from 3 designer perspectives (Kowalski, Krehel, Tompkins) + timing/easing/choreography checklist + severity rankings
+    - `skills/qa-automation.md` — 6 Playwright QA agents (smoke, ux, adversarial, performance, mobile, multi-user) + 5-step workflow
+  - **3 new runtime modules**:
+    - `runtime/design_slop_verifier.py` — AI-slop detection (7 categories: gradient wash, accent-border cards, SVG illustrations, overused fonts, emoji decoration, 3-column grid, AI headline phrases). Optional injectable vision-model judge_fn. Fail-open-safe.
+    - `runtime/plugin_system.py` — Plugin registry (discovers plugins from `plugins/` dir, validates manifest, manages lifecycle: DISCOVERED→LOADED→ACTIVE→ERROR→DISABLED). Supports skills, agents, commands, hooks (UserPromptSubmit/PreToolUse/PostToolUse/Stop), MCP servers. Keyword + persona indexing.
+    - `runtime/design_library.py` — 58 brand design systems catalog (Stripe, Linear, Vercel, Figma...). Load single brand, mix 2-3 brands (simple or granular section mapping), auto-detect project type and suggest best-fit brands.
+  - **Kernel integration**: `kernel.py` now initializes `design_slop_verifier`, `design_library`, `plugin_registry` in `_init_core_services`.
+  - **__init__.py**: 20+ new symbols exported.
+  - **personas.yaml**: 8 new lord_skills entries with keyword indexes. UX persona gets 6 design skills, DEV gets backend-design, QA gets qa-automation.
+  - **Tests**: 39 new tests across 3 test files + 15 persona reset tests. All pass.
+  - **Quality gates**: ruff PASS, mypy PASS (5 source files), pytest 54/54 PASS.
+  - **Persona Reset Shortcuts**: 17 trigger commands (`/reset`, `#reset`, `/انتحل`, `#شخصيات`, `/بدّل`, `/persona`, `#switch`, etc.) in `runtime/persona.py`. When detected in a chat message, `inject_persona_context` clears existing persona fields and re-detects based on any hint text after the command (e.g., `/reset اكتب backend API` → switches to DEV persona + `backend-design` skill). Works mid-session without `fresh_context=True`.
+  - **Persona Status Shortcuts**: 17 status query commands (`/status`, `#status`, `/حالة`, `#حالة`, `/whoami`, `/مين`, `/info`, `/معلومات`, etc.) in `runtime/persona.py`. When detected, `inject_persona_context` populates `context["persona_status"]` with a formatted Arabic report showing: primary persona (name + weight), secondary personas, primary skills (with descriptions), and lord skills (with descriptions). Does NOT re-detect — just displays current state. `format_persona_status()` is the formatter function.
+  - **Research report**: `tech-stack/claude-code-skills-research.md` (191 lines, comprehensive study of 50+ Claude Code skills across 6 domains).
+- **Prompt Injection Defense Stack — 2026-08-28 (SEC + ML personas)**:
+  - **7 new runtime modules** for comprehensive prompt-injection defense (OWASP LLM01):
+    - `runtime/injection_detector.py` — 13-technique detector (direct override, system prompt extraction, roleplay jailbreak, multi-turn manipulation, encoding obfuscation, typoglycemia, best-of-N, HTML/Markdown injection, multimodal injection, RAG poisoning, tool abuse, thought injection, memory poisoning) + encoding-aware scanning (Base64/Hex/URL decode + Unicode NFKC normalization) + multilingual patterns (Arabic). 50+ regex patterns, deterministic, model-free. BLOCK_THRESHOLD=12, SUSPICIOUS_THRESHOLD=5.
+    - `runtime/defensive_injection.py` — **الميزة الأساسية**: defensive prompt injection. When policy violation detected, aiZee injects its own authoritative instructions (SYSTEM OVERRIDE + data fence + safe redirect) to steer the model back to compliance. 3 strategies: REDIRECT (wrap + redirect), SANITIZE_AND_REDIRECT (strip injection + redirect), QUARANTINE (don't relay content). Per-technique redirect messages.
+    - `runtime/tool_output_sanitizer.py` — indirect injection defense. Scans tool outputs (web fetch, file read, MCP calls) before they re-enter the context window. HIGH_RISK_TOOLS set for perf optimization.
+    - `runtime/prompt_injection_detector.py` — two-stage semantic detector. Stage 1: deterministic (InjectionDetector). Stage 2: optional injectable model_fn (PromptGuard/deberta/Lakera). Fail-open-safe fallback. Model-free by default.
+    - `runtime/dual_llm.py` — Simon Willison's dual-LLM pattern. Privileged LLM (has tools, no untrusted content) + Quarantined LLM (reads untrusted content, no tools). Breaks indirect injection path.
+    - `runtime/agent_baseline.py` — behavioral anomaly detection. Tracks tool/data/endpoint usage per agent. Flags new tools, new data sources, new endpoints, rare actions. Learning → Detecting phase transition.
+    - `eval/prompt_injection_suite.py` — eval suite with 33 attack cases (all 13 techniques + Arabic) + 15 benign cases (including hard negatives). Measures detection rate, false positive rate, containment rate.
+  - **Kernel integration**: `kernel.py` now initializes `injection_detector`, `defensive_injector`, `tool_output_sanitizer`, `baseline_registry` in `_init_core_services`.
+  - **__init__.py**: 7 new modules exported (20+ new symbols).
+  - **Tests**: 82 new tests across 7 test files. All pass.
+  - **Eval results**: Detection rate 100% (33/33), False positive rate 0% (0/15), Containment rate 100% (33/33).
+  - **Quality gates**: ruff PASS, mypy PASS (8 source files), pytest 82/82 PASS.
+  - **Research repos cloned** to `D:\server\temp\prompt-injection-study\`: pint-benchmark (Lakera), PromptInject, PIArena (ACL 2026).
+  - **Research report**: `tech-stack/prompt-injection-research.md` (252 lines, comprehensive).
 - **Comprehensive review report remediation — 2026-08-24 (ARCH persona)**:
   - **Schema drift fix** (`memory/store.py`, `memory/schema_contract.py`): `memory_decay` table + `idx_decay_last_accessed` index now created in `_init_schema` (not lazily). FTS5 shadow tables (`memories_fts*`) ignored in `detect_schema_drift`. `verify_schema_integrity` now returns `(True, None)` for fresh DBs — no more false drift warnings.
   - **Lazy SentenceTransformer** (`memory/vector.py`): `Embedder.__init__` no longer loads the model; `_ensure_model()` loads on first `embed()` call. Prevents network download on every `MemoryStore` creation. Updated 3 tests for lazy behavior.

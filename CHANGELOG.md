@@ -1,5 +1,55 @@
 # Changelog
 
+## [5.8.0] - 2026-08-28 (Claude Code Skills Import + Design Tooling + Persona Shortcuts)
+
+### New Skills (8)
+- **web-design-guidelines** (`skills/web-design-guidelines.md`) — 100+ Vercel rules covering accessibility, forms, dark mode, typography, animation, images, performance, navigation, touch, and i18n.
+- **design-taste** (`skills/design-taste.md`) — Design DNA extractor. 4-phase pipeline: Playwright capture → measure tokens → extract Taste DNA (Trigger→Decision→Reason→Evidence) → write {domain}.md + .json.
+- **image-to-code** (`skills/image-to-code.md`) — Image-first design-to-code workflow. Mandatory image generation per section, deep analysis, pixel-faithful implementation. DESIGN_VARIANCE=8, MOTION_INTENSITY=5, VISUAL_DENSITY=6.
+- **backend-design** (`skills/backend-design.md`) — 13 senior backend reflexes: think-before-coding (6-step), data-modeling-discipline, migration-safety, query-discipline, idempotency, error-handling, observability, security, auth, performance, debugging, testing, boring-by-default.
+- **accessibility-auditor** (`skills/accessibility-auditor.md`) — 11 WCAG 2.2 AA specialist agents: ARIA, contrast, keyboard, cognitive, forms, images, media, structure, motion, touch, i18n.
+- **web-quality** (`skills/web-quality.md`) — Lighthouse + Core Web Vitals: LCP <2.5s, INP <200ms, CLS <0.1, FCP <1.8s, TTFB <800ms, SEO, Best Practices.
+- **motion-design** (`skills/motion-design.md`) — Animation audit from 3 designer perspectives (Kowalski, Krehel, Tompkins) + timing/easing/choreography/purpose/accessibility checklists + severity rankings.
+- **qa-automation** (`skills/qa-automation.md`) — 6 Playwright QA agents (smoke, ux, adversarial, performance, mobile, multi-user) + 5-step workflow (discover→manifest→dispatch→collect→report).
+
+### New Runtime Modules (3)
+- **DesignSlopVerifier** (`runtime/design_slop_verifier.py`) — AI-slop detection in 7 categories (gradient wash, accent-border cards, SVG illustrations, overused fonts, emoji decoration, 3-column grid, AI headline phrases). Optional injectable vision-model `judge_fn`. Fail-open-safe. 12 tests.
+- **PluginRegistry** (`runtime/plugin_system.py`) — Plugin discovery, manifest validation, lifecycle management (DISCOVERED→ACTIVE→ERROR→DISABLED), keyword + persona indexing, hook execution (UserPromptSubmit/PreToolUse/PostToolUse/Stop). 14 tests.
+- **DesignLibrary** (`runtime/design_library.py`) — 56 brand design systems catalog (Stripe, Linear, Vercel, Figma...). Load single brand, mix 2-3 brands (simple or granular section mapping), auto-detect project type and suggest best-fit brands. 12 tests.
+
+### Persona System Enhancements
+- **Reset Shortcuts (17 triggers):** `/reset`, `#reset`, `/انتحل`, `#شخصيات`, `/بدّل`, `/persona`, `#switch`, etc. in `runtime/persona.py`. When detected, `inject_persona_context` clears existing persona fields and re-detects based on hint text. 15 tests.
+- **Status Shortcuts (17 triggers):** `/status`, `#status`, `/حالة`, `#مين`, `/whoami`, `/info`, etc. When detected, populates `context["persona_status"]` with formatted Arabic report (persona name, weight, skills with descriptions, lords with descriptions). 18 tests.
+- **personas.yaml:** 8 new lord_skills entries with keyword indexes. UX persona gets 6 design skills, DEV gets backend-design, QA gets qa-automation.
+
+### Kernel Integration
+- `kernel.py::_init_core_services` now initializes `design_slop_verifier`, `design_library`, `plugin_registry`.
+- `runtime/__init__.py` exports 20+ new symbols.
+
+### Prompt Injection Defense Stack (from earlier in session)
+- 7 modules: `injection_detector`, `defensive_injection`, `tool_output_sanitizer`, `prompt_injection_detector`, `dual_llm`, `agent_baseline`, `prompt_injection_suite`.
+- 13-technique deterministic scanner + active counter-injection + indirect-injection defense + dual-LLM isolation + behavioral anomaly detection.
+- 82 tests across 7 test files.
+
+### Research Reports (2)
+- `tech-stack/claude-code-skills-research.md` — Comprehensive study of 50+ Claude Code skills across 6 domains.
+- `tech-stack/prompt-injection-research.md` — Prompt injection defense research.
+
+### Quality Gates
+- ruff: PASS (all Python files)
+- mypy: PASS (6 source files)
+- pytest: 154/154 new tests PASS (39 design + 15 reset + 18 status + 82 injection)
+- E2E: 17/17 persona scenarios PASS
+- Sync: 20/20 files in sync between .ai and aizee
+
+### Numbers
+- Skills: 72 → **80**
+- Runtime modules: 85 → **96**
+- Tests: 3566 → **3680**
+- Lord skills: 23 → **31**
+- Workflows: 36 → **50**
+- Tech-stack refs: 163 → **173**
+
 ## [5.7.1] - 2026-08-24 (Comprehensive Review: 17 Fixes Across 125 Files)
 
 ### Critical Fixes (3)

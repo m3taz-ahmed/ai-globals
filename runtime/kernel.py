@@ -101,6 +101,44 @@ def _init_core_services(kernel: Kernel) -> None:
     with contextlib.suppress(Exception):
         import runtime.guardrails.prompt_injection  # noqa: F401
 
+    # Initialize the comprehensive injection defense stack:
+    # - InjectionDetector: 13-technique deterministic scanner
+    # - DefensiveInjector: active counter-injection (redirect/quarantine)
+    # - ToolOutputSanitizer: indirect-injection defense for tool outputs
+    # - BaselineRegistry: behavioral anomaly detection for agents
+    with contextlib.suppress(Exception):
+        from runtime.agent_baseline import BaselineRegistry
+        from runtime.defensive_injection import DefensiveInjector
+        from runtime.injection_detector import InjectionDetector
+        from runtime.tool_output_sanitizer import ToolOutputSanitizer
+
+        kernel.injection_detector = InjectionDetector()  # type: ignore[attr-defined]
+        kernel.defensive_injector = DefensiveInjector()  # type: ignore[attr-defined]
+        kernel.tool_output_sanitizer = ToolOutputSanitizer(  # type: ignore[attr-defined]
+            detector=kernel.injection_detector,  # type: ignore[attr-defined]
+            injector=kernel.defensive_injector,  # type: ignore[attr-defined]
+        )
+        kernel.baseline_registry = BaselineRegistry()  # type: ignore[attr-defined]
+
+    # Initialize the design tooling stack:
+    # - DesignSlopVerifier: AI-slop detection for HTML/UI output
+    # - DesignLibrary: 58 brand design systems catalog
+    # - PluginRegistry: plugin discovery and lifecycle management
+    with contextlib.suppress(Exception):
+
+        from runtime.design_library import DesignLibrary
+        from runtime.design_slop_verifier import DesignSlopVerifier
+        from runtime.plugin_system import PluginRegistry
+
+        kernel.design_slop_verifier = DesignSlopVerifier()  # type: ignore[attr-defined]
+        kernel.design_library = DesignLibrary(  # type: ignore[attr-defined]
+            library_dir=kernel.root / "design-library",
+        )
+        kernel.plugin_registry = PluginRegistry(  # type: ignore[attr-defined]
+            plugins_dir=kernel.root / "plugins",
+        )
+        kernel.plugin_registry.discover()  # type: ignore[attr-defined]
+
 
 def _init_managers(kernel: Kernel) -> None:
     """Initialize manager submodules (policy, workflow, agent, chat)."""

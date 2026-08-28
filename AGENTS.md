@@ -69,7 +69,7 @@ aiZee follows a layered design:
 - **CLI / Entry Point** — `aizee_cli.py` parses commands, delegates to kernel.
 - **Kernel (Facade)** — `runtime/kernel.py` routes to managers.
 - **Managers** — `runtime/managers/` (PolicyManager, WorkflowManager, AgentManager, ChatManager).
-- **Runtime Modules** — 85 governance modules in `runtime/`.
+- **Runtime Modules** — 96 governance modules in `runtime/`.
 - **MCP Server** — `aizee_mcp/` exposes 36 tools via FastMCP.
 - **Memory** — `memory/` SQLite + FTS5 + vector store.
 - **Skills / Workflows / Tech-Stack** — declarative `.md` files loaded at runtime.
@@ -96,16 +96,16 @@ aiZee follows a layered design:
 aizee/                         # Sovereign root (AIZEE_ROOT)
 ├── aizee_cli.py               # CLI entry point
 ├── config.py                  # Root discovery + version
-├── runtime/                   # Kernel + 85 governance modules
+├── runtime/                   # Kernel + 96 governance modules
 │   ├── kernel.py              # Facade
 │   ├── managers/              # Policy/Workflow/Agent/Chat managers
 │   ├── storage_backend.py     # StorageBackend protocol + factory
 │   ├── service_catalog.py     # ServiceDescriptor + multi-index catalog
 │   ├── schemas.py             # Pydantic + exceptions + pagination
-│   └── ...                    # 85 governance modules
+│   └── ...                    # 96 governance modules
 ├── aizee_mcp/                 # MCP server (36 tools)
 ├── memory/                    # SQLite + FTS5 + vector
-├── skills/                    # 72 persona + lord skills
+├── skills/                    # 80 persona + lord skills
 ├── workflows/                 # 36 trigger-based execution protocols
 ├── rules/                     # Compressed behavioral rules
 ├── tech-stack/                # 163 version-locked stack references

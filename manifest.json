@@ -257,5 +257,6 @@
     "vocabulary": "rules/vocabulary.md",
     "anti-patterns": "rules/anti-patterns.md",
     "behavioral": "rules/core-behavioral-compact.md"
-  }
+  },
+  "version": "5.8.0"
 }

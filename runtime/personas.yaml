@@ -38,6 +38,8 @@ personas:
     - test-driven-development
     - test-guard
     - eval-reliability-lord
+    skills:
+    - qa-automation
     keywords:
     - test
     - tests
@@ -71,6 +73,13 @@ personas:
     - flutter-design
     - seo-lord
     - arabic-dialect-lord
+    skills:
+    - web-design-guidelines
+    - design-taste
+    - image-to-code
+    - accessibility-auditor
+    - web-quality
+    - motion-design
     keywords:
     - ui
     - ux
@@ -98,6 +107,14 @@ personas:
     - شامي
     - rtl
     - mena
+    - design taste
+    - design dna
+    - image to code
+    - lighthouse
+    - core web vitals
+    - cwv
+    - motion design
+    - slop
   DEV:
     name: Master Developer
     weight: 1.0
@@ -107,6 +124,8 @@ personas:
     - language-lord
     - page-sections-lord
     - seo-lord
+    skills:
+    - backend-design
     keywords:
     - backend
     - api
@@ -1055,5 +1074,74 @@ lord_skills:
   - تحسين محركات البحث
   - سيو
   - تهيئة الموقع
+  web-design-guidelines:
+  - web design guidelines
+  - design guidelines
+  - a11y rules
+  - wcag rules
+  - dark mode
+  - typography rules
+  - form design
+  - i18n design
+  design-taste:
+  - design taste
+  - design dna
+  - extract design
+  - analyze design
+  - reverse engineer design
+  - design tokens
+  - taste skill
+  image-to-code:
+  - image to code
+  - design to code
+  - figma to code
+  - screenshot to code
+  - mockup to code
+  - design image
+  accessibility-auditor:
+  - accessibility audit
+  - wcag audit
+  - a11y audit
+  - axe-core
+  - screen reader
+  - aria audit
+  - contrast check
+  web-quality:
+  - lighthouse
+  - core web vitals
+  - cwv
+  - lcp
+  - inp
+  - cls
+  - fcp
+  - ttfb
+  - pagespeed
+  - web performance
+  motion-design:
+  - motion design
+  - animation audit
+  - gsap audit
+  - framer motion
+  - spring physics
+  - micro interaction
+  - transition design
+  qa-automation:
+  - playwright
+  - e2e testing
+  - e2e test
+  - browser automation
+  - qa agent
+  - smoke test
+  - visual regression
+  - adversarial test
+  backend-design:
+  - backend design
+  - senior backend
+  - idempotency
+  - n+1
+  - migration safety
+  - query discipline
+  - observability
+  - boring tech
 default: ARCH
 persona_lord_bonus: 0.5

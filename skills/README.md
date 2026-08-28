@@ -1,6 +1,19 @@
 # `skills/` — Persona & Lord Skills
 
-This directory contains **72 skills** (38 directory-based `SKILL.md` + 34 flat `.md` = 72 logical skills; `glob skills/**/*.md` returns ~115 files because directory skills have `references/` and `templates/`). Each skill is a compact rule set loaded lazily — only matching skills enter the AI's context window.
+This directory contains **80 skills** (38 directory-based `SKILL.md` + 42 flat `.md` = 80 logical skills; `glob skills/**/*.md` returns ~115 files because directory skills have `references/` and `templates/`). Each skill is a compact rule set loaded lazily — only matching skills enter the AI's context window.
+
+## New Skills (2026-08-28) — Imported from Claude Code Ecosystem
+
+| Skill | Type | Persona | Description |
+|-------|------|---------|-------------|
+| `web-design-guidelines` | flat | UX | 100+ rules from Vercel (a11y, forms, dark mode, typography, animation, images, performance, navigation, touch, i18n) |
+| `design-taste` | flat | UX | Design DNA extractor — reverse-engineer any website's design taste via Playwright |
+| `image-to-code` | flat | UX | Image-first design-to-code workflow (generate → analyze → implement) |
+| `accessibility-auditor` | flat | UX | 11 WCAG 2.2 AA specialist agents |
+| `web-quality` | flat | UX | Lighthouse + Core Web Vitals optimization |
+| `motion-design` | flat | UX | Animation audit from 3 designer perspectives + severity rankings |
+| `backend-design` | flat | DEV | 13 senior backend engineer reflexes |
+| `qa-automation` | flat | QA | 6 Playwright QA agents + 5-step workflow |
 
 ## How It Works
 

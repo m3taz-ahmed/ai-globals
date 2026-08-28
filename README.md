@@ -4,16 +4,16 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.7.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.7.1">
-    <img src="https://img.shields.io/badge/Tests-3566%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3566 passed">
+    <img src="https://img.shields.io/badge/Version-5.8.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.8.0">
+    <img src="https://img.shields.io/badge/Tests-3680%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3680 passed">
     <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 Personas">
-    <img src="https://img.shields.io/badge/Skills-72-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="72 Skills">
-    <img src="https://img.shields.io/badge/Workflows-36-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="36 Workflows">
-    <img src="https://img.shields.io/badge/Tech--Stack-163-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="163 Tech-Stack refs">
+    <img src="https://img.shields.io/badge/Skills-80-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="80 Skills">
+    <img src="https://img.shields.io/badge/Workflows-50-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="50 Workflows">
+    <img src="https://img.shields.io/badge/Tech--Stack-173-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="173 Tech-Stack refs">
   </p>
 </div>
 
@@ -35,7 +35,7 @@ A **zero-compromise, version-controlled operating system** that sits between you
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
 | Raw SQL, missing XSS, weak secrets | OWASP, zero-trust, RBAC enforced by default |
 | Random drive-by refactoring | Surgical changes through policy + budget + audit gates |
-| One-size-fits-all AI answers | 22 personas + 72 skills auto-selected per task |
+| One-size-fits-all AI answers | 22 personas + 80 skills auto-selected per task |
 
 ---
 
@@ -87,7 +87,7 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 22 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 85 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 96 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
 ├── aizee_mcp/                # MCP server (36 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
@@ -148,6 +148,38 @@ python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
 
 ---
+
+## What's New in v5.8.0
+
+### Claude Code Skills Import + Design Tooling Stack + Persona Shortcuts
+
+**8 New Skills** (imported from Claude Code ecosystem study):
+- `web-design-guidelines` — 100+ Vercel rules (a11y, forms, dark mode, typography, animation, images, performance, navigation, touch, i18n)
+- `design-taste` — Design DNA extractor via Playwright (4-phase pipeline: capture → measure → extract → write)
+- `image-to-code` — Image-first design-to-code workflow (DESIGN_VARIANCE=8, MOTION_INTENSITY=5, VISUAL_DENSITY=6)
+- `backend-design` — 13 senior backend reflexes (idempotency, migration safety, N+1, observability, boring-by-default)
+- `accessibility-auditor` — 11 WCAG 2.2 AA specialist agents
+- `web-quality` — Lighthouse + Core Web Vitals (LCP <2.5s, INP <200ms, CLS <0.1)
+- `motion-design` — Animation audit from 3 designer perspectives + severity rankings
+- `qa-automation` — 6 Playwright QA agents (smoke, ux, adversarial, performance, mobile, multi-user)
+
+**3 New Runtime Modules:**
+- `design_slop_verifier.py` — AI-slop detection (7 categories: gradient wash, accent-border cards, SVG illustrations, overused fonts, emoji, 3-column grid, AI headlines). Optional injectable vision-model judge.
+- `plugin_system.py` — Plugin registry (discovery, manifest validation, lifecycle management, keyword + persona indexing, hook execution)
+- `design_library.py` — 56 brand design systems catalog (Stripe, Linear, Vercel...). Load single brand, mix 2-3 brands, auto-detect project type.
+
+**Persona Reset + Status Shortcuts (34 commands):**
+- 17 reset triggers (`/reset`, `#reset`, `/انتحل`, `#شخصيات`, `/بدّل`, `/persona`, `#switch`...) — force persona re-detection mid-chat
+- 17 status triggers (`/status`, `#status`, `/حالة`, `#مين`, `/whoami`, `/info`...) — display current personas + skills + lords in formatted Arabic report
+- Works in any chat interface without `fresh_context=True`
+
+**Prompt Injection Defense Stack (from previous session):**
+- 7 modules: `injection_detector`, `defensive_injection`, `tool_output_sanitizer`, `prompt_injection_detector`, `dual_llm`, `agent_baseline`, `prompt_injection_suite`
+- 13-technique deterministic scanner + active counter-injection + indirect-injection defense + dual-LLM isolation + behavioral anomaly detection
+
+**Numbers:**
+- Skills: 72 → **80** | Runtime modules: 85 → **96** | Tests: 3566 → **3680** | Lord skills: 23 → **31**
+- ruff PASS, mypy PASS, pytest 154/154 new tests PASS
 
 ## What's New in v5.7.1
 
