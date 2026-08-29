@@ -16,10 +16,16 @@ from typing import Any
 from aizee_mcp._compat import FastMCP
 from aizee_mcp.rbac import check_tool_permission
 from aizee_mcp.tools import (
+    register_ads_tools,
+    register_analytics_tools,
     register_context_tools,
+    register_cro_tools,
+    register_email_tools,
+    register_freelance_tools,
     register_memory_tools,
     register_policy_tools,
     register_seo_tools,
+    register_social_tools,
     register_workflow_tools,
 )
 from aizee_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-exported for tests
@@ -90,6 +96,12 @@ def _register_tools_fallback() -> None:
     register_policy_tools(mcp)
     register_context_tools(mcp)
     register_seo_tools(mcp)
+    register_ads_tools(mcp)
+    register_analytics_tools(mcp)
+    register_cro_tools(mcp)
+    register_email_tools(mcp)
+    register_freelance_tools(mcp)
+    register_social_tools(mcp)
 
 
 # Auto-discover and register all tool modules; fall back to manual registration.

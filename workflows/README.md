@@ -4,7 +4,7 @@ Each file here activates when the AI detects a specific task type. Counts and th
 
 ## Numbered Workflows (Trigger-Based)
 
-This directory contains **50** `.md` files: **36** numbered trigger-based workflows (`00`-`35`) plus standards protocols and reference files.
+This directory contains **68** `.md` files: **54** numbered trigger-based workflows (`00`-`53`) plus standards protocols and reference files.
 
 | Trigger / Task Type | Workflow File | When to Use |
 |---|---|---|
@@ -44,6 +44,24 @@ This directory contains **50** `.md` files: **36** numbered trigger-based workfl
 | multi-tool sync | `33-multi-tool-sync.md` | Materialize aiZee's single source of truth into every AI coding tool's native format. Eli… |
 | agent gateway | `34-agent-gateway-audit.md` | Audit all LLM/MCP traffic passing through the agent gateway. Every request and response i… |
 | reliability eval | `35-reliability-eval.md` | Score AI coding agents with reliability@k + security-adjusted reliability@k. Replace the… |
+| onboarding / استقبال عميل / kickoff / intake… | `36-client-onboarding.md` | Structured client intake→contract→invoice→kickoff flow for new freelance engagements: col… |
+| contract / عقد / NDA / SOW / اتفاقية / IP tra… | `37-contract-lifecycle.md` | Generate→review→sign→store lifecycle for freelance contracts (NDA/SOW/MSA/IP-transfer) us… |
+| invoice / فاتورة / payment / عرض سعر / quotat… | `38-invoice-payment.md` | Quote→invoice→track→reconcile flow for freelance billing using the `invoice-manager` skil… |
+| pricing / تسعير / rate / retainer / حزمة / va… | `39-pricing-strategy.md` | Compute recommended rate→present→negotiate flow for freelance pricing using `pricing-stra… |
+| productize / خدمة جاهزة / packaged service /… | `40-productized-service.md` | Standardize→package→landing→sell flow that converts a custom freelance service into a fix… |
+| tax / ضريبة / cash flow / تدفق نقدي / savings… | `41-freelance-financials.md` | Income/expense/tax/cashflow planning for freelancers using `freelance-financials` skill a… |
+| win loss / تحليل فوز / win rate / bid analyti… | `42-win-loss-analytics.md` | Track bids→win rate→A/B proposals flow that turns freelance pipeline data into actionable… |
+| mostaql / خمسات / مستقل عربي / arabic freelan… | `43-arabic-freelance.md` | RTL-aware proposal/contract/invoice flow tailored to Arabic freelance platforms (Mostaql/… |
+| email setup / نشرة بريدية / drip / campaign ب… | `44-email-automation-setup.md` | Choose ESP→list→segment→drip→live setup for email marketing using the `email-marketing` s… |
+| social calendar / جدولة منشورات / content cal… | `45-social-content-calendar.md` | Draft→approve→schedule→publish→measure social content flow across X/IG/YT/TikTok/LinkedIn… |
+| cro / معدل تحويل / landing page / تجربة أ ب /… | `46-cro-audit.md` | Funnel→replay→hypothesis→experiment conversion-rate-optimization audit using the `cro-opt… |
+| marketing campaign / حملة إعلانية / campaign… | `47-marketing-campaign.md` | Brief→channels→budget→launch→measure marketing campaign flow using `marketing-strategy` a… |
+| lead gen / اكتساب عملاء / lead funnel / عميل… | `48-lead-generation-funnel.md` | Capture→score→nurture→handoff lead funnel using `lead-generation-crm` and `b2b-cold-outre… |
+| ga4 / analytics / attribution / CAC / LTV / ت… | `49-marketing-analytics.md` | Collect→attribute→dashboard→decide marketing analytics flow using the `marketing-analytic… |
+| automation / journey / أتمتة تسويق / marketin… | `50-marketing-automation.md` | Trigger→enrich→route→notify marketing automation flow using `marketing-automation` skill… |
+| local seo / google business profile / citatio… | `51-local-seo.md` | GBP→citations→reviews local SEO flow that extends `seo-lord` locally using Google Busines… |
+| pr outreach / press release / HARO / علاقات ص… | `52-pr-outreach.md` | Query match→pitch→follow-up PR outreach flow using `pr-pitch` skill to match journalist q… |
+| community / بناء مجتمع / community building /… | `53-community-building.md` | Launch→moderate→grow RTL-aware community flow using `community-builder` skill and Chatwoo… |
 
 ## Standards & Reference Files
 

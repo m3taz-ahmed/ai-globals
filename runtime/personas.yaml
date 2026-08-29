@@ -535,71 +535,71 @@ personas:
     weight: 1.3
     skill: freelance-platforms
     lords:
-      - proposal-writer
-      - cv-writer
-      - api-architect
-      - security-lord
-      - docs-guard
+    - proposal-writer
+    - cv-writer
+    - api-architect
+    - security-lord
+    - docs-guard
     keywords:
-      - freelance
-      - freelancer
-      - upwork
-      - fiverr
-      - freelancer.com
-      - mostaql
-      - khamsat
-      - nabbesh
-      - bawaba
-      - qawm
-      - موقع
-      - مواقع
-      - مواقع العمل الحر
-      - العمل الحر
-      - أعمال حرة
-      - عمل حر
-      - فريلانسر
-      - مستقل
-      - خمسات
-      - منصات
-      - بروبوزل
-      - عروض
-      - عروض أسعار
-      - عرض سعر
-      - كتابة عروض
-      - تصميم موقع
-      - تطوير موقع
-      - freelance platforms
-      - remote work
-      - gig
-      - gigs
-      - bids
-      - bidding
-      - proposal
-      - proposals
-      - website proposal
-      - web proposal
-      - digital proposal
-      - service proposal
-      - sales proposal
-      - client proposal
-      - rfp
-      - request for proposal
-      - quotation
-      - quote
-      - quotes
-      - pitch
-      - scope of work
-      - sow
-      - proposal writing
-      - proposal writer
-      - portfolio
-      - client
-      - clients
-      - earnings
-      - connects
-      - contract
-      - milestone
-      - escrow
+    - freelance
+    - freelancer
+    - upwork
+    - fiverr
+    - freelancer.com
+    - mostaql
+    - khamsat
+    - nabbesh
+    - bawaba
+    - qawm
+    - موقع
+    - مواقع
+    - مواقع العمل الحر
+    - العمل الحر
+    - أعمال حرة
+    - عمل حر
+    - فريلانسر
+    - مستقل
+    - خمسات
+    - منصات
+    - بروبوزل
+    - عروض
+    - عروض أسعار
+    - عرض سعر
+    - كتابة عروض
+    - تصميم موقع
+    - تطوير موقع
+    - freelance platforms
+    - remote work
+    - gig
+    - gigs
+    - bids
+    - bidding
+    - proposal
+    - proposals
+    - website proposal
+    - web proposal
+    - digital proposal
+    - service proposal
+    - sales proposal
+    - client proposal
+    - rfp
+    - request for proposal
+    - quotation
+    - quote
+    - quotes
+    - pitch
+    - scope of work
+    - sow
+    - proposal writing
+    - proposal writer
+    - portfolio
+    - client
+    - clients
+    - earnings
+    - connects
+    - contract
+    - milestone
+    - escrow
   DEVX:
     name: Developer Experience Engineer
     weight: 1.1
@@ -675,40 +675,257 @@ personas:
     - aws cost
     - gcp cost
     - azure cost
+  MARKETING:
+    name: Digital Marketing Strategist & E-marketing Architect
+    weight: 1.3
+    skill: marketing-strategy
+    lords:
+    - seo-lord
+    - content-quality-lord
+    - docs-guard
+    keywords:
+    - marketing
+    - digital marketing
+    - التسويق
+    - تسويق إلكتروني
+    - تسويق رقمي
+    - e-marketing
+    - emarketing
+    - campaign
+    - حملة إعلانية
+    - growth
+    - brand
+    - براند
+    - lead generation
+    - عملاء محتملين
+    - funnel
+    - قمع مبيعات
+    - market
+    - تسويق
+    - ماركتنج
+    - حملة
+    - حملات
+    - campaigns
+    - إعلان
+    - إعلانات
+    - ads
+    - advertising
+    - جمهور
+    - audience
+    - نمو
+    - leads
+    - عملاء
+    - قمع
+    - رعاية
+    - promo
+    - استهداف
+    - targeting
+    - نقرات
+    - clicks
+  GROWTH:
+    name: Growth Hacker & Virality Engineer
+    weight: 1.3
+    skill: growth-loops
+    lords:
+    - marketing-strategy
+    - seo-lord
+    keywords:
+    - growth hacking
+    - viral
+    - فيروسي
+    - referral
+    - إحالة
+    - plg
+    - product led growth
+    - loop
+    - احتفاظ
+    - retention
+    - شارك المجانية
+    - growth
+    - نمو
+    - hacking
+    - انتشار
+    - share
+  BRAND:
+    name: Brand Strategist & Identity Architect
+    weight: 1.1
+    skill: brand-kit
+    lords:
+    - docs-guard
+    - content-quality-lord
+    keywords:
+    - brand
+    - براند
+    - هوية
+    - identity
+    - positioning
+    - موقع تنافسي
+    - voice
+    - نبرة
+    - guidelines
+    - دليل براند
+    - logo
+    - شعار
+    - دليل
+    - اسم
+    - naming
+  EMAIL:
+    name: Email Marketing & Automation Specialist
+    weight: 1.2
+    skill: email-marketing
+    lords:
+    - marketing-strategy
+    keywords:
+    - email
+    - newsletter
+    - نشرة بريدية
+    - drip
+    - رسائل تلقائية
+    - campaign email
+    - mailchimp
+    - brevo
+    - listmonk
+    - تسويق بريد
+    - بريد
+    - بريد إلكتروني
+    - نشرة
+    - رسائل
+    - حملة بريدية
+    - قائمة بريدية
+    - mailing list
+    - اشتراك
+    - subscribe
+  SOCIAL:
+    name: Social Media Manager & Content Distributor
+    weight: 1.2
+    skill: social-media-marketing
+    lords:
+    - marketing-strategy
+    - content-quality-lord
+    keywords:
+    - social media
+    - تواصل اجتماعي
+    - تويتر
+    - x platform
+    - instagram
+    - يوتيوب
+    - tiktok
+    - facebook
+    - جدولة منشورات
+    - content calendar
+    - وسائل التواصل
+    - social
+    - twitter
+    - اكس
+    - انستقرام
+    - youtube
+    - تيك توك
+    - فيسبوك
+    - منشور
+    - منشورات
+    - post
+    - posts
+    - جدولة
+    - schedule
+    - محتوى
+    - content
+    - منصة
+    - platform
+    - بث
+    - livestream
+    - ريلز
+    - reels
+    - ستوري
+    - story
+  CRO:
+    name: Conversion Rate Optimizer & Experimentation Lead
+    weight: 1.2
+    skill: cro-optimization
+    lords:
+    - marketing-strategy
+    - seo-lord
+    keywords:
+    - cro
+    - conversion
+    - تحويل
+    - a/b test
+    - تجربة أ ب
+    - landing page
+    - صفحة هبوط
+    - heatmap
+    - experiment
+    - معدل تحويل
+    - a/b
+    - ab test
+    - تجربة
+    - تحسين
+    - optimize
+    - اختبار
+    - testing
+    - معدل
+    - rate
+  SALES:
+    name: Lead Generation & Outreach Closer
+    weight: 1.2
+    skill: b2b-cold-outreach
+    lords:
+    - proposal-writer
+    - marketing-strategy
+    keywords:
+    - lead gen
+    - cold email
+    - رسالة باردة
+    - outreach
+    - اكتساب عملاء
+    - b2b
+    - prospecting
+    - اوت ريتش
+    - عميل محتمل
+    - sales
+    - مبيعات
+    - lead
+    - leads
+    - بروبوزل
+    - proposal
+    - إغلاق
+    - closing
+    - مبيعات باردة
+default: ARCH
+persona_lord_bonus: 0.5
 lord_skills:
   freelance-platforms:
-    - freelance
-    - freelancer
-    - upwork
-    - fiverr
-    - freelancer.com
-    - mostaql
-    - khamsat
-    - nabbesh
-    - bawaba
-    - qawm
-    - موقع
-    - مواقع
-    - مواقع العمل الحر
-    - العمل الحر
-    - أعمال حرة
-    - عمل حر
-    - فريلانسر
-    - مستقل
-    - خمسات
-    - bidding
-    - bids
-    - gig
-    - gigs
-    - عروض
-    - بروبوزل
-    - عروض أسعار
-    - proposal
-    - proposals
-    - connects
-    - contract
-    - milestone
-    - escrow
+  - freelance
+  - freelancer
+  - upwork
+  - fiverr
+  - freelancer.com
+  - mostaql
+  - khamsat
+  - nabbesh
+  - bawaba
+  - qawm
+  - موقع
+  - مواقع
+  - مواقع العمل الحر
+  - العمل الحر
+  - أعمال حرة
+  - عمل حر
+  - فريلانسر
+  - مستقل
+  - خمسات
+  - bidding
+  - bids
+  - gig
+  - gigs
+  - عروض
+  - بروبوزل
+  - عروض أسعار
+  - proposal
+  - proposals
+  - connects
+  - contract
+  - milestone
+  - escrow
   database-lord:
   - database
   - sql
@@ -1074,6 +1291,92 @@ lord_skills:
   - تحسين محركات البحث
   - سيو
   - تهيئة الموقع
+  marketing-strategy:
+  - marketing
+  - digital marketing
+  - التسويق
+  - تسويق إلكتروني
+  - تسويق رقمي
+  - e-marketing
+  - emarketing
+  - campaign
+  - حملة إعلانية
+  - growth
+  - brand
+  - براند
+  - lead generation
+  - عملاء محتملين
+  - funnel
+  - قمع مبيعات
+  growth-loops:
+  - growth hacking
+  - viral
+  - فيروسي
+  - referral
+  - إحالة
+  - plg
+  - product led growth
+  - loop
+  - احتفاظ
+  - retention
+  - شارك المجانية
+  brand-kit:
+  - brand
+  - براند
+  - هوية
+  - identity
+  - positioning
+  - موقع تنافسي
+  - voice
+  - نبرة
+  - guidelines
+  - دليل براند
+  - logo
+  - شعار
+  email-marketing:
+  - email
+  - newsletter
+  - نشرة بريدية
+  - drip
+  - رسائل تلقائية
+  - campaign email
+  - mailchimp
+  - brevo
+  - listmonk
+  - تسويق بريد
+  social-media-marketing:
+  - social media
+  - تواصل اجتماعي
+  - تويتر
+  - x platform
+  - instagram
+  - يوتيوب
+  - tiktok
+  - facebook
+  - جدولة منشورات
+  - content calendar
+  - وسائل التواصل
+  cro-optimization:
+  - cro
+  - conversion
+  - تحويل
+  - a/b test
+  - تجربة أ ب
+  - landing page
+  - صفحة هبوط
+  - heatmap
+  - experiment
+  - معدل تحويل
+  b2b-cold-outreach:
+  - lead gen
+  - cold email
+  - رسالة باردة
+  - outreach
+  - اكتساب عملاء
+  - b2b
+  - prospecting
+  - اوت ريتش
+  - عميل محتمل
   web-design-guidelines:
   - web design guidelines
   - design guidelines
@@ -1143,5 +1446,3 @@ lord_skills:
   - query discipline
   - observability
   - boring tech
-default: ARCH
-persona_lord_bonus: 0.5

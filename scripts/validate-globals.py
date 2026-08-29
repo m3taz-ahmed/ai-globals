@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI Globals Validation Script (Python) v5.7.1
+# AI Globals Validation Script (Python) v5.8.0
 # Source of truth validator - PowerShell wrapper delegates to this script.
 
 import argparse
@@ -165,7 +165,11 @@ def check_title(content: str, rel_name: str, ctx: ValidationContext) -> bool:
     return True
 
 def check_struct(content: str, rel_name: str, ctx: ValidationContext) -> bool:
-    """AI files with [SKILL]/[FILE]/[TECH]/[WORKFLOW] in body MUST have [OBJ] and [RULES]."""
+    """AI files with [SKILL]/[FILE]/[TECH]/[WORKFLOW] in body MUST have [OBJ] and [RULES].
+
+    Tech-stack files may use [DATA]/[API] sections instead of [RULES] (they
+    describe data sources and API endpoints, not behavioral rules).
+    """
     if not is_ai_file(content):
         return False
     error = False
@@ -173,7 +177,11 @@ def check_struct(content: str, rel_name: str, ctx: ValidationContext) -> bool:
         cprint(f"ERROR: Missing [OBJ] in AI file {rel_name}", Colors.RED)
         ctx.error_count += 1
         error = True
-    if "[RULES]" not in content:
+    # Tech-stack files use [DATA]/[API] instead of [RULES].
+    is_tech_stack = rel_name.startswith("tech-stack") or "[TECH]" in content
+    has_rules = "[RULES]" in content
+    has_data_or_api = "[DATA]" in content or "[API]" in content
+    if not has_rules and not (is_tech_stack and has_data_or_api):
         cprint(f"ERROR: Missing [RULES] in AI file {rel_name}", Colors.RED)
         ctx.error_count += 1
         error = True
@@ -419,7 +427,7 @@ def run_pass1(rule_files: list[str], global_path: str, manifest: dict[str, str],
     return file_data
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="AI Globals Validation v5.7.1")
+    p = argparse.ArgumentParser(description="AI Globals Validation v5.8.0")
     p.add_argument("--dry-run",            action="store_true", help="Scan without writing")
     p.add_argument("--generate-manifest",  action="store_true", help="Force regenerate manifest")
     p.add_argument("--force",              action="store_true", help="Bypass manifest cache")
@@ -460,7 +468,7 @@ def main() -> None:
         cprint(f"MISCONFIG: rules/vocabulary.md not found at {vocab_path}", Colors.RED)
         sys.exit(2)
 
-    cprint(f"AI Globals Validation v5.7.1 [Fix: {'ON' if args.fix else 'OFF'}]", Colors.CYAN)
+    cprint(f"AI Globals Validation v5.8.0 [Fix: {'ON' if args.fix else 'OFF'}]", Colors.CYAN)
 
     rule_files = collect_rule_files(global_path)
     manifest_path = os.path.join(global_path, "integrity.manifest")

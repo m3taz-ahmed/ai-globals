@@ -15,6 +15,7 @@ license: MIT
 ## Cold Start
 1. Read `global-roles.md`, `global-workflow.md`, and `Memory.md`.
 2. Detect personas with `aizee persona detect --multi` and load the returned `skills/` before acting.
+   **Persona switch directive (mandatory):** If the user message STARTS with a persona command — `#انتحل`, `/انتحل`, `#reset`, `/reset`, `#persona`, `/persona`, `#redetect`, `#switch` (or Arabic `#شخصيات`, `/شخصيات`, `#بدّل`, `/بدّل`, `#حالة`, `/حالة`, `#مين`, `/مين`, `#معلومات`, `/معلومات`) — strip the command token, then run `aizee persona detect --multi "<remaining text>"` and **ADOPT** the returned primary + secondary personas and load their `skills/` + `lords/` before acting. For status commands (`#حالة`, `/status`, `#مين`, `/معلومات`) print the currently active persona set instead of acting. This makes persona adoption explicit and verifiable; never silently ignore these commands.
 3. If the current project has `spec.md`, read it before any action.
 
 ## Runtime Gate
@@ -40,4 +41,5 @@ No `eval` in policy code.
 - No full `php artisan test` suites. Targeted `--filter=...` only, or skip tests.
 - No `git add .` / `git add -A` (`[GIT-06]`). No `git commit`, `git push`, destructive git, or unauthorized server actions without explicit user approval.
 - Delete temporary/scratch/test files immediately after use.
+
 

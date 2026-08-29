@@ -64,6 +64,12 @@ if exist "%SOURCE%\.cursor\rules" (
     xcopy "%SOURCE%\.cursor\rules\*" "%TARGET%\.cursor\rules\" /E /I /Y /Q >nul
 )
 
+REM Sync .claude/ (MCP server config + permissions)
+echo Syncing .claude/...
+if exist "%SOURCE%\.claude" (
+    xcopy "%SOURCE%\.claude\*" "%TARGET%\.claude\" /E /I /Y /Q >nul
+)
+
 REM Sync aizee_mcp/ (MCP server + tools)
 echo Syncing aizee_mcp/...
 xcopy "%SOURCE%\aizee_mcp\*" "%TARGET%\aizee_mcp\" /E /I /Y /Q >nul

@@ -5,15 +5,15 @@
 
   <p>
     <img src="https://img.shields.io/badge/Version-5.8.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.8.0">
-    <img src="https://img.shields.io/badge/Tests-3680%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3680 passed">
+    <img src="https://img.shields.io/badge/Tests-3687%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3687 passed">
     <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/Personas-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 Personas">
-    <img src="https://img.shields.io/badge/Skills-80-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="80 Skills">
-    <img src="https://img.shields.io/badge/Workflows-50-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="50 Workflows">
-    <img src="https://img.shields.io/badge/Tech--Stack-173-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="173 Tech-Stack refs">
+    <img src="https://img.shields.io/badge/Personas-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 Personas">
+    <img src="https://img.shields.io/badge/Skills-110-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="110 Skills">
+    <img src="https://img.shields.io/badge/Workflows-54-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="54 Workflows">
+    <img src="https://img.shields.io/badge/Tech--Stack-195-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="195 Tech-Stack refs">
   </p>
 </div>
 
@@ -35,7 +35,7 @@ A **zero-compromise, version-controlled operating system** that sits between you
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
 | Raw SQL, missing XSS, weak secrets | OWASP, zero-trust, RBAC enforced by default |
 | Random drive-by refactoring | Surgical changes through policy + budget + audit gates |
-| One-size-fits-all AI answers | 22 personas + 80 skills auto-selected per task |
+| One-size-fits-all AI answers | 29 personas + 71 skills auto-selected per task |
 
 ---
 
@@ -85,14 +85,14 @@ aizee status    # Current persona, skills, budget
 ```
 .ai/                         # Sovereign root (discovered via AIZEE_ROOT)
 ├── AGENTS.md                # Cross-tool canonical bootloader
-├── global-roles.md          # 22 personas + operational rules
+├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 96 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 107 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
 ├── aizee_mcp/                # MCP server (36 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 72 persona + lord skills
-├── workflows/               # 36 trigger-based execution protocols
+├── skills/                  # 110 persona + lord skills
+├── workflows/               # 54 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -106,7 +106,7 @@ aizee status    # Current persona, skills, budget
 ## The Six Pillars
 
 ### 1. Persona + Skill Composition
-22 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, etc.) with 29 lord-level domain skills. Auto-detected per task — no manual selection needed.
+29 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, `MARKETING`, `GROWTH`, `BRAND`, `EMAIL`, `SOCIAL`, `CRO`, `SALES`, etc.) with 38 lord-level domain skills. Auto-detected per task — no manual selection needed.
 
 ```bash
 aizee persona detect --multi "build a secure docker API with postgres"

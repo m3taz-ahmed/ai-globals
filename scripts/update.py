@@ -217,11 +217,19 @@ def _post_install_hooks(root: Path) -> list[str]:
     # 2. MCP config sync
     sync_script = root / "scripts" / "mcp_global_sync.py"
     if sync_script.exists():
-        rc, _, _ = _run(
+        rc, out, _ = _run(
             [sys.executable, str(sync_script)],
             cwd=root, check=False,
         )
-        actions.append(f"MCP config sync: {'OK' if rc == 0 else 'skipped'}")
+        # Extract server count from output
+        server_count = ""
+        for line in out.strip().splitlines():
+            low = line.lower()
+            if ("servers" in low and "verified" in low) or "written global mcp config" in low:
+                server_count = line.strip()
+                break
+        status = "OK" if rc == 0 else "skipped"
+        actions.append(f"MCP config sync: {status}" + (f" ({server_count})" if server_count else ""))
 
     # 3. CLI shim refresh (legacy script, if present)
     cli_script = root / "scripts" / "install_cli_shim.py"
@@ -319,25 +327,179 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
     else:
         print("  No files changed.")
 
+    # Step 6b: Self-re-execution — if update.py itself changed, re-launch
+    # the NEW version so post-install hooks + verification use the latest code.
+    # This solves the bootstrapping problem: the old script can't run new logic.
+    self_script = Path(__file__).resolve()
+    if any(f.replace("\\", "/").endswith("scripts/update.py") for f in changed):
+        print("\n  [SELF-UPDATE] update.py changed — re-launching new version...")
+        rc = subprocess.call(
+            [sys.executable, str(self_script), "--post-install-only", "--root", str(root)],
+            cwd=root,
+        )
+        return rc
+
     # Step 7: Post-install hooks
     print("\n  Running post-install hooks...")
     actions = _post_install_hooks(root)
     for a in actions:
         print(f"    {a}")
 
-    # Step 8: Summary
+    # Step 8: Verify update integrity
+    print("\n  Verifying update...")
+    verify_ok = True
+
+    # 8a: Version check
+    version_file = root / ".aizee-version"
+    if version_file.exists():
+        ver = version_file.read_text(encoding="utf-8").strip()
+        print(f"    Version: {ver}")
+    else:
+        print("    [WARN] .aizee-version file missing")
+        verify_ok = False
+
+    # 8b: MCP config check — count servers in config.json
+    config_file = root / "aizee_mcp" / "config.json"
+    if config_file.exists():
+        try:
+            import json as _json
+            cfg = _json.loads(config_file.read_text(encoding="utf-8"))
+            n_servers = len(cfg.get("mcpServers", {}))
+            print(f"    MCP servers configured: {n_servers}")
+            if n_servers < 7:
+                print("    [WARN] Expected at least 7 MCP servers")
+                verify_ok = False
+        except (OSError, ValueError):
+            print("    [WARN] config.json is invalid JSON")
+            verify_ok = False
+    else:
+        print("    [WARN] aizee_mcp/config.json missing")
+        verify_ok = False
+
+    # 8c: Core import check — can we import the kernel?
+    rc, _, err = _run(
+        [sys.executable, "-c", "from runtime.kernel import Kernel; print('OK')"],
+        cwd=root, check=False,
+    )
+    if rc == 0:
+        print("    Kernel import: OK")
+    else:
+        print(f"    [ERROR] Kernel import failed: {err.strip()}")
+        verify_ok = False
+
+    # 8d: ruff quick check (if ruff is installed)
+    rc, _out, _ = _run(
+        [sys.executable, "-m", "ruff", "check", "--select", "E9,F63,F7,F82", "."],
+        cwd=root, check=False,
+    )
+    if rc == 0:
+        print("    ruff fatal check: OK")
+    else:
+        # Non-fatal — just warn
+        print("    [WARN] ruff check had issues (non-blocking)")
+
+    # Step 9: Summary
     print("\n" + "=" * 60)
-    print("  [DONE] aiZee updated successfully.")
+    if verify_ok:
+        print("  [DONE] aiZee updated + verified successfully.")
+    else:
+        print("  [DONE] aiZee updated (with warnings — check output above).")
     print("  Learned data (memory/state/brain/.env) preserved.")
     print("=" * 60)
 
-    return 0
+    return 0 if verify_ok else 2
+
+
+def _run_post_install_only(root: Path) -> int:
+    """Run only post-install hooks + verification (no git pull).
+
+    Called by the self-re-execution path when ``update.py`` itself changed
+    during git pull. The OLD script (still in memory) detects this and
+    re-launches the NEW script with ``--post-install-only``.
+    """
+    print("=" * 60)
+    print("  aiZee Update — Post-install (self-re-launched)")
+    print("=" * 60)
+
+    # Step 7: Post-install hooks
+    print("\n  Running post-install hooks...")
+    actions = _post_install_hooks(root)
+    for a in actions:
+        print(f"    {a}")
+
+    # Step 8: Verify update integrity
+    print("\n  Verifying update...")
+    verify_ok = True
+
+    # 8a: Version check
+    version_file = root / ".aizee-version"
+    if version_file.exists():
+        ver = version_file.read_text(encoding="utf-8").strip()
+        print(f"    Version: {ver}")
+    else:
+        print("    [WARN] .aizee-version file missing")
+        verify_ok = False
+
+    # 8b: MCP config check
+    config_file = root / "aizee_mcp" / "config.json"
+    if config_file.exists():
+        try:
+            import json as _json
+            cfg = _json.loads(config_file.read_text(encoding="utf-8"))
+            n_servers = len(cfg.get("mcpServers", {}))
+            print(f"    MCP servers configured: {n_servers}")
+            if n_servers < 7:
+                print("    [WARN] Expected at least 7 MCP servers")
+                verify_ok = False
+        except (OSError, ValueError):
+            print("    [WARN] config.json is invalid JSON")
+            verify_ok = False
+    else:
+        print("    [WARN] aizee_mcp/config.json missing")
+        verify_ok = False
+
+    # 8c: Core import check
+    rc, _, err = _run(
+        [sys.executable, "-c", "from runtime.kernel import Kernel; print('OK')"],
+        cwd=root, check=False,
+    )
+    if rc == 0:
+        print("    Kernel import: OK")
+    else:
+        print(f"    [ERROR] Kernel import failed: {err.strip()}")
+        verify_ok = False
+
+    # 8d: ruff quick check
+    rc, _out, _ = _run(
+        [sys.executable, "-m", "ruff", "check", "--select", "E9,F63,F7,F82", "."],
+        cwd=root, check=False,
+    )
+    if rc == 0:
+        print("    ruff fatal check: OK")
+    else:
+        print("    [WARN] ruff check had issues (non-blocking)")
+
+    # Step 9: Summary
+    print("\n" + "=" * 60)
+    if verify_ok:
+        print("  [DONE] aiZee updated + verified successfully.")
+    else:
+        print("  [DONE] aiZee updated (with warnings — check output above).")
+    print("  Learned data (memory/state/brain/.env) preserved.")
+    print("=" * 60)
+
+    return 0 if verify_ok else 2
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="aiZee update — pull latest from GitHub")
     parser.add_argument("--yes", "-y", action="store_true", help="Skip confirmation")
     parser.add_argument("--root", default=None, help="aiZee root directory (default: auto-detect)")
+    parser.add_argument(
+        "--post-install-only",
+        action="store_true",
+        help="Skip git pull; run only post-install hooks + verification (used by self-re-execution)",
+    )
     args = parser.parse_args(argv)
 
     # Auto-detect: script is in <root>/scripts/
@@ -346,6 +508,10 @@ def main(argv: list[str] | None = None) -> int:
     if not root.exists():
         print(f"[ERROR] Root not found: {root}")
         return 1
+
+    # Self-re-execution path: skip pull, just run hooks + verify
+    if args.post_install_only:
+        return _run_post_install_only(root)
 
     return run_update(root, assume_yes=args.yes)
 

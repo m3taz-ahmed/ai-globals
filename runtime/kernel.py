@@ -139,6 +139,36 @@ def _init_core_services(kernel: Kernel) -> None:
         )
         kernel.plugin_registry.discover()  # type: ignore[attr-defined]
 
+    # Initialize freelance + marketing/emarkeitng runtime modules (lazy).
+    # These are stateless helpers (functions/small classes); import the
+    # module so callers can access them via ``kernel.<module>``.
+    with contextlib.suppress(Exception):
+        import runtime.attribution_model as _attr
+        import runtime.billing_ledger as _billing
+        import runtime.crm_manager as _crm
+        import runtime.drip_engine as _drip
+        import runtime.experiment_tracker as _exp
+        import runtime.feature_flags as _flags
+        import runtime.funnel_tracker as _funnel
+        import runtime.lead_scorer as _lead
+        import runtime.marketing_compliance as _mcomp
+        import runtime.pipeline_analytics as _pipe
+        import runtime.post_queue as _queue
+        import runtime.pricing_calculator as _pricing
+
+        kernel.attribution_model = _attr  # type: ignore[attr-defined]
+        kernel.billing_ledger = _billing  # type: ignore[attr-defined]
+        kernel.crm_manager = _crm  # type: ignore[attr-defined]
+        kernel.drip_engine = _drip  # type: ignore[attr-defined]
+        kernel.experiment_tracker = _exp  # type: ignore[attr-defined]
+        kernel.feature_flags = _flags  # type: ignore[attr-defined]
+        kernel.funnel_tracker = _funnel  # type: ignore[attr-defined]
+        kernel.lead_scorer = _lead  # type: ignore[attr-defined]
+        kernel.marketing_compliance = _mcomp  # type: ignore[attr-defined]
+        kernel.pipeline_analytics = _pipe  # type: ignore[attr-defined]
+        kernel.post_queue = _queue  # type: ignore[attr-defined]
+        kernel.pricing_calculator = _pricing  # type: ignore[attr-defined]
+
 
 def _init_managers(kernel: Kernel) -> None:
     """Initialize manager submodules (policy, workflow, agent, chat)."""

@@ -1,5 +1,39 @@
 # Changelog
 
+## [5.9.0] - 2026-08-29 (Marketing/Freelance MCP Integration + Runtime Wiring + Plugin Hardening)
+
+### Runtime Module Wiring (12 modules → 10 MCP tools)
+- **analytics_tools.py** — wired `attribution_model`, `funnel_tracker`, `lead_scorer`, `marketing_compliance`, `pipeline_analytics`. New tools: `lead_score`, `compliance_check`, `pipeline_win_rate`, `funnel_dropoff`.
+- **cro_tools.py** — wired `experiment_tracker`, `feature_flags`. Replaced stub `_two_proportion_z` with `experiment_tracker.analyze_ab_test`. New tool: `cro_evaluate_flag`.
+- **social_tools.py** — wired `post_queue`. New tool: `social_enqueue`.
+- **email_tools.py** — wired `drip_engine`, `crm_manager`. New tools: `drip_create_sequence`, `drip_ready_steps`, `crm_opportunity_transition`.
+- All 10 new tools have defensive exception handling: `except (ValidationError, TypeError, ValueError, AttributeError)`.
+
+### Plugin Hardening (27 plugins)
+- **mcpServers config** — 27 new entries in `aizee_mcp/config.json` + `.claude/settings.json` (brevo, listmonk, documenso, postiz, twitter, youtube, mostaql, khamsat, google-ads, meta-ads, tiktok-ads, linkedin-ads, posthog, n8n, twenty, hubspot, chatwoot, formbricks, openreplay, growthbook, flagsmith, lago, erpnext, sendgrid, kit, klaviyo, automatisch).
+- **on_load validation** — all 27 plugins now validate required env vars on load and log WARNING if missing.
+- **_ENV_ALLOWLIST** — `runtime/mcp_client.py` expanded with 27 plugins' env vars (33 new entries).
+
+### Runtime Bug Fixes
+- **post_queue.py** — fixed `field(default_factory=list)` → `[]` (broken queue init).
+- **pipeline_analytics.py** — `_Bid.won` changed from `bool` to `bool | None`; `win_rate` now excludes pending bids; `ValueError`/`TypeError` → `ValidationError`.
+- **experiment_tracker.py** — added validation for conversions > visitors; `NotImplementedError` → `ValidationError`.
+- **drip_engine.py** — `ready_steps` now accepts `context: dict | None = None` parameter.
+- **marketing_compliance.py** — `ValueError` → `ValidationError`.
+- **crm_manager.py** — moved `ValidationError` import to top-level.
+
+### Tech-Stack Fixes
+- **9 Context7 IDs verified** — buffer, hubspot, kit, klaviyo, linkedin-ads, mailchimp, mixpanel, sendgrid, tiktok-ads. All resolved via Context7 MCP `resolve-library-id`.
+- **2 new tech-stack files** — `n8n-1.md`, `mautic-1.md`.
+- **3 skills fixed** — marketing-automation, paid-ads tech_stack refs corrected.
+
+### Skill Compliance
+- **growth-loops/SKILL.md** — rewritten to comply with skill schema.
+- **manifest.json** — 8 stale workflow filenames corrected.
+
+### Sync Script Fix
+- **update_aizee.bat** — added `.claude/` sync (was missing, causing MCP config drift).
+
 ## [5.8.0] - 2026-08-28 (Claude Code Skills Import + Design Tooling + Persona Shortcuts)
 
 ### New Skills (8)

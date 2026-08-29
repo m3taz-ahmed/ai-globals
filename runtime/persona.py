@@ -227,16 +227,20 @@ def inject_persona_context(
         context["persona_status"] = format_persona_status(context, detector)
         return context
 
-    # Reset trigger: clear existing persona fields and re-detect.
+    # Reset trigger: clear existing persona fields and re-detect on the
+    # text AFTER the command token (so "#انتحل حملة تسويق" detects on
+    # "حملة تسويق", not on the command itself).
+    detect_text = text
     if is_persona_reset_command(text):
         for key in ("persona", "skill", "personas", "skills", "lords"):
             context.pop(key, None)
+        detect_text = _RESET_PATTERN.sub("", text, count=1).strip() or text
 
     # Normal path: skip if persona already set (unless reset was triggered).
     if "personas" in context or "persona" in context:
         return context
 
-    result = detector.detect_multiple(text)
+    result = detector.detect_multiple(detect_text)
     context["persona"] = result["persona"]
     context["skill"] = result["skill"]
     context["personas"] = result["personas"]
@@ -254,14 +258,15 @@ class PersonaDetector:
     """
 
     _DATA: ClassVar[dict[str, Any]] = _load_persona_data()
-    DEFAULT: ClassVar[str] = _DATA["default"]
-    PERSONA_LORD_BONUS: ClassVar[float] = _DATA["persona_lord_bonus"]
-    PERSONAS: ClassVar[dict[str, dict[str, Any]]] = _DATA["personas"]
-    LORD_SKILLS: ClassVar[dict[str, list[str]]] = _DATA["lord_skills"]
+    DEFAULT: ClassVar[str] = _DATA.get("default", "")
+    PERSONA_LORD_BONUS: ClassVar[float] = _DATA.get("persona_lord_bonus", 0.0)
+    PERSONAS: ClassVar[dict[str, dict[str, Any]]] = _DATA.get("personas", {})
+    LORD_SKILLS: ClassVar[dict[str, list[str]]] = _DATA.get("lord_skills", {})
     # Pre-compiled regex cache for keyword matching (compiled once at class load)
     _COMPILED_KEYWORDS: ClassVar[dict[str, re.Pattern[str]]] = {
         kw.lower(): re.compile(r"\b" + re.escape(kw) + r"\b", re.IGNORECASE)
-        for info in _DATA["personas"].values()
+        for info in _DATA.get("personas", {}).values()
+        if info
         for kw in info.get("keywords", [])
     } | {
         kw.lower(): re.compile(r"\b" + re.escape(kw) + r"\b", re.IGNORECASE)

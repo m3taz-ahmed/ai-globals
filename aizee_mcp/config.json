@@ -27,6 +27,114 @@
     "linkedin": {
       "command": "python",
       "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"]
+    },
+    "brevo": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-brevo"]
+    },
+    "listmonk": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-listmonk"]
+    },
+    "documenso": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-documenso"]
+    },
+    "postiz": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-postiz"]
+    },
+    "twitter": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-twitter"]
+    },
+    "youtube": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-youtube"]
+    },
+    "mostaql": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@aizee/server-mostaql"]
+    },
+    "khamsat": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@aizee/server-khamsat"]
+    },
+    "google-ads": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-google-ads"]
+    },
+    "meta-ads": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-meta-ads"]
+    },
+    "tiktok-ads": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-tiktok-ads"]
+    },
+    "linkedin-ads": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-linkedin-ads"]
+    },
+    "posthog": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-posthog"]
+    },
+    "n8n": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-n8n"]
+    },
+    "twenty": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-twenty"]
+    },
+    "hubspot": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-hubspot"]
+    },
+    "chatwoot": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-chatwoot"]
+    },
+    "formbricks": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-formbricks"]
+    },
+    "openreplay": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-openreplay"]
+    },
+    "growthbook": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-growthbook"]
+    },
+    "flagsmith": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-flagsmith"]
+    },
+    "lago": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-lago"]
+    },
+    "erpnext": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-erpnext"]
+    },
+    "sendgrid": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-sendgrid"]
+    },
+    "kit": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-kit"]
+    },
+    "klaviyo": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-klaviyo"]
+    },
+    "automatisch": {
+      "command": "python",
+      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-automatisch"]
     }
   }
 }

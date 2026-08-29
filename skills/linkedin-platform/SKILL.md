@@ -203,6 +203,12 @@ aizee linkedin stats urn:li:share:123
 
 ## Related Skills
 
+- `social-media-marketing` — LinkedIn is ONE channel within this broader skill; use it for cross-channel strategy, calendars, and measurement across X/Instagram/YouTube/TikTok/Facebook.
 - `cv-writer` — LinkedIn profile optimization + CV/resume writing
 - `proposal-writer` — Cross-platform content generation (Upwork + LinkedIn)
 - `freelance-platforms` — Upwork, Fiverr, Freelancer integration
+
+## Cross-Channel Notes
+
+- LinkedIn is a single distribution channel. For X (Twitter) and YouTube, draft natively per platform voice and reuse the approved LinkedIn message as the seed — do not cross-post verbatim.
+- Analytics: alongside `linkedin_get_post_stats`, pull `social_analytics` (from the `social-media-marketing` skill) for unified cross-platform reach/engagement reporting.

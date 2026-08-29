@@ -7,6 +7,20 @@ import config
 __version__ = config.VERSION
 
 # Re-export new governance modules for convenient access.
+import runtime.attribution_model as attribution_model
+import runtime.billing_ledger as billing_ledger
+import runtime.crm_manager as crm_manager
+import runtime.drip_engine as drip_engine
+import runtime.experiment_tracker as experiment_tracker
+import runtime.feature_flags as feature_flags
+import runtime.funnel_tracker as funnel_tracker
+import runtime.lead_scorer as lead_scorer
+import runtime.marketing_compliance as marketing_compliance
+import runtime.pipeline_analytics as pipeline_analytics
+import runtime.post_queue as post_queue
+
+# Freelance + Marketing/E-marketing runtime modules (Phase 1).
+import runtime.pricing_calculator as pricing_calculator
 from runtime.agent_baseline import AgentAction as AgentAction
 from runtime.agent_baseline import AgentBaseline as AgentBaseline
 from runtime.agent_baseline import AnomalyAlert as AnomalyAlert
@@ -293,4 +307,20 @@ __all__ = [
     "emit_contract",
     "emit_contracts",
     "scoped_factory",
+]
+
+# Freelance + Marketing/E-marketing runtime modules (Phase 1) — re-exported.
+__all__ += [
+    "attribution_model",
+    "billing_ledger",
+    "crm_manager",
+    "drip_engine",
+    "experiment_tracker",
+    "feature_flags",
+    "funnel_tracker",
+    "lead_scorer",
+    "marketing_compliance",
+    "pipeline_analytics",
+    "post_queue",
+    "pricing_calculator",
 ]

@@ -39,44 +39,53 @@ def global_config_dir() -> Path:
 
 
 def build_global_config(root: Path) -> dict[str, Any]:
-    """Build MCP config with absolute paths rooted at the OS root."""
+    """Build MCP config with absolute paths rooted at the OS root.
+
+    Reads from ``aizee_mcp/config.json`` (single source of truth) and
+    resolves all relative script paths to absolute paths.
+    """
     py = sys.executable or "python"
+    config_path = root / "aizee_mcp" / "config.json"
 
-    def abs_script(name: str) -> str:
-        return str(root / "scripts" / name)
+    if not config_path.exists():
+        print(f"[mcp-global-sync] WARN: {config_path} not found — using empty config", file=sys.stderr)
+        return {"mcpServers": {}}
 
-    return {
-        "mcpServers": {
-            "aizee": {
-                "command": py,
-                "args": [abs_script("aizee_mcp_wrapper.py")],
-            },
-            "graphify": {
-                "command": py,
-                "args": [abs_script("graphify_mcp_wrapper.py")],
-            },
-            "upwork": {
-                "command": py,
-                "args": [abs_script("mcp_env_wrapper.py"), "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"],
-            },
-            "freelancer": {
-                "command": py,
-                "args": [abs_script("mcp_env_wrapper.py"), "npx", "-y", "freelancer-mcp-server@2.0.0"],
-            },
-            "fiverr": {
-                "command": py,
-                "args": [abs_script("mcp_env_wrapper.py"), "uvx", "fiverr-mcp-server"],
-            },
-            "context7": {
-                "command": "npx",
-                "args": ["-y", "@upstash/context7-mcp@3.1.0"],
-            },
-            "linkedin": {
-                "command": py,
-                "args": [abs_script("mcp_env_wrapper.py"), "octopus-linkedin-mcp"],
-            },
+    try:
+        raw = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"[mcp-global-sync] ERROR: cannot parse {config_path}: {exc}", file=sys.stderr)
+        return {"mcpServers": {}}
+
+    servers = raw.get("mcpServers", {})
+    resolved: dict[str, Any] = {"mcpServers": {}}
+
+    for name, entry in servers.items():
+        command = entry.get("command", "")
+        args: list[str] = list(entry.get("args", []))
+
+        # If command is "python", replace with absolute sys.executable
+        if command in ("python", "python3"):
+            command = py
+
+        # Resolve script paths: any arg that ends with a .py filename
+        # and exists relative to root/scripts/ gets absolutized.
+        resolved_args: list[str] = []
+        for arg in args:
+            # Check if this arg looks like a script path (contains .py)
+            if ".py" in arg and not Path(arg).is_absolute():
+                candidate = root / arg
+                if candidate.exists():
+                    resolved_args.append(str(candidate))
+                    continue
+            resolved_args.append(arg)
+
+        resolved["mcpServers"][name] = {
+            "command": command,
+            "args": resolved_args,
         }
-    }
+
+    return resolved
 
 
 def main() -> int:
