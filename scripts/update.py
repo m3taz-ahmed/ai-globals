@@ -249,6 +249,25 @@ def _post_install_hooks(root: Path) -> list[str]:
         )
         actions.append(f"memory ingest: {'OK' if rc == 0 else 'skipped'}")
 
+    # 5. Settings migration (state/settings.json)
+    settings_file = root / "state" / "settings.json"
+    if settings_file.exists():
+        rc, out, err = _run(
+            [sys.executable, "-c",
+             "import sys; sys.path.insert(0, '.'); "
+             "from pathlib import Path; "
+             "from runtime.settings import SettingsManager, SETTINGS_VERSION; "
+             "SettingsManager(Path('.')).migrate(); "
+             "print(f'migrated to v{SETTINGS_VERSION}')"],
+            cwd=root, check=False,
+        )
+        if rc == 0:
+            actions.append(f"settings migration: OK ({out.strip()})")
+        else:
+            actions.append(f"settings migration: skipped ({err.strip()[:80]})")
+    else:
+        actions.append("settings migration: no settings.json (fresh install)")
+
     return actions
 
 

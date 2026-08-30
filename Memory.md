@@ -4,8 +4,15 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-08-28
+[UPDATED] 2026-08-30
 [NOTES]
+- **Dashboard Settings Panel — 2026-08-30 (ARCH persona)**:
+  - **New runtime module**: `runtime/settings.py` — `SettingsManager` for user-facing settings persisted to `state/settings.json` (separate from canonical config sources). Thread-safe, fail-safe (corrupt file → defaults), versioned schema. 14 sections: mcp_servers, budget, guardian, mcp_firewall, policy, loop_detector, injection_defense, plugins, persona, dashboard, telemetry, audit, memory, design.
+  - **Dashboard API endpoints** (`dashboard/server.py`): 6 new endpoints — `GET/POST /api/settings`, `GET /api/settings/defaults`, `POST /api/settings/reset`, `GET /api/settings/mcp-status`, `POST /api/settings/restart`. Soft-reload kernel (reset caches + terminate MCP pool + reload settings).
+  - **Dashboard UI** (`dashboard/index.html` + `app.js` + `index.css`): New "Settings" tab with 6 sub-sections (MCP Servers, Budget & Costs, Security & Gates, Injection Defense, Plugins & Persona, Dashboard & System). Toggle switches for MCP servers (34 servers in 9 categories), forms for budget/guardian/firewall/policy/loop detector, toggles for injection defense modules, plugin management, dashboard/telemetry/audit/memory/design settings. Save/Reset/Restart buttons with toast notifications.
+  - **Tests**: `tests/test_settings_manager.py` — 39 tests covering defaults, load/save, validation, section updates, MCP toggles, reset, fail-safe on corrupt file, **migration** (v1→v2, orphan cleanup, backup creation, user value preservation). All pass.
+  - **Migration framework**: `SETTINGS_VERSION=2` + `_MIGRATIONS` registry + `_migrate_if_needed()` in `_load()` + public `migrate()` method. On load: backs up old file to `settings.json.v{old}.bak`, runs sequential migration steps, prunes orphaned keys, bumps version. `scripts/update.py` calls `sm.migrate()` in post-install hooks (step 5).
+  - **Quality gates**: ruff PASS, mypy strict PASS (3 files), pytest 39/39 PASS.
 - **Claude Code Skills Import + Design Tooling Stack — 2026-08-28 (UX + DEVX personas)**:
   - **8 new skills** imported from Claude Code ecosystem study:
     - `skills/web-design-guidelines.md` — 100+ rules from Vercel (a11y, forms, dark mode, typography, animation, images, performance, navigation, touch, i18n)

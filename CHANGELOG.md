@@ -1,5 +1,54 @@
 # Changelog
 
+## [5.10.0] - 2026-08-30 (Dashboard Settings Panel + Schema Migration Framework)
+
+### Dashboard Settings Panel (new UI tab)
+- **New "Settings" tab** in the aiZee dashboard with 6 sub-sections:
+  - **MCP Servers** — toggle 34 MCP servers on/off, grouped by 9 categories (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other). Bulk group toggle + search filter.
+  - **Budget & Costs** — max_tokens, max_cost_usd, max_calls, period, on_exceed, finalization_reserve, token weights, fallback_model (global + session scopes).
+  - **Security & Gates** — Guardian (default_decision, kill_switch), MCP Firewall (catch_all_action), Policy (default_action), Loop Detector (window, threshold).
+  - **Injection Defense** — 7 defense module toggles + block/suspicious thresholds.
+  - **Plugins & Persona** — plugin enable/disable + default persona + multi-persona + autoload lords.
+  - **Dashboard & System** — rate_limit, rate_window, max_body_size, bind_host + telemetry + audit retention + memory decay/vector + design tooling + **Restart aiZee** button.
+- **6 new API endpoints** in `dashboard/server.py`:
+  - `GET /api/settings` — return all or one section (`?section=`).
+  - `POST /api/settings` — save a section (`{section, data}`).
+  - `GET /api/settings/defaults` — return defaults for a section or all.
+  - `POST /api/settings/reset` — reset a section to defaults.
+  - `GET /api/settings/mcp-status` — MCP server status + categories.
+  - `POST /api/settings/restart` — soft-reload kernel (reset caches + terminate MCP pool + reload settings).
+- **Toggle switches, toast notifications, light-theme support, responsive layout** in `dashboard/index.css` (200 lines).
+- **570 lines of JS** in `dashboard/app.js` — 6 render functions + collectSettingsData + save/reset/restart + toast + search filter.
+
+### Settings Manager (`runtime/settings.py` — new module)
+- **`SettingsManager`** — thread-safe, fail-safe settings persistence to `state/settings.json` (separate from canonical config sources).
+- **14 sections**: mcp_servers, budget, guardian, mcp_firewall, policy, loop_detector, injection_defense, plugins, persona, dashboard, telemetry, audit, memory, design.
+- **Validation** on save — period, on_exceed, decisions, reserve range, positive integers, booleans.
+- **Fail-safe** — missing/corrupt file → defaults (never crash). Corrupt files quarantined to `settings.json.corrupt.bak`.
+- **Atomic writes** — `tempfile.mkstemp` + `os.replace` (no partial writes on crash).
+- **Deep merge** — partial updates (e.g. toggling one MCP server) don't wipe the rest.
+
+### Schema Migration Framework
+- **`SETTINGS_VERSION = 2`** + `_MIGRATIONS` registry + `_register_migration()` decorator.
+- **Automatic migration on load** — `_migrate_if_needed()` backs up old file to `settings.json.v{old}.bak`, runs sequential migration steps, bumps version, saves migrated data.
+- **Orphaned key pruning** — keys not in `SECTIONS` are removed on load (clean upgrade path).
+- **`migrate()` public method** — called by `scripts/update.py` in post-install hooks (step 5).
+- **v1 → v2 migration** — ensures `dashboard.trusted_proxies` exists, removes orphaned keys.
+
+### Update Script (`scripts/update.py`)
+- **Step 5 added** to post-install hooks: `SettingsManager.migrate()` — runs settings migration after `git pull`.
+- Fresh install (no `settings.json`) → "no settings.json (fresh install)".
+- Existing file → backup + migrate + merge.
+
+### Tests
+- **`tests/test_settings_manager.py`** — 39 tests covering defaults, load/save, validation, section updates, MCP toggles, reset, fail-safe on corrupt file, **migration** (v1→v2, orphan cleanup, backup creation, user value preservation).
+- **`tests/dashboard/test_dashboard.py`** — fixed 2 pre-existing version mismatch failures (hardcoded `"5.7.1"` → `config.VERSION`).
+
+### Quality Gates
+- ruff check: PASS (4 Python files).
+- mypy --strict: PASS (3 Python files).
+- pytest: 39/39 settings tests + 84/84 dashboard tests = 123 passed.
+
 ## [5.9.0] - 2026-08-29 (Marketing/Freelance MCP Integration + Runtime Wiring + Plugin Hardening)
 
 ### Runtime Module Wiring (12 modules → 10 MCP tools)

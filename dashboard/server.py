@@ -32,6 +32,8 @@ from memory.store import MemoryStore
 from runtime.astryx import AstryxLinter
 from runtime.kernel import Kernel
 from runtime.metrics import format_metrics
+from runtime.settings import SECTIONS as SETTINGS_SECTIONS
+from runtime.settings import SettingsManager
 from runtime.telemetry import system_metrics
 
 logger = logging.getLogger(__name__)
@@ -62,6 +64,7 @@ _TRUSTED_PROXIES = {ip.strip() for ip in _env_first("AIZEE_DASHBOARD_TRUSTED_PRO
 # Shared instances so state (budget, audit, chat) is consistent across requests.
 _kernel_cache: tuple[Path, Kernel] | None = None
 _memory_cache: tuple[Path, MemoryStore] | None = None
+_settings_cache: tuple[Path, SettingsManager] | None = None
 _cache_lock = threading.Lock()
 
 # Simple per-IP fixed-window rate limiter.
@@ -91,6 +94,15 @@ def _memory_instance() -> MemoryStore:
         if _memory_cache is None or _memory_cache[0] != project_root:
             _memory_cache = (project_root, MemoryStore(project_root))
         return _memory_cache[1]
+
+
+def _settings_instance() -> SettingsManager:
+    global _settings_cache
+    root = config.discover_root()
+    with _cache_lock:
+        if _settings_cache is None or _settings_cache[0] != root:
+            _settings_cache = (root, SettingsManager(root))
+        return _settings_cache[1]
 
 
 def _check_rate_limit(client_ip: str) -> bool:
@@ -330,6 +342,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_graph_stats()
         elif parsed.path == "/api/events":
             self._send_sse_events()
+        elif parsed.path == "/api/settings" and self.command == "GET":
+            self._send_settings_get()
+        elif parsed.path == "/api/settings" and self.command == "POST":
+            self._send_settings_update()
+        elif parsed.path == "/api/settings/defaults" and self.command == "GET":
+            self._send_settings_defaults()
+        elif parsed.path == "/api/settings/reset" and self.command == "POST":
+            self._send_settings_reset()
+        elif parsed.path == "/api/settings/mcp-status" and self.command == "GET":
+            self._send_settings_mcp_status()
+        elif parsed.path == "/api/settings/restart" and self.command == "POST":
+            self._send_settings_restart()
         elif parsed.path == "/" or parsed.path == "/index.html":
             self._serve_file(_asset_dir() / "index.html")
         elif parsed.path == "/app.js":
@@ -574,6 +598,113 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         ctype = content_type or mimetypes.guess_type(str(path))[0] or "text/plain"
         self._send(200, path.read_bytes(), ctype, cors=False)
+
+    # --- Settings API ---
+
+    def _send_settings_get(self) -> None:
+        sm = _settings_instance()
+        section = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("section", [""])[0]
+        if section:
+            if section not in SETTINGS_SECTIONS:
+                self._send(400, b"Invalid section")
+                return
+            data = sm.get_section(section)
+        else:
+            data = sm.get_all()
+        self._send(200, json.dumps(data, default=str).encode("utf-8"), "application/json")
+
+    def _send_settings_update(self) -> None:
+        body = self._read_json_body()
+        if body is None:
+            return
+        section = body.get("section", "")
+        data = body.get("data", {})
+        if not section or section not in SETTINGS_SECTIONS:
+            self._send(400, b"Missing or invalid section")
+            return
+        if not isinstance(data, dict):
+            self._send(400, b"data must be an object")
+            return
+        sm = _settings_instance()
+        try:
+            updated = sm.update_section(section, data)
+        except Exception as exc:
+            self._send(400, json.dumps({"error": str(exc)}).encode("utf-8"), "application/json")
+            return
+        self._send(200, json.dumps({"ok": True, "section": section, "data": updated}, default=str).encode("utf-8"), "application/json")
+
+    def _send_settings_defaults(self) -> None:
+        sm = _settings_instance()
+        section = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("section", [""])[0]
+        if section:
+            if section not in SETTINGS_SECTIONS:
+                self._send(400, b"Invalid section")
+                return
+            try:
+                defaults = sm.reset_section(section)
+            except Exception as exc:
+                self._send(400, json.dumps({"error": str(exc)}).encode("utf-8"), "application/json")
+                return
+        else:
+            defaults = sm.reset_all()
+        self._send(200, json.dumps({"ok": True, "data": defaults}, default=str).encode("utf-8"), "application/json")
+
+    def _send_settings_reset(self) -> None:
+        body = self._read_json_body()
+        if body is None:
+            return
+        section = body.get("section", "")
+        sm = _settings_instance()
+        if section:
+            if section not in SETTINGS_SECTIONS:
+                self._send(400, b"Invalid section")
+                return
+            try:
+                data = sm.reset_section(section)
+            except Exception as exc:
+                self._send(400, json.dumps({"error": str(exc)}).encode("utf-8"), "application/json")
+                return
+        else:
+            data = sm.reset_all()
+        self._send(200, json.dumps({"ok": True, "data": data}, default=str).encode("utf-8"), "application/json")
+
+    def _send_settings_mcp_status(self) -> None:
+        sm = _settings_instance()
+        status = sm.mcp_status()
+        categories = sm.mcp_categories()
+        self._send(
+            200,
+            json.dumps({"servers": status, "categories": categories}, default=str).encode("utf-8"),
+            "application/json",
+        )
+
+    def _send_settings_restart(self) -> None:
+        """Soft-reload the kernel: reset caches so next request rebuilds them.
+
+        This clears the kernel, memory, and settings caches so the next
+        request re-initializes them from disk (policies, budget, settings).
+        MCP process pool is terminated so MCP servers reconnect fresh.
+        """
+        global _kernel_cache, _memory_cache, _settings_cache
+        with _cache_lock:
+            # Flush budget state before dropping the kernel reference
+            if _kernel_cache is not None:
+                with contextlib.suppress(Exception):
+                    _kernel_cache[1].save()
+            _kernel_cache = None
+            if _memory_cache is not None:
+                with contextlib.suppress(Exception):
+                    _memory_cache[1].close()
+            _memory_cache = None
+            # Reload settings from disk
+            if _settings_cache is not None:
+                with contextlib.suppress(Exception):
+                    _settings_cache[1].reload()
+        # Terminate MCP process pool so servers reconnect with fresh config
+        with contextlib.suppress(Exception):
+            from runtime.mcp_client import _terminate_pool
+            _terminate_pool()
+        self._send(200, json.dumps({"ok": True, "message": "aiZee kernel reloaded"}).encode("utf-8"), "application/json")
 
     # Simple in-memory cache for graph.json to avoid reading 2MB on every request
     _graph_cache: ClassVar[dict[str, tuple[float, bytes]]] = {}

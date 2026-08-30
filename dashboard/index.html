@@ -30,6 +30,7 @@
         <a href="#telemetry">Telemetry</a>
         <a href="#system">System</a>
         <a href="#audit">Audit Logs</a>
+        <a href="#settings">Settings</a>
       </nav>
       <div class="status-indicator">
         <div class="dot" id="status-dot"></div>
@@ -234,6 +235,34 @@
           </div>
           <div class="audit-log-container mt-1" id="audit-logs">
             <p class="muted">Loading audit logs...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Tab -->
+      <section id="settings-tab" class="tab-content">
+        <div class="settings-layout">
+          <aside class="settings-sidenav">
+            <button class="settings-nav-btn active" data-settings-section="mcp_servers">MCP Servers</button>
+            <button class="settings-nav-btn" data-settings-section="budget">Budget &amp; Costs</button>
+            <button class="settings-nav-btn" data-settings-section="guardian">Security &amp; Gates</button>
+            <button class="settings-nav-btn" data-settings-section="injection_defense">Injection Defense</button>
+            <button class="settings-nav-btn" data-settings-section="plugins">Plugins &amp; Persona</button>
+            <button class="settings-nav-btn" data-settings-section="dashboard">Dashboard &amp; System</button>
+          </aside>
+          <div class="settings-content">
+            <div class="panel-header">
+              <h3 id="settings-section-title">MCP Servers</h3>
+              <div class="settings-actions">
+                <button class="btn btn-outline" id="settings-reset-btn">Reset Section</button>
+                <button class="btn btn-primary" id="settings-save-btn">Save Changes</button>
+                <button class="btn btn-danger" id="settings-restart-btn">Restart aiZee</button>
+              </div>
+            </div>
+            <div id="settings-body" class="settings-body">
+              <p class="muted">Loading settings...</p>
+            </div>
+            <div id="settings-toast" class="settings-toast"></div>
           </div>
         </div>
       </section>

@@ -4,7 +4,7 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.8.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.8.0">
+    <img src="https://img.shields.io/badge/Version-5.10.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.10.0">
     <img src="https://img.shields.io/badge/Tests-3687%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3687 passed">
     <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -456,6 +456,18 @@ python dashboard/server.py 8080
 ```
 
 Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, status pills, glass panels. Optional Bearer auth via `AIZEE_DASHBOARD_TOKEN`.
+
+**Tabs:** Overview · Memory Explorer · Policy Sandbox · Workflows · Sagas · Chat · Tech Stack · Telemetry · System Health · Audit Logs · **Settings**
+
+**Settings panel** (new in 5.10.0) — configure aiZee from the browser without editing YAML or env vars:
+- **MCP Servers** — toggle 34 servers on/off, grouped by category (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other).
+- **Budget & Costs** — token/cost/call limits, period, on-exceed action, fallback model (global + session).
+- **Security & Gates** — Guardian, MCP Firewall, Policy engine, Loop Detector.
+- **Injection Defense** — 7 defense module toggles + thresholds.
+- **Plugins & Persona** — plugin enable/disable + default persona.
+- **Dashboard & System** — rate limits, bind host, telemetry, audit retention, memory, design tooling, **Restart aiZee** button.
+
+Settings persist to `state/settings.json` (gitignored, survives updates). Schema migrations run automatically on update — old files are backed up to `settings.json.v{old}.bak`.
 
 ---
 

@@ -14,6 +14,7 @@ from urllib.request import Request, urlopen
 
 import pytest
 
+import config
 from dashboard.server import DashboardHandler, ThreadingHTTPServer
 
 pytestmark = pytest.mark.slow
@@ -43,7 +44,7 @@ def test_dashboard_status(monkeypatch):
         with urlopen(f"http://127.0.0.1:{port}/api/status") as resp:
             body = resp.read().decode()
             data = json.loads(body)
-            assert data["version"] == "5.7.1"
+            assert data["version"] == config.VERSION
     finally:
         server.shutdown()
 
@@ -56,7 +57,7 @@ def test_dashboard_health(monkeypatch):
         with urlopen(f"http://127.0.0.1:{port}/api/health") as resp:
             data = json.loads(resp.read().decode())
             assert data["ok"] is True
-            assert data["version"] == "5.7.1"
+            assert data["version"] == config.VERSION
     finally:
         server.shutdown()
 
