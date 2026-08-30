@@ -256,6 +256,11 @@ def backup_database(db_path: Path, backup_dir: Path, max_backups: int = 5) -> Pa
     backup_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     backup_path = backup_dir / f"{db_path.stem}_backup_{timestamp}.db"
+    # Append counter if timestamp collides with an existing backup
+    counter = 2
+    while backup_path.exists():
+        backup_path = backup_dir / f"{db_path.stem}_backup_{timestamp}_{counter}.db"
+        counter += 1
     shutil.copy2(db_path, backup_path)
 
     # Retention: keep only the latest max_backups

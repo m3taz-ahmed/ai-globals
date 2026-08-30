@@ -13,6 +13,7 @@ import logging
 import shutil
 import ssl
 import urllib.error
+import urllib.parse
 import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -20,6 +21,28 @@ from enum import Enum
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def _is_loopback_ip(host: str) -> bool:
+    """Return True if ``host`` is a 127.0.0.0/8 loopback IPv4 address.
+
+    Rejects look-alikes such as ``127.0.0.1.evil.com`` or ``127.0.0.256``
+    which a naive ``startswith`` would accept (SSRF bypass).
+    """
+    if not host:
+        return False
+    parts = host.split(".")
+    if len(parts) != 4:
+        return False
+    if not all(p.isdigit() for p in parts):
+        return False
+    try:
+        octets = [int(p) for p in parts]
+    except ValueError:
+        return False
+    if not all(0 <= o <= 255 for o in octets):
+        return False
+    return octets[0] == 127
 
 
 class Backend(str, Enum):
@@ -251,11 +274,24 @@ class RemoteA2AAdapter(AgentAdapter):
             )
         if not self._endpoint:
             raise AdapterError("RemoteA2AAdapter requires config['endpoint']")
-        # Validate endpoint URL scheme
-        if not self._endpoint.startswith(("https://", "http://localhost", "http://127.0.0.1")):
+        # Validate endpoint URL scheme + host precisely.
+        # A naive ``startswith`` check accepts hostnames like
+        # ``http://localhost.evil.com`` or ``http://127.0.0.1.evil.com`` which
+        # resolve to arbitrary external hosts (SSRF). Parse the URL and require
+        # HTTPS for non-local, and an exact localhost/loopback host for HTTP.
+        parsed = urllib.parse.urlparse(self._endpoint)
+        scheme = parsed.scheme.lower()
+        host = (parsed.hostname or "").lower()
+        if scheme not in ("https", "http"):
             raise AdapterError(
-                "RemoteA2AAdapter endpoint must use HTTPS (or localhost for dev). "
+                "RemoteA2AAdapter endpoint must use http(s) scheme. "
                 f"Got: {self._endpoint}"
+            )
+        if scheme == "http" and (not host or not (host == "localhost" or _is_loopback_ip(host))):
+            # HTTP only allowed for exact localhost / 127.0.0.0/8 loopback.
+            raise AdapterError(
+                "RemoteA2AAdapter HTTP endpoint is only allowed for "
+                f"localhost/loopback. Got host: {host!r}"
             )
 
     def _create_ssl_context(self) -> ssl.SSLContext:

@@ -110,7 +110,24 @@ class _SafeEvaluator(ast.NodeVisitor):
     # `env != "prod"` fail-closed instead of matching (None != "prod" -> True).
     # This prevents allow-by-absence: a rule requiring env != "prod" must NOT
     # match actions that have no env attribute at all.
-    _MISSING: ClassVar[object] = object()
+    #
+    # ``_MISSING`` is falsy (``__bool__`` -> False) so that a bare missing
+    # attribute used as a condition (e.g. ``condition: "is_admin"``) does NOT
+    # match — ``bool(_MISSING)`` is False, not True. This closes the
+    # allow-by-absence hole where a missing attribute evaluated to a truthy
+    # plain ``object()``.
+    class _MissingSentinel:
+        """Falsy sentinel for missing action attributes (fail-closed)."""
+
+        __slots__ = ()
+
+        def __bool__(self) -> bool:
+            return False
+
+        def __repr__(self) -> str:
+            return "<MISSING>"
+
+    _MISSING: ClassVar[object] = _MissingSentinel()
 
     def __init__(self, action: dict[str, Any]) -> None:
         self.action = action
@@ -137,18 +154,35 @@ class _SafeEvaluator(ast.NodeVisitor):
         if isinstance(node, ast.Subscript):
             value = self.visit(node.value)
             key = self.visit(node.slice)
+            # Fail-closed: if the container itself is missing, propagate _MISSING
+            # so downstream comparisons reject the rule instead of matching.
+            if value is self._MISSING or key is self._MISSING:
+                return self._MISSING
             try:
                 return value[key]
             except (KeyError, TypeError, IndexError):
-                return None
+                # Missing key/index → _MISSING (not None) so comparisons like
+                # `config["env"] != "prod"` fail-closed consistently with Name.
+                return self._MISSING
         if isinstance(node, ast.BoolOp):
             if isinstance(node.op, ast.And):
+                # all() short-circuits on falsy; but _MISSING is now falsy so
+                # `missing and x` correctly returns False. However a bare
+                # `missing` as the only operand must be False, which it is.
                 return all(self.visit(v) for v in node.values)
             if isinstance(node.op, ast.Or):
+                # any() returns True on first truthy; _MISSING is falsy so it
+                # won't falsely satisfy `or`. A bare `missing` → False (correct).
                 return any(self.visit(v) for v in node.values)
             return False  # pragma: no cover
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
-            return not self.visit(node.operand)
+            operand = self.visit(node.operand)
+            # `not _MISSING` → True would be wrong (treats absence as "not X"
+            # being true). Fail-closed: missing operand → comparison must not
+            # match → return False (the rule does not apply).
+            if operand is self._MISSING:
+                return False
+            return not operand
         if isinstance(node, ast.Compare):
             left = self.visit(node.left)
             for op_node, comparator in zip(node.ops, node.comparators, strict=True):

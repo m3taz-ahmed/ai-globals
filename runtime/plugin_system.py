@@ -17,12 +17,17 @@ never crashes the kernel.
 from __future__ import annotations
 
 import json
+import logging
+import subprocess
+import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import ClassVar
 
 from runtime.schemas import AizeeError, ErrorSeverity
+
+_logger = logging.getLogger(__name__)
 
 
 class PluginType(str, Enum):
@@ -257,8 +262,9 @@ class PluginRegistry:
     def run_hook(self, plugin_name: str, phase: HookPhase, context: dict[str, object]) -> str | None:
         """Run a hook script for a plugin. Returns the script output or None.
 
-        This is a placeholder — actual hook execution would shell out to the
-        configured script. For now, it returns the hook's registered path.
+        Executes the hook via ``subprocess.run`` with a 30-second timeout.
+        Hook failures are logged but never crash the OS — a broken plugin
+        is isolated from the kernel.
         """
         plugin = self._plugins.get(plugin_name)
         if plugin is None or not plugin.is_active:
@@ -266,7 +272,45 @@ class PluginRegistry:
         hook_path = plugin.manifest.hooks.get(phase.value)
         if hook_path is None:
             return None
-        return hook_path
+        full_path = plugin.path / hook_path
+        if not full_path.exists():
+            _logger.warning(
+                "Hook script not found for plugin %s phase %s: %s",
+                plugin_name, phase.value, full_path,
+            )
+            return None
+        try:
+            result = subprocess.run(
+                [sys.executable, str(full_path)],
+                input=json.dumps(context),
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            _logger.warning(
+                "Hook script timed out for plugin %s phase %s",
+                plugin_name, phase.value,
+            )
+            return None
+        except Exception as exc:
+            _logger.warning(
+                "Hook script failed for plugin %s phase %s: %s",
+                plugin_name, phase.value, exc,
+            )
+            return None
+        if result.returncode != 0:
+            _logger.warning(
+                "Hook script exited with code %d for plugin %s phase %s: %s",
+                result.returncode, plugin_name, phase.value, result.stderr.strip(),
+            )
+            return None
+        _logger.debug(
+            "Hook script succeeded for plugin %s phase %s",
+            plugin_name, phase.value,
+        )
+        return result.stdout.strip() or None
 
     def stats(self) -> dict[str, int]:
         """Return registry statistics."""

@@ -39,7 +39,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 # Safe single path component: no separators, no "..", bounded length.
 _SAFE_COMPONENT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -244,8 +244,56 @@ class GitMemoryStore:
         result = self._git("pull", remote, branch, check=False)
         return result.returncode == 0
 
+    # Allowed git remote URL schemes. ``ext::`` and ``file://`` are rejected
+    # because they can execute arbitrary commands or read local paths. SSH and
+    # git@...:user/repo forms are allowed for trusted private remotes.
+    _SAFE_REMOTE_SCHEMES: ClassVar[frozenset[str]] = frozenset({"https", "http", "ssh", "git"})
+    _REMOTE_NAME_RE: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+    def _validate_remote_url(self, url: str) -> None:
+        """Validate a git remote URL against a safe scheme/host allowlist.
+
+        Rejects ``ext::`` (command execution), ``file://`` (local path access),
+        and other unsafe protocols that git would otherwise happily pass to
+        the shell. Raises ``ValueError`` on invalid URLs.
+        """
+        if not url:
+            raise ValueError("Remote URL must not be empty")
+        # Reject the ext:: transport outright — it runs arbitrary commands.
+        if url.startswith("ext::"):
+            raise ValueError(
+                "git 'ext::' transport is forbidden (arbitrary command execution)"
+            )
+        # Handle SCP-style: git@host:user/repo
+        if "@" in url and ":" in url and not url.startswith(("http://", "https://", "ssh://", "git://")):
+            # git@github.com:user/repo — allowed (SSH)
+            return
+        # URL-style: scheme://host/path
+        if "://" in url:
+            scheme = url.split("://", 1)[0].lower()
+            if scheme == "file":
+                raise ValueError("git 'file://' transport is forbidden (local path access)")
+            if scheme not in self._SAFE_REMOTE_SCHEMES:
+                raise ValueError(
+                    f"Unsupported git remote scheme {scheme!r}; "
+                    f"allowed: {sorted(self._SAFE_REMOTE_SCHEMES)}"
+                )
+            return
+        # Bare path (relative/absolute) — reject; must be a real remote URL.
+        raise ValueError(
+            f"Invalid git remote URL {url!r}; expected https://, http://, "
+            f"ssh://, git://, or git@host:user/repo form"
+        )
+
     def add_remote(self, name: str, url: str) -> bool:
-        """Add a remote repository."""
+        """Add a remote repository.
+
+        Validates the remote name (safe component) and URL scheme before
+        invoking git, blocking unsafe transports (``ext::``, ``file://``).
+        """
+        if not self._REMOTE_NAME_RE.match(name):
+            raise ValueError(f"Invalid remote name {name!r}")
+        self._validate_remote_url(url)
         result = self._git("remote", "add", name, url, check=False)
         return result.returncode == 0
 

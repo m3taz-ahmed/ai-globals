@@ -128,8 +128,8 @@ def _wrap_tool_with_rbac(tool: Any) -> None:
 
     The original function's signature/schema (used for argument validation by
     FastMCP) is left untouched; only the callable executed at call time is
-    replaced. The permission check is fail-open: if it raises, the call is
-    allowed so existing behavior is never broken.
+    replaced. The permission check is fail-closed (default-deny): if it raises,
+    the call is denied so a corrupted RBAC config cannot silently bypass gates.
     """
     original_fn = tool.fn
     tool_name = tool.name
@@ -144,7 +144,8 @@ def _wrap_tool_with_rbac(tool: Any) -> None:
                 if not check_tool_permission(tool_name):
                     return _denied()
             except Exception as exc:
-                logger.warning("RBAC check failed for %s (fail-open): %s", tool_name, exc)
+                logger.warning("RBAC check failed for %s (fail-closed): %s", tool_name, exc)
+                return _denied()
             return await original_fn(**kwargs)
         guarded: Any = _guarded_async
     else:
@@ -153,7 +154,8 @@ def _wrap_tool_with_rbac(tool: Any) -> None:
                 if not check_tool_permission(tool_name):
                     return _denied()
             except Exception as exc:
-                logger.warning("RBAC check failed for %s (fail-open): %s", tool_name, exc)
+                logger.warning("RBAC check failed for %s (fail-closed): %s", tool_name, exc)
+                return _denied()
             return original_fn(**kwargs)
         guarded = _guarded_sync
 

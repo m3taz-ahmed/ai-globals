@@ -28,8 +28,14 @@ from .common import _MAX_INPUT_LENGTH, truncate, validate_query
 
 _USER_AGENT = "aizee-seo-bot/1.0 (+https://github.com/aizee)"
 _TIMEOUT = 15  # seconds
-_MAX_PAGES = 2000
+# B8: Lowered from 2000 to 500 to prevent OOM when accumulating per-page
+# results in memory. Each page result includes parsed HTML metadata, issues,
+# and link lists — at 2000 pages this could consume hundreds of MB.
+_MAX_PAGES = 500
 _MAX_CONTENT_LENGTH = 2_000_000  # 2MB HTML limit (Googlebot's limit)
+# B8: Abort the site crawl if the process RSS exceeds this threshold (512MB)
+# to prevent out-of-memory when accumulating results from many pages.
+_MAX_CRAWL_RSS_BYTES = 512 * 1024 * 1024
 
 _CWV_THRESHOLDS: dict[str, dict[str, float]] = {
     "lcp": {"good": 2.5, "poor": 4.0},
@@ -594,6 +600,23 @@ def register_seo_tools(mcp: FastMCP) -> None:
         page_results: list[dict[str, Any]] = []
 
         while queue and len(visited) < max_pages:
+            # B8: Memory guard — abort crawl if process RSS exceeds threshold.
+            try:
+                import psutil
+
+                rss = psutil.Process().memory_info().rss
+                if rss > _MAX_CRAWL_RSS_BYTES:
+                    return json.dumps({
+                        "ok": False,
+                        "error": (
+                            f"Crawl aborted: memory limit {_MAX_CRAWL_RSS_BYTES} bytes "
+                            f"exceeded (RSS={rss}). Lower max_pages or increase server RAM."
+                        ),
+                        "pages_crawled": len(visited),
+                        "partial_results": page_results[:50],
+                    }, indent=2)
+            except ImportError:
+                pass  # psutil not available — skip memory check gracefully.
             current = queue.popleft()
             normalized = _normalize_url(current)
             if normalized in visited:

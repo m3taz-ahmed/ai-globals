@@ -28,6 +28,11 @@ _MAGIC = b"AIOS_ENC:"  # 9-byte magic prefix to detect encrypted files
 def _get_fernet() -> Fernet | None:
     """Return a Fernet instance. Auto-generates a key if none is set (secure-by-default).
 
+    Key resolution order:
+    1. ``AIOS_ENCRYPTION_KEY`` env var (production — key never touches disk).
+    2. ``AIOS_ENCRYPTION_KEY_FILE`` env var (path outside OS root, e.g. ``/etc/aizee/enc.key``).
+    3. Auto-generated key in ``state/.encryption_key`` (dev only — warns loudly).
+
     Set AIOS_ENCRYPTION_KEY=plaintext to explicitly disable encryption.
     """
     key = os.environ.get("AIOS_ENCRYPTION_KEY")
@@ -35,7 +40,15 @@ def _get_fernet() -> Fernet | None:
         return None  # Explicit opt-out for development
     if key:
         return Fernet(key.encode() if isinstance(key, str) else key)
-    # Auto-generate key on first run
+    # Check for external key file (production: key outside OS root)
+    key_file_path = os.environ.get("AIOS_ENCRYPTION_KEY_FILE")
+    if key_file_path:
+        ext_path = Path(key_file_path)
+        if ext_path.exists():
+            stored = ext_path.read_bytes().strip()
+            if stored:
+                return Fernet(stored)
+    # Auto-generate key on first run (dev fallback)
     root = Path(os.environ.get("AIZEE_ROOT", "."))
     key_file = root / "state" / ".encryption_key"
     key_file.parent.mkdir(parents=True, exist_ok=True)
@@ -70,8 +83,9 @@ def _get_fernet() -> Fernet | None:
         with contextlib.suppress(OSError):
             key_file.chmod(0o600)
     logging.getLogger(__name__).warning(
-        "No AIOS_ENCRYPTION_KEY set — auto-generated key stored at %s. "
-        "Set AIOS_ENCRYPTION_KEY env var for production. "
+        "SECURITY: No AIOS_ENCRYPTION_KEY set — auto-generated key stored at %s "
+        "INSIDE the OS root. For production, set AIOS_ENCRYPTION_KEY env var or "
+        "AIOS_ENCRYPTION_KEY_FILE to a path outside the OS root. "
         "Back up this file — loss means encrypted state is unrecoverable.",
         key_file,
     )

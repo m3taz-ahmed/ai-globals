@@ -404,6 +404,22 @@ def cmd_spec(args: argparse.Namespace) -> int:
             console.print(f"[red]Unknown template: {args.template}[/red]")
             return 1
         console.print(f"[green]Scaffolded {args.template}:[/green] {result}")
+    elif args.subcommand == "advance":
+        if not args.spec_id:
+            console.print("[red]spec_id required for advance[/red]")
+            return 1
+        can_advance, reason = engine.can_advance(args.spec_id)
+        if not can_advance:
+            console.print(f"[red]Cannot advance spec '{args.spec_id}': {reason}[/red]")
+            return 1
+        try:
+            spec = engine.advance(args.spec_id)
+        except ValueError as exc:
+            console.print(f"[red]Failed to advance spec '{args.spec_id}': {exc}[/red]")
+            return 1
+        console.print(
+            f"[green]Advanced spec '{args.spec_id}' to phase:[/green] {spec.phase.value}"
+        )
     return 0
 
 
@@ -866,7 +882,7 @@ def main(argv: list[str] | None = None) -> int:
     p_stack.add_argument("subcommand", choices=["detect", "show"])
 
     p_spec = sub.add_parser("spec", help="Spec-driven development commands")
-    p_spec.add_argument("subcommand", choices=["list", "analyze", "converge", "scaffold"])
+    p_spec.add_argument("subcommand", choices=["list", "analyze", "converge", "scaffold", "advance"])
     p_spec.add_argument("spec_id", nargs="?", default="", help="Spec ID")
     p_spec.add_argument("--codebase", default="", help="Codebase dir for converge")
     p_spec.add_argument("--template", default="", help="Template type for scaffold (spec/plan/tasks)")

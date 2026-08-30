@@ -21,6 +21,7 @@ class TestDecayScheduler:
         result = scheduler.run_cycle()
         assert result["decayed"] == 1
         entry = scheduler.get_entry("1")
+        assert entry is not None
         assert entry.current_salience < 1.0
 
     def test_evict_below_threshold(self) -> None:
@@ -31,10 +32,11 @@ class TestDecayScheduler:
         assert scheduler.get_entry("1") is None
 
     def test_should_run_after_interval(self) -> None:
-        scheduler = DecayScheduler(interval_seconds=0.01)
-        scheduler._last_run = time.time()
-        time.sleep(0.02)
-        assert scheduler.should_run() is True
+        scheduler = DecayScheduler(interval_seconds=0.3)
+        base = 1000.0
+        scheduler._last_run = base
+        # Pass `now` explicitly — deterministic, no sleep needed
+        assert scheduler.should_run(now=base + 0.5) is True
 
     def test_should_not_run_before_interval(self) -> None:
         scheduler = DecayScheduler(interval_seconds=3600)

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from runtime.approval_cache import ApprovalCache
+from runtime.approval_service import ApprovalService
 from runtime.audit import AuditLogger
 from runtime.budget import BudgetManager
 from runtime.enums import ActionResultStatus, Decision
@@ -34,12 +35,14 @@ class PolicyManager:
         actions_total: Counter,
         guardian_denials_total: Counter,
         probity_violations_total: Counter,
+        approval_service: ApprovalService | None = None,
     ) -> None:
         self.root = root
         self.project_root = project_root
         self.audit = audit
         self.budget = budget
         self.approval_cache = approval_cache
+        self.approval_service = approval_service
         self.preloop = preloop
         self._actions_total = actions_total
         self._guardian_denials_total = guardian_denials_total
@@ -66,17 +69,21 @@ class PolicyManager:
         # Load OS-level probity first, then project-level (B2 fix): previously
         # only project_root was read, so in multi-project setups the rich OS
         # probity rules were silently dropped, leaving a gap behind Guardian.
+        # Collect rules from ALL roots (OS + project) before constructing one
+        # Guardrails — a premature ``return`` inside the loop dropped project
+        # rules whenever an OS-level probity.yaml existed first.
+        import yaml
+
+        rules: list[dict[str, Any]] = []
         roots = [self.root]
         if self.project_root and self.project_root != self.root:
             roots.append(self.project_root)
         for root in roots:
             path = root / "runtime" / "policies" / "probity.yaml"
             if path.exists():
-                import yaml
-
                 data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-                return Guardrails(data)
-        return Guardrails()
+                rules.extend(data.get("rules", []))
+        return Guardrails({"rules": rules}) if rules else Guardrails()
 
     # Read-only actions skip the guardian gate. Derived from the canonical
     # READ_ACTIONS set in runtime/policy.py (single source of truth) plus
@@ -138,7 +145,17 @@ class PolicyManager:
         from runtime.probity import normalize_action_type
 
         normalized = normalize_action_type(action_type)
-        event: dict[str, Any] = {"type": normalized, "raw_type": action_type, "history": []}
+        # M2: wire real action history so RequireCommand/EnforceTdd guardrails
+        # can actually verify prerequisites. Previously ``history`` was always
+        # empty, making those guardrails fire false-positive violations.
+        history = action_data.get("history")
+        if not isinstance(history, list):
+            history = []
+        event: dict[str, Any] = {
+            "type": normalized,
+            "raw_type": action_type,
+            "history": history,
+        }
         if normalized == "write":
             event["path"] = str(action_data.get("path", ""))
             event["content"] = str(action_data.get("content", ""))
@@ -170,6 +187,21 @@ class PolicyManager:
         if self.approval_cache.is_approved(action_data):
             action_data["approved"] = True
             return True
+        # F1/I3: When an ApprovalService is wired, create a persistent
+        # request so the approval lifecycle (notify → poll → resolve) can
+        # proceed asynchronously. This is an enhancement layered on top of
+        # the cache — the cache still handles replay suppression.
+        if self.approval_service is not None:
+            action_type = str(action_data.get("type", "unknown"))
+            req = self.approval_service.create_request(
+                action=action_type,
+                args=action_data,
+                reason=f"Policy ASK gate for {action_type}",
+            )
+            _logger.debug(
+                "Created approval request %s for action %s",
+                req.id, action_type,
+            )
         return False
 
     def _cache_approval(self, action_data: dict[str, Any], dry_run: bool) -> None:

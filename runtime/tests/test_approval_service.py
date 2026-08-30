@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from unittest.mock import patch
 
 from runtime.approval_service import (
     ApprovalRequest,
@@ -60,10 +61,12 @@ class TestApprovalService:
         assert svc.is_pending(req.id) is False
 
     def test_expiry(self):
-        svc = ApprovalService(channels=[], default_ttl=0.01)
+        svc = ApprovalService(channels=[], default_ttl=0.3)
         req = svc.create_request("deploy", {})
-        time.sleep(0.02)
-        assert svc.is_approved(req.id) is False
+        assert req.expires_at is not None
+        # Mock time.time to be past expires_at (deterministic, no sleep needed)
+        with patch.object(time, "time", return_value=req.expires_at + 1):
+            assert svc.is_approved(req.id) is False
         expired = svc._get(req.id)
         assert expired is not None
         assert expired.status is ApprovalStatus.EXPIRED

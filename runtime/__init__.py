@@ -1,4 +1,23 @@
-"""aiZee runtime kernel."""
+"""aiZee runtime kernel.
+
+NOTE: This module re-exports ~100 symbols for convenient access. Not all are
+wired into the production kernel pipeline — some are internal/experimental
+modules used only by their own tests or by cross-references between themselves.
+The production-wired modules are: kernel, managers/*, policy, budget, audit,
+guardian, probity, persona, loop_detector, saga, workflow, repository, crypto,
+telemetry, tracing, metrics, middleware, mcp_firewall, mcp_client, tech_stack,
+settings, skill_resolver, sovereign, design_library, design_slop_verifier,
+agent_baseline, agent_discovery, local_responder, chat, preloop, approval_cache,
+approval_service, defensive_injection, injection_detector, taint,
+tool_output_sanitizer, plugin_system, spec_engine, spec/*, guardrails/*,
+uninstaller, uninstaller_gui, ci, astryx, governance, enums, schemas,
+storage_backend, service_catalog, rule_compiler, rule_frontmatter,
+mcp_orchestrator, tracing_otel, attribution_model, billing_ledger,
+crm_manager, drip_engine, experiment_tracker, feature_flags, funnel_tracker,
+lead_scorer, marketing_compliance, pipeline_analytics, pricing_calculator,
+post_queue. The remaining exports are retained for test compatibility and
+potential future wiring.
+"""
 
 from __future__ import annotations
 

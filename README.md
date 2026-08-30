@@ -5,7 +5,7 @@
 
   <p>
     <img src="https://img.shields.io/badge/Version-5.10.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.10.0">
-    <img src="https://img.shields.io/badge/Tests-3687%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3687 passed">
+    <img src="https://img.shields.io/badge/Tests-3753%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3753 passed">
     <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
@@ -87,7 +87,7 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 107 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 108 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
 ├── aizee_mcp/                # MCP server (36 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
@@ -148,6 +148,22 @@ python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
 
 ---
+
+## What's New in v5.10.0
+
+### Dashboard Settings Panel + Schema Migration Framework
+- **New "Settings" tab** in the dashboard — configure aiZee from the browser without editing YAML or env vars. 6 sub-sections: MCP Servers, Budget & Costs, Security & Gates, Injection Defense, Plugins & Persona, Dashboard & System.
+- **6 new API endpoints** (`GET/POST /api/settings`, defaults, reset, mcp-status, restart) with soft-reload kernel support.
+- **`SettingsManager`** (`runtime/settings.py`) — thread-safe, fail-safe, versioned settings persistence with atomic writes + deep merge.
+- **Schema migration framework** — `SETTINGS_VERSION=2` + `_MIGRATIONS` registry + automatic migration on load (backup → migrate → prune orphans → bump version).
+- 39 new tests. ruff/mypy/pytest all green.
+
+## What's New in v5.9.0
+
+### Marketing/Freelance MCP Integration + Runtime Wiring + Plugin Hardening
+- **12 runtime modules wired** to 10 MCP tools (analytics, billing, CRM, drip, experiments, feature flags, funnels, leads, compliance, pipelines).
+- **Plugin system hardening** — lifecycle validation, manifest schema, error recovery.
+- **34 MCP servers** registered across 9 categories (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other).
 
 ## What's New in v5.8.0
 

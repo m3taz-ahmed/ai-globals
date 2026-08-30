@@ -232,8 +232,19 @@ def _build_patterns() -> list[_Pattern]:
     add("D6", InjectionTechnique.DIRECT_OVERRIDE, InjectionSeverity.MEDIUM,
         r"your\s+(?:real|true|actual)\s+(?:instructions|rules)\s+are", "Direct override: fake authority claim")
     add("D7", InjectionTechnique.DIRECT_OVERRIDE, InjectionSeverity.HIGH,
-        r"ignore\s+(?:the\s+|all\s+|your\s+)?(?:safety\s+rules|safety\s+filters|safety\s+guidelines|content\s+polic|guardrails|security\s+rules)",
+        r"ignore\s+(?:the\s+|all\s+|your\s+)?(?:safety\s+rules|safety\s+filters|safety\s+guidelines|content\s+policy|guardrails|security\s+rules)",
         "Direct override: ignore safety rules")
+    # M7: concatenated variants (no whitespace) bypass whitespace-dependent
+    # patterns. ``ignoreallpreviousinstructions`` etc. are common obfuscations.
+    add("D8", InjectionTechnique.DIRECT_OVERRIDE, InjectionSeverity.CRITICAL,
+        r"ignore(?:all|the|your|any)?(?:previous|prior|above|preceding)(?:instructions|prompts|context|messages|rules)",
+        "Direct override: concatenated ignore-previous")
+    add("D9", InjectionTechnique.DIRECT_OVERRIDE, InjectionSeverity.HIGH,
+        r"forget(?:your|all|the)?(?:instructions|everything|previous|prompt|rules)",
+        "Direct override: concatenated memory wipe")
+    add("D10", InjectionTechnique.DIRECT_OVERRIDE, InjectionSeverity.HIGH,
+        r"override(?:safety|security|contentpolicy|guardrails|yourrules)",
+        "Direct override: concatenated override")
 
     # 2. System prompt extraction (S1-S5)
     add("S1", InjectionTechnique.SYSTEM_PROMPT_EXTRACTION, InjectionSeverity.HIGH,
@@ -282,9 +293,9 @@ def _build_patterns() -> list[_Pattern]:
         r"(?:decode|execute|run|eval)\s+(?:this\s+)?(?:base64|b64|hex|rot13|binary|morse)[:\s]",
         "Encoding obfuscation: decode instruction")
     add("E2", InjectionTechnique.ENCODING_OBFUSCATION, InjectionSeverity.MEDIUM,
-        r"\\x[0-9a-f]{2}\\x[0-9a-f]{2}\\x[0-9a-f]{2}", "Encoding obfuscation: hex escape sequence")
+        r"(?:\\x[0-9a-f]{2}){2,}", "Encoding obfuscation: hex escape sequence (2+)")
     add("E3", InjectionTechnique.ENCODING_OBFUSCATION, InjectionSeverity.MEDIUM,
-        r"\\u[0-9a-f]{4}\\u[0-9a-f]{4}", "Encoding obfuscation: unicode escape")
+        r"(?:\\u[0-9a-f]{4}){2,}", "Encoding obfuscation: unicode escape (2+)")
     add("E4", InjectionTechnique.ENCODING_OBFUSCATION, InjectionSeverity.LOW,
         r"(?:rot13|caesar\s+cipher|atbash)", "Encoding obfuscation: cipher reference")
 
@@ -343,9 +354,14 @@ def _build_patterns() -> list[_Pattern]:
         "RAG poisoning: retrieval-triggered instruction")
 
     # 11. Tool abuse (TA1-TA5)
+    # M10: detect any ``../`` (1+) traversal, not just 2+ segments, against a
+    # broadened sensitive-path list. A single ``../`` can still escape a
+    # sandbox to read secrets.
     add("TA1", InjectionTechnique.TOOL_ABUSE, InjectionSeverity.CRITICAL,
-        r"(?:read|open|access|cat|type)\s+.{0,30}?(?:\.\./){2,}(?:etc/passwd|etc/shadow|proc/self|root/)",
-        "Tool abuse: path traversal to system files")
+        r"(?:read|open|access|cat|type|load|include|require|import)\s+.{0,30}?"
+        r"(?:\.\./|\\\.\\\.\.\\|%2e%2e%2f|%2e%2e/)"
+        r"(?:etc/(?:passwd|shadow|hosts|group)|proc/self|root/|\.ssh|\.env|\.aws|\.git|\.npmrc|\.netrc)",
+        "Tool abuse: path traversal to sensitive files")
     add("TA2", InjectionTechnique.TOOL_ABUSE, InjectionSeverity.HIGH,
         r"(?:fetch|get|request|curl|wget)\s+['\"]?https?://(?:localhost|127\.0\.0\.1|10\.|192\.168\.|169\.254\.|0\.0\.0\.0)",
         "Tool abuse: SSRF to internal network")
@@ -474,21 +490,35 @@ class InjectionDetector:
         if not text or not text.strip():
             return InjectionVerdict(text=text)
 
-        # Bound input length to prevent ReDoS on pathological inputs
+        # Bound input length to prevent ReDoS on pathological inputs.
+        # M9: scan BOTH head and tail so a payload placed at the end of a long
+        # input is not silently ignored. We scan the first MAX_TEXT_LENGTH
+        # chars and, if the text is longer, the last MAX_TEXT_LENGTH chars too.
         bounded = text[: self.MAX_TEXT_LENGTH]
+        tail = ""
+        if len(text) > self.MAX_TEXT_LENGTH:
+            tail = text[-self.MAX_TEXT_LENGTH:]
 
         signals: list[InjectionSignal] = []
         seen: set[str] = set()  # dedup by (pattern_id, match-start)
 
-        # Layer 1: scan raw text
+        # Layer 1: scan raw text (head)
         self._scan_text(bounded, signals, seen)
+        if tail:
+            self._scan_text(tail, signals, seen, source_label="tail")
 
         # Layer 2: normalize Unicode and re-scan (catches homoglyphs)
         normalized = _normalize_unicode(bounded)
         if normalized != bounded:
             self._scan_text(normalized, signals, seen, source_label="unicode_normalized")
+        if tail:
+            normalized_tail = _normalize_unicode(tail)
+            if normalized_tail != tail:
+                self._scan_text(normalized_tail, signals, seen, source_label="unicode_normalized_tail")
 
-        # Layer 3: decode encodings and scan decoded content
+        # Layer 3: decode encodings and scan decoded content.
+        # Apply to both head and tail so an obfuscated payload at the end of
+        # a long input is caught (parity with the tail-scan fix above).
         if scan_encodings:
             for decoder_name, decoder_fn in [
                 ("base64", _try_decode_base64),
@@ -498,6 +528,10 @@ class InjectionDetector:
                 decoded = decoder_fn(bounded)
                 if decoded and decoded != bounded:
                     self._scan_text(decoded, signals, seen, source_label=decoder_name)
+                if tail:
+                    decoded_tail = decoder_fn(tail)
+                    if decoded_tail and decoded_tail != tail:
+                        self._scan_text(decoded_tail, signals, seen, source_label=f"{decoder_name}_tail")
 
         # Aggregate
         total_score = sum(s.score for s in signals)

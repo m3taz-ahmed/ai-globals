@@ -35,6 +35,7 @@ Usage::
 
 from __future__ import annotations
 
+import logging
 import re
 import threading
 from dataclasses import dataclass, field
@@ -42,6 +43,8 @@ from enum import IntEnum
 from typing import Any
 
 from runtime.schemas import AizeeError, ErrorSeverity
+
+_logger = logging.getLogger(__name__)
 
 # Content-based secret detection patterns. Used by sanitize() to prevent
 # downgrading a value that looks like a secret even if it was not initially
@@ -368,9 +371,10 @@ def _register_taint_guardrail() -> None:
                         )
             return GuardrailResult(tripwire_triggered=False)
 
-    except Exception:
-        # Never break import if policy module not yet ready
-        pass
+    except Exception as exc:
+        # Never break import if policy module not yet ready, but surface the
+        # failure so operators know the taint guardrail is inactive.
+        _logger.warning("Taint guardrail registration failed — taint flow checks inactive: %s", exc)
 
 
 # Auto-register on import so Kernel/Guardian picks it up without explicit wiring

@@ -371,13 +371,13 @@ class PromptInjectionEvalSuite:
                 )
 
         # Test benign cases (false positive check)
-        for case in self.BENIGN_CORPUS:
+        for benign_case in self.BENIGN_CORPUS:
             report.total_benign += 1
-            verdict = self._detector.detect(case.text)
+            verdict = self._detector.detect(benign_case.text)
             if verdict.is_injection:
                 report.false_positives += 1
                 report.false_positive_cases.append(
-                    f"[{case.category}] {case.description}: {case.text[:80]}"
+                    f"[{benign_case.category}] {benign_case.description}: {benign_case.text[:80]}"
                 )
 
         return report

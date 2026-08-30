@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hmac
 import json
 import logging
@@ -539,12 +540,22 @@ class MemoryStore(BaseRepository):
     def _load_integrity_key(self) -> str:
         """Resolve the HMAC key for memory signing.
 
-        Uses ``AIZEE_INTEGRITY_KEY`` if set; otherwise it reads (or atomically
-        generates and persists) ``state/integrity.key`` under the root.
+        Key resolution order:
+        1. ``AIZEE_INTEGRITY_KEY`` env var (production — key never touches disk).
+        2. ``AIZEE_INTEGRITY_KEY_FILE`` env var (path outside OS root).
+        3. ``state/integrity.key`` under the root (dev fallback — warns loudly).
         """
         env_key = os.environ.get(_INTEGRITY_KEY_ENV)
         if env_key:
             return env_key
+        # Check for external key file (production: key outside OS root)
+        ext_key_file = os.environ.get("AIZEE_INTEGRITY_KEY_FILE")
+        if ext_key_file:
+            ext_path = Path(ext_key_file)
+            if ext_path.exists():
+                existing = ext_path.read_text(encoding="utf-8").strip()
+                if existing:
+                    return existing
         key_path = self.root / _INTEGRITY_KEY_RELATIVE
         if key_path.exists():
             existing = key_path.read_text(encoding="utf-8").strip()
@@ -552,7 +563,19 @@ class MemoryStore(BaseRepository):
                 return existing
         new_key = secrets.token_hex(32)
         key_path.parent.mkdir(parents=True, exist_ok=True)
+        # L6: write the HMAC key with restrictive permissions (0o600) so other
+        # users on shared Unix hosts cannot read it. On Windows the mode is
+        # effectively ignored (ACLs apply), but chmod is harmless.
         key_path.write_text(new_key, encoding="utf-8")
+        # L6: restrict key file permissions (best-effort; harmless on Windows).
+        with contextlib.suppress(OSError):
+            os.chmod(key_path, 0o600)
+        logger.warning(
+            "SECURITY: AIZEE_INTEGRITY_KEY not set — auto-generated key at %s "
+            "INSIDE the OS root. For production, set AIZEE_INTEGRITY_KEY env var "
+            "or AIZEE_INTEGRITY_KEY_FILE to a path outside the OS root.",
+            key_path,
+        )
         return new_key
 
     def _ensure_integrity_column(self) -> None:

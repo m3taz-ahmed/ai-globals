@@ -156,21 +156,34 @@ def _evict_stale_entries(now: float) -> None:
 def _client_ip(handler: DashboardHandler) -> str:
     """Resolve client IP when the direct peer is a trusted proxy.
 
-    Per RFC 7239, X-Forwarded-For is "client, proxy1, proxy2" — the
-    first element is the original client. For a chain of multiple
-    proxies, a more robust implementation would iterate from the right
-    and return the first untrusted address.
+    Per RFC 7239, X-Forwarded-For is "client, proxy1, proxy2". The left-most
+    element is the most easily spoofed (client-controlled), so for a chain of
+    trusted proxies we iterate from the RIGHT and return the first address
+    that is NOT a trusted proxy — that is the real client as reported by the
+    closest trusted proxy. If all entries are trusted proxies, fall back to
+    the left-most entry (single-proxy case).
     """
     direct = handler.client_address[0]
     if direct in _TRUSTED_PROXIES:
-        forwarded = handler.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-        if forwarded:
-            # Validate that the forwarded value is a real IP address to prevent spoofing.
+        raw = handler.headers.get("X-Forwarded-For", "")
+        parts = [p.strip() for p in raw.split(",") if p.strip()]
+        if parts:
+            # L4: scan from the right (closest trusted proxy) and return the
+            # first non-trusted address — this is the real client. The
+            # left-most entry is client-controlled and easily spoofed.
+            for candidate in reversed(parts):
+                try:
+                    ipaddress.ip_address(candidate)
+                except ValueError:
+                    continue
+                if candidate not in _TRUSTED_PROXIES:
+                    return candidate
+            # All entries were trusted proxies (unusual) — use left-most.
             try:
-                ipaddress.ip_address(forwarded)
-                return forwarded
+                ipaddress.ip_address(parts[0])
+                return parts[0]
             except ValueError:
-                logger.warning("Invalid X-Forwarded-For value %r from trusted proxy; using direct IP", forwarded)
+                pass
     return direct
 
 
@@ -183,11 +196,57 @@ def _dashboard_token(root: Path) -> str | None:
     local use, which stays safe because the server binds to 127.0.0.1,
     GETs are read-only/dry-run, and state-changing POSTs still enforce the
     CSRF custom header that cross-origin pages cannot set.
+
+    B9: If no env var is set, reads a previously auto-generated token from
+    ``state/dashboard.token`` (created on first network-exposed start).
     """
-    return (
+    env_token = (
         os.environ.get("AIZEE_DASHBOARD_TOKEN")
         or os.environ.get("AGENT_OS_DASHBOARD_TOKEN")
     )
+    if env_token:
+        return env_token
+    # B9: Read auto-generated token from state file if it exists.
+    token_file = root / "state" / "dashboard.token"
+    if token_file.exists():
+        stored = token_file.read_text(encoding="utf-8").strip()
+        if stored:
+            return stored
+    return None
+
+
+def _write_dashboard_token_file(root: Path, token: str) -> Path:
+    """Persist an auto-generated dashboard token to ``state/dashboard.token`` (B9).
+
+    The file is created with 0o600 permissions. The token is never printed
+    to stdout — only the file path is logged.
+    """
+    token_file = root / "state" / "dashboard.token"
+    token_file.parent.mkdir(parents=True, exist_ok=True)
+    token_file.write_text(token, encoding="utf-8")
+    try:
+        import platform
+
+        if platform.system() == "Windows":
+            import getpass
+            import subprocess
+
+            try:
+                user = os.getlogin()
+            except OSError:
+                user = getpass.getuser()
+            subprocess.run(
+                ["icacls", str(token_file), "/inheritance:r", "/grant:r", f"{user}:(R,W)"],
+                capture_output=True,
+                timeout=5,
+                check=False,
+            )
+        else:
+            token_file.chmod(0o600)
+    except Exception:
+        with contextlib.suppress(OSError):
+            token_file.chmod(0o600)
+    return token_file
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -201,11 +260,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def _origin(self) -> str:
+        """Return a validated CORS origin to reflect, or "" to disallow.
+
+        Security: never reflect ``*`` or an unvalidated configured origin with
+        credentials. The reflected value must exactly match the request Origin
+        against an explicit allowlist (configured env value or the built-in
+        ``_ALLOWED_ORIGINS``). A wildcard ``*`` configured value is rejected
+        because ``Access-Control-Allow-Credentials: true`` is always set.
+        """
         configured = _env_first("AIZEE_DASHBOARD_ORIGIN", "AGENT_OS_DASHBOARD_ORIGIN")
-        if configured:
-            return configured
         request_origin = self.headers.get("Origin", "")
-        if request_origin in _ALLOWED_ORIGINS:
+        # Build an allowlist: configured origin (if any, and not "*") + defaults.
+        allow: set[str] = set(_ALLOWED_ORIGINS)
+        if configured and configured != "*":
+            allow.add(configured)
+        # Only reflect the request Origin if it is on the allowlist.
+        if request_origin and request_origin in allow:
             return request_origin
         return ""
 
@@ -228,7 +298,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Credentials", "true")
             self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-CSRF-Token, X-Requested-With")
+        # NOTE: X-Requested-With is intentionally NOT exposed here. It is the
+        # CSRF guard header (_csrf); listing it in Allow-Headers would let a
+        # cross-origin page (that passed the origin check) set it and bypass
+        # the CSRF protection. Only Authorization/Content-Type are safe to
+        # expose; the dashboard's same-origin JS already sets X-Requested-With.
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
 
     def _security_headers(self) -> None:
         self.send_header("Content-Security-Policy", self._CSP)
@@ -883,10 +958,16 @@ if __name__ == "__main__":
 
         token = secrets.token_urlsafe(32)
         os.environ["AIZEE_DASHBOARD_TOKEN"] = token
-        print(
+        # B9: Write the token to a file (0o600) instead of printing to stdout.
+        token_path = _write_dashboard_token_file(
+            Path(os.environ.get("AIZEE_ROOT", ".")), token
+        )
+        logger.info(
             "NETWORK-EXPOSED MODE: no AIZEE_DASHBOARD_TOKEN set — generated a "
-            "random token. Pass it as `Authorization: Bearer <token>`. Set the "
-            "env var for a stable token across restarts."
+            "random token and stored it at %s. Pass it as "
+            "`Authorization: Bearer <token>`. Set the env var for a stable "
+            "token across restarts.",
+            token_path,
         )
     # Fail-closed: never boot network-exposed with a known placeholder/empty
     # token (e.g. the K8s secret shipped with REPLACE_WITH_REAL_TOKEN...).

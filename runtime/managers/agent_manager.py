@@ -40,6 +40,7 @@ class AgentManager:
                 return {"ok": False, "error": "No persona provided"}
         agent = self.pool.register(agent_id, personas, scope, project_root, lords=extra_lords)
         self.health.register(agent_id)
+        self.health.heartbeat(agent_id)
         return {
             "ok": True,
             "id": agent.id,
@@ -50,10 +51,21 @@ class AgentManager:
         }
 
     def delegate(self, agent_id: str, action_type: str, **kwargs: Any) -> dict[str, Any]:
-        return self.pool.delegate(agent_id, action_type, **kwargs)
+        result = self.pool.delegate(agent_id, action_type, **kwargs)
+        # Record a heartbeat after agent activity so the health monitor
+        # can track liveness without a background thread.
+        self.health.heartbeat(agent_id)
+        return result
 
     def list_agents(self) -> list[dict[str, Any]]:
         return self.pool.list_agents()
+
+    def check_health(self) -> list[str]:
+        """Check all registered agents and return list of crashed agent IDs.
+
+        Short alias for :meth:`check_agents_health` matching the requested API.
+        """
+        return self.health.check_health()
 
     def check_agents_health(self) -> list[str]:
         """Check all registered agents and return list of crashed agent IDs."""

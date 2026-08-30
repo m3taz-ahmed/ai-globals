@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "5.7.1",
+    "version": "5.10.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
-    "updated": "2026-08-24"
+    "updated": "2026-08-30"
   },
   "triggers": {
     "/prompt": "workflows/00-prompt-architecting.md",
@@ -64,6 +64,24 @@
     "filament-plugin": "workflows/25-filament-plugin-development.md",
     "/api-versioning": "workflows/26-laravel-api-versioning.md",
     "api-versioning": "workflows/26-laravel-api-versioning.md",
+    "/nativephp": "workflows/27-nativephp-app-development.md",
+    "/native-php": "workflows/27-nativephp-app-development.md",
+    "/native-app": "workflows/27-nativephp-app-development.md",
+    "/desktop-app": "workflows/27-nativephp-app-development.md",
+    "/mobile-app": "workflows/27-nativephp-app-development.md",
+    "/supernative": "workflows/27-nativephp-app-development.md",
+    "/electron-laravel": "workflows/27-nativephp-app-development.md",
+    "/blade-native": "workflows/27-nativephp-app-development.md",
+    "nativephp": "workflows/27-nativephp-app-development.md",
+    "native-php": "workflows/27-nativephp-app-development.md",
+    "native app": "workflows/27-nativephp-app-development.md",
+    "desktop app": "workflows/27-nativephp-app-development.md",
+    "draft and review": "workflows/31-drafter-reviewer.md",
+    "two-pass generation": "workflows/31-drafter-reviewer.md",
+    "critique and revise": "workflows/31-drafter-reviewer.md",
+    "drafter reviewer": "workflows/31-drafter-reviewer.md",
+    "adversarial review": "workflows/31-drafter-reviewer.md",
+    "/drafter-reviewer": "workflows/31-drafter-reviewer.md",
     "/seo-audit": "workflows/28-seo-audit.md",
     "seo audit": "workflows/28-seo-audit.md",
     "seo analysis": "workflows/28-seo-audit.md",
@@ -150,7 +168,7 @@
     "marketing-analytics": "workflows/49-marketing-analytics.md",
     "marketing-automation": "workflows/50-marketing-automation.md",
     "local-seo": "workflows/51-local-seo.md",
-    "pr": "workflows/52-pr-outreach.md",
+    "pr-outreach": "workflows/52-pr-outreach.md",
     "community": "workflows/53-community-building.md",
     "استقبال-عميل": "workflows/36-client-onboarding.md",
     "عقد": "workflows/37-contract-lifecycle.md",
@@ -293,5 +311,5 @@
     "anti-patterns": "rules/anti-patterns.md",
     "behavioral": "rules/core-behavioral-compact.md"
   },
-  "version": "5.8.0"
+  "version": "5.10.0"
 }

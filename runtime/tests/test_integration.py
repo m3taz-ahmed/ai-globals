@@ -4,6 +4,10 @@ import pytest
 
 from runtime.kernel import Kernel
 
+# TEST-10: this file spins up a real Kernel + durable state (integration),
+# so mark every test as integration (excluded from FAST tier).
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture
 def k(tmp_path):

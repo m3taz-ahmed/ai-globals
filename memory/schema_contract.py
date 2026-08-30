@@ -129,6 +129,51 @@ def _normalize_sql(sql: str) -> str:
     return _WS_RE.sub(" ", no_ifne).strip().lower()
 
 
+def _extract_columns(ddl: str) -> list[str]:
+    """Extract column names from a CREATE TABLE DDL string.
+
+    Handles multi-line DDL, ALTER TABLE additions (which SQLite stores with
+    the new column appended in a different position), and normalizes for
+    comparison. Returns column names in order, lowercased.
+    """
+    if not ddl:
+        return []
+    # Find the content between the outermost parentheses
+    start = ddl.find("(")
+    end = ddl.rfind(")")
+    if start == -1 or end == -1 or end <= start:
+        return []
+    body = ddl[start + 1:end]
+    # Split on commas, but respect nested parens (e.g., CHECK constraints)
+    columns: list[str] = []
+    depth = 0
+    current: list[str] = []
+    for char in body:
+        if char == "(":
+            depth += 1
+            current.append(char)
+        elif char == ")":
+            depth -= 1
+            current.append(char)
+        elif char == "," and depth == 0:
+            col_def = "".join(current).strip()
+            if col_def:
+                col_name = col_def.split()[0].lower() if col_def.split() else ""
+                # Skip table-level constraints (PRIMARY KEY, FOREIGN KEY, etc.)
+                if col_name and not col_name.startswith(("primary", "foreign", "unique", "check", "constraint", "default")):
+                    columns.append(col_name)
+            current = []
+        else:
+            current.append(char)
+    # Last column
+    col_def = "".join(current).strip()
+    if col_def:
+        col_name = col_def.split()[0].lower() if col_def.split() else ""
+        if col_name and not col_name.startswith(("primary", "foreign", "unique", "check", "constraint", "default")):
+            columns.append(col_name)
+    return columns
+
+
 # ---------------------------------------------------------------------------
 # DB introspection
 # ---------------------------------------------------------------------------
@@ -174,14 +219,18 @@ def detect_schema_drift(
     actual_tables, actual_indexes = _read_db_schema(db_path)
     drifts: list[SchemaDrift] = []
 
-    # Missing / mismatched tables
+    # Missing / mismatched tables — use column-level comparison to avoid
+    # false positives when ALTER TABLE ADD COLUMN changes DDL formatting.
     for tname, expected_ddl in expected.tables.items():
         if tname not in actual_tables:
             drifts.append(SchemaDrift("missing_table", tname, expected_ddl, ""))
-        elif _normalize_sql(actual_tables[tname]) != _normalize_sql(expected_ddl):
-            drifts.append(
-                SchemaDrift("column_mismatch", tname, expected_ddl, actual_tables[tname])
-            )
+        else:
+            expected_cols = _extract_columns(expected_ddl)
+            actual_cols = _extract_columns(actual_tables[tname])
+            if expected_cols != actual_cols:
+                drifts.append(
+                    SchemaDrift("column_mismatch", tname, expected_ddl, actual_tables[tname])
+                )
 
     # Extra tables — ignore FTS5 shadow tables (memories_fts, memories_fts_data,
     # memories_fts_idx, memories_fts_docsize, memories_fts_config) which SQLite

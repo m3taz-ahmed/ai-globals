@@ -29,6 +29,70 @@ from runtime.schemas import AizeeError, ErrorSeverity, PolicyDeniedError
 
 _logger = logging.getLogger(__name__)
 
+# B7: ReDoS protection — compiled regex cache and limits.
+_COMPILED_REGEX_CACHE: dict[str, re.Pattern[str]] = {}
+_MAX_REGEX_PATTERN_LEN = 200  # Reject overly complex patterns.
+_MAX_REGEX_INPUT_LEN = 10000  # Reject excessively long input strings.
+_REGEX_TIMEOUT_SECONDS = 2  # Max time for a single regex match (Unix only).
+
+
+def _safe_regex_search(pattern: str, text: str) -> bool:
+    """Safely execute a regex search with ReDoS protections (B7).
+
+    - Rejects patterns longer than ``_MAX_REGEX_PATTERN_LEN``.
+    - Rejects input longer than ``_MAX_REGEX_INPUT_LEN``.
+    - Compiles the pattern once and caches it in ``_COMPILED_REGEX_CACHE``.
+    - Uses ``signal.alarm`` timeout on Unix; skips timeout on Windows.
+    """
+    if len(pattern) > _MAX_REGEX_PATTERN_LEN:
+        _logger.warning(
+            "Guardian regex rejected: pattern exceeds %d chars", _MAX_REGEX_PATTERN_LEN
+        )
+        return False
+    if len(text) > _MAX_REGEX_INPUT_LEN:
+        _logger.warning(
+            "Guardian regex rejected: input exceeds %d chars", _MAX_REGEX_INPUT_LEN
+        )
+        return False
+    # Compile and cache the pattern.
+    compiled = _COMPILED_REGEX_CACHE.get(pattern)
+    if compiled is None:
+        try:
+            compiled = re.compile(pattern)
+        except re.error as exc:
+            _logger.warning("Guardian regex compilation failed: %s (pattern=%r)", exc, pattern)
+            return False
+        _COMPILED_REGEX_CACHE[pattern] = compiled
+    # Apply timeout on Unix via signal.alarm; skip on Windows.
+    import os as _os
+    import signal as _signal
+
+    use_alarm = hasattr(_signal, "SIGALRM") and _os.name != "nt"
+    if use_alarm:
+        sigalrm: Any = getattr(_signal, "SIGALRM", None)
+        alarm_fn: Any = getattr(_signal, "alarm", None)
+
+        def _timeout_handler(_signum: int, _frame: Any) -> None:
+            raise TimeoutError("Guardian regex match timed out")
+
+        old_handler = _signal.signal(sigalrm, _timeout_handler)
+        alarm_fn(_REGEX_TIMEOUT_SECONDS)
+        try:
+            return bool(compiled.search(text))
+        except TimeoutError:
+            _logger.warning("Guardian regex timed out after %ds (pattern=%r)", _REGEX_TIMEOUT_SECONDS, pattern)
+            return False
+        finally:
+            alarm_fn(0)
+            _signal.signal(sigalrm, old_handler)
+    else:
+        # Windows: no signal.alarm — run without timeout.
+        try:
+            return bool(compiled.search(text))
+        except Exception as exc:
+            _logger.warning("Guardian regex match failed: %s (pattern=%r)", exc, pattern)
+            return False
+
 
 class DecisionStatus(str, Enum):
     """Possible policy decisions."""
@@ -161,7 +225,7 @@ class _PredicateEvaluator:
         "in": lambda a, b: a in b,
         "nin": lambda a, b: a not in b,
         "contains": lambda a, b: b in a if isinstance(a, (str, list, tuple)) else False,
-        "regex": lambda a, b: bool(re.search(b, str(a))) if a is not None else False,
+        "regex": lambda a, b: _safe_regex_search(b, str(a)) if a is not None else False,
     }
 
     def __init__(self, attributes: dict[str, Any]) -> None:
@@ -270,17 +334,19 @@ class Guardian:
                     matched = evaluator.evaluate_predicate(rule["predicate"])
                 else:
                     matched = True
+                if matched:
+                    decision = rule.get("decision", self.config.default_decision.value)
+                    # DecisionStatus() can raise ValueError on an invalid
+                    # string — keep it inside the try so on_evaluation_error
+                    # applies instead of propagating out of _match_rule.
+                    return Decision(DecisionStatus(decision), name, rule.get("description", ""))
             except Exception as exc:
-                _logger.debug("rule evaluation failed: %s", exc, exc_info=True)
+                _logger.warning("rule evaluation failed for rule %r: %s", name, exc, exc_info=True)
                 if self.config.on_evaluation_error == DecisionStatus.DENY:
                     return Decision(DecisionStatus.DENY, name, self.EVALUATION_ERROR_REASON)
                 if self.config.on_evaluation_error == DecisionStatus.REQUIRE_APPROVAL:
                     return Decision(DecisionStatus.REQUIRE_APPROVAL, name, self.EVALUATION_ERROR_REASON)
                 continue
-
-            if matched:
-                decision = rule.get("decision", self.config.default_decision.value)
-                return Decision(DecisionStatus(decision), name, rule.get("description", ""))
 
         return None
 

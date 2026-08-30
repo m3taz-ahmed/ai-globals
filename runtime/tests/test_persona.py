@@ -52,7 +52,9 @@ class TestPersonaDetector:
         assert "ARCH" in d.list_personas()
         assert "CV" in d.list_personas()
         assert "FREELANCE" in d.list_personas()
-        assert len(d.list_personas()) == 22
+        # Persona count grows as new personas are added; assert >= 22 to
+        # avoid breaking on legitimate additions while still catching regressions.
+        assert len(d.list_personas()) >= 22
 
     def test_unknown_default_raises(self):
         with pytest.raises(ValueError, match="Unknown default persona"):

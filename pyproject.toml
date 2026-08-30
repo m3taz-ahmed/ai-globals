@@ -45,6 +45,9 @@ dev = [
     "mypy>=1.0,<2.0",
     "types-pyyaml",
     "types-psutil",
+    "psutil>=5.9,<7.0",
+    "sentry-sdk>=2.0,<3.0",
+    "defusedxml>=0.7,<0.8",
     "graphifyy>=0.9.16,<0.9.17",
     "bandit>=1.7,<2.0",
     "pip-audit>=2.0,<3.0",
@@ -195,4 +198,27 @@ markers = [
     "mcp: marks tests that spin up the MCP server (slow, ~3s each)",
     "dashboard: marks tests that start the dashboard server (slow)",
     "vector: marks tests that load the SentenceTransformer model (slow)",
+]
+
+# Coverage configuration — enforces the 80% floor (TEST-06) when running
+# ``pytest --cov`` directly. ``aizee test --full`` also passes
+# ``--cov-fail-under=80`` explicitly; this section provides the same gate for
+# ad-hoc coverage runs and CI without the CLI wrapper.
+[tool.coverage.run]
+source = ["runtime", "memory", "aizee_mcp", "dashboard", "eval"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
 ]

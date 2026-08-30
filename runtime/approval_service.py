@@ -23,10 +23,14 @@ Usage::
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import logging
+import socket
 import threading
 import time
+import urllib.parse
+import urllib.request
 import uuid
 from dataclasses import asdict, dataclass, field
 from enum import Enum
@@ -36,6 +40,64 @@ if TYPE_CHECKING:
     from runtime.storage_backend import StorageBackend as _StorageBackend
 
 _logger = logging.getLogger(__name__)
+
+
+def _is_private_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Return True if the IP is private, loopback, or link-local (SSRF guard)."""
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    )
+
+
+def _validate_webhook_url(url: str) -> bool:
+    """Validate a webhook URL to prevent SSRF attacks (B5).
+
+    1. Rejects non-HTTP(S) schemes (file://, gopher://, ftp://, etc.).
+    2. Resolves the hostname to an IP via ``socket.getaddrinfo``.
+    3. Rejects private/loopback/link-local IP destinations.
+    Returns True if safe, False otherwise.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except (ValueError, TypeError):
+        return False
+    if parsed.scheme not in ("http", "https"):
+        _logger.warning("Webhook URL rejected: non-HTTP(S) scheme %r", parsed.scheme)
+        return False
+    hostname = parsed.hostname
+    if not hostname:
+        _logger.warning("Webhook URL rejected: no hostname in %r", url)
+        return False
+    # If the hostname is already an IP literal, validate directly.
+    try:
+        ip = ipaddress.ip_address(hostname)
+        if _is_private_ip(ip):
+            _logger.warning("Webhook URL rejected: private/loopback IP %s", ip)
+            return False
+        return True
+    except ValueError:
+        pass  # Not an IP literal — proceed to DNS resolution.
+    # Resolve hostname to IP addresses; reject if any resolution fails or is private.
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+    except (socket.gaierror, socket.herror, OSError) as exc:
+        _logger.warning("Webhook URL rejected: DNS resolution failed for %r: %s", hostname, exc)
+        return False
+    for _family, _stype, _proto, _canon, sockaddr in infos:
+        ip_str = sockaddr[0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            continue
+        if _is_private_ip(ip):
+            _logger.warning("Webhook URL rejected: hostname %r resolves to private IP %s", hostname, ip)
+            return False
+    return True
 
 
 class ApprovalStatus(str, Enum):
@@ -109,8 +171,11 @@ class WebhookChannel(NotificationChannel):
         self.headers = headers or {"Content-Type": "application/json"}
 
     def send(self, request: ApprovalRequest) -> bool:
-        import urllib.request
-
+        if not _validate_webhook_url(self.url):
+            _logger.warning(
+                "Webhook notification skipped: URL failed SSRF validation %r", self.url
+            )
+            return False
         payload = json.dumps(request.to_dict()).encode("utf-8")
         req = urllib.request.Request(self.url, data=payload, headers=self.headers, method="POST")
         try:

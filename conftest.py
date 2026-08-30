@@ -1,8 +1,17 @@
-"""Shared pytest fixtures and auto-marking for aiZee test suite."""
+"""Root conftest.py — shared pytest fixtures and auto-marking for the entire aiZee test suite.
+
+This file lives at the repository root and is automatically discovered by
+pytest for **all** test directories (tests/, runtime/tests/, memory/tests/,
+eval/tests/, …).  The per-directory conftest.py duplicates have been removed
+in favour of this single source of truth (P3.3 / I12-Q4).
+"""
+
+from __future__ import annotations
 
 import gc
 import shutil
 import tempfile
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -14,14 +23,15 @@ from runtime.kernel import Kernel
 # Auto-mark slow tests based on file path
 # ---------------------------------------------------------------------------
 
+
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """Auto-mark tests as slow/fast based on their file path.
 
-    - tests/mcp/ → marked as 'mcp' (slow: spins up MCP server)
-    - tests/dashboard/ → marked as 'dashboard' (slow: starts server)
-    - tests/e2e/ → marked as 'slow' (end-to-end)
-    - memory/tests/test_vector.py → marked as 'vector' (slow: loads model)
-    - Everything else → marked as 'fast'
+    - tests/mcp/            -> marked as 'mcp'       (slow: spins up MCP server)
+    - tests/dashboard/      -> marked as 'dashboard' (slow: starts server)
+    - tests/e2e/            -> marked as 'slow'      (end-to-end)
+    - memory/tests/test_vector.py -> marked as 'vector' (slow: loads model)
+    - Everything else       -> marked as 'fast'
     """
     slow_markers = {
         "tests/mcp/": "mcp",
@@ -47,16 +57,18 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
-def tmp_root():
+def tmp_root() -> Iterator[Path]:
+    """Yield a fresh temporary directory, cleaned up after the test."""
     path = Path(tempfile.mkdtemp(prefix="aizee_test_"))
     yield path
     shutil.rmtree(path, ignore_errors=True)
 
 
 @pytest.fixture
-def kernel(tmp_root):
-    # Copy minimal structure for tests
+def kernel(tmp_root: Path) -> Kernel:
+    """Return a Kernel backed by a minimal tmp_root directory structure."""
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
         (tmp_root / sub).mkdir(parents=True, exist_ok=True)
     (tmp_root / "runtime/policies/default.yaml").write_text(
@@ -71,7 +83,8 @@ def kernel(tmp_root):
 
 
 @pytest.fixture
-def store(tmp_root):
+def store(tmp_root: Path) -> MemoryStore:
+    """Return a MemoryStore backed by a SQLite DB inside tmp_root."""
     return MemoryStore(tmp_root, db_path=tmp_root / "brain" / "memory.db", enable_vector=False)
 
 
@@ -79,8 +92,9 @@ def store(tmp_root):
 # Global cleanup — close leaked SQLite connections after each test
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
-def _close_sqlite_connections():
+def _close_sqlite_connections() -> Iterator[None]:
     """Force-close any leaked SQLite connections after each test.
 
     Prevents ``ResourceWarning: unclosed database`` warnings that occur
@@ -92,17 +106,24 @@ def _close_sqlite_connections():
     gc.collect()
 
 
-@pytest.fixture(autouse=True)
-def _mock_time_sleep(request):
-    """Replace time.sleep() with a no-op for fast tests.
+# ---------------------------------------------------------------------------
+# Mock time.sleep for fast tests
+# ---------------------------------------------------------------------------
 
-    Slow/integration tests (marked with @pytest.mark.slow) keep real sleep.
-    This prevents flaky timing-dependent tests and speeds up the fast tier.
+
+@pytest.fixture(autouse=True)
+def _mock_time_sleep(request: pytest.FixtureRequest) -> Iterator[None]:
+    """Replace ``time.sleep()`` with a no-op for fast tests.
+
+    Slow/integration tests (marked with ``@pytest.mark.slow`` or
+    ``@pytest.mark.integration``) keep real sleep.  This prevents flaky
+    timing-dependent tests and speeds up the fast tier.
     """
     if request.node.get_closest_marker("slow") or request.node.get_closest_marker("integration"):
         yield
         return
     import time as _time
+
     original_sleep = _time.sleep
     _time.sleep = lambda _seconds: None
     try:

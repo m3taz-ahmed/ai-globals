@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""Append-only audit logging with hash chaining for aiZee.
+"""Append-only audit logging with HMAC hash chaining for aiZee.
 
-Each log entry is cryptographically chained to the previous one via SHA-256,
-producing a tamper-evident trail. Any modification or deletion of a past
-entry breaks the chain and is detectable via ``verify_chain()``.
+Each log entry is cryptographically chained to the previous one via
+HMAC-SHA-256, producing a tamper-evident trail. Any modification or
+deletion of a past entry breaks the chain and is detectable via
+``verify_chain()``.
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import hmac
 import json
 import logging
+import os
+import platform
 import re
+import secrets
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,13 +29,117 @@ _SENSITIVE_KEYS = re.compile(r"(token|key|secret|password|credential|auth|api[_-
 
 _GENESIS_HASH = "0" * 64
 
+# Module-level cache for the audit HMAC key (B6).
+_audit_key_cache: bytes | None = None
+_audit_key_lock = threading.Lock()
+
+
+def _restrict_file_permissions(path: Path) -> None:
+    """Restrict file permissions to 0o600 (owner-only), cross-platform."""
+    try:
+        if platform.system() == "Windows":
+            import getpass
+            import subprocess
+
+            try:
+                user = os.getlogin()
+            except OSError:
+                user = getpass.getuser()
+            subprocess.run(
+                ["icacls", str(path), "/inheritance:r", "/grant:r", f"{user}:(R,W)"],
+                capture_output=True,
+                timeout=5,
+                check=False,
+            )
+        else:
+            path.chmod(0o600)
+    except Exception:
+        with contextlib.suppress(OSError):
+            path.chmod(0o600)
+
+
+def _get_audit_key() -> bytes:
+    """Return the HMAC key for audit chain integrity (B6).
+
+    Resolution order:
+    1. ``AIZEE_AUDIT_KEY`` env var (raw key bytes).
+    2. ``AIZEE_AUDIT_KEY_FILE`` env var (path to a file containing the key).
+    3. Auto-generated random key stored in ``state/audit.key`` (0o600).
+
+    The key is cached in a module-level variable after first resolution.
+    """
+    global _audit_key_cache
+    with _audit_key_lock:
+        if _audit_key_cache is not None:
+            return _audit_key_cache
+        # 1. Env var with raw key.
+        env_key = os.environ.get("AIZEE_AUDIT_KEY")
+        if env_key:
+            _audit_key_cache = env_key.encode("utf-8")
+            return _audit_key_cache
+        # 2. Env var with key file path.
+        key_file_env = os.environ.get("AIZEE_AUDIT_KEY_FILE")
+        if key_file_env:
+            key_path = Path(key_file_env)
+            if key_path.exists():
+                stored = key_path.read_bytes().strip()
+                if stored:
+                    _audit_key_cache = stored
+                    return _audit_key_cache
+        # 3. Auto-generate and persist to state/audit.key.
+        root = Path(os.environ.get("AIZEE_ROOT", "."))
+        key_file = root / "state" / "audit.key"
+        key_file.parent.mkdir(parents=True, exist_ok=True)
+        if key_file.exists():
+            stored = key_file.read_bytes().strip()
+            if stored:
+                _audit_key_cache = stored
+                return _audit_key_cache
+        generated = secrets.token_bytes(32)
+        key_file.write_bytes(generated)
+        _restrict_file_permissions(key_file)
+        _logger.warning(
+            "SECURITY: No AIZEE_AUDIT_KEY set — auto-generated audit HMAC key "
+            "stored at %s. For production, set AIZEE_AUDIT_KEY env var or "
+            "AIZEE_AUDIT_KEY_FILE to a path outside the OS root. "
+            "Back up this file — loss means the audit chain cannot be verified.",
+            key_file,
+        )
+        _audit_key_cache = generated
+        return _audit_key_cache
+
+
+def _ts_after(entry_ts: str, since_ts: str) -> bool:
+    """Return True if ``entry_ts`` is at or after ``since_ts``.
+
+    Parses both as ISO-8601 datetimes (handling ``Z`` suffix and offsets) so
+    mixed timezone formats compare correctly. Falls back to string comparison
+    if either value fails to parse.
+    """
+    try:
+        from datetime import datetime as _dt
+
+        def _parse(ts: str) -> _dt:
+            # Normalize trailing Z to +00:00 for fromisoformat.
+            if ts.endswith("Z"):
+                ts = ts[:-1] + "+00:00"
+            parsed = _dt.fromisoformat(ts)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed
+
+        return _parse(entry_ts) >= _parse(since_ts)
+    except (ValueError, TypeError):
+        return entry_ts >= since_ts
+
 
 class AuditLogger:
-    """Append-only, hash-chained audit log for policy, budget, and workflow events.
+    """Append-only, HMAC hash-chained audit log for policy, budget, and workflow events.
 
     Every entry stores ``prev_hash`` (the hash of the preceding entry) and
-    ``hash`` (SHA-256 of its own canonical JSON excluding the ``hash`` field).
-    The first entry's ``prev_hash`` is the genesis hash (64 zeros).
+    ``hash`` (HMAC-SHA-256 of its own canonical JSON excluding the ``hash``
+    field, keyed via ``_get_audit_key``). The first entry's ``prev_hash``
+    is the genesis hash (64 zeros).
     """
 
     _MAX_LOG_SIZE = 100 * 1024 * 1024  # 100 MB
@@ -60,8 +170,10 @@ class AuditLogger:
                 # Invalidate cache after rotation — new file starts from genesis
                 with self._cache_lock:
                     self._cached_last_hash = None
-        except OSError:
-            pass  # Best-effort rotation
+        except OSError as exc:
+            # L2: log rotation failures so operators notice disk/permission
+            # issues instead of silently losing the audit trail.
+            _logger.warning("Audit log rotation failed: %s", exc)
 
     def _redact(self, value: Any, key_name: str = "") -> Any:
         """Redact sensitive values using both key-name and content matching.
@@ -86,26 +198,46 @@ class AuditLogger:
 
         Uses in-memory cache for O(1) after first read; falls back to
         tail-scan only on cache-miss (first init or after rotation).
+
+        The tail-scan reads the last line in full by scanning backward for the
+        final newline, growing the read window up to the whole file. This
+        avoids the previous 8KB cap which truncated large JSON records
+        (>8KB) mid-entry, causing ``json.loads`` to fail and silently breaking
+        the hash chain (returning genesis instead of the real last hash).
         """
         with self._cache_lock:
             if self._cached_last_hash is not None:
                 return self._cached_last_hash
         if not self.log_file.exists():
             return _GENESIS_HASH
-        # Tail-scan: read only last line instead of full file iteration optimization
-        # for first cold-start; cached thereafter.
         last_line: str | None = None
         try:
-            # Efficient tail: read last 8KB and find last line
             with self.log_file.open("rb") as f:
                 f.seek(0, 2)
                 size = f.tell()
-                read_size = min(size, 8192)
-                f.seek(size - read_size)
-                chunk = f.read().decode("utf-8", errors="ignore")
-                lines = [ln.strip() for ln in chunk.splitlines() if ln.strip()]
-                if lines:
-                    last_line = lines[-1]
+                if size == 0:
+                    return _GENESIS_HASH
+                # Scan backward from EOF to find the last complete line.
+                # Start with 8KB but grow up to the full file size if the last
+                # record is larger than the initial window.
+                window = min(size, 8192)
+                pos = size - window
+                while True:
+                    f.seek(pos)
+                    chunk = f.read(size - pos).decode("utf-8", errors="ignore")
+                    lines = [ln.strip() for ln in chunk.splitlines() if ln.strip()]
+                    if lines:
+                        # If we read from the very start, lines[0] is complete.
+                        # Otherwise lines[0] is a partial line (mid-record) and
+                        # we must use lines[1:] — but the LAST line is always
+                        # complete because the file ends with it.
+                        last_line = lines[-1]
+                        break
+                    # No complete line in this window; grow toward the start.
+                    if pos == 0:
+                        break
+                    window = min(size, window * 4)
+                    pos = max(0, size - window)
         except OSError:
             # Fallback to full scan on error
             with self.log_file.open("r", encoding="utf-8") as fh:
@@ -126,10 +258,15 @@ class AuditLogger:
 
     @staticmethod
     def _compute_hash(entry: dict[str, Any]) -> str:
-        """Compute SHA-256 hash of an entry excluding the ``hash`` field."""
+        """Compute HMAC-SHA-256 hash of an entry excluding the ``hash`` field (B6).
+
+        Uses a secret key (from ``_get_audit_key``) so that an attacker who
+        can read the log but not the key cannot forge a valid chain link.
+        """
         payload = {k: v for k, v in entry.items() if k != "hash"}
         canonical = json.dumps(payload, sort_keys=True, default=str)
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        key = _get_audit_key()
+        return hmac.new(key, canonical.encode("utf-8"), hashlib.sha256).hexdigest()
 
     def log(self, event_type: str, details: dict[str, Any]) -> None:
         """Append a new hash-chained entry to the audit log.
@@ -155,10 +292,12 @@ class AuditLogger:
                 with self._cache_lock:
                     self._cached_last_hash = entry["hash"]
             except OSError as exc:
-                _logger.warning(
+                _logger.error(
                     "Audit log write failed (fail-open): %s — event_type=%s",
                     exc, event_type,
                 )
+                if os.environ.get("AIZEE_AUDIT_STRICT"):
+                    raise
 
     def log_admission(self, record: dict[str, Any]) -> None:
         """Append an admission event with identity keys (Hazem R1-R15).
@@ -208,7 +347,10 @@ class AuditLogger:
         self.log("authorization", details)
 
     def verify_chain(self) -> dict[str, Any]:
-        """Verify the integrity of the hash chain.
+        """Verify the integrity of the HMAC hash chain (B6).
+
+        Walks the audit log and verifies each entry's HMAC and prev_hash
+        linkage. Logs errors but does not crash.
 
         Returns a dict with ``valid`` (bool), ``entries_checked`` (int),
         and ``broken_at`` (int | None, the 0-based index of the first
@@ -219,27 +361,52 @@ class AuditLogger:
         expected_prev = _GENESIS_HASH
         idx = 0
         broken_at: int | None = None
-        with self.log_file.open("r", encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
-                if not stripped:
-                    continue
-                try:
-                    entry = json.loads(stripped)
-                except json.JSONDecodeError:
-                    broken_at = broken_at if broken_at is not None else idx
-                    break
-                # Check prev_hash linkage
-                if entry.get("prev_hash") != expected_prev:
-                    broken_at = broken_at if broken_at is not None else idx
-                    break
-                # Recompute and verify hash
-                recomputed = self._compute_hash(entry)
-                if recomputed != entry.get("hash"):
-                    broken_at = broken_at if broken_at is not None else idx
-                    break
-                expected_prev = str(entry.get("hash", ""))
-                idx += 1
+        try:
+            with self.log_file.open("r", encoding="utf-8") as f:
+                for line in f:
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+                    try:
+                        entry = json.loads(stripped)
+                    except json.JSONDecodeError as exc:
+                        _logger.error(
+                            "Audit chain broken at entry %d: JSON decode error: %s",
+                            idx, exc,
+                        )
+                        broken_at = broken_at if broken_at is not None else idx
+                        break
+                    # Check prev_hash linkage
+                    if entry.get("prev_hash") != expected_prev:
+                        _logger.error(
+                            "Audit chain broken at entry %d: prev_hash mismatch "
+                            "(expected %s, got %s)",
+                            idx, expected_prev, entry.get("prev_hash"),
+                        )
+                        broken_at = broken_at if broken_at is not None else idx
+                        break
+                    # Recompute and verify HMAC
+                    recomputed = self._compute_hash(entry)
+                    if recomputed != entry.get("hash"):
+                        _logger.error(
+                            "Audit chain broken at entry %d: HMAC mismatch "
+                            "(recomputed %s, stored %s)",
+                            idx, recomputed, entry.get("hash"),
+                        )
+                        broken_at = broken_at if broken_at is not None else idx
+                        break
+                    expected_prev = str(entry.get("hash", ""))
+                    idx += 1
+        except OSError as exc:
+            _logger.error("Audit chain verification failed (I/O error): %s", exc)
+            return {"valid": False, "entries_checked": idx, "broken_at": broken_at}
+        if broken_at is not None:
+            _logger.warning(
+                "Audit chain integrity check FAILED at entry %d (%d entries checked)",
+                broken_at, idx,
+            )
+        else:
+            _logger.info("Audit chain integrity OK (%d entries checked)", idx)
         return {
             "valid": broken_at is None,
             "entries_checked": idx,
@@ -273,7 +440,12 @@ class AuditLogger:
                     continue
                 if event_type and entry.get("type") != event_type:
                     continue
-                if since and entry.get("ts", "") < since:
-                    continue
+                # L3: compare timestamps as datetime objects, not raw strings,
+                # so mixed timezone formats (Z vs +00:00 vs local) compare
+                # correctly. Fall back to string comparison on parse failure.
+                if since:
+                    entry_ts = entry.get("ts", "")
+                    if not _ts_after(entry_ts, since):
+                        continue
                 entries.append(entry)
         return list(reversed(entries[-limit:]))

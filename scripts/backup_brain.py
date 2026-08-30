@@ -166,9 +166,13 @@ def run_backup(root: Path, dest: Path) -> int:
         print(f"[ERROR] aiZee root not found: {root}")
         return 1
 
-    # Create timestamped backup folder
+    # Create timestamped backup folder (append counter if timestamp collides)
     ts = datetime.now().strftime("%Y-%m-%d-%H%M%S")
     backup_folder = dest / f"aizee-backup-{ts}"
+    counter = 2
+    while backup_folder.exists():
+        backup_folder = dest / f"aizee-backup-{ts}-{counter}"
+        counter += 1
     backup_folder.mkdir(parents=True, exist_ok=True)
 
     # Write metadata file

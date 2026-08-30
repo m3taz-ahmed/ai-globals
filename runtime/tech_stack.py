@@ -88,8 +88,8 @@ _TECH_STACK_ALIASES: dict[str, list[str]] = {
     "mypy": ["mypy"],
     "rich": ["rich"],
     "numpy": ["numpy"],
-    "turbovec": ["turbovec"],
-    "graphifyy": ["graphify"],
+    "turbovec": ["turbovec", "turbovec-standards"],
+    "graphifyy": ["graphify", "graphifyy"],
     "sentence-transformers": ["sentence-transformers"],
     # SEO
     "seo": ["seo"],

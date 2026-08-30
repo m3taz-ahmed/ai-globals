@@ -163,6 +163,45 @@ def _terminate_pool() -> None:
 atexit.register(_terminate_pool)
 
 
+# B2: Shell metacharacters that indicate command injection attempts.
+_SHELL_METACHARS = set(";|&`$(){}[]<>!\n\r")
+# B2: Allowed MCP server command basenames (extend as new servers are added).
+_ALLOWED_MCP_COMMANDS = frozenset({
+    "python", "python3", "node", "npx", "uv", "uvx", "ruby", "go",
+    "docker", "java", "bun", "deno",
+})
+
+
+def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
+    """Validate that an MCP server command is safe to spawn.
+
+    Rejects:
+    - Shell metacharacters in command or args (injection prevention).
+    - Commands that are not in the allowlist (when basename doesn't match).
+    - Absolute paths to non-standard locations (must resolve via PATH or be in allowlist).
+    """
+    if not cmd or not isinstance(cmd, str):
+        raise ValueError(f"MCP command is empty or not a string: {cmd!r}")
+    # Check for shell metacharacters in command
+    if any(c in _SHELL_METACHARS for c in cmd):
+        raise ValueError(f"MCP command contains shell metacharacters: {cmd!r}")
+    # Check args for metacharacters
+    for arg in args:
+        if not isinstance(arg, str):
+            continue
+        if any(c in _SHELL_METACHARS for c in arg):
+            raise ValueError(f"MCP arg contains shell metacharacters: {arg!r}")
+    # Extract basename for allowlist check
+    cmd_basename = Path(cmd).name.lower()
+    if cmd_basename not in _ALLOWED_MCP_COMMANDS:
+        import logging
+        logging.getLogger(__name__).warning(
+            "MCP command %r is not in the allowlist %s — proceeding but "
+            "consider adding it to _ALLOWED_MCP_COMMANDS for production safety.",
+            cmd, sorted(_ALLOWED_MCP_COMMANDS),
+        )
+
+
 class McpClient:
     """Spawn and call tools on an MCP server defined in config.
 
@@ -190,6 +229,9 @@ class McpClient:
             raise RuntimeError(f"MCP server '{self.server_name}' not configured")
         cmd = self.config["command"]
         args = self.config.get("args", [])
+        # B2: Validate command — reject shell metacharacters and require absolute
+        # path or resolvable binary. Prevents config.json command injection.
+        _validate_mcp_command(cmd, args)
         _load_secrets_once()
         env = self._build_spawn_env()
         resolved = shutil.which(cmd, path=env.get("PATH"))

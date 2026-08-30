@@ -680,7 +680,9 @@ class OsvDevClient:
     ) -> list[VulnerabilityAdvisory]:
         """Query OSV.dev for vulnerabilities affecting a package.
 
-        Returns a list of advisories. On network error, returns empty list.
+        Returns a list of advisories. Raises ``SupplyChainGuardError`` on
+        network/parse failure (fail-closed — never silently pass vulnerable
+        packages when OSV.dev is unreachable).
         """
         import time as _time
 
@@ -698,7 +700,10 @@ class OsvDevClient:
     def _fetch(
         self, cache_key: str, package: str, eco_str: str, version: str | None,
     ) -> list[VulnerabilityAdvisory]:
-        """Fetch from OSV.dev API. Returns empty list on failure."""
+        """Fetch from OSV.dev API.
+
+        Raises ``SupplyChainGuardError`` on network/parse failure (fail-closed).
+        """
         import json as _json
         import urllib.error
         import urllib.request
@@ -713,8 +718,16 @@ class OsvDevClient:
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = _json.loads(resp.read().decode("utf-8"))
-        except (urllib.error.URLError, TimeoutError, _json.JSONDecodeError):
-            return []  # Fail-open: no advisories on network error
+        except (urllib.error.URLError, TimeoutError, _json.JSONDecodeError) as exc:
+            # Fail-closed: a network/parse failure must NOT be silently treated
+            # as "no vulnerabilities". Returning [] would let vulnerable
+            # packages pass checks when OSV.dev is unreachable. Raise so the
+            # caller can decide (e.g. block, warn, or treat as unknown).
+            raise SupplyChainGuardError(
+                f"OSV.dev query failed for {package}@{version or 'latest'}: "
+                f"{type(exc).__name__}: {exc}",
+                context={"package": package, "ecosystem": eco_str, "version": version},
+            ) from exc
 
         advisories: list[VulnerabilityAdvisory] = []
         for vuln in data.get("vulns", []):

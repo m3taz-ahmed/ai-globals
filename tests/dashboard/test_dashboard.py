@@ -1389,14 +1389,15 @@ def test_dashboard_main_block_poll_assert_mocked():
 # ---------------------------------------------------------------------------
 
 def test_dashboard_token_from_existing_file_ignored(monkeypatch):
-    """A leftover state/dashboard.token file is ignored — env is the only source."""
+    """A leftover state/dashboard.token file is read as fallback when env is unset (B9 fix)."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tokf_"))
     import dashboard.server as dash_server
     monkeypatch.delenv("AIZEE_DASHBOARD_TOKEN", raising=False)
     monkeypatch.delenv("AGENT_OS_DASHBOARD_TOKEN", raising=False)
     (tmp / "state").mkdir(parents=True, exist_ok=True)
     (tmp / "state" / "dashboard.token").write_text("file-based-token", encoding="utf-8")
-    assert dash_server._dashboard_token(tmp) is None
+    token = dash_server._dashboard_token(tmp)
+    assert token == "file-based-token"
 
 
 # ---------------------------------------------------------------------------

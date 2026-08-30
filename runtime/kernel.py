@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from collections.abc import Callable
 from pathlib import Path
@@ -51,6 +52,8 @@ if TYPE_CHECKING:
     from .saga import SagaOrchestrator
     from .workflow import WorkflowRunner
 
+_logger = logging.getLogger(__name__)
+
 
 class ActionSchema(BaseModel):
     """Validated action envelope for Kernel.act().
@@ -86,27 +89,32 @@ def _init_core_services(kernel: Kernel) -> None:
     kernel.governance = GovernanceHooks(kernel.audit, kernel.telemetry)
     kernel.mcp_firewall = kernel._build_mcp_firewall()
     kernel.loop_detector = LoopDetector(window=20, threshold=5)
-    # Ensure taint guardrail is registered (import triggers auto-registration)
+    # Ensure taint guardrail is registered (import triggers auto-registration).
+    # A broken import silently disables taint tracking — log a warning so the
+    # operator knows defenses are degraded instead of running blind.
     try:
         import runtime.taint as _taint  # noqa: F401
         from runtime.taint import get_default_tracker
 
         kernel.taint_tracker = get_default_tracker()  # type: ignore[attr-defined]
-    except Exception:
-        pass
+    except Exception as exc:
+        _logger.warning("Taint tracker module failed to load — taint tracking disabled: %s", exc)
     # Ensure the prompt-injection input guardrail is registered (import
     # triggers auto-registration into the default GuardrailRegistry).
-    import contextlib
-
-    with contextlib.suppress(Exception):
+    try:
         import runtime.guardrails.prompt_injection  # noqa: F401
+    except Exception as exc:
+        _logger.warning(
+            "Prompt-injection guardrail module failed to load — input guardrail disabled: %s",
+            exc,
+        )
 
     # Initialize the comprehensive injection defense stack:
     # - InjectionDetector: 13-technique deterministic scanner
     # - DefensiveInjector: active counter-injection (redirect/quarantine)
     # - ToolOutputSanitizer: indirect-injection defense for tool outputs
     # - BaselineRegistry: behavioral anomaly detection for agents
-    with contextlib.suppress(Exception):
+    try:
         from runtime.agent_baseline import BaselineRegistry
         from runtime.defensive_injection import DefensiveInjector
         from runtime.injection_detector import InjectionDetector
@@ -119,12 +127,17 @@ def _init_core_services(kernel: Kernel) -> None:
             injector=kernel.defensive_injector,  # type: ignore[attr-defined]
         )
         kernel.baseline_registry = BaselineRegistry()  # type: ignore[attr-defined]
+    except Exception as exc:
+        _logger.warning(
+            "Injection defense stack failed to load — injection detection disabled: %s",
+            exc,
+        )
 
     # Initialize the design tooling stack:
     # - DesignSlopVerifier: AI-slop detection for HTML/UI output
     # - DesignLibrary: 58 brand design systems catalog
     # - PluginRegistry: plugin discovery and lifecycle management
-    with contextlib.suppress(Exception):
+    try:
 
         from runtime.design_library import DesignLibrary
         from runtime.design_slop_verifier import DesignSlopVerifier
@@ -138,11 +151,13 @@ def _init_core_services(kernel: Kernel) -> None:
             plugins_dir=kernel.root / "plugins",
         )
         kernel.plugin_registry.discover()  # type: ignore[attr-defined]
+    except Exception as exc:
+        _logger.warning("Design tooling stack failed to load — design checks disabled: %s", exc)
 
     # Initialize freelance + marketing/emarkeitng runtime modules (lazy).
     # These are stateless helpers (functions/small classes); import the
     # module so callers can access them via ``kernel.<module>``.
-    with contextlib.suppress(Exception):
+    try:
         import runtime.attribution_model as _attr
         import runtime.billing_ledger as _billing
         import runtime.crm_manager as _crm
@@ -168,6 +183,8 @@ def _init_core_services(kernel: Kernel) -> None:
         kernel.pipeline_analytics = _pipe  # type: ignore[attr-defined]
         kernel.post_queue = _queue  # type: ignore[attr-defined]
         kernel.pricing_calculator = _pricing  # type: ignore[attr-defined]
+    except Exception as exc:
+        _logger.warning("Marketing/freelance modules failed to load (non-critical): %s", exc)
 
 
 def _init_managers(kernel: Kernel) -> None:
@@ -631,7 +648,11 @@ class Kernel:
         return self.agent_mgr.spawn_agent(agent_id, persona, scope, project_root, lords)
 
     def delegate(self, agent_id: str, action_type: str, **kwargs: Any) -> dict[str, Any]:
-        return self.agent_mgr.delegate(agent_id, action_type, **kwargs)
+        result = self.agent_mgr.delegate(agent_id, action_type, **kwargs)
+        # Record a heartbeat after agent activity so the health monitor
+        # tracks liveness without requiring a background thread.
+        self.agent_mgr.health.heartbeat(agent_id)
+        return result
 
     # --- Misc ---
     def list_workflows(self) -> list[str]:
@@ -754,8 +775,13 @@ class KernelBuilder:
             kernel.audit = self._audit_logger
         if self._policy_engine is not None:
             kernel.policy = self._policy_engine
+            # L1: keep the manager's reference in sync with the facade so the
+            # two never disagree on which PolicyEngine is authoritative.
+            kernel.policy_mgr.policy = self._policy_engine
         if self._guardian is not None:
             kernel.guardian = self._guardian
+            # L1: same sync for the Guardian instance.
+            kernel.policy_mgr.guardian = self._guardian
         if self._memory is not None:
             # Wire memory to kernel and plugins (used by load_plugins).
             kernel._memory = self._memory

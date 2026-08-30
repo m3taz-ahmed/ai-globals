@@ -265,9 +265,39 @@ def test_remote_a2a_missing_endpoint_raises():
 
 
 def test_remote_a2a_invalid_scheme_raises():
-    """Cover lines 244-248: non-HTTPS endpoint raises AdapterError."""
-    with pytest.raises(AdapterError, match="must use HTTPS"):
+    """Cover lines 244-248: non-http(s) endpoint raises AdapterError."""
+    with pytest.raises(AdapterError, match="must use http\\(s\\) scheme"):
         RemoteA2AAdapter({"endpoint": "ftp://example.com"})
+
+
+def test_remote_a2a_ssrf_localhost_lookalike_rejected():
+    """SSRF guard: ``http://localhost.evil.com`` must be rejected."""
+    with pytest.raises(AdapterError, match="localhost/loopback"):
+        RemoteA2AAdapter({"endpoint": "http://localhost.evil.com/a2a"})
+
+
+def test_remote_a2a_ssrf_loopback_lookalike_rejected():
+    """SSRF guard: ``http://127.0.0.1.evil.com`` must be rejected."""
+    with pytest.raises(AdapterError, match="localhost/loopback"):
+        RemoteA2AAdapter({"endpoint": "http://127.0.0.1.evil.com/a2a"})
+
+
+def test_remote_a2a_http_localhost_ok():
+    """HTTP to exact localhost is allowed for dev."""
+    adapter = RemoteA2AAdapter({"endpoint": "http://localhost:8080/a2a"})
+    assert adapter._endpoint == "http://localhost:8080/a2a"
+
+
+def test_remote_a2a_http_loopback_ip_ok():
+    """HTTP to exact 127.0.0.1 is allowed for dev."""
+    adapter = RemoteA2AAdapter({"endpoint": "http://127.0.0.1:9000/a2a"})
+    assert adapter._endpoint == "http://127.0.0.1:9000/a2a"
+
+
+def test_remote_a2a_http_external_rejected():
+    """HTTP to a non-loopback host must be rejected (HTTPS required)."""
+    with pytest.raises(AdapterError, match="localhost/loopback"):
+        RemoteA2AAdapter({"endpoint": "http://example.com/a2a"})
 
 
 def test_remote_a2a_https_endpoint_ok():

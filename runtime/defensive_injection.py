@@ -236,7 +236,10 @@ def _build_redirect_message(techniques: set[InjectionTechnique]) -> str:
 # ---------------------------------------------------------------------------
 
 
-# Patterns to strip during sanitization (the injection phrases themselves)
+# Patterns to strip during sanitization (the injection phrases themselves).
+# L7: expanded to cover the same techniques as InjectionDetector — encoding
+# obfuscation, RAG poisoning, tool abuse, memory poisoning, and concatenated
+# (whitespace-stripped) variants that bypass whitespace-dependent patterns.
 _SANITIZE_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"ignore\s+(?:all\s+|the\s+|your\s+|any\s+)?(?:previous|prior|above|preceding)\s+"
                r"(?:instructions|prompts|context|messages|rules)", re.IGNORECASE),
@@ -257,6 +260,30 @@ _SANITIZE_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"<(?:script|iframe|object|embed|svg)[^>]*>", re.IGNORECASE),
     re.compile(r"(?:thought|reasoning|observation|action)\s*:\s*(?:i\s+should\s+)?(?:ignore|disregard|bypass|override)",
                re.IGNORECASE),
+    # Concatenated variants (no whitespace) — M7 parity with detector D8-D10.
+    re.compile(r"ignore(?:all|the|your|any)?(?:previous|prior|above|preceding)(?:instructions|prompts|context|messages|rules)",
+               re.IGNORECASE),
+    re.compile(r"forget(?:your|all|the)?(?:instructions|everything|previous|prompt|rules)", re.IGNORECASE),
+    re.compile(r"override(?:safety|security|contentpolicy|guardrails|yourrules)", re.IGNORECASE),
+    # Encoding obfuscation markers — M8 parity.
+    re.compile(r"(?:decode|execute|run|eval)\s+(?:this\s+)?(?:base64|b64|hex|rot13|binary|morse)[:\s]",
+               re.IGNORECASE),
+    re.compile(r"(?:\\x[0-9a-f]{2}){2,}", re.IGNORECASE),
+    re.compile(r"(?:\\u[0-9a-f]{4}){2,}", re.IGNORECASE),
+    # RAG poisoning — parity with detector RP1/RP2.
+    re.compile(r"(?:inject|plant|poison|embed|insert)\s+(?:this|the\s+following)\s+(?:into|in)\s+"
+               r"(?:the\s+)?(?:vector\s+(?:db|database|store)|knowledge\s+base|rag|corpus|index|embedding)",
+               re.IGNORECASE),
+    re.compile(r"(?:when\s+(?:retrieved|searched|queried)|upon\s+retrieval).{0,40}(?:ignore|follow|execute)",
+               re.IGNORECASE),
+    # Tool abuse / path traversal — M10 parity.
+    re.compile(r"(?:read|open|access|cat|type|load|include|require|import)\s+.{0,30}?"
+               r"(?:\.\./|\\\.\\\.\.\\|%2e%2e%2f|%2e%2e/)"
+               r"(?:etc/(?:passwd|shadow|hosts|group)|proc/self|root/|\.ssh|\.env|\.aws|\.git|\.npmrc|\.netrc)",
+               re.IGNORECASE),
+    # Memory poisoning — parity with detector.
+    re.compile(r"(?:remember|memorize|store|save)\s+(?:that\s+)?(?:you\s+(?:are|must|should)|"
+               r"the\s+(?:user|admin|developer)\s+(?:is|said|wants))", re.IGNORECASE),
 ]
 
 

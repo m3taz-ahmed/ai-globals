@@ -293,10 +293,15 @@ class BudgetWindowManager:
             return active
 
     def maybe_refresh_policies(self, stale_threshold: float = 300.0) -> bool:
-        """Lazy policy refresh — only reload when stale (5 min default).
+        """Track whether the policy-refresh interval has elapsed.
 
-        Returns ``True`` if a refresh was performed, ``False`` if policies
-        were still fresh.
+        This is currently a *staleness tracker* only — it does NOT reload any
+        policies yet (no policy source is wired into ``BudgetWindowManager``).
+        It returns ``True`` when the stale threshold has elapsed so callers
+        can perform their own reload, and updates the last-refresh timestamp.
+        Returns ``False`` when still fresh.
+
+        Future: wire an actual policy reload callback here.
         """
         with self._lock:
             now = time.time()
@@ -380,6 +385,10 @@ class BudgetManager:
         self._dirty = False
         self.window_manager: BudgetWindowManager | None = None
         self._load()
+        # Wire a default BudgetWindowManager so time-scoped windows are
+        # tracked and enforced. Previously this was left as None, making
+        # the entire BudgetWindowManager class dead code.
+        self.window_manager = BudgetWindowManager()
 
     def _default_budgets(self) -> dict[str, Budget]:
         return {
@@ -546,7 +555,7 @@ class BudgetManager:
             max_tokens = budget.rollout_max_tokens if budget else None
             threshold = budget.rollout_reminder_threshold if budget else None
 
-            if max_tokens and projected_tokens >= max_tokens:
+            if max_tokens is not None and projected_tokens >= max_tokens:
                 return {
                     "ok": False,
                     "reason": "Rollout budget exceeded: tokens",
@@ -589,6 +598,10 @@ class BudgetManager:
 
             self._reset_if_needed(scope, budget, session_id)
 
+            # Refresh window policies if stale (no-op when fresh).
+            if self.window_manager is not None:
+                self.window_manager.maybe_refresh_policies()
+
             u = self.usage[scope]
             effective_tokens = self._weighted_tokens(budget, tokens, token_weight, input_tokens, output_tokens)
             projected = {
@@ -598,11 +611,11 @@ class BudgetManager:
             }
 
             exceeded = []
-            if budget.effective_max_tokens and projected["tokens"] >= budget.effective_max_tokens:
+            if budget.effective_max_tokens is not None and projected["tokens"] >= budget.effective_max_tokens:
                 exceeded.append("tokens")
-            if budget.effective_max_cost and projected["cost"] >= budget.effective_max_cost:
+            if budget.effective_max_cost is not None and projected["cost"] >= budget.effective_max_cost:
                 exceeded.append("cost")
-            if budget.max_calls and projected["calls"] >= budget.max_calls:
+            if budget.max_calls is not None and projected["calls"] >= budget.max_calls:
                 exceeded.append("calls")
 
             # --- BudgetWindow integration (optional, backward-compatible) ---
@@ -694,6 +707,6 @@ class BudgetManager:
             u = self.usage[scope]
             eff_tokens = budget.effective_max_tokens
             eff_cost = budget.effective_max_cost
-            if eff_tokens and (u["tokens"] + estimated_tokens) >= eff_tokens:
+            if eff_tokens is not None and (u["tokens"] + estimated_tokens) >= eff_tokens:
                 return True
-            return bool(eff_cost and (u["cost"] + estimated_cost) >= eff_cost)
+            return bool(eff_cost is not None and (u["cost"] + estimated_cost) >= eff_cost)
