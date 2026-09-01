@@ -106,6 +106,119 @@ def _settings_instance() -> SettingsManager:
     return get_settings_manager(root)
 
 
+def _sync_ide_mcp_configs(root: Path, mcp_settings: dict[str, Any]) -> None:
+    """Sync MCP server toggles to ALL IDE MCP config files.
+
+    When a user disables an MCP server in the dashboard, we update every IDE
+    config source so the server is not loaded on next restart — regardless of
+    which IDE (Devin, Claude Code, Windsurf, Cursor) is used.
+
+    Supported config files:
+    - ``.devin/mcp_config.local.json`` — Devin overlay (uses ``"disabled": true``)
+    - ``.claude/settings.json`` — Claude Code (remove disabled server entries)
+
+    Re-enabling a server restores it in Claude Code (from the canonical
+    ``aizee_mcp/config.json``) and removes the disabled flag in Devin.
+    """
+    # --- 1. Devin: .devin/mcp_config.local.json (disabled flag overlay) ---
+    _sync_devin_mcp_local(root, mcp_settings)
+
+    # --- 2. Claude Code: .claude/settings.json (remove/add server entries) ---
+    _sync_claude_mcp_settings(root, mcp_settings)
+
+
+def _sync_devin_mcp_local(root: Path, mcp_settings: dict[str, Any]) -> None:
+    """Update .devin/mcp_config.local.json with disabled flags."""
+    local_path = root / ".devin" / "mcp_config.local.json"
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+
+    local: dict[str, Any] = {"mcpServers": {}}
+    if local_path.exists():
+        try:
+            local = json.loads(local_path.read_text(encoding="utf-8"))
+            if "mcpServers" not in local or not isinstance(local["mcpServers"], dict):
+                local["mcpServers"] = {}
+        except (ValueError, OSError):
+            local = {"mcpServers": {}}
+
+    servers = local["mcpServers"]
+    for server_name, cfg in mcp_settings.items():
+        if not isinstance(cfg, dict):
+            continue
+        enabled = cfg.get("enabled", True)
+        existing = servers.get(server_name, {})
+        if not isinstance(existing, dict):
+            existing = {}
+        if enabled:
+            existing.pop("disabled", None)
+        else:
+            existing["disabled"] = True
+        if existing:
+            servers[server_name] = existing
+        elif server_name in servers and not servers[server_name]:
+            servers.pop(server_name, None)
+
+    local_path.write_text(json.dumps(local, indent=2), encoding="utf-8")
+
+
+def _sync_claude_mcp_settings(root: Path, mcp_settings: dict[str, Any]) -> None:
+    """Update .claude/settings.json — remove disabled servers, restore enabled.
+
+    Claude Code has no ``disabled`` flag; the only way to prevent loading is
+    to remove the server entry entirely. To restore a re-enabled server, we
+    read the canonical config from ``aizee_mcp/config.json`` AND
+    ``.devin/mcp_config.json`` so servers defined in either source can be
+    restored.
+    """
+    claude_path = root / ".claude" / "settings.json"
+    if not claude_path.exists():
+        return  # No Claude Code config to update
+
+    # Read current Claude settings
+    try:
+        claude_cfg = json.loads(claude_path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return
+    if "mcpServers" not in claude_cfg or not isinstance(claude_cfg["mcpServers"], dict):
+        return
+
+    # Read canonical MCP config (source of truth for server definitions).
+    # Check both aizee_mcp/config.json AND .devin/mcp_config.json so servers
+    # that only exist in the Devin config (e.g. upwork, freelancer) can be
+    # restored when re-enabled.
+    canonical: dict[str, Any] = {}
+    for cfg_path in [root / "aizee_mcp" / "config.json", root / ".devin" / "mcp_config.json"]:
+        if not cfg_path.exists():
+            continue
+        try:
+            raw = json.loads(cfg_path.read_text(encoding="utf-8"))
+            for name, defn in raw.get("mcpServers", {}).items():
+                if name not in canonical:
+                    canonical[name] = defn
+        except (ValueError, OSError):
+            pass
+
+    changed = False
+    for server_name, cfg in mcp_settings.items():
+        if not isinstance(cfg, dict):
+            continue
+        enabled = cfg.get("enabled", True)
+        if enabled:
+            # Restore: if server is missing from Claude config but exists in
+            # canonical, add it back.
+            if server_name not in claude_cfg["mcpServers"] and server_name in canonical:
+                claude_cfg["mcpServers"][server_name] = canonical[server_name]
+                changed = True
+        else:
+            # Disable: remove from Claude config entirely
+            if server_name in claude_cfg["mcpServers"]:
+                del claude_cfg["mcpServers"][server_name]
+                changed = True
+
+    if changed:
+        claude_path.write_text(json.dumps(claude_cfg, indent=2), encoding="utf-8")
+
+
 def _check_rate_limit(client_ip: str) -> bool:
     if _rate_limit <= 0:
         return True  # Explicit 0 disables rate limiting (for tests); env var is clamped to >=1.
@@ -707,6 +820,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception as exc:
             self._send(400, json.dumps({"error": str(exc)}).encode("utf-8"), "application/json")
             return
+        # When MCP server toggles change, sync ALL IDE MCP config files
+        # (Devin + Claude Code) so disabled servers are not loaded on next
+        # IDE restart.
+        if section == "mcp_servers":
+            with contextlib.suppress(Exception):
+                _sync_ide_mcp_configs(self.root, data)
         self._send(200, json.dumps({"ok": True, "section": section, "data": updated}, default=str).encode("utf-8"), "application/json")
 
     def _send_settings_defaults(self) -> None:
@@ -742,6 +861,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 return
         else:
             data = sm.reset_all()
+        # When MCP server toggles are reset, sync ALL IDE MCP config files
+        # so all servers are restored to enabled in Devin + Claude Code.
+        if section == "mcp_servers" or not section:
+            with contextlib.suppress(Exception):
+                _sync_ide_mcp_configs(self.root, data.get("mcp_servers", data) if isinstance(data, dict) else {})
         self._send(200, json.dumps({"ok": True, "data": data}, default=str).encode("utf-8"), "application/json")
 
     def _send_settings_mcp_status(self) -> None:
