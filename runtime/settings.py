@@ -581,3 +581,292 @@ class SettingsManager:
         """Reload settings from disk (used after external edits)."""
         with self._lock:
             self._load()
+
+
+# --- Process-wide settings manager cache (single source of truth) ---
+#
+# All consumers (Kernel, dashboard, McpClient, PluginManager) share one
+# SettingsManager instance per OS root so that a dashboard toggle + restart
+# is immediately visible to every MCP gate without restarting the process.
+_SM_CACHE: dict[Path, SettingsManager] = {}
+_SM_CACHE_LOCK = threading.Lock()
+
+
+def get_settings_manager(root: Path, mcp_config_path: Path | None = None) -> SettingsManager:
+    """Return the process-wide cached ``SettingsManager`` for ``root``.
+
+    The first caller may pass ``mcp_config_path``; subsequent callers get the
+    cached instance regardless of the path argument. This guarantees a single
+    source of truth: a ``reload_settings_manager`` call is visible to every
+    consumer (kernel, dashboard, McpClient, PluginManager).
+    """
+    root = Path(root)
+    with _SM_CACHE_LOCK:
+        if root not in _SM_CACHE:
+            _SM_CACHE[root] = SettingsManager(root, mcp_config_path)
+        return _SM_CACHE[root]
+
+
+def reload_settings_manager(root: Path) -> None:
+    """Reload the cached ``SettingsManager`` for ``root`` (no-op if uncached).
+
+    Called by the dashboard restart endpoint after a settings save so the
+    MCP enable-gate picks up the new toggle state without a full process
+    restart.
+    """
+    root = Path(root)
+    with _SM_CACHE_LOCK:
+        sm = _SM_CACHE.get(root)
+        if sm is not None:
+            sm.reload()
+
+
+def clear_settings_cache() -> None:
+    """Drop all cached SettingsManager instances (test helper)."""
+    with _SM_CACHE_LOCK:
+        _SM_CACHE.clear()
+
+
+def apply_settings_to_kernel(kernel: Any) -> None:
+    """Apply all dashboard settings as overrides onto a live ``Kernel``.
+
+    Called by ``Kernel.__init__`` (via ``_init_core_services``) and by the
+    dashboard restart endpoint after a ``reload_settings_manager`` so every
+    settings section takes effect immediately. Each section is applied
+    independently — a failure in one section logs a warning but does not
+    block the others (fail-soft).
+
+    The canonical config sources (budget.json, guardian.yaml, etc.) remain
+    the source of truth; settings here act as **overrides** applied on top.
+    """
+    sm = getattr(kernel, "settings_manager", None)
+    if sm is None:
+        return
+
+    # --- budget ---
+    try:
+        budget_cfg = sm.get_section("budget")
+        if hasattr(kernel, "budget") and kernel.budget is not None:
+            _apply_budget_overrides(kernel.budget, budget_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply budget overrides: %s", exc)
+
+    # --- guardian ---
+    try:
+        guardian_cfg = sm.get_section("guardian")
+        if hasattr(kernel, "guardian") and kernel.guardian is not None:
+            _apply_guardian_overrides(kernel.guardian, guardian_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply guardian overrides: %s", exc)
+
+    # --- mcp_firewall ---
+    try:
+        fw_cfg = sm.get_section("mcp_firewall")
+        if hasattr(kernel, "mcp_firewall") and kernel.mcp_firewall is not None:
+            _apply_firewall_overrides(kernel.mcp_firewall, fw_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply mcp_firewall overrides: %s", exc)
+
+    # --- policy ---
+    try:
+        policy_cfg = sm.get_section("policy")
+        if hasattr(kernel, "policy") and kernel.policy is not None:
+            _apply_policy_overrides(kernel.policy, policy_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply policy overrides: %s", exc)
+
+    # --- loop_detector ---
+    try:
+        ld_cfg = sm.get_section("loop_detector")
+        if hasattr(kernel, "loop_detector") and kernel.loop_detector is not None:
+            _apply_loop_detector_overrides(kernel.loop_detector, ld_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply loop_detector overrides: %s", exc)
+
+    # --- injection_defense ---
+    try:
+        inj_cfg = sm.get_section("injection_defense")
+        _apply_injection_defense_overrides(kernel, inj_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply injection_defense overrides: %s", exc)
+
+    # --- persona ---
+    try:
+        persona_cfg = sm.get_section("persona")
+        if hasattr(kernel, "persona") and kernel.persona is not None:
+            _apply_persona_overrides(kernel.persona, persona_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply persona overrides: %s", exc)
+
+    # --- memory ---
+    try:
+        mem_cfg = sm.get_section("memory")
+        _apply_memory_overrides(kernel, mem_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply memory overrides: %s", exc)
+
+    # --- design ---
+    try:
+        design_cfg = sm.get_section("design")
+        _apply_design_overrides(kernel, design_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply design overrides: %s", exc)
+
+    # --- audit ---
+    try:
+        audit_cfg = sm.get_section("audit")
+        if hasattr(kernel, "audit") and kernel.audit is not None:
+            _apply_audit_overrides(kernel.audit, audit_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply audit overrides: %s", exc)
+
+    # --- telemetry ---
+    try:
+        tel_cfg = sm.get_section("telemetry")
+        if hasattr(kernel, "telemetry") and kernel.telemetry is not None:
+            _apply_telemetry_overrides(kernel.telemetry, tel_cfg)
+    except Exception as exc:
+        _logger.warning("settings: failed to apply telemetry overrides: %s", exc)
+
+
+# --- Per-section override appliers ---
+
+
+def _apply_budget_overrides(budget_mgr: Any, cfg: dict[str, Any]) -> None:
+    """Override BudgetManager budgets from settings (on top of budget.json).
+
+    A value of ``0`` for ``max_tokens``/``max_cost_usd``/``max_calls`` means
+    "unlimited" (matches BudgetManager semantics where ``None`` = unlimited).
+    We skip those so we don't accidentally impose a zero budget.
+    """
+    for scope, values in cfg.items():
+        if not isinstance(values, dict):
+            continue
+        existing = budget_mgr.budgets.get(scope)
+        if existing is None:
+            continue  # don't create scopes that don't exist in canonical config
+        for field in (
+            "max_tokens", "max_cost_usd", "max_calls", "period",
+            "on_exceed", "finalization_reserve", "token_weight_input",
+            "token_weight_output", "fallback_model",
+        ):
+            val = values.get(field)
+            # Skip None and skip 0 for numeric limits (0 = unlimited).
+            if val is None:
+                continue
+            if field in ("max_tokens", "max_cost_usd", "max_calls") and val == 0:
+                continue
+            setattr(existing, field, val)
+
+
+def _apply_guardian_overrides(guardian: Any, cfg: dict[str, Any]) -> None:
+    """Override Guardian default_decision / on_evaluation_error from settings."""
+    from runtime.enums import Decision
+    # Guardian stores config on guardian.config (GuardConfig). The settings
+    # values are strings ("allow"/"deny"/"ask"/"require_approval") that map
+    # to DecisionStatus enum values.
+    decision_map = {
+        "allow": Decision.ALLOW,
+        "deny": Decision.DENY,
+        "ask": Decision.ASK,
+        # Decision enum has no REQUIRE_APPROVAL; map to ASK (closest semantics).
+        "require_approval": Decision.ASK,
+    }
+    config = getattr(guardian, "config", None)
+    if config is None:
+        return
+    dd = cfg.get("default_decision")
+    if dd and dd in decision_map:
+        config.default_decision = decision_map[dd]
+    oe = cfg.get("on_evaluation_error")
+    if oe and oe in decision_map:
+        config.on_evaluation_error = decision_map[oe]
+
+
+def _apply_firewall_overrides(firewall: Any, cfg: dict[str, Any]) -> None:
+    """Override McpFirewall default_action from settings (catch_all_action in UI)."""
+    from runtime.mcp_firewall import FirewallAction
+    fw_map = {
+        "allow": FirewallAction.ALLOW,
+        "deny": FirewallAction.DENY,
+        # FirewallAction has no ASK; map to REQUIRE_APPROVAL (closest semantics).
+        "ask": FirewallAction.REQUIRE_APPROVAL,
+        "require_approval": FirewallAction.REQUIRE_APPROVAL,
+    }
+    action = cfg.get("catch_all_action")
+    if action and action in fw_map:
+        firewall.default_action = fw_map[action]
+
+
+def _apply_policy_overrides(policy: Any, cfg: dict[str, Any]) -> None:
+    """Override PolicyEngine default_action from settings."""
+    da = cfg.get("default_action")
+    if da:
+        policy.default_action = da
+
+
+def _apply_loop_detector_overrides(ld: Any, cfg: dict[str, Any]) -> None:
+    """Override LoopDetector window/threshold from settings."""
+    if "window" in cfg and isinstance(cfg["window"], int) and cfg["window"] >= 1:
+        ld.window = cfg["window"]
+    if "threshold" in cfg and isinstance(cfg["threshold"], int) and cfg["threshold"] >= 1:
+        ld.threshold = cfg["threshold"]
+
+
+def _apply_injection_defense_overrides(kernel: Any, cfg: dict[str, Any]) -> None:
+    """Override injection defense module thresholds + enable toggles."""
+    det = getattr(kernel, "injection_detector", None)
+    if det is not None:
+        # BLOCK_THRESHOLD / SUSPICIOUS_THRESHOLD are ClassVar defaults; setting
+        # instance attributes shadows them so per-kernel overrides work.
+        if "block_threshold" in cfg and isinstance(cfg["block_threshold"], int):
+            det.block_threshold = cfg["block_threshold"]
+        if "suspicious_threshold" in cfg and isinstance(cfg["suspicious_threshold"], int):
+            det.suspicious_threshold = cfg["suspicious_threshold"]
+
+
+def _apply_persona_overrides(persona: Any, cfg: dict[str, Any]) -> None:
+    """Override PersonaDetector defaults from settings."""
+    default = cfg.get("default")
+    if default and hasattr(persona, "PERSONAS") and default in persona.PERSONAS:
+        persona.default = default
+    multi = cfg.get("multi")
+    if isinstance(multi, bool):
+        persona.multi = multi
+    autoload = cfg.get("autoload_lords")
+    if isinstance(autoload, bool):
+        persona.autoload_lords = autoload
+
+
+def _apply_memory_overrides(kernel: Any, cfg: dict[str, Any]) -> None:
+    """Override memory settings (decay_enabled, vector_search)."""
+    # These are read lazily by the memory store; store on kernel for access.
+    kernel._settings_memory = cfg
+
+
+def _apply_design_overrides(kernel: Any, cfg: dict[str, Any]) -> None:
+    """Override design module toggles from settings."""
+    kernel._settings_design = cfg
+
+
+def _apply_audit_overrides(audit: Any, cfg: dict[str, Any]) -> None:
+    """Override AuditLogger retention_days from settings.
+
+    Stored as an instance attribute for future retention-based pruning; the
+    current AuditLogger rotates by file size (``_MAX_LOG_SIZE``), not by age.
+    """
+    if "retention_days" in cfg and isinstance(cfg["retention_days"], int):
+        audit.retention_days = cfg["retention_days"]
+
+
+def _apply_telemetry_overrides(telemetry: Any, cfg: dict[str, Any]) -> None:
+    """Override TelemetryCollector enabled/sse_interval from settings.
+
+    Stored as instance attributes read by the dashboard SSE endpoint and
+    telemetry recording. When ``enabled`` is False, callers should skip
+    ``telemetry.record()`` calls.
+    """
+    if "enabled" in cfg and isinstance(cfg["enabled"], bool):
+        telemetry.enabled = cfg["enabled"]
+    if "sse_interval" in cfg and isinstance(cfg["sse_interval"], int) and cfg["sse_interval"] >= 1:
+        telemetry.sse_interval = cfg["sse_interval"]

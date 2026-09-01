@@ -447,6 +447,9 @@ def cmd_linkedin(args: argparse.Namespace) -> int:
     if not client.is_configured():
         console.print("[red]LinkedIn MCP server not configured. Run the installer.[/red]")
         return 1
+    if not client.is_enabled():
+        console.print("[red]LinkedIn MCP server is disabled in dashboard settings.[/red]")
+        return 1
 
     action = args.linkedin_action
     tool_map = {
@@ -489,6 +492,9 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     client = McpClient(args.server, _root(args))
     if not client.is_configured():
         console.print(f"[red]MCP server '{args.server}' not configured[/red]")
+        return 1
+    if not client.is_enabled():
+        console.print(f"[red]MCP server '{args.server}' is disabled in dashboard settings.[/red]")
         return 1
     arguments = _load_json(args.args, "--args")
     result = client.call_tool(args.tool, arguments)

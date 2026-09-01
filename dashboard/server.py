@@ -33,7 +33,7 @@ from runtime.astryx import AstryxLinter
 from runtime.kernel import Kernel
 from runtime.metrics import format_metrics
 from runtime.settings import SECTIONS as SETTINGS_SECTIONS
-from runtime.settings import SettingsManager
+from runtime.settings import SettingsManager, get_settings_manager, reload_settings_manager
 from runtime.telemetry import system_metrics
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,6 @@ _TRUSTED_PROXIES = {ip.strip() for ip in _env_first("AIZEE_DASHBOARD_TRUSTED_PRO
 # Shared instances so state (budget, audit, chat) is consistent across requests.
 _kernel_cache: tuple[Path, Kernel] | None = None
 _memory_cache: tuple[Path, MemoryStore] | None = None
-_settings_cache: tuple[Path, SettingsManager] | None = None
 _cache_lock = threading.Lock()
 
 # Simple per-IP fixed-window rate limiter.
@@ -97,12 +96,14 @@ def _memory_instance() -> MemoryStore:
 
 
 def _settings_instance() -> SettingsManager:
-    global _settings_cache
+    """Return the shared, process-wide SettingsManager for the OS root.
+
+    Uses ``get_settings_manager`` so the dashboard, kernel, McpClient, and
+    PluginManager all share one instance — a toggle + restart is immediately
+    visible to every MCP gate.
+    """
     root = config.discover_root()
-    with _cache_lock:
-        if _settings_cache is None or _settings_cache[0] != root:
-            _settings_cache = (root, SettingsManager(root))
-        return _settings_cache[1]
+    return get_settings_manager(root)
 
 
 def _check_rate_limit(client_ip: str) -> bool:
@@ -756,11 +757,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def _send_settings_restart(self) -> None:
         """Soft-reload the kernel: reset caches so next request rebuilds them.
 
-        This clears the kernel, memory, and settings caches so the next
-        request re-initializes them from disk (policies, budget, settings).
-        MCP process pool is terminated so MCP servers reconnect fresh.
+        This clears the kernel and memory caches so the next request
+        re-initializes them from disk (policies, budget). The shared
+        SettingsManager is reloaded in place so the MCP enable-gate picks up
+        toggles immediately. The MCP process pool is terminated so disabled
+        servers do not keep running and re-enabled servers reconnect fresh.
         """
-        global _kernel_cache, _memory_cache, _settings_cache
+        global _kernel_cache, _memory_cache
+        root = config.discover_root()
         with _cache_lock:
             # Flush budget state before dropping the kernel reference
             if _kernel_cache is not None:
@@ -771,11 +775,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 with contextlib.suppress(Exception):
                     _memory_cache[1].close()
             _memory_cache = None
-            # Reload settings from disk
-            if _settings_cache is not None:
-                with contextlib.suppress(Exception):
-                    _settings_cache[1].reload()
+        # Reload the shared settings manager so every MCP gate (McpClient,
+        # PluginManager, kernel) sees the new toggle state at once.
+        with contextlib.suppress(Exception):
+            reload_settings_manager(root)
         # Terminate MCP process pool so servers reconnect with fresh config
+        # (and disabled servers stop running immediately).
         with contextlib.suppress(Exception):
             from runtime.mcp_client import _terminate_pool
             _terminate_pool()

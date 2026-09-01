@@ -34,6 +34,7 @@ from .persona import PersonaDetector, inject_persona_context
 from .policy import READ_ACTIONS
 from .preloop import FeedbackLoop
 from .probity import GuardrailViolationError
+from .settings import SettingsManager, apply_settings_to_kernel, get_settings_manager
 from .skill_resolver import SkillResolver
 from .sovereign import AgentCapabilities
 from .tech_stack import detect_stack
@@ -89,6 +90,9 @@ def _init_core_services(kernel: Kernel) -> None:
     kernel.governance = GovernanceHooks(kernel.audit, kernel.telemetry)
     kernel.mcp_firewall = kernel._build_mcp_firewall()
     kernel.loop_detector = LoopDetector(window=20, threshold=5)
+    # User-facing settings (dashboard override layer). Process-wide cached so
+    # the dashboard, McpClient, and PluginManager share one source of truth.
+    kernel.settings_manager = get_settings_manager(kernel.root)
     # Ensure taint guardrail is registered (import triggers auto-registration).
     # A broken import silently disables taint tracking — log a warning so the
     # operator knows defenses are degraded instead of running blind.
@@ -417,6 +421,7 @@ class Kernel:
     governance: GovernanceHooks
     mcp_firewall: McpFirewall
     loop_detector: LoopDetector
+    settings_manager: SettingsManager
     policy_mgr: PolicyManager
     workflow_mgr: WorkflowManager
     agent_mgr: AgentManager
@@ -443,6 +448,10 @@ class Kernel:
         _init_core_services(self)
         _init_managers(self)
         _init_compat_attributes(self)
+        # Apply dashboard settings as overrides on top of canonical config
+        # (budget.json, guardian.yaml, etc.). Must run after managers +
+        # compat attributes so kernel.guardian/policy/etc. are set.
+        apply_settings_to_kernel(self)
         # Plugin manager — lazily initialized to avoid loading plugins on kernel creation
         self._plugins: PluginManager | None = None
         # Optional memory store wired via KernelBuilder.with_memory() — not created by default.

@@ -476,14 +476,16 @@ Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, st
 **Tabs:** Overview · Memory Explorer · Policy Sandbox · Workflows · Sagas · Chat · Tech Stack · Telemetry · System Health · Audit Logs · **Settings**
 
 **Settings panel** (new in 5.10.0) — configure aiZee from the browser without editing YAML or env vars:
-- **MCP Servers** — toggle 34 servers on/off, grouped by category (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other).
+- **MCP Servers** — toggle 34 servers on/off, grouped by category (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other). **Check All / Uncheck All** buttons for bulk toggling. Live count summary shows enabled/total.
 - **Budget & Costs** — token/cost/call limits, period, on-exceed action, fallback model (global + session).
 - **Security & Gates** — Guardian, MCP Firewall, Policy engine, Loop Detector.
 - **Injection Defense** — 7 defense module toggles + thresholds.
 - **Plugins & Persona** — plugin enable/disable + default persona.
 - **Dashboard & System** — rate limits, bind host, telemetry, audit retention, memory, design tooling, **Restart aiZee** button.
 
-Settings persist to `state/settings.json` (gitignored, survives updates). Schema migrations run automatically on update — old files are backed up to `settings.json.v{old}.bak`.
+> **Important — disable MCP servers you don't use.** Every enabled MCP server consumes memory and may spawn a subprocess on first tool call. Leaving all 34 servers enabled by default wastes resources and slows startup. After installation, open **Settings → MCP Servers**, uncheck servers you don't need (use **Uncheck All** then re-check only the ones you use), and click **Save Changes**. The kernel auto-reloads on save — no manual restart needed.
+
+Settings persist to `state/settings.json` (gitignored, survives updates). Schema migrations run automatically on update — old files are backed up to `settings.json.v{old}.bak`. All settings are **applied live** — saving changes triggers an automatic kernel reload that applies overrides on top of the canonical config sources (budget.json, guardian.yaml, policies/*.yaml, etc.).
 
 ---
 

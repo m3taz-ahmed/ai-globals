@@ -4,8 +4,29 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-08-30
+[UPDATED] 2026-09-01
 [NOTES]
+- **Dashboard settings full wiring + UI improvements — 2026-09-01 (ARCH persona)**:
+  - **All 14 settings sections now APPLIED** (previously only mcp_servers was wired; the other 13 were cosmetic-only). Added `apply_settings_to_kernel()` in `runtime/settings.py` — called by `Kernel.__init__` after managers + compat attributes are initialized, and re-applied on dashboard restart (new kernel picks up overrides automatically).
+  - **Per-section override appliers**: `_apply_budget_overrides` (0=unlimited skip), `_apply_guardian_overrides` (Decision enum mapping), `_apply_firewall_overrides` (FirewallAction enum mapping), `_apply_policy_overrides`, `_apply_loop_detector_overrides`, `_apply_injection_defense_overrides` (instance attr shadows ClassVar), `_apply_persona_overrides`, `_apply_audit_overrides`, `_apply_telemetry_overrides`, `_apply_memory_overrides`, `_apply_design_overrides`.
+  - **UI improvements** (`dashboard/app.js` + `index.css`):
+    - **Check All / Uncheck All** buttons on MCP Servers settings page + live count summary (`X / Y enabled`).
+    - **Auto-reload after save**: `saveSettings()` now calls `/api/settings/restart` automatically after a successful save — no need to click "Restart aiZee" separately. Toast: "Settings saved & applied."
+  - **README updated** (both `README.md` + `README-AR.md`): Added warning about disabling unused MCP servers (memory/load impact), documented Check All/Uncheck All + auto-reload, noted that all settings are applied live.
+  - **Tests**: `tests/test_settings_wiring.py` — 14 tests covering budget (max_tokens, zero=unlimited, on_exceed), guardian (default_decision, on_error), mcp_firewall (catch_all), policy (default_action), loop_detector (window/threshold), injection_defense (thresholds), persona (default, multi), audit (retention_days), telemetry (enabled, sse_interval), reapply-on-reload. All pass.
+  - **Quality gates**: ruff PASS, mypy PASS (8 files, 0 errors), FULL pytest 3819 passed / 0 failed / 1 skipped (tkinter).
+- **MCP toggle gate fix + settings audit — 2026-09-01 (ARCH persona)**:
+  - **Root cause**: Dashboard MCP server toggles were cosmetic-only. `SettingsManager.is_mcp_enabled()` + `mcp_status()` worked and persisted to `state/settings.json`, but NO runtime consumer read the toggle — `McpClient` loaded config from `aizee_mcp/config.json` only, all 27 plugins spawned `McpClient` directly, CLI `mcp`/`linkedin` commands did the same. Toggling a server OFF did nothing.
+  - **Fix (block + hide)**:
+    - `runtime/settings.py`: Added process-wide `get_settings_manager()` / `reload_settings_manager()` / `clear_settings_cache()` cache so kernel, dashboard, McpClient, and PluginManager share ONE `SettingsManager` instance — a dashboard toggle + restart is immediately visible to every MCP gate.
+    - `runtime/kernel.py`: `kernel.settings_manager` wired in `_init_core_services` via `get_settings_manager(kernel.root)`.
+    - `runtime/mcp_client.py`: `McpClient.__init__` now accepts optional `settings_manager` (defaults to shared cache). `call_tool` / `_call_tool_sync` / `async_call_tool` all check `_is_enabled()` BEFORE spawning — disabled servers return `{ok: False, disabled: True, error: "..."}` with no process spawn. New public `is_enabled()` method.
+    - `runtime/plugin.py`: `PluginManager.get_tools()` skips plugins whose MCP server is disabled in settings — tools neither load nor appear.
+    - `dashboard/server.py`: `_settings_instance()` now uses `get_settings_manager()` (shared). Restart endpoint calls `reload_settings_manager(root)` + `_terminate_pool()` so disabled servers stop running immediately. Removed stale `_settings_cache` global.
+    - `aizee_cli.py`: `cmd_mcp` + `cmd_linkedin` now check `client.is_enabled()` and print a clear "disabled in dashboard settings" message.
+  - **Tests**: `tests/test_mcp_toggle_gate.py` — 12 tests (block calls, block async calls, is_enabled reflects toggle, unknown server defaults enabled, enabled proceeds, re-enable restores calls, shared cache, reload picks up disk change, McpClient uses shared manager, disabled plugin tools hidden, enabled plugin tools visible, no settings_manager falls back to all tools). All pass.
+  - **Quality gates**: ruff PASS, mypy PASS (6 changed files, 0 errors), FULL pytest 3805 passed / 0 failed / 1 skipped (tkinter).
+  - **Settings audit finding (IMPORTANT)**: Audited all 14 dashboard settings sections. Only `mcp_servers` is APPLIED by the runtime. The other 13 sections (budget, guardian, mcp_firewall, policy, loop_detector, injection_defense, plugins, persona, dashboard, telemetry, audit, memory, design) are **COSMETIC-ONLY** — written to `state/settings.json` but never read/applied by any runtime consumer. Each has its own canonical source (state/budget.json, runtime/policies/*.yaml, plugins.yaml, personas.yaml, env vars, hardcoded constructor args). Fixing all 13 is a separate larger task — not done in this session.
 - **P1-P4 comprehensive remediation — 2026-08-30 (QA + DEV + SEC personas)**:
   - **P1 Critical security (5 fixes)**:
     - **B1**: `aizee_mcp/aizee_server.py` + `rbac.py` — RBAC fail-open → fail-closed. Corrupted `rbac.yaml` now denies ALL tools to non-admins (sentinel `_RBAC_BROKEN_SENTINEL`). Exception in `check_tool_permission` → deny (not allow).

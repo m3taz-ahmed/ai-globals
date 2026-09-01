@@ -615,7 +615,14 @@ function renderMcpSettings(body, data) {
     if (!categorized.has(name)) categories.Other.push(name);
   }
 
-  let html = '<div class="settings-search"><input type="text" id="mcp-search" placeholder="Filter servers..." class="settings-input"></div>';
+  let html = '<div class="settings-search">';
+  html += '<input type="text" id="mcp-search" placeholder="Filter servers..." class="settings-input">';
+  html += '<div class="mcp-bulk-actions">';
+  html += '<button class="btn btn-outline btn-sm" id="mcp-check-all">Check All</button>';
+  html += '<button class="btn btn-outline btn-sm" id="mcp-uncheck-all">Uncheck All</button>';
+  html += '<span class="mcp-summary" id="mcp-summary"></span>';
+  html += '</div>';
+  html += '</div>';
   for (const [cat, srvs] of Object.entries(categories)) {
     if (srvs.length === 0) continue;
     const allOn = srvs.every(n => servers[n] && servers[n].enabled !== false);
@@ -669,6 +676,39 @@ function renderMcpSettings(body, data) {
       });
     });
   }
+  // Bulk check/uncheck all
+  const checkAllBtn = document.getElementById('mcp-check-all');
+  const uncheckAllBtn = document.getElementById('mcp-uncheck-all');
+  if (checkAllBtn) {
+    checkAllBtn.addEventListener('click', () => {
+      body.querySelectorAll('.mcp-toggle').forEach(t => { t.checked = true; });
+      body.querySelectorAll('.mcp-group-toggle').forEach(t => { t.checked = true; });
+      settingsDirty = true;
+      updateMcpSummary();
+    });
+  }
+  if (uncheckAllBtn) {
+    uncheckAllBtn.addEventListener('click', () => {
+      body.querySelectorAll('.mcp-toggle').forEach(t => { t.checked = false; });
+      body.querySelectorAll('.mcp-group-toggle').forEach(t => { t.checked = false; });
+      settingsDirty = true;
+      updateMcpSummary();
+    });
+  }
+  // Update summary on every toggle change
+  body.querySelectorAll('.mcp-toggle').forEach(el => {
+    el.addEventListener('change', updateMcpSummary);
+  });
+  updateMcpSummary();
+}
+
+function updateMcpSummary() {
+  const body = document.getElementById('settings-body');
+  const summary = document.getElementById('mcp-summary');
+  if (!body || !summary) return;
+  const all = body.querySelectorAll('.mcp-toggle');
+  const on = body.querySelectorAll('.mcp-toggle:checked');
+  summary.textContent = `${on.length} / ${all.length} enabled`;
 }
 
 function updateGroupToggles() {
@@ -681,6 +721,7 @@ function updateGroupToggles() {
       groupToggle.checked = Array.from(toggles).every(t => t.checked);
     }
   });
+  updateMcpSummary();
 }
 
 function renderBudgetSettings(body, data) {
@@ -1032,7 +1073,25 @@ async function saveSettings() {
   }
   if (allOk) {
     settingsDirty = false;
-    showSettingsToast('Settings saved. Click "Restart aiZee" to apply.', false);
+    // Auto-reload the kernel so settings apply immediately without the user
+    // having to click "Restart aiZee" separately. This is critical because
+    // settings like MCP toggles only take effect after a reload.
+    showSettingsToast('Settings saved. Reloading aiZee...', false);
+    try {
+      const restartRes = await fetchJson('/api/settings/restart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      if (restartRes.error) {
+        showSettingsToast('Saved, but reload failed: ' + restartRes.error + '. Click "Restart aiZee".', true);
+      } else {
+        showSettingsToast('Settings saved & applied.', false);
+        setTimeout(() => loadStatus(), 500);
+      }
+    } catch (e) {
+      showSettingsToast('Saved. Click "Restart aiZee" to apply.', false);
+    }
   }
 }
 

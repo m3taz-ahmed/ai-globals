@@ -327,9 +327,24 @@ class PluginManager:
             self._loaded = True
 
     def get_tools(self) -> list[Callable[..., Any]]:
-        """Aggregate all sandboxed tools exposed by loaded plugins."""
+        """Aggregate all sandboxed tools exposed by loaded plugins.
+
+        Plugins whose name maps to an MCP server toggled OFF in the dashboard
+        settings are skipped — their tools neither load nor appear, matching
+        the ``mcp_servers.<name>.enabled`` override. Plugin names that are not
+        present in the settings (unknown servers) default to enabled.
+        """
         tools: list[Callable[..., Any]] = []
+        sm = getattr(self.kernel, "settings_manager", None)
         for name, plugin in self._plugins.items():
+            if sm is not None:
+                try:
+                    enabled = sm.is_mcp_enabled(name)
+                except Exception:
+                    enabled = True  # fail-open: settings error must not hide tools
+                if not enabled:
+                    _logger.info("plugin '%s' MCP server disabled in settings; hiding tools", name)
+                    continue
             guard = self._guards.get(name, PluginGuard())
             for tool in plugin.register_mcp_tools():
                 tools.append(guard.wrap(tool, name))

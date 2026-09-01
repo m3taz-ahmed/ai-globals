@@ -18,7 +18,7 @@ import sysconfig
 import threading
 import uuid
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
 _logger = logging.getLogger(__name__)
 
@@ -172,6 +172,30 @@ _ALLOWED_MCP_COMMANDS = frozenset({
 })
 
 
+def _get_settings_manager(os_root: Path) -> Any:
+    """Return the shared ``SettingsManager`` for ``os_root`` (lazy import).
+
+    Imported lazily to avoid a runtime→settings import at module load and to
+    dodge any import-cycle risk. Returns an object exposing
+    ``is_mcp_enabled(name) -> bool``.
+    """
+    from runtime.settings import get_settings_manager
+
+    return get_settings_manager(os_root)
+
+
+# Error payload returned when a server is disabled in dashboard settings.
+def _disabled_result(server_name: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "error": (
+            f"MCP server '{server_name}' is disabled in dashboard settings "
+            "(toggle it back on in the Settings → MCP Servers panel)"
+        ),
+        "disabled": True,
+    }
+
+
 def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
     """Validate that an MCP server command is safe to spawn.
 
@@ -202,18 +226,53 @@ def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
         )
 
 
+class _SettingsLike(Protocol):
+    """Structural type for the settings manager dependency (avoids import cycle)."""
+
+    def is_mcp_enabled(self, server_name: str) -> bool: ...
+
+
 class McpClient:
     """Spawn and call tools on an MCP server defined in config.
 
     Processes are cached per (server, root) so repeated calls to the same
     server reuse the initialized stdio connection.
+
+    Enable-gate: before spawning or calling a server, the shared settings
+    manager's ``is_mcp_enabled`` is consulted. A server toggled OFF in the
+    dashboard settings is never spawned and its tool calls return a disabled
+    error — it neither loads nor appears.
     """
 
-    def __init__(self, server_name: str, os_root: Path) -> None:
+    def __init__(
+        self,
+        server_name: str,
+        os_root: Path,
+        settings_manager: _SettingsLike | None = None,
+    ) -> None:
         self.server_name = server_name
         self.os_root = os_root
         self.config = self._load_config()
         self._key = (server_name, os_root)
+        # Resolve the shared settings manager (process-wide cache) so the
+        # dashboard toggle is honored without callers having to inject it.
+        if settings_manager is None:
+            settings_manager = cast(_SettingsLike, _get_settings_manager(os_root))
+        self._settings: _SettingsLike = settings_manager
+
+    def _is_enabled(self) -> bool:
+        """True if this server is enabled in dashboard settings (default True)."""
+        try:
+            return bool(self._settings.is_mcp_enabled(self.server_name))
+        except Exception:
+            # Fail-open on settings error: never block MCP because settings
+            # could not be read. The settings manager itself is fail-safe
+            # (corrupt file → defaults), so this is a defensive backstop.
+            return True
+
+    def is_enabled(self) -> bool:
+        """Public check: is this MCP server enabled in dashboard settings?"""
+        return self._is_enabled()
 
     def _load_config(self) -> dict[str, Any]:
         for settings_path in [self.os_root / ".claude" / "settings.json", self.os_root / "aizee_mcp" / "config.json"]:
@@ -336,6 +395,8 @@ class McpClient:
 
     def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """Synchronous wrapper around async_call_tool."""
+        if not self._is_enabled():
+            return _disabled_result(self.server_name)
         import asyncio
         try:
             loop = asyncio.get_running_loop()
@@ -353,6 +414,8 @@ class McpClient:
         Used as a fallback when ``call_tool`` is invoked from within a
         running asyncio event loop (where ``asyncio.run`` cannot be used).
         """
+        if not self._is_enabled():
+            return _disabled_result(self.server_name)
         if not self.config:
             return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
         try:
@@ -385,6 +448,8 @@ class McpClient:
 
     async def async_call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """Async version of call_tool using asyncio.subprocess."""
+        if not self._is_enabled():
+            return _disabled_result(self.server_name)
         if not self.config:
             return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
         proc = await self._async_spawn()
