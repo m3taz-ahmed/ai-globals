@@ -176,8 +176,15 @@ async function fetchJson(path, options = {}) {
 function setStatus(ok, msg) {
   const dot = document.getElementById('status-dot');
   const text = document.getElementById('status-text');
-  dot.className = 'dot ' + (ok ? 'online' : 'offline');
-  text.textContent = msg;
+  if (dot) dot.className = 'dot ' + (ok ? 'online' : 'offline');
+  if (text) text.textContent = msg;
+  // Update the redesigned daemon badge in the sidebar
+  const badge = document.getElementById('daemon-badge');
+  const label = document.getElementById('daemon-label');
+  const detail = document.getElementById('daemon-detail');
+  if (badge) badge.className = 'daemon-badge ' + (ok ? 'connected' : 'disconnected');
+  if (label) label.textContent = msg;
+  if (detail) detail.textContent = ok ? 'All systems operational' : 'Cannot reach server';
 }
 
 // Load Overview Status
