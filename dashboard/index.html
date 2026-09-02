@@ -14,267 +14,354 @@
 </head>
 <body>
   <div class="app-container">
-    <aside class="sidebar">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
       <div class="brand">
         <img src="/logo.png" alt="aiZee" class="logo">
         <h2>aiZee</h2>
       </div>
       <nav class="nav-menu">
-        <a href="#overview" class="active">Overview</a>
-        <a href="#memory">Memory Explorer</a>
-        <a href="#policy">Policy Sandbox</a>
-        <a href="#workflows">Workflows</a>
-        <a href="#saga">Sagas</a>
-        <a href="#chat">Chat</a>
-        <a href="#stack">Tech Stack</a>
-        <a href="#telemetry">Telemetry</a>
-        <a href="#system">System</a>
-        <a href="#audit">Audit Logs</a>
-        <a href="#settings">Settings</a>
+        <a href="#overview" class="active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="nav-label">Overview</span>
+        </a>
+        <a href="#memory">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>
+          <span class="nav-label">Memory Explorer</span>
+        </a>
+        <a href="#policy">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          <span class="nav-label">Policy Sandbox</span>
+        </a>
+        <a href="#workflows">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="nav-label">Workflows</span>
+        </a>
+        <a href="#saga">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
+          <span class="nav-label">Sagas</span>
+        </a>
+        <a href="#chat">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="nav-label">Chat</span>
+        </a>
+        <a href="#stack">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+          <span class="nav-label">Tech Stack</span>
+        </a>
+        <a href="#telemetry">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span class="nav-label">Telemetry</span>
+        </a>
+        <a href="#system">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.16 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.16-1.62 0-5 0-5"/></svg>
+          <span class="nav-label">System</span>
+        </a>
+        <a href="#audit">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span class="nav-label">Audit Logs</span>
+        </a>
+        <a href="#settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="nav-label">Settings</span>
+        </a>
       </nav>
-      <div class="status-indicator">
-        <div class="dot" id="status-dot"></div>
-        <span id="status-text">Connecting...</span>
+      <div class="sidebar-footer">
+        <div class="daemon-badge connecting" id="daemon-badge">
+          <span class="daemon-dot"></span>
+          <span class="daemon-label" id="daemon-label">Connecting</span>
+          <span class="daemon-detail" id="daemon-detail"></span>
+        </div>
       </div>
     </aside>
 
+    <!-- Main Content -->
     <main class="main-content">
       <header class="top-bar">
-        <h1 id="page-title">Overview</h1>
+        <div style="display:flex;align-items:center;gap:var(--sp-3);">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" title="Toggle menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <h1 id="page-title">Overview</h1>
+        </div>
         <div class="top-actions">
           <div class="command-trigger" id="command-trigger" title="Open command palette (Cmd/Ctrl + K)">
-            <span>Search or run command...</span>
-            <kbd>⌘ K</kbd>
+            <span class="ct-text">Search or run command...</span>
+            <kbd>Ctrl K</kbd>
           </div>
-          <button class="btn btn-outline" id="theme-toggle-btn">Toggle Theme</button>
+          <button class="theme-toggle-btn" id="theme-toggle-btn" title="Toggle theme (auto/light/dark)"></button>
           <div class="version-badge" id="version-badge">v---</div>
         </div>
       </header>
 
-      <!-- Overview Tab -->
-      <section id="overview-tab" class="tab-content active">
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <span class="label"><span>Workflows</span><span class="status-pill info" id="workflow-pill">Live</span></span>
-            <span class="value" id="workflow-count">-</span>
-            <span class="trend up" id="workflow-trend">AI agents ready</span>
+      <div class="content-area">
+        <!-- Overview Tab -->
+        <section id="overview-tab" class="tab-content active">
+          <div class="metrics-grid" id="overview-metrics">
+            <div class="metric-card">
+              <span class="label"><span>Workflows</span><span class="status-pill info" id="workflow-pill">Live</span></span>
+              <span class="value" id="workflow-count">-</span>
+              <span class="trend up" id="workflow-trend">AI agents ready</span>
+            </div>
+            <div class="metric-card">
+              <span class="label"><span>Rules</span><span class="status-pill success" id="rule-pill">Synced</span></span>
+              <span class="value" id="rule-count">-</span>
+              <span class="trend" id="rule-trend">from validate-globals</span>
+            </div>
+            <div class="metric-card">
+              <span class="label"><span>Budgets</span><span class="status-pill warning" id="budget-pill">Active</span></span>
+              <span class="value" id="budget-count">-</span>
+              <span class="trend" id="budget-trend">daily + session</span>
+            </div>
+            <div class="metric-card">
+              <span class="label"><span>Tech Stack</span><span class="status-pill info" id="stack-pill">Detected</span></span>
+              <span class="value" id="stack-count">-</span>
+              <span class="trend" id="stack-trend">lockfile driven</span>
+            </div>
           </div>
-          <div class="metric-card">
-            <span class="label"><span>Rules</span><span class="status-pill success" id="rule-pill">Synced</span></span>
-            <span class="value" id="rule-count">-</span>
-            <span class="trend" id="rule-trend">from validate-globals</span>
-          </div>
-          <div class="metric-card">
-            <span class="label"><span>Budgets</span><span class="status-pill warning" id="budget-pill">Active</span></span>
-            <span class="value" id="budget-count">-</span>
-            <span class="trend" id="budget-trend">daily + session</span>
-          </div>
-          <div class="metric-card">
-            <span class="label"><span>Tech Stack</span><span class="status-pill info" id="stack-pill">Detected</span></span>
-            <span class="value" id="stack-count">-</span>
-            <span class="trend" id="stack-trend">lockfile driven</span>
-          </div>
-        </div>
 
-        <div class="glass-panel mt-2">
-          <div class="panel-header">
-            <h3>Registered Workflows</h3>
-            <button class="btn btn-outline" id="refresh-status-btn">Refresh</button>
-          </div>
-          <ul class="workflow-list" id="workflows-list"></ul>
-        </div>
-      </section>
-
-      <!-- Memory Explorer Tab -->
-      <section id="memory-tab" class="tab-content">
-        <div class="glass-panel">
-          <div class="search-bar">
-            <input type="text" id="memory-query" placeholder="Search memory...">
-            <select id="memory-kind">
-              <option value="">All Kinds</option>
-              <option value="factual">Factual</option>
-              <option value="semantic">Semantic</option>
-              <option value="episodic">Episodic</option>
-            </select>
-            <button class="btn btn-primary" id="memory-search-btn">Search</button>
-          </div>
-          <div class="results-container mt-2" id="memory-results">
-            <p class="muted">Enter a query to search FTS memory.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Policy Sandbox Tab -->
-      <section id="policy-tab" class="tab-content">
-        <div class="glass-panel">
-          <p class="muted mb-2">Test policies and budgets via a dry-run evaluation. No audit logs or budget deductions are recorded.</p>
-          <div class="form-group">
-            <label>Action Type</label>
-            <input type="text" id="policy-action" placeholder="e.g. Read, Write, RunCommand">
-          </div>
-          <div class="form-group">
-            <label>Arguments (JSON)</label>
-            <textarea id="policy-args" rows="5" placeholder='{"path": "file.txt", "approved": true}'></textarea>
-          </div>
-          <button class="btn btn-primary mt-1" id="policy-eval-btn">Evaluate Policy</button>
-          
-          <div class="results-container mt-2" id="policy-result" style="display: none;"></div>
-        </div>
-      </section>
-
-      <!-- Workflows Tab -->
-      <section id="workflows-tab" class="tab-content">
-        <div class="glass-panel">
-          <div class="panel-header">
-            <h3>Run Workflow</h3>
-            <button class="btn btn-outline" id="refresh-workflows-btn">Refresh</button>
-          </div>
-          <div class="form-group">
-            <label>Select Workflow</label>
-            <select id="workflow-select">
-              <option value="">Loading...</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Context (JSON)</label>
-            <textarea id="workflow-context" rows="5" placeholder='{"project": "demo"}'></textarea>
-          </div>
-          <button class="btn btn-primary mt-1" id="workflow-run-btn">Run Workflow</button>
-          <div class="results-container mt-2" id="workflow-result" style="display: none;"></div>
-        </div>
-      </section>
-
-      <!-- Saga Tab -->
-      <section id="saga-tab" class="tab-content">
-        <div class="glass-panel">
-          <h3>Run Saga</h3>
-          <div class="form-group">
-            <label>Saga ID</label>
-            <input type="text" id="saga-id" placeholder="project-setup">
-          </div>
-          <div class="form-group">
-            <label>Steps (JSON)</label>
-            <textarea id="saga-steps" rows="6" placeholder='[{"action":"Reserve","args":{"item":"A"},"compensation":{"action":"Cancel","args":{"item":"A"}}},{"action":"Confirm"}]'></textarea>
-          </div>
-          <div class="form-group">
-            <label>Context (JSON)</label>
-            <textarea id="saga-context" rows="4" placeholder='{"project": "demo"}'></textarea>
-          </div>
-          <button class="btn btn-primary mt-1" id="saga-run-btn">Run Saga</button>
-          <div class="results-container mt-2" id="saga-result" style="display: none;"></div>
-        </div>
-      </section>
-
-      <!-- Chat Tab -->
-      <section id="chat-tab" class="tab-content">
-        <div class="glass-panel chat-panel">
-          <div id="chat-history" class="chat-history"></div>
-          <div class="chat-input">
-            <input type="text" id="chat-message" placeholder="Type a message...">
-            <button class="btn btn-primary" id="chat-send-btn">Send</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Tech Stack Tab -->
-      <section id="stack-tab" class="tab-content">
-        <div class="glass-panel">
-          <div class="panel-header">
-            <h3>Detected Tech Stack</h3>
-            <button class="btn btn-outline" id="stack-refresh-btn">Refresh</button>
-          </div>
-          <div id="stack-results" class="results-container mt-2">
-            <p class="muted">Loading...</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Telemetry Tab -->
-      <section id="telemetry-tab" class="tab-content">
-        <div class="glass-panel">
-          <div class="panel-header">
-            <h3>Telemetry Events</h3>
-            <button class="btn btn-outline" id="telemetry-refresh-btn">Refresh</button>
-          </div>
-          <div class="form-group">
-            <label>Filter by Type</label>
-            <select id="telemetry-type">
-              <option value="">All</option>
-              <option value="action">Action</option>
-              <option value="workflow">Workflow</option>
-              <option value="saga">Saga</option>
-            </select>
-          </div>
-          <div id="telemetry-results" class="results-container mt-2"></div>
-          <canvas id="telemetry-chart" class="mt-2"></canvas>
-        </div>
-      </section>
-
-      <!-- System Tab -->
-      <section id="system-tab" class="tab-content">
-        <div class="glass-panel">
-          <div class="panel-header">
-            <h3>System Health</h3>
-            <button class="btn btn-outline" id="system-refresh-btn">Refresh</button>
-          </div>
-          <div class="metrics-grid" id="system-results">
-            <div class="metric-card"><span class="label">CPU %</span><span class="value" id="cpu-percent">-</span></div>
-            <div class="metric-card"><span class="label">Memory %</span><span class="value" id="memory-percent">-</span></div>
-            <div class="metric-card"><span class="label">Memory Used (MB)</span><span class="value" id="memory-used">-</span></div>
-            <div class="metric-card"><span class="label">Version</span><span class="value" id="system-version">-</span></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Audit Logs Tab -->
-      <section id="audit-tab" class="tab-content">
-        <div class="glass-panel">
-          <div class="panel-header">
-            <h3>Recent Activity</h3>
-            <button class="btn btn-outline" id="audit-refresh-btn">Refresh</button>
-          </div>
-          <div class="audit-log-container mt-1" id="audit-logs">
-            <p class="muted">Loading audit logs...</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Settings Tab -->
-      <section id="settings-tab" class="tab-content">
-        <div class="settings-layout">
-          <aside class="settings-sidenav">
-            <button class="settings-nav-btn active" data-settings-section="mcp_servers">MCP Servers</button>
-            <button class="settings-nav-btn" data-settings-section="budget">Budget &amp; Costs</button>
-            <button class="settings-nav-btn" data-settings-section="guardian">Security &amp; Gates</button>
-            <button class="settings-nav-btn" data-settings-section="injection_defense">Injection Defense</button>
-            <button class="settings-nav-btn" data-settings-section="plugins">Plugins &amp; Persona</button>
-            <button class="settings-nav-btn" data-settings-section="dashboard">Dashboard &amp; System</button>
-          </aside>
-          <div class="settings-content">
+          <div class="glass-panel mt-2">
             <div class="panel-header">
-              <h3 id="settings-section-title">MCP Servers</h3>
-              <div class="settings-actions">
-                <button class="btn btn-outline" id="settings-reset-btn">Reset Section</button>
-                <button class="btn btn-primary" id="settings-save-btn">Save Changes</button>
-                <button class="btn btn-danger" id="settings-restart-btn">Restart aiZee</button>
+              <h3>Registered Workflows</h3>
+              <button class="btn btn-outline" id="refresh-status-btn">Refresh</button>
+            </div>
+            <ul class="workflow-list" id="workflows-list"></ul>
+          </div>
+        </section>
+
+        <!-- Memory Explorer Tab -->
+        <section id="memory-tab" class="tab-content">
+          <div class="glass-panel">
+            <div class="search-bar">
+              <input type="text" id="memory-query" placeholder="Search memory...">
+              <select id="memory-kind">
+                <option value="">All Kinds</option>
+                <option value="factual">Factual</option>
+                <option value="semantic">Semantic</option>
+                <option value="episodic">Episodic</option>
+              </select>
+              <button class="btn btn-primary" id="memory-search-btn">Search</button>
+            </div>
+            <div class="results-container mt-2" id="memory-results">
+              <div class="empty-state">
+                <svg class="es-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <div class="es-title">Search Memory</div>
+                <div class="es-desc">Enter a query above to search the FTS memory store. Results will appear here.</div>
               </div>
             </div>
-            <div id="settings-body" class="settings-body">
-              <p class="muted">Loading settings...</p>
-            </div>
-            <div id="settings-toast" class="settings-toast"></div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <!-- Policy Sandbox Tab -->
+        <section id="policy-tab" class="tab-content">
+          <div class="glass-panel">
+            <p class="muted mb-2">Test policies and budgets via a dry-run evaluation. No audit logs or budget deductions are recorded.</p>
+            <div class="form-group">
+              <label>Action Type</label>
+              <input type="text" id="policy-action" placeholder="e.g. Read, Write, RunCommand">
+            </div>
+            <div class="form-group">
+              <label>Arguments (JSON)</label>
+              <textarea id="policy-args" rows="5" placeholder='{"path": "file.txt", "approved": true}'></textarea>
+            </div>
+            <button class="btn btn-primary mt-1" id="policy-eval-btn">Evaluate Policy</button>
+            <div class="results-container mt-2" id="policy-result" style="display: none;"></div>
+          </div>
+        </section>
+
+        <!-- Workflows Tab -->
+        <section id="workflows-tab" class="tab-content">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3>Run Workflow</h3>
+              <button class="btn btn-outline" id="refresh-workflows-btn">Refresh</button>
+            </div>
+            <div class="form-group">
+              <label>Select Workflow</label>
+              <select id="workflow-select">
+                <option value="">Loading...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Context (JSON)</label>
+              <textarea id="workflow-context" rows="5" placeholder='{"project": "demo"}'></textarea>
+            </div>
+            <button class="btn btn-primary mt-1" id="workflow-run-btn">Run Workflow</button>
+            <div class="results-container mt-2" id="workflow-result" style="display: none;"></div>
+          </div>
+        </section>
+
+        <!-- Saga Tab -->
+        <section id="saga-tab" class="tab-content">
+          <div class="glass-panel">
+            <h3>Run Saga</h3>
+            <div class="form-group">
+              <label>Saga ID</label>
+              <input type="text" id="saga-id" placeholder="project-setup">
+            </div>
+            <div class="form-group">
+              <label>Steps (JSON)</label>
+              <textarea id="saga-steps" rows="6" placeholder='[{"action":"Reserve","args":{"item":"A"},"compensation":{"action":"Cancel","args":{"item":"A"}}},{"action":"Confirm"}]'></textarea>
+            </div>
+            <div class="form-group">
+              <label>Context (JSON)</label>
+              <textarea id="saga-context" rows="4" placeholder='{"project": "demo"}'></textarea>
+            </div>
+            <button class="btn btn-primary mt-1" id="saga-run-btn">Run Saga</button>
+            <div class="results-container mt-2" id="saga-result" style="display: none;"></div>
+          </div>
+        </section>
+
+        <!-- Chat Tab -->
+        <section id="chat-tab" class="tab-content">
+          <div class="glass-panel chat-panel">
+            <div id="chat-history" class="chat-history">
+              <div class="empty-state">
+                <svg class="es-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <div class="es-title">Start a conversation</div>
+                <div class="es-desc">Send a message below to chat with aiZee. Responses will appear here in real time.</div>
+              </div>
+            </div>
+            <div class="chat-input">
+              <input type="text" id="chat-message" placeholder="Type a message...">
+              <button class="btn btn-primary" id="chat-send-btn">Send</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tech Stack Tab -->
+        <section id="stack-tab" class="tab-content">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3>Detected Tech Stack</h3>
+              <button class="btn btn-outline" id="stack-refresh-btn">Refresh</button>
+            </div>
+            <div id="stack-results" class="results-container mt-2">
+              <div class="empty-state">
+                <svg class="es-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+                <div class="es-title">No stack detected</div>
+                <div class="es-desc">Lockfiles (package.json, composer.json, etc.) will be scanned automatically.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Telemetry Tab -->
+        <section id="telemetry-tab" class="tab-content">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3>Telemetry Events</h3>
+              <button class="btn btn-outline" id="telemetry-refresh-btn">Refresh</button>
+            </div>
+            <div class="form-group">
+              <label>Filter by Type</label>
+              <select id="telemetry-type">
+                <option value="">All</option>
+                <option value="action">Action</option>
+                <option value="workflow">Workflow</option>
+                <option value="saga">Saga</option>
+              </select>
+            </div>
+            <div id="telemetry-results" class="results-container mt-2"></div>
+            <canvas id="telemetry-chart" class="mt-2"></canvas>
+          </div>
+        </section>
+
+        <!-- System Tab -->
+        <section id="system-tab" class="tab-content">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3>System Health</h3>
+              <button class="btn btn-outline" id="system-refresh-btn">Refresh</button>
+            </div>
+            <div class="metrics-grid" id="system-results">
+              <div class="metric-card"><span class="label">CPU %</span><span class="value" id="cpu-percent">-</span></div>
+              <div class="metric-card"><span class="label">Memory %</span><span class="value" id="memory-percent">-</span></div>
+              <div class="metric-card"><span class="label">Memory Used (MB)</span><span class="value" id="memory-used">-</span></div>
+              <div class="metric-card"><span class="label">Version</span><span class="value" id="system-version">-</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Audit Logs Tab -->
+        <section id="audit-tab" class="tab-content">
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3>Recent Activity</h3>
+              <button class="btn btn-outline" id="audit-refresh-btn">Refresh</button>
+            </div>
+            <div class="audit-log-container mt-1" id="audit-logs">
+              <div class="empty-state">
+                <svg class="es-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div class="es-title">No audit logs</div>
+                <div class="es-desc">Activity will be recorded here as aiZee processes actions and workflows.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section id="settings-tab" class="tab-content">
+          <div class="settings-layout">
+            <aside class="settings-sidenav">
+              <button class="settings-nav-btn active" data-settings-section="mcp_servers">
+                <svg class="snb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                MCP Servers
+              </button>
+              <button class="settings-nav-btn" data-settings-section="budget">
+                <svg class="snb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Budget &amp; Costs
+              </button>
+              <button class="settings-nav-btn" data-settings-section="guardian">
+                <svg class="snb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Security &amp; Gates
+              </button>
+              <button class="settings-nav-btn" data-settings-section="injection_defense">
+                <svg class="snb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                Injection Defense
+              </button>
+              <button class="settings-nav-btn" data-settings-section="plugins">
+                <svg class="snb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+                Plugins &amp; Persona
+              </button>
+              <button class="settings-nav-btn" data-settings-section="dashboard">
+                <svg class="snb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                Dashboard &amp; System
+              </button>
+            </aside>
+            <div class="settings-content">
+              <div class="panel-header">
+                <h3 id="settings-section-title">MCP Servers</h3>
+                <div class="settings-actions">
+                  <button class="btn btn-outline" id="settings-reset-btn">Reset Section</button>
+                  <button class="btn btn-primary" id="settings-save-btn">Save Changes</button>
+                  <button class="btn btn-danger" id="settings-restart-btn">Restart aiZee</button>
+                </div>
+              </div>
+              <div id="settings-body" class="settings-body">
+                <div class="skeleton-card">
+                  <div class="skeleton skeleton-line medium"></div>
+                  <div class="skeleton skeleton-line short"></div>
+                  <div class="skeleton skeleton-block"></div>
+                  <div class="skeleton skeleton-block"></div>
+                </div>
+              </div>
+              <div id="settings-toast" class="settings-toast"></div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 
-    <!-- Command Palette -->
-    <div id="command-palette" class="command-palette-overlay">
-      <div class="command-palette">
-        <input type="text" id="command-input" placeholder="Search workflows, skills, memory...">
-        <div class="command-list" id="command-list"></div>
-      </div>
+  <!-- Command Palette -->
+  <div id="command-palette" class="command-palette-overlay">
+    <div class="command-palette">
+      <input type="text" id="command-input" placeholder="Search workflows, skills, memory...">
+      <div class="command-list" id="command-list"></div>
     </div>
+  </div>
 
   <script src="/app.js"></script>
+</body>
+</html>

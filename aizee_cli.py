@@ -783,6 +783,57 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
     return interactive_uninstall(root, assume_yes=args.yes)
 
 
+def cmd_daemon(args: argparse.Namespace) -> int:
+    """Background daemon — ensures settings persist when dashboard is closed.
+
+    Subcommands:
+      aizee daemon start [--foreground]  → start daemon (background by default)
+      aizee daemon stop                  → stop running daemon
+      aizee daemon status                → print daemon status
+      aizee daemon enable-autostart      → enable auto-start on boot
+      aizee daemon disable-autostart     → disable auto-start on boot
+    """
+    root = _root(args)
+    from runtime.daemon import AizeeDaemon
+
+    action = args.daemon_action
+    if action == "status":
+        status = AizeeDaemon.status(root)
+        console.print_json(data=status)
+        return 0 if status["running"] else 1
+    elif action == "start":
+        if args.foreground:
+            console.print("[cyan]Starting daemon in foreground...[/]")
+            daemon = AizeeDaemon(root, foreground=True)
+            return daemon.start()
+        # Background: spawn a detached process
+        import subprocess
+        cmd = [sys.executable, str(root / "runtime" / "daemon.py"), "--root", str(root)]
+        creationflags = 0
+        if sys.platform == "win32":
+            creationflags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW
+        proc = subprocess.Popen(cmd, cwd=str(root), creationflags=creationflags, shell=False)
+        console.print(f"[green]Daemon started (PID {proc.pid})[/]")
+        return 0
+    elif action == "stop":
+        daemon = AizeeDaemon(root)
+        stopped = daemon.stop()
+        if stopped:
+            console.print("[green]Stop signal sent.[/]")
+            return 0
+        console.print("[yellow]No running daemon found.[/]")
+        return 1
+    elif action == "enable-autostart":
+        result = AizeeDaemon.enable_autostart(root)
+        console.print_json(data=result)
+        return 0 if result.get("enabled") else 1
+    elif action == "disable-autostart":
+        result = AizeeDaemon.disable_autostart()
+        console.print_json(data=result)
+        return 0 if result.get("disabled") else 1
+    return 1
+
+
 def cmd_test(args: argparse.Namespace) -> int:
     """Run pytest with configurable speed tiers.
 
@@ -920,6 +971,16 @@ def main(argv: list[str] | None = None) -> int:
     p_test.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     p_test.add_argument("--xdist", action="store_true", help="Parallel execution (faster on Linux/macOS)")
 
+    # --- daemon ---
+    p_daemon = sub.add_parser("daemon", help="Background settings-sync daemon")
+    sp_daemon = p_daemon.add_subparsers(dest="daemon_action", required=True)
+    sp_daemon.add_parser("status", help="Show daemon status")
+    p_daemon_start = sp_daemon.add_parser("start", help="Start daemon")
+    p_daemon_start.add_argument("--foreground", action="store_true", help="Run in foreground")
+    sp_daemon.add_parser("stop", help="Stop running daemon")
+    sp_daemon.add_parser("enable-autostart", help="Enable auto-start on boot")
+    sp_daemon.add_parser("disable-autostart", help="Disable auto-start on boot")
+
     p_agent = sub.add_parser("agent", help="Sub-agent orchestration")
     p_agent.add_argument("subcommand", choices=["spawn", "delegate", "list", "sync"])
     p_agent.add_argument("--agent-id", default=None)
@@ -1021,6 +1082,7 @@ def main(argv: list[str] | None = None) -> int:
         "version": cmd_version,
         "doctor": cmd_doctor,
         "uninstall": cmd_uninstall,
+        "daemon": cmd_daemon,
     }
     try:
         return commands[args.command](args)

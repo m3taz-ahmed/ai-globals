@@ -1,44 +1,93 @@
 {
   "permissions": {
-    "allow": ["view","Read","read","grep","Glob","search","query","list","get","status","bash:git status","bash:git diff","bash:git log","bash:ls","bash:cd","bash:pwd","bash:graphify"],
-    "ask": ["edit","write","Bash","bash:rm","bash:mv","bash:cp","mcp_call_tool","mcp_read_resource"],
-    "deny": ["bash:rm -rf","bash:git reset --hard","bash:git checkout .","bash:git clean -fd","bash:git add -A","bash:git add .","bash:git push -f","bash:git stash","bash:curl -X POST","bash:curl -X DELETE","bash:Invoke-WebRequest -Method Post","bash:Invoke-WebRequest -Method Delete","bash:node -e","bash:python -c"]
+    "allow": [
+      "view",
+      "Read",
+      "read",
+      "grep",
+      "Glob",
+      "search",
+      "query",
+      "list",
+      "get",
+      "status",
+      "bash:git status",
+      "bash:git diff",
+      "bash:git log",
+      "bash:ls",
+      "bash:cd",
+      "bash:pwd",
+      "bash:graphify"
+    ],
+    "ask": [
+      "edit",
+      "write",
+      "Bash",
+      "bash:rm",
+      "bash:mv",
+      "bash:cp",
+      "mcp_call_tool",
+      "mcp_read_resource"
+    ],
+    "deny": [
+      "bash:rm -rf",
+      "bash:git reset --hard",
+      "bash:git checkout .",
+      "bash:git clean -fd",
+      "bash:git add -A",
+      "bash:git add .",
+      "bash:git push -f",
+      "bash:git stash",
+      "bash:curl -X POST",
+      "bash:curl -X DELETE",
+      "bash:Invoke-WebRequest -Method Post",
+      "bash:Invoke-WebRequest -Method Delete",
+      "bash:node -e",
+      "bash:python -c"
+    ]
   },
   "mcpServers": {
-    "aizee": { "command": "python", "args": ["scripts/aizee_mcp_wrapper.py"] },
-    "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
-    "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
-    "upwork": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
-    "freelancer": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "freelancer-mcp-server@2.0.0"] },
-    "fiverr": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "uvx", "fiverr-mcp-server"] },
-    "linkedin": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"] },
-    "brevo": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-brevo"] },
-    "listmonk": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-listmonk"] },
-    "documenso": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-documenso"] },
-    "postiz": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-postiz"] },
-    "twitter": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-twitter"] },
-    "youtube": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-youtube"] },
-    "mostaql": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@aizee/server-mostaql"] },
-    "khamsat": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@aizee/server-khamsat"] },
-    "google-ads": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-google-ads"] },
-    "meta-ads": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-meta-ads"] },
-    "tiktok-ads": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-tiktok-ads"] },
-    "linkedin-ads": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-linkedin-ads"] },
-    "posthog": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-posthog"] },
-    "n8n": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-n8n"] },
-    "twenty": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-twenty"] },
-    "hubspot": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-hubspot"] },
-    "chatwoot": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-chatwoot"] },
-    "formbricks": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-formbricks"] },
-    "openreplay": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-openreplay"] },
-    "growthbook": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-growthbook"] },
-    "flagsmith": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-flagsmith"] },
-    "lago": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-lago"] },
-    "erpnext": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-erpnext"] },
-    "sendgrid": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-sendgrid"] },
-    "kit": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-kit"] },
-    "klaviyo": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-klaviyo"] },
-    "automatisch": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-automatisch"] }
+    "aizee": {
+      "command": "python",
+      "args": [
+        "scripts/aizee_mcp_wrapper.py"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@3.1.0"
+      ]
+    },
+    "graphify": {
+      "command": "python",
+      "args": [
+        "scripts/graphify_mcp_wrapper.py"
+      ]
+    }
   },
-  "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context"] }
+  "alwaysAllow": {
+    "tools": [
+      "Read",
+      "read",
+      "grep",
+      "Glob",
+      "view",
+      "search",
+      "query"
+    ],
+    "mcpTools": [
+      "context7-resolve-library-id",
+      "context7-get-library-docs",
+      "graphify-query",
+      "query_rules",
+      "check_policy",
+      "search_memory",
+      "search_memory_vector",
+      "search_skills",
+      "get_changelog",
+      "get_active_context"
+    ]
+  }
 }
