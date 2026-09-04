@@ -85,7 +85,8 @@ class Embedder:
     def embed(self, texts: Sequence[str]) -> Any:
         self._ensure_model()
         if self.model is not None:
-            assert np is not None  # narrowed for type checkers
+            if np is None:
+                raise RuntimeError("numpy is required for embeddings but is not installed.")
             return np.asarray(self.model.encode(list(texts)), dtype=np.float32)
         raise RuntimeError("SentenceTransformer model is not available.")
 
@@ -126,8 +127,11 @@ class VectorMemory:
                 self.id_map = json.load(f)
 
     def _save_map(self) -> None:
-        with self.map_path.open("w", encoding="utf-8") as f:
+        # Atomic write: a crash mid-write must not corrupt vector_id_map.json.
+        tmp = self.map_path.with_suffix(".json.tmp")
+        with tmp.open("w", encoding="utf-8") as f:
             json.dump(self.id_map, f)
+        tmp.replace(self.map_path)
 
     def is_available(self) -> bool:
         return IdMapIndex is not None and self.index is not None
@@ -192,9 +196,20 @@ class VectorMemory:
             return
         assert np is not None  # narrowed for type checkers
         u64s = np.array([_mem_id_to_uint64(mid) for mid in mem_ids], dtype=np.uint64)
-        for u64 in u64s:
-            self.id_map.pop(str(u64), None)
-            self.index.remove(int(u64))
+        popped: list[tuple[str, str | None]] = []
+        try:
+            for u64 in u64s:
+                key = str(u64)
+                popped.append((key, self.id_map.pop(key, None)))
+                self.index.remove(int(u64))
+        except Exception:
+            # Restore map entries so map/index cannot diverge on partial
+            # failure. (Index-side partial removal is tolerated: unknown ids
+            # are skipped at search time via the id_map lookup.)
+            for key, old in popped:
+                if old is not None:
+                    self.id_map.setdefault(key, old)
+            raise
         self.index.write(str(self.index_path))
         self._save_map()
 
@@ -235,11 +250,11 @@ class VectorStore:
         return self._full_scan_threshold
 
     def add(
-        self, id: str, vector: list[float], metadata: dict[str, Any] | None = None,
+        self, mem_id: str, vector: list[float], metadata: dict[str, Any] | None = None,
     ) -> None:
         """Add a vector with an associated id and optional metadata."""
         self._vectors.append(list(vector))
-        self._ids.append(id)
+        self._ids.append(mem_id)
         self._metadata.append(metadata or {})
 
     def search(
@@ -295,6 +310,8 @@ class VectorStore:
         if filter_metadata:
             mask = self._apply_metadata_filter(filter_metadata)
             scores = scores * mask
+        if limit <= 0:
+            return []
         top_indices = np.argsort(scores)[-limit:][::-1]
         return [(int(i), float(scores[i])) for i in top_indices if scores[i] > 0]
 
@@ -383,20 +400,31 @@ class VectorStore:
 
     @staticmethod
     def _check_operators(field_val: Any, ops: dict[str, Any]) -> bool:
-        """Evaluate operator-style conditions against a field value."""
+        """Evaluate operator-style conditions against a field value.
+
+        Unknown operators fail closed (return False) so a typo cannot
+        silently match everything. ``$in`` requires an iterable operand.
+        """
         for op, operand in ops.items():
-            if op == "$eq" and field_val != operand:
+            try:
+                if op == "$eq":
+                    match = field_val == operand
+                elif op == "$ne":
+                    match = field_val != operand
+                elif op == "$gte":
+                    match = bool(field_val >= operand)
+                elif op == "$lte":
+                    match = bool(field_val <= operand)
+                elif op == "$gt":
+                    match = bool(field_val > operand)
+                elif op == "$lt":
+                    match = bool(field_val < operand)
+                elif op == "$in":
+                    match = field_val in operand
+                else:
+                    return False
+            except TypeError:
                 return False
-            if op == "$ne" and field_val == operand:
-                return False
-            if op == "$gte" and not (field_val >= operand):
-                return False
-            if op == "$lte" and not (field_val <= operand):
-                return False
-            if op == "$gt" and not (field_val > operand):
-                return False
-            if op == "$lt" and not (field_val < operand):
-                return False
-            if op == "$in" and field_val not in operand:
+            if not match:
                 return False
         return True

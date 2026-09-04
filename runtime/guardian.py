@@ -31,6 +31,7 @@ _logger = logging.getLogger(__name__)
 
 # B7: ReDoS protection — compiled regex cache and limits.
 _COMPILED_REGEX_CACHE: dict[str, re.Pattern[str]] = {}
+_MAX_REGEX_CACHE_SIZE = 1024  # Evict oldest entries beyond this (memory-DoS guard).
 _MAX_REGEX_PATTERN_LEN = 200  # Reject overly complex patterns.
 _MAX_REGEX_INPUT_LEN = 10000  # Reject excessively long input strings.
 _REGEX_TIMEOUT_SECONDS = 2  # Max time for a single regex match (Unix only).
@@ -54,7 +55,7 @@ def _safe_regex_search(pattern: str, text: str) -> bool:
             "Guardian regex rejected: input exceeds %d chars", _MAX_REGEX_INPUT_LEN
         )
         return False
-    # Compile and cache the pattern.
+    # Compile and cache the pattern (bounded: evict oldest on overflow).
     compiled = _COMPILED_REGEX_CACHE.get(pattern)
     if compiled is None:
         try:
@@ -62,6 +63,8 @@ def _safe_regex_search(pattern: str, text: str) -> bool:
         except re.error as exc:
             _logger.warning("Guardian regex compilation failed: %s (pattern=%r)", exc, pattern)
             return False
+        if len(_COMPILED_REGEX_CACHE) >= _MAX_REGEX_CACHE_SIZE:
+            _COMPILED_REGEX_CACHE.pop(next(iter(_COMPILED_REGEX_CACHE)))
         _COMPILED_REGEX_CACHE[pattern] = compiled
     # Apply timeout on Unix via signal.alarm; skip on Windows.
     import os as _os
@@ -154,26 +157,30 @@ class KillSwitchRule:
         """Evaluate the kill-switch rule against the context.
 
         Returns (triggered, reason). If triggered is True, the agent
-        must stop immediately.
+        must stop immediately. Malformed context values fail open to
+        False here (the gates themselves remain fail-closed).
         """
-        if self.rule_type == "cost_ceiling":
-            total_cost = float(context.get("total_cost", 0.0))
-            if total_cost >= self.limit:
-                return True, f"Cost {total_cost:.2f} exceeded ceiling {self.limit:.2f}"
-        elif self.rule_type == "file_touched":
-            files_touched = context.get("files_touched", [])
-            if isinstance(files_touched, list):
-                for f in files_touched:
-                    if isinstance(f, str) and _glob_match(self.pattern, f):
-                        return True, f"Protected file {f!r} touched (pattern {self.pattern!r})"
-        elif self.rule_type == "tool_call_count":
-            call_count = int(context.get("tool_call_count", 0))
-            if call_count >= int(self.limit):
-                return True, f"Tool call count {call_count} exceeded limit {int(self.limit)}"
-        elif self.rule_type == "time_limit":
-            elapsed = float(context.get("elapsed_seconds", 0.0))
-            if elapsed >= self.limit:
-                return True, f"Elapsed {elapsed:.1f}s exceeded time limit {self.limit:.1f}s"
+        try:
+            if self.rule_type == "cost_ceiling":
+                total_cost = float(context.get("total_cost", 0.0))
+                if total_cost >= self.limit:
+                    return True, f"Cost {total_cost:.2f} exceeded ceiling {self.limit:.2f}"
+            elif self.rule_type == "file_touched":
+                files_touched = context.get("files_touched", [])
+                if isinstance(files_touched, list):
+                    for f in files_touched:
+                        if isinstance(f, str) and _glob_match(self.pattern, f):
+                            return True, f"Protected file {f!r} touched (pattern {self.pattern!r})"
+            elif self.rule_type == "tool_call_count":
+                call_count = int(context.get("tool_call_count", 0))
+                if call_count >= int(self.limit):
+                    return True, f"Tool call count {call_count} exceeded limit {int(self.limit)}"
+            elif self.rule_type == "time_limit":
+                elapsed = float(context.get("elapsed_seconds", 0.0))
+                if elapsed >= self.limit:
+                    return True, f"Elapsed {elapsed:.1f}s exceeded time limit {self.limit:.1f}s"
+        except (TypeError, ValueError) as exc:
+            _logger.warning("Kill-switch evaluation failed for %r: %s", self.rule_type, exc)
         return False, ""
 
 
@@ -184,7 +191,14 @@ def _glob_match(pattern: str, path: str) -> bool:
 
 
 class GuardConfig:
-    """Configuration for the guardian."""
+    """Configuration for the guardian.
+
+    NOTE: ``default_decision=ALLOW`` is intentional — the Guardian is one
+    layer in a defense-in-depth pipeline (Probity → Guardian → Policy →
+    LoopDetector → Budget → Audit). The Policy gate (default=``ask``) is
+    the primary enforcement layer. For a stricter posture, construct with
+    ``default_decision=DecisionStatus.DENY`` in production deployments.
+    """
 
     def __init__(
         self,
@@ -212,20 +226,33 @@ class Decision:
     reason: str = ""
 
 
+class _MissingSentinel:
+    """Sentinel for a missing attribute (fail-closed: never equals anything)."""
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return "_MISSING"
+
+
+_MISSING = _MissingSentinel()
+
+
 class _PredicateEvaluator:
     """Evaluate guardian-style predicate rules."""
 
     _ops: ClassVar[dict[str, Callable[[Any, Any], bool]]] = {
-        "eq": lambda a, b: a == b,
-        "ne": lambda a, b: a != b,
-        "gt": lambda a, b: a > b,
-        "gte": lambda a, b: a >= b,
-        "lt": lambda a, b: a < b,
-        "lte": lambda a, b: a <= b,
-        "in": lambda a, b: a in b,
-        "nin": lambda a, b: a not in b,
+        "eq": lambda a, b: False if isinstance(a, _MissingSentinel) else a == b,
+        "ne": lambda a, b: False if isinstance(a, _MissingSentinel) else a != b,
+        "gt": lambda a, b: False if isinstance(a, _MissingSentinel) else a > b,
+        "gte": lambda a, b: False if isinstance(a, _MissingSentinel) else a >= b,
+        "lt": lambda a, b: False if isinstance(a, _MissingSentinel) else a < b,
+        "lte": lambda a, b: False if isinstance(a, _MissingSentinel) else a <= b,
+        "in": lambda a, b: False if isinstance(a, _MissingSentinel) else a in b,
+        "nin": lambda a, b: False if isinstance(a, _MissingSentinel) else a not in b,
         "contains": lambda a, b: b in a if isinstance(a, (str, list, tuple)) else False,
-        "regex": lambda a, b: _safe_regex_search(b, str(a)) if a is not None else False,
+        "regex": lambda a, b: _safe_regex_search(b, str(a)) if a is not None and not isinstance(a, _MissingSentinel) else False,
     }
 
     def __init__(self, attributes: dict[str, Any]) -> None:
@@ -236,9 +263,11 @@ class _PredicateEvaluator:
         value: Any = self._attributes
         for part in parts:
             if isinstance(value, dict):
+                if part not in value:
+                    return _MISSING
                 value = value.get(part)
             else:
-                return None
+                return _MISSING
         return value
 
     def evaluate_predicate(self, predicate: dict[str, Any]) -> bool:
@@ -301,13 +330,25 @@ class Guardian:
 
     @classmethod
     def from_yaml(cls, path: str | Path, config: GuardConfig | None = None) -> Guardian:
-        data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
-        return cls(data.get("rules", []), config)
+        try:
+            data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as exc:
+            raise ValueError(f"Guardian YAML unreadable: {path}: {exc}") from exc
+        rules = data.get("rules", [])
+        if not isinstance(rules, list):
+            raise ValueError(f"Guardian YAML {path}: 'rules' must be a list")
+        return cls(rules, config)
 
     @classmethod
     def from_json(cls, path: str | Path, config: GuardConfig | None = None) -> Guardian:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
-        return cls(data.get("rules", []), config)
+        try:
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"Guardian JSON unreadable: {path}: {exc}") from exc
+        rules = data.get("rules", []) if isinstance(data, dict) else []
+        if not isinstance(rules, list):
+            raise ValueError(f"Guardian JSON {path}: 'rules' must be a list")
+        return cls(rules, config)
 
     def _match_rule(self, request: ActionRequest) -> Decision | None:
         evaluator = _PredicateEvaluator(request.attributes)

@@ -125,6 +125,8 @@ def _args_similarity(args1: dict[str, Any], args2: dict[str, Any]) -> float:
     """Combined similarity score between two args dicts (Jaccard + edit distance).
 
     Returns a float in [0, 1] where 1.0 means identical.
+    Bounds Levenshtein cost: when serialized JSON exceeds 20KB, falls back
+    to Jaccard-only (exact path) to avoid O(n·m) blowup.
     """
     set1 = _args_to_set(args1)
     set2 = _args_to_set(args2)
@@ -134,6 +136,9 @@ def _args_similarity(args1: dict[str, Any], args2: dict[str, Any]) -> float:
     s2 = json.dumps(args2, sort_keys=True, default=str)
     if not s1 and not s2:
         return 1.0
+    # Bound cost: skip edit distance on large payloads, use Jaccard only.
+    if len(s1) > 20_000 or len(s2) > 20_000:
+        return jaccard
     max_len = max(len(s1), len(s2))
     if max_len == 0:
         return 1.0
@@ -200,7 +205,6 @@ class LoopDetector:
         self._history: deque[str] = deque(maxlen=window)
         # Track (tool, args) pairs for fuzzy and cycle detection
         self._tool_history: deque[tuple[str, dict[str, Any]]] = deque(maxlen=window)
-        self._counts: dict[str, int] = {}
         self._lock = threading.RLock()
         self._blocks: int = 0
         self._consecutive_hits: int = 0
@@ -210,19 +214,30 @@ class LoopDetector:
         return sum(1 for x in self._history if x == h)
 
     def _detect_fuzzy(self, tool: str, args: dict[str, Any]) -> tuple[float, dict[str, Any]] | None:
-        """Check for fuzzy repeat — args similarity >= fuzzy_threshold."""
+        """Check for fuzzy repeat — requires >=2 similar past actions.
+
+        Falls back to exact-only (None) when history exceeds 200 entries
+        to bound O(n) scan cost.
+        """
         if not self.fuzzy_enabled:
+            return None
+        if len(self._tool_history) > 200:
             return None
         best_sim = 0.0
         best_args: dict[str, Any] = {}
+        similar_count = 0
         for past_tool, past_args in self._tool_history:
             if past_tool != tool:
                 continue
             sim = _args_similarity(args, past_args)
-            if sim >= self.fuzzy_threshold and sim > best_sim:
-                best_sim = sim
-                best_args = past_args
-        if best_sim > 0:
+            if sim >= self.fuzzy_threshold:
+                similar_count += 1
+                if sim > best_sim:
+                    best_sim = sim
+                    best_args = past_args
+        # Single-similar firing is too strict (false positives on retries);
+        # require at least 2 similar past actions.
+        if similar_count >= 2 and best_sim > 0:
             return best_sim, best_args
         return None
 
@@ -278,14 +293,19 @@ class LoopDetector:
             return bool(self._detect_cycle(tool, args))
 
     def check_and_record(self, tool: str, args: dict[str, Any]) -> LoopHit | None:
-        """Atomically check + record. Returns LoopHit if blocked, None if ok."""
+        """Atomically check + record. Returns LoopHit if blocked, None if ok.
+
+        Blocked actions are NOT appended to history so they don't inflate
+        future counts; LoopHit.action is preserved for callers to escalate.
+        """
         h = _action_hash(tool, args)
         with self._lock:
             hit = self._detect_any_loop(tool, args, h)
+            if hit is not None:
+                # Preserve action escalation for callers; do not pollute history.
+                return hit
             self._history.append(h)
             self._tool_history.append((tool, args))
-            if hit is not None:
-                return hit
             self._consecutive_hits = 0
             return None
 
@@ -343,8 +363,8 @@ class LoopDetector:
         with self._lock:
             self._history.clear()
             self._tool_history.clear()
-            self._counts.clear()
             self._consecutive_hits = 0
+            self._blocks = 0
 
     @property
     def blocks(self) -> int:

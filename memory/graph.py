@@ -17,6 +17,10 @@ from typing import Any
 # Prevents SQL injection via PRAGMA statements which don't accept parameters.
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
+# OOM guard: cap graph size for huge databases.
+_MAX_TABLES = 500
+_MAX_COLUMNS_PER_TABLE = 500
+
 
 def _validate_identifier(name: str, kind: str = "table") -> str:
     """Validate a SQLite identifier against a strict pattern to prevent injection."""
@@ -83,9 +87,14 @@ class SchemaGraph:
 
     def build(self) -> Graph:
         graph = Graph()
-        with sqlite3.connect(self.db_path) as conn:
+        if not self.db_path.exists():
+            return graph
+        # Read-only open: never create a DB as a side effect of a read.
+        uri = f"file:{self.db_path}?mode=ro"
+        with sqlite3.connect(uri, uri=True, timeout=10) as conn:
             conn.row_factory = sqlite3.Row
             tables = [row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+            tables = [t for t in tables if not t.startswith("sqlite_")][: _MAX_TABLES]
 
             for table in tables:
                 _validate_identifier(table, "table")
@@ -93,7 +102,7 @@ class SchemaGraph:
                 graph.add_node(table_node)
 
                 columns = conn.execute(f"PRAGMA table_info({_validate_identifier(table)})").fetchall()
-                for col in columns:
+                for col in columns[: _MAX_COLUMNS_PER_TABLE]:
                     col_name = col["name"]
                     _validate_identifier(col_name, "column")
                     col_id = f"column:{table}.{col_name}"

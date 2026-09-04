@@ -65,6 +65,7 @@ def normalize_content(network: str, content: str) -> dict[str, Any]:
             context={"allowed": list(_CHAR_LIMITS)},
         )
     limit = _CHAR_LIMITS[key]
+    content = content if isinstance(content, str) else str(content or "")
     trimmed = content[:limit]
     return {
         "network": key,
@@ -129,11 +130,12 @@ class YouTubeProvider(SocialProvider):
     network = SocialNetwork.YOUTUBE
 
     def build_instruction(self, payload: dict[str, Any]) -> dict[str, Any]:
+        norm = normalize_content(self.network.value, payload.get("content", ""))
         return {
             "network": self.network.value,
             "action": "insert_video",
-            "title": truncate(payload.get("title", ""), 100),
-            "description": payload.get("content", ""),
+            "title": truncate(payload.get("title", norm["content"][:100]), 100),
+            "description": norm["content"],
             "requires_oauth_env": "AIZEE_YOUTUBE_OAUTH",
         }
 
@@ -182,6 +184,14 @@ def register_social_tools(mcp: FastMCP) -> None:
         """Schedule a post for later. WRITE/EXTERNAL — gated; returns proxy instruction (normalized content + schedule)."""
         if err := validate_query(content):
             return err
+        if scheduled_at:
+            if not isinstance(scheduled_at, str) or len(scheduled_at) > 64:
+                return _err("'scheduled_at' must be an ISO-8601 string")
+            try:
+                from datetime import datetime as _dt
+                _dt.fromisoformat(scheduled_at.replace("Z", "+00:00"))
+            except ValueError:
+                return _err("'scheduled_at' must be ISO-8601 (e.g. 2026-09-05T10:00:00Z)")
         try:
             provider = _resolve_provider(network)
         except ValidationError as exc:
@@ -228,12 +238,17 @@ def register_social_tools(mcp: FastMCP) -> None:
         """Draft platform-appropriate copy from a topic (pure generation guidance). Returns normalized draft text."""
         if err := validate_query(topic):
             return err
+        if tone not in ("professional", "casual", "witty", "urgent", "friendly"):
+            return _err("'tone' must be professional/casual/witty/urgent/friendly")
+        if length_hint not in ("short", "medium", "long"):
+            return _err("'length_hint' must be short/medium/long")
         try:
             provider = _resolve_provider(network)
         except ValidationError as exc:
             return _err(exc.message, context=exc.context)
         limit = _CHAR_LIMITS[provider.network.value]
-        draft = f"[{tone}] {topic}: " + ("Add your key insight, CTA, and 2-3 hashtags here. " * max(1, limit // 80))[:limit]
+        target = {"short": limit // 4, "medium": limit // 2, "long": limit}[length_hint]
+        draft = f"[{tone}] {topic}: " + ("Add your key insight, CTA, and 2-3 hashtags here. " * max(1, target // 80))[:target]
         norm = normalize_content(provider.network.value, draft)
         return _ok(
             network=provider.network.value,
@@ -255,7 +270,12 @@ def register_social_tools(mcp: FastMCP) -> None:
             provider = _resolve_provider(network)
         except ValidationError as exc:
             return _err(exc.message, context=exc.context)
-        days = max(1, min(days, 365))
+        if metric not in ("engagement", "followers", "impressions", "reach", "clicks"):
+            return _err("'metric' must be engagement/followers/impressions/reach/clicks")
+        try:
+            days = max(1, min(int(days), 365))
+        except (TypeError, ValueError):
+            return _err("'days' must be an integer")
         return _json({
             "ok": True,
             "network": provider.network.value,
@@ -285,16 +305,25 @@ def register_social_tools(mcp: FastMCP) -> None:
         instruction_id: str,
         approved: bool = False,
     ) -> str:
-        """Explicit approval gate for a pending social instruction. WRITE — returns approval decision object (guardian-enforced)."""
-        if not instruction_id:
-            return _err("'instruction_id' is required")
+        """Record a human approval decision for a pending social instruction.
+
+        WARNING: the returned object is a recorded decision, NOT an
+        authorization — executors must still pass the action through the
+        kernel gates (guardian/policy). Treating this object as a green
+        light without re-checking would be a self-approval bypass.
+        """
+        if not instruction_id or not isinstance(instruction_id, str) or len(instruction_id) > 256:
+            return _err("'instruction_id' is required (max 256 chars)")
+        if not isinstance(approved, bool):
+            return _err("'approved' must be true/false")
         return _json({
             "ok": True,
             "gated": True,
+            "authorization": False,
             "instruction_id": instruction_id,
             "approved": approved,
             "decision": "approved" if approved else "rejected",
-            "note": "Approval is recorded; execution proceeds only if approved AND guardian allows.",
+            "note": "Decision recorded only. Execution proceeds only if approved AND kernel guardian/policy allow — re-check via check_policy.",
         })
 
     @mcp.tool()
@@ -302,10 +331,11 @@ def register_social_tools(mcp: FastMCP) -> None:
         network: str,
         content: str,
     ) -> str:
-        """Enqueue a normalized post via runtime.post_queue. Pure computation (no network call).
+        """Enqueue a normalized post via runtime.post_queue.
 
-        Enforces channel char limits and X free-post allowance. Returns the
-        queued post metadata. Use social_publish to actually send.
+        The tool is stateless: the X free-post allowance is enforced per
+        call against a fresh queue (documented limitation), not across
+        calls. Use social_publish to actually send.
         """
         if err := validate_query(content):
             return err

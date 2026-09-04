@@ -20,13 +20,19 @@ Usage::
 
 from __future__ import annotations
 
+import contextlib
 import json
+import re
 import sqlite3
 import threading
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol, TypeVar, runtime_checkable
+
+# SQLite identifiers cannot be parameterized — validate strictly so a
+# caller-controlled `name` can never inject SQL via the table name.
+_TABLE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}")
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -114,7 +120,7 @@ class JsonFileStorage(StorageBackend[Any, Any]):
     def __init__(self, file_path: Path) -> None:
         self._path = file_path
         self._data: dict[Any, Any] = {}
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()  # RLock: clear() calls flush() which also locks
         self._loaded = False
 
     def load(self) -> None:
@@ -162,9 +168,22 @@ class JsonFileStorage(StorageBackend[Any, Any]):
     def flush(self) -> None:
         with self._lock:
             self._path.parent.mkdir(parents=True, exist_ok=True)
-            self._path.write_text(
-                json.dumps(self._data, indent=2, default=str), encoding="utf-8",
+            # Atomic write: write to temp file then rename, to prevent
+            # corruption if the process crashes mid-write.
+            import os as _os
+            import tempfile
+
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                dir=str(self._path.parent), suffix=".tmp", prefix=self._path.name + ".",
             )
+            try:
+                with _os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                    f.write(json.dumps(self._data, indent=2, default=str))
+                _os.replace(tmp_path, str(self._path))
+            except Exception:
+                with contextlib.suppress(OSError):
+                    _os.unlink(tmp_path)
+                raise
 
     def clear(self) -> None:
         with self._lock:
@@ -184,6 +203,10 @@ class SqliteStorage(StorageBackend[Any, Any]):
     """
 
     def __init__(self, db_path: Path, table_name: str = "kv_store") -> None:
+        if not _TABLE_RE.fullmatch(table_name):
+            raise ValueError(
+                f"Invalid SQLite table name {table_name!r}: must match {_TABLE_RE.pattern}"
+            )
         self._db_path = db_path
         self._table = table_name
         self._lock = threading.Lock()
@@ -251,17 +274,32 @@ class SqliteStorage(StorageBackend[Any, Any]):
                 rows = conn.execute(
                     f"SELECT key, value FROM {self._table}"
                 ).fetchall()
-                return [
-                    json.loads(r[1])
-                    for r in rows
-                    if key_filter(r[0])
-                ]
+                result: list[Any] = []
+                for r in rows:
+                    try:
+                        value = json.loads(r[1])
+                    except (ValueError, TypeError):
+                        continue
+                    try:
+                        if key_filter(r[0]):
+                            result.append(value)
+                    except Exception:
+                        continue
+                return result
             else:
                 rows = conn.execute(
                     f"SELECT value FROM {self._table} WHERE key = ?",
                     (str(key_filter),),
                 ).fetchall()
-        return [json.loads(r[0]) for r in rows]
+        decoded: list[Any] = []
+        for r in rows:
+            try:
+                decoded.append(json.loads(r[0]))
+            except (ValueError, TypeError):
+                # Corrupt row: skip instead of crashing the whole scan
+                # (get() already degrades to raw str; scan degrades to skip).
+                continue
+        return decoded
 
     def keys(self) -> list[Any]:
         conn = self._connect()
@@ -358,7 +396,10 @@ class StorageFactory:
             backend = JsonFileStorage(file_path)
         elif effective_mode == StorageMode.SQLITE:
             db_path = file_path if file_path.suffix == ".db" else file_path.with_suffix(".db")
-            backend = SqliteStorage(db_path, table_name=name.replace("-", "_"))
+            table = re.sub(r"[^A-Za-z0-9_]", "_", name)
+            if not table or (not table[0].isalpha() and table[0] != "_"):
+                table = f"kv_{table}"
+            backend = SqliteStorage(db_path, table_name=table)
         else:
             raise ValueError(f"Unknown storage mode: {effective_mode}")
 

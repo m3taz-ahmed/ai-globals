@@ -133,24 +133,33 @@ class GitMemoryStore:
         existing = ""
         if file_path.exists():
             existing = file_path.read_text(encoding="utf-8")
+        created_at = now
+        if existing:
+            try:
+                created_at = json.loads(existing).get("created_at", now)
+            except (ValueError, AttributeError):
+                created_at = now
         entry = MemoryEntry(
             id=entry_id,
             category=category,
             content=content,
-            created_at=json.loads(existing).get("created_at", now) if existing else now,
+            created_at=created_at,
             updated_at=now,
         )
         file_path.write_text(entry.to_json(), encoding="utf-8")
         return file_path
 
     def read(self, category: str, entry_id: str) -> MemoryEntry | None:
-        """Read a memory entry from the store."""
+        """Read a memory entry from the store. Corrupt files yield None."""
         _safe_component(category, "category")
         _safe_component(entry_id, "entry_id")
         file_path = self.repo_path / category / f"{entry_id}.json"
         if not file_path.exists():
             return None
-        return MemoryEntry.from_json(file_path.read_text(encoding="utf-8"))
+        try:
+            return MemoryEntry.from_json(file_path.read_text(encoding="utf-8"))
+        except (ValueError, KeyError, TypeError, OSError, UnicodeDecodeError):
+            return None
 
     def delete(self, category: str, entry_id: str) -> bool:
         """Delete a memory entry."""
@@ -177,17 +186,27 @@ class GitMemoryStore:
         return sorted(entries)
 
     def commit(self, message: str) -> bool:
-        """Stage all changes and commit to the memory repo."""
-        self._git("add", "-A")
+        """Stage tracked memory files and commit to the memory repo.
+
+        Stages only ``*.json`` under the repo root (never ``git add -A``,
+        which could sweep up accidentally dropped secrets).
+        """
+        self._git("add", "--", "*.json")
         # Check if there are changes to commit
         status = self._git("status", "--porcelain", check=False)
         if status.stdout.strip() == "":
             return False  # Nothing to commit
+        if not message or len(message) > 500:
+            raise ValueError("Commit message must be 1..500 chars")
         self._git("commit", "-m", message)
         return True
 
     def log(self, limit: int = 20) -> list[dict[str, str]]:
         """Return commit history."""
+        try:
+            limit = max(1, min(int(limit), 200))
+        except (TypeError, ValueError):
+            limit = 20
         result = self._git("log", f"-{limit}", "--pretty=format:%H|%an|%ad|%s", "--date=iso", check=False)
         if result.returncode != 0:
             return []
@@ -205,24 +224,35 @@ class GitMemoryStore:
                 })
         return commits
 
+    _REF_RE: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/@-]{0,127}$")
+
+    def _safe_ref(self, ref: str, what: str = "ref") -> str:
+        """Validate a git ref/branch/remote name (blocks option injection)."""
+        if not isinstance(ref, str) or self._REF_RE.match(ref) is None or ref.startswith("-"):
+            raise ValueError(f"Invalid git {what} {ref!r}")
+        return ref
+
     def diff(self, ref: str = "HEAD~1") -> str:
         """Show diff between HEAD and a reference (default: previous commit)."""
-        result = self._git("diff", ref, "HEAD", check=False)
+        # No `--` here: these are revisions, not paths (`--` would turn the
+        # ref into a pathspec). Option injection is blocked by _safe_ref
+        # (rejects leading `-`).
+        result = self._git("diff", self._safe_ref(ref), "HEAD", check=False)
         return result.stdout
 
     def checkout(self, ref: str) -> bool:
         """Checkout a specific commit or branch (time-travel)."""
-        result = self._git("checkout", ref, check=False)
+        result = self._git("checkout", self._safe_ref(ref), check=False)
         return result.returncode == 0
 
     def create_branch(self, name: str) -> bool:
         """Create and checkout a new branch (e.g., for a persona)."""
-        result = self._git("checkout", "-b", name, check=False)
+        result = self._git("checkout", "-b", self._safe_ref(name, "branch"), check=False)
         return result.returncode == 0
 
     def switch_branch(self, name: str) -> bool:
         """Switch to an existing branch."""
-        result = self._git("checkout", name, check=False)
+        result = self._git("checkout", self._safe_ref(name, "branch"), check=False)
         return result.returncode == 0
 
     def list_branches(self) -> list[str]:
@@ -236,12 +266,18 @@ class GitMemoryStore:
 
     def push(self, remote: str = "origin", branch: str = "main") -> bool:
         """Push memory to a remote repository."""
-        result = self._git("push", remote, branch, check=False)
+        result = self._git(
+            "push", self._safe_ref(remote, "remote"), self._safe_ref(branch, "branch"),
+            check=False,
+        )
         return result.returncode == 0
 
     def pull(self, remote: str = "origin", branch: str = "main") -> bool:
         """Pull memory from a remote repository."""
-        result = self._git("pull", remote, branch, check=False)
+        result = self._git(
+            "pull", self._safe_ref(remote, "remote"), self._safe_ref(branch, "branch"),
+            check=False,
+        )
         return result.returncode == 0
 
     # Allowed git remote URL schemes. ``ext::`` and ``file://`` are rejected

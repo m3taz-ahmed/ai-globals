@@ -142,7 +142,7 @@ def _redact_secrets(text: str) -> tuple[str, list[str]]:
 
 def secret_leak_guardrail(ctx: GuardrailContext) -> GuardrailResult:
     """Block/redact secrets in prompts and responses."""
-    text = ctx.prompt or ctx.response or ctx.generated_code
+    text = "\n".join(t for t in (ctx.prompt, ctx.response, ctx.generated_code) if t)
     _redacted, matched = _redact_secrets(text)
     if not matched:
         return GuardrailResult(Verdict.ALLOW, "secret_leak")
@@ -184,7 +184,14 @@ def prompt_injection_guardrail(ctx: GuardrailContext) -> GuardrailResult:
 
 
 def destructive_command_guardrail(ctx: GuardrailContext) -> GuardrailResult:
-    """Block destructive shell commands in generated code/tool payloads."""
+    """Block destructive shell commands in generated code/tool payloads.
+
+    NOTE (substring blocklist limits): matching is plain case-insensitive
+    substring search, so it can false-positive on prose/docs (e.g. "sudo "
+    in a tutorial) and false-negative on obfuscation (quoting, env vars,
+    base64, unicode tricks). Treat BLOCKs as heuristic signals, not a
+    sandbox guarantee.
+    """
     code = ctx.generated_code or ""
     payload = ctx.tool_payload or {}
     text = code + " " + str(payload.get("command", ""))
@@ -245,7 +252,10 @@ class AgentGateway:
             ]
 
     def _severity_rank(self, v: Verdict) -> int:
-        return {Verdict.ALLOW: 0, Verdict.REDACT: 1, Verdict.BLOCK: 2}[v]
+        rank = {Verdict.ALLOW: 0, Verdict.REDACT: 1, Verdict.BLOCK: 2}.get(v)
+        if rank is None:
+            raise GatewayError(f"Unknown verdict: {v!r}")
+        return rank
 
     def _run_phase(
         self, phase: GuardrailPhase, ctx: GuardrailContext
@@ -288,8 +298,12 @@ class AgentGateway:
         sanitized_results = []
         for r in results:
             d = r.to_dict()
-            if "secret" in d.get("reason", "").lower() or "pattern" in d.get("reason", "").lower():
-                d["reason"] = "[REDACTED]"
+            # Redact only actual secret payloads (e.g. key assignments),
+            # not every reason that merely mentions "secret"/"pattern".
+            reason = d.get("reason", "")
+            if isinstance(reason, str) and reason:
+                redacted_reason, _ = _redact_secrets(reason)
+                d["reason"] = redacted_reason
             sanitized_results.append(d)
         entry: dict[str, Any] = {
             "direction": direction,

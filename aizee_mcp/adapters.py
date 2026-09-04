@@ -8,6 +8,7 @@ with swappable execution backends (local, codex, claude_code, remote_a2a, etc.).
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 import logging
 import shutil
@@ -15,6 +16,7 @@ import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -24,25 +26,59 @@ logger = logging.getLogger(__name__)
 
 
 def _is_loopback_ip(host: str) -> bool:
-    """Return True if ``host`` is a 127.0.0.0/8 loopback IPv4 address.
+    """Return True if ``host`` is a loopback address (IPv4 127/8 or IPv6 ::1).
 
     Rejects look-alikes such as ``127.0.0.1.evil.com`` or ``127.0.0.256``
     which a naive ``startswith`` would accept (SSRF bypass).
     """
     if not host:
         return False
-    parts = host.split(".")
-    if len(parts) != 4:
-        return False
-    if not all(p.isdigit() for p in parts):
-        return False
+    clean = host.strip("[]")
+    if clean == "::1":
+        return True
+    import ipaddress as _ipaddress
+
     try:
-        octets = [int(p) for p in parts]
+        ip = _ipaddress.ip_address(clean)
     except ValueError:
         return False
-    if not all(0 <= o <= 255 for o in octets):
+    return ip.is_loopback
+
+
+def _is_private_or_reserved_ip(host: str) -> bool:
+    """Return True if ``host`` is a private, loopback, link-local, or reserved IP.
+
+    Blocks RFC 1918 (10/8, 172.16/12, 192.168/16), loopback (127/8, ::1),
+    link-local (169.254/16, fe80::/10), CGNAT (100.64/10), IPv6 ULA (fc00::/7),
+    and metadata endpoints. This prevents SSRF to internal services and cloud
+    metadata (e.g. 169.254.169.254).
+    """
+    if not host:
         return False
-    return octets[0] == 127
+    # Strip IPv6 brackets for parsing.
+    clean = host.strip("[]")
+    # Fast path: IPv6 loopback
+    if clean == "::1":
+        return True
+    # Use ipaddress for robust IPv4 + IPv6 classification.
+    import ipaddress as _ipaddress
+
+    try:
+        ip = _ipaddress.ip_address(clean)
+    except ValueError:
+        return False
+    # is_private covers RFC 1918, loopback, link-local, ULA, reserved.
+    # is_loopback covers 127/8 and ::1.
+    # is_link_local covers 169.254/16 and fe80::/10.
+    # is_reserved covers 0.0.0.0/8, 240.0.0.0/4, etc.
+    # is_multicast covers 224.0.0.0/4, ff00::/8.
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+    )
 
 
 class Backend(str, Enum):
@@ -56,6 +92,50 @@ class Backend(str, Enum):
 
 class AdapterError(Exception):
     """Raised when an adapter fails to execute or is misconfigured."""
+
+
+class _A2ARedirectBlocker(urllib.request.HTTPRedirectHandler):
+    """Block cross-origin redirects on A2A polling (SSRF guard)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[no-untyped-def]
+        target = urllib.parse.urljoin(req.full_url, newurl)
+        base = urllib.parse.urlparse(req.full_url)
+        dest = urllib.parse.urlparse(target)
+        if dest.scheme not in ("http", "https") or dest.netloc.lower() != base.netloc.lower():
+            raise urllib.error.HTTPError(
+                req.full_url, code, f"A2A redirect to {target!r} blocked", headers, fp,
+            )
+        # SSRF re-validation: redirect target must not resolve to private IP.
+        dest_host = (dest.hostname or "").lower()
+        if _is_private_or_reserved_ip(dest_host):
+            raise urllib.error.HTTPError(
+                req.full_url, code,
+                f"A2A redirect to private/reserved IP {dest_host!r} blocked (SSRF)",
+                headers, fp,
+            )
+        return super().redirect_request(req, fp, code, msg, headers, target)
+
+
+def _a2a_open(url: str | urllib.request.Request, context: ssl.SSLContext, timeout: float):  # type: ignore[no-untyped-def]
+    """Open an A2A URL/Request with redirect confinement (same-origin only)."""
+    opener = urllib.request.build_opener(
+        _A2ARedirectBlocker(), urllib.request.HTTPSHandler(context=context),
+    )
+    if isinstance(url, urllib.request.Request):
+        return opener.open(url, timeout=timeout)
+    return opener.open(urllib.request.Request(url), timeout=timeout)
+
+
+def _positive_float(value: Any, default: float, maximum: float = 3600.0) -> float:
+    """Coerce a timeout config to a positive finite float (fallback: default)."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    import math
+    if not math.isfinite(number) or number <= 0:
+        return default
+    return min(number, maximum)
 
 
 @dataclass
@@ -100,7 +180,7 @@ class LocalAdapter(AgentAdapter):
 
     async def launch(self, task: str, profile: str | None = None) -> Session:
         session = Session(
-            session_id=f"local-{len(self._sessions) + 1}",
+            session_id=f"local-{uuid.uuid4().hex[:12]}",
             backend=self.backend,
             profile=profile or "default",
         )
@@ -113,6 +193,12 @@ class LocalAdapter(AgentAdapter):
         session.status = "completed"
         self._store_artifact(session, "result", {"local": True, "task": session.artifacts.get("task", "")})
         return session
+
+    def public_session(self, session: Session) -> Session:
+        """Return a copy without internal handles (never leaks _proc/_pid)."""
+        public = copy.copy(session)
+        public.artifacts = {k: v for k, v in session.artifacts.items() if not k.startswith("_")}
+        return public
 
 
 class _CliAdapterBase(AgentAdapter):
@@ -143,7 +229,7 @@ class _CliAdapterBase(AgentAdapter):
                 f"Binary {self._binary!r} not found on PATH for backend {self.backend.value!r}"
             )
         session = Session(
-            session_id=f"{self.backend.value}-{len(self._sessions) + 1}",
+            session_id=f"{self.backend.value}-{uuid.uuid4().hex[:12]}",
             backend=self.backend,
             profile=profile or "default",
         )
@@ -168,8 +254,8 @@ class _CliAdapterBase(AgentAdapter):
         return session
 
     async def poll(self, session: Session) -> Session:
-        proc: asyncio.subprocess.Process = session.artifacts.get("_proc")  # type: ignore[assignment]
-        if proc is None:
+        proc = session.artifacts.get("_proc")
+        if proc is None or not hasattr(proc, "communicate"):
             session.status = "failed"
             self._store_artifact(session, "error", "No process handle")
             return session
@@ -213,7 +299,7 @@ class CodexAdapter(_CliAdapterBase):
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         cfg = config or {}
-        self._timeout = float(cfg.get("timeout", self._timeout))
+        self._timeout = _positive_float(cfg.get("timeout", self._timeout), self._timeout)
         super().__init__(cfg)
 
     def _backend(self) -> Backend:
@@ -237,7 +323,7 @@ class ClaudeCodeAdapter(_CliAdapterBase):
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         cfg = config or {}
-        self._timeout = float(cfg.get("timeout", self._timeout))
+        self._timeout = _positive_float(cfg.get("timeout", self._timeout), self._timeout)
         super().__init__(cfg)
 
     def _backend(self) -> Backend:
@@ -248,6 +334,52 @@ class ClaudeCodeAdapter(_CliAdapterBase):
         if profile and profile != "default":
             args.extend(["--profile", profile])
         return args
+
+
+def _validate_endpoint(endpoint: str) -> None:
+    """Validate an A2A endpoint URL for scheme, host, and SSRF safety.
+
+    Checks:
+    1. Scheme must be http or https.
+    2. HTTP is only allowed for exact localhost / loopback.
+    3. Private/reserved IPs are blocked (SSRF guard).
+    4. DNS resolution re-check: hostnames resolving to private IPs are blocked.
+    """
+    parsed = urllib.parse.urlparse(endpoint)
+    scheme = parsed.scheme.lower()
+    host = (parsed.hostname or "").lower()
+    if scheme not in ("https", "http"):
+        raise AdapterError(
+            f"RemoteA2AAdapter endpoint must use http(s) scheme. Got: {endpoint}"
+        )
+    if scheme == "http" and (not host or not (host == "localhost" or _is_loopback_ip(host))):
+        raise AdapterError(
+            "RemoteA2AAdapter HTTP endpoint is only allowed for "
+            f"localhost/loopback. Got host: {host!r}"
+        )
+    # SSRF guard: block private/reserved IPs for BOTH http and https.
+    if _is_private_or_reserved_ip(host):
+        raise AdapterError(
+            "RemoteA2AAdapter endpoint resolves to a private/reserved IP "
+            f"(SSRF blocked). Got host: {host!r}"
+        )
+    # DNS-based SSRF: hostnames that resolve to private IPs bypass the
+    # literal-IP check above. Resolve and re-check.
+    if host and host != "localhost" and not _is_loopback_ip(host) and not _is_private_or_reserved_ip(host):
+        import socket as _socket
+
+        try:
+            resolved = _socket.getaddrinfo(host, None)
+            for _family, _, _, _, sockaddr in resolved:
+                ip = str(sockaddr[0])
+                ip_clean = ip.strip("[]")
+                if _is_private_or_reserved_ip(ip_clean) or _is_loopback_ip(ip_clean):
+                    raise AdapterError(
+                        f"RemoteA2AAdapter endpoint {host!r} resolves to "
+                        f"private/reserved IP {ip!r} (DNS SSRF blocked)."
+                    )
+        except _socket.gaierror:
+            pass
 
 
 class RemoteA2AAdapter(AgentAdapter):
@@ -261,9 +393,9 @@ class RemoteA2AAdapter(AgentAdapter):
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         super().__init__(Backend.REMOTE_A2A, config)
         self._endpoint = str(self.config.get("endpoint", "")).rstrip("/")
-        self._poll_interval = float(self.config.get("poll_interval", 2.0))
-        self._timeout = float(self.config.get("timeout", 300.0))
-        self._request_timeout = float(self.config.get("request_timeout", 30.0))
+        self._poll_interval = _positive_float(self.config.get("poll_interval", 2.0), 2.0, maximum=300.0)
+        self._timeout = _positive_float(self.config.get("timeout", 300.0), 300.0)
+        self._request_timeout = _positive_float(self.config.get("request_timeout", 30.0), 30.0, maximum=300.0)
         self._verify_ssl = bool(self.config.get("verify_ssl", True))
         self._ssl_context: ssl.SSLContext | None = None
         if not self._verify_ssl:
@@ -274,25 +406,7 @@ class RemoteA2AAdapter(AgentAdapter):
             )
         if not self._endpoint:
             raise AdapterError("RemoteA2AAdapter requires config['endpoint']")
-        # Validate endpoint URL scheme + host precisely.
-        # A naive ``startswith`` check accepts hostnames like
-        # ``http://localhost.evil.com`` or ``http://127.0.0.1.evil.com`` which
-        # resolve to arbitrary external hosts (SSRF). Parse the URL and require
-        # HTTPS for non-local, and an exact localhost/loopback host for HTTP.
-        parsed = urllib.parse.urlparse(self._endpoint)
-        scheme = parsed.scheme.lower()
-        host = (parsed.hostname or "").lower()
-        if scheme not in ("https", "http"):
-            raise AdapterError(
-                "RemoteA2AAdapter endpoint must use http(s) scheme. "
-                f"Got: {self._endpoint}"
-            )
-        if scheme == "http" and (not host or not (host == "localhost" or _is_loopback_ip(host))):
-            # HTTP only allowed for exact localhost / 127.0.0.0/8 loopback.
-            raise AdapterError(
-                "RemoteA2AAdapter HTTP endpoint is only allowed for "
-                f"localhost/loopback. Got host: {host!r}"
-            )
+        _validate_endpoint(self._endpoint)
 
     def _create_ssl_context(self) -> ssl.SSLContext:
         """Create (once) the SSL context for secure connections.
@@ -324,40 +438,63 @@ class RemoteA2AAdapter(AgentAdapter):
         try:
             response = await loop.run_in_executor(
                 None,
-                lambda: urllib.request.urlopen(  # nosec B310 - validated HTTPS endpoint
-                    req, context=ssl_ctx, timeout=self._request_timeout
+                lambda: _a2a_open(  # nosec B310 - validated + redirect-blocked endpoint
+                    req, ssl_ctx, self._request_timeout
                 ),
             )
-            body = json.loads(response.read().decode("utf-8"))
+            raw = response.read(1_000_000)
+            try:
+                body = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError) as exc:
+                raise AdapterError(f"A2A launch returned malformed JSON: {exc}") from exc
+            if not isinstance(body, dict):
+                raise AdapterError("A2A launch returned a non-object response")
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             raise AdapterError(f"A2A launch failed: {exc}") from exc
+        remote_id = body.get("session_id")
+        if not isinstance(remote_id, str) or not remote_id or len(remote_id) > 256:
+            remote_id = f"a2a-{uuid.uuid4().hex[:12]}"
+        # Collision-safe local key: a hostile server must not overwrite an
+        # existing session by returning a duplicate session_id.
+        local_id = f"a2a-{uuid.uuid4().hex[:12]}"
         session = Session(
-            session_id=body.get("session_id", f"a2a-{len(self._sessions) + 1}"),
+            session_id=local_id,
             backend=self.backend,
             profile=profile or "default",
         )
         session.status = "running"
         self._sessions[session.session_id] = session
         self._store_artifact(session, "task", task)
-        self._store_artifact(session, "remote_session_id", body.get("session_id"))
+        self._store_artifact(session, "remote_session_id", remote_id)
         return session
 
     async def poll(self, session: Session) -> Session:
         remote_id = session.artifacts.get("remote_session_id", session.session_id)
-        url = f"{self._endpoint}/tasks/{remote_id}"
+        if not isinstance(remote_id, str) or not remote_id:
+            session.status = "failed"
+            self._store_artifact(session, "error", "Missing remote session id")
+            return session
+        quoted = urllib.parse.quote(remote_id, safe="")
+        url = f"{self._endpoint}/tasks/{quoted}"
         loop = asyncio.get_running_loop()
         deadline = loop.time() + self._timeout
         while True:
             try:
                 response = await loop.run_in_executor(
                     None,
-                    lambda: urllib.request.urlopen(  # nosec B310 - validated HTTPS endpoint
-                        urllib.request.Request(url),
-                        context=self._create_ssl_context(),
-                        timeout=self._request_timeout,
-                    ),
+                    lambda: _a2a_open(url, self._create_ssl_context(), self._request_timeout),
                 )
-                body = json.loads(response.read().decode("utf-8"))
+                raw = response.read(1_000_000)
+                try:
+                    body = json.loads(raw.decode("utf-8"))
+                except (ValueError, UnicodeDecodeError) as exc:
+                    session.status = "failed"
+                    self._store_artifact(session, "error", f"A2A poll returned malformed JSON: {exc}")
+                    return session
+                if not isinstance(body, dict):
+                    session.status = "failed"
+                    self._store_artifact(session, "error", "A2A poll returned a non-object response")
+                    return session
             except (urllib.error.URLError, TimeoutError, OSError) as exc:
                 session.status = "failed"
                 self._store_artifact(session, "error", str(exc))
@@ -365,7 +502,8 @@ class RemoteA2AAdapter(AgentAdapter):
             status = body.get("status", "running")
             if status in ("completed", "failed", "timeout"):
                 session.status = status
-                self._store_artifact(session, "result", body.get("result", {}))
+                result = body.get("result", {})
+                self._store_artifact(session, "result", result if isinstance(result, dict) else {"value": result})
                 return session
             if loop.time() > deadline:
                 session.status = "timeout"
@@ -392,12 +530,16 @@ class AdapterRegistry:
         adapter = self.get(backend)
         session = await adapter.launch(task, profile)
         session = await adapter.poll(session)
+        # Strip internal handles (_proc/_pid) — never leak process objects.
+        artifacts = {k: v for k, v in session.artifacts.items() if not k.startswith("_")}
+        if "_pid" in session.artifacts:
+            artifacts["pid"] = session.artifacts["_pid"]
         return {
             "session_id": session.session_id,
             "backend": session.backend.value,
             "status": session.status,
             "profile": session.profile,
-            "artifacts": session.artifacts,
+            "artifacts": artifacts,
         }
 
 

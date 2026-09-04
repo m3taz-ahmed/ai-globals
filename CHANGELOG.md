@@ -1,5 +1,42 @@
 # Changelog
 
+## [5.10.1] - 2026-08-31 (Security Hardening + Architecture Cleanup + Docs Sync)
+
+### Security
+- **SSRF protection (A2A adapters):** `_is_private_or_reserved_ip()` + `_is_loopback_ip()` now use `ipaddress` module for full IPv4+IPv6 coverage (fc00::/7, fe80::/10, ::1, 127/8, 169.254/16, CGNAT, multicast). DNS resolution re-check blocks hostnames resolving to private IPs. `_validate_endpoint()` extracted as reusable helper. `launch()` now uses `_a2a_open()` for redirect confinement (was plain `urlopen`).
+- **RBAC fail-closed:** `AIZEE_RBAC_STRICT=1` denies admin-required tools when no roles are set; non-admin tools stay allowed (was denying all tools — logic bug fix).
+- **Audit fail-closed:** `AIZEE_AUDIT_STRICT` defaults to `"1"` (raise on write failure); `=0` for fail-open. Docstring updated.
+- **MCP client env allowlist:** `_build_spawn_env()` now uses default allowlist (essential system vars + AIZEE_* + common API key prefixes). `AIZEE_MCP_ENV_PASSTHROUGH=1` for full inherit (dev only). Prevents secret leakage to spawned MCP servers.
+- **Supply chain:** all GitHub Actions pinned by 40-char SHA across `release.yml`, `security.yml`, `supply-chain.yml`, `validate.yml`. pip-audit (2.7.0), bandit (1.7.10), build (1.2.2.post1), twine (6.0.1) version-pinned. `|| true` removed from validate.yml pip-audit.
+
+### Architecture
+- **CompiledPipeline deleted:** orphaned class removed from `runtime/middleware.py`, `runtime/__init__.py`, and tests. Only Pattern 4 (flat array + iterative closure) remains.
+- **Kernel/KernelBuilder exports:** added to `runtime/__init__.py` `__all__`.
+- **KernelBuilder.with_probity():** added; `build()` syncs probity to kernel facade + policy_mgr.
+- **Kernel middleware:** `_act_via_middleware()` now preserves full denial payload (reason, gate, decision, detail) instead of dropping it.
+- **JsonFileStorage:** uses `RLock` (was `Lock`); `flush()` does atomic temp-file + `os.replace()`.
+- **_BoundedThreadingHTTPServer:** dashboard thread pool bounded by `Semaphore`.
+
+### Performance
+- **telemetry `summary()`:** tail-read with `deque(maxlen=max_lines)` (was full-file read).
+- **metrics `_quantile()`:** accepts optional pre-sorted `sorted_values`; `_samples()` sorts once.
+- **learning_loop:** batch persist with `_dirty`/`_persist_counter` (threshold=100); `flush()` method added.
+
+### QA / Tests
+- **Coverage:** `fail_under` raised from 80% → 95% across `pyproject.toml`, `aizee_cli.py`, `eval/harness.py`, `release.yml`, `validate.yml`, `CONTRIBUTING.md`, `workflows/testing-standards.md`.
+- **New test package:** `aizee_mcp/tests/` with `test_mcp_command_validation.py` (shell metachar + allowlist + injection tests).
+- **packaging exclude + mypy overrides:** `aizee_mcp.tests*` and `eval.tests*` added.
+- **psutil:** moved from `[dev]` to main `dependencies`.
+- **Test count:** 3865 tests (was 3561).
+
+### Docs
+- **Counts synced:** 109 modules / 110 skills / 54 workflows / 197 tech-stack / 3865 tests across AGENTS.md, README.md, README-AR.md, spec.md, global-workflow.md.
+- **Stale 80% coverage references:** fixed in CONTRIBUTING.md, testing-standards.md.
+- **Garbled tree characters:** fixed in AGENTS.md package-layout block.
+- **Broken BEL char (0x07):** fixed in `.windsurfrules`.
+- **global-roles.md:** 29 personas (7 added: MARKETING, GROWTH, BRAND, EMAIL, SOCIAL, CRO, SALES).
+- **scripts/update_aizee.bat:** sync list expanded (rules/, .devin/, .github/, installer/, root files).
+
 ## [5.10.0] - 2026-08-30 (Dashboard Settings Panel + Schema Migration Framework)
 
 ### Dashboard Settings Panel (new UI tab)

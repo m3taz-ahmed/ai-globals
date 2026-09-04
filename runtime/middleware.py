@@ -1,23 +1,17 @@
-"""Middleware pipeline and compiled enhancer pipeline for aiZee runtime.
+﻿"""Middleware pipeline for aiZee runtime.
 
-Implements two architectural patterns:
-
-Pattern 4 (from tRPC): Flat middleware array + recursive ``callRecursive``
-execution. Middlewares are stored as a flat list and executed via a single
-recursive function where each middleware calls ``next()`` to recurse to the
-next index. Errors are caught at each level and wrapped into
-``MiddlewareResult(ok=False, error)`` — the chain never raises.
-
-Pattern 5 (from NestJS): Pre-compiled enhancer pipeline. Guards, interceptors,
-and pipes are registered at configuration time and compiled into a single
-execution chain once, then executed per-request without rebuilding.
+Implements Pattern 4 (from tRPC): Flat middleware array + recursive
+``callRecursive`` execution. Middlewares are stored as a flat list and
+executed via a single recursive function where each middleware calls
+``next()`` to recurse to the next index. Errors are caught at each level
+and wrapped into ``MiddlewareResult(ok=False, error)`` — the chain never
+raises.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Generic, TypeVar
 
 from runtime.schemas import AizeeError, ErrorSeverity
@@ -68,6 +62,12 @@ Middleware = Callable[[ActionContext, NextFunction], MiddlewareResult[Any]]
 HandlerFn = Callable[[ActionContext], MiddlewareResult[Any]]
 
 
+def _truncate_cause(text: str, limit: int = 500) -> str:
+    if len(text) > limit:
+        return text[:limit] + "...[truncated]"
+    return text
+
+
 def normalize_error(cause: BaseException) -> AizeeError:
     """Convert any thrown value into an AizeeError.
 
@@ -79,7 +79,7 @@ def normalize_error(cause: BaseException) -> AizeeError:
         return cause
     return AizeeError(
         error_code="INTERNAL",
-        message=str(cause) or cause.__class__.__name__,
+        message=_truncate_cause(str(cause) or cause.__class__.__name__),
         severity=ErrorSeverity.HIGH,
     )
 
@@ -111,201 +111,45 @@ class MiddlewarePipeline:
     ) -> MiddlewareResult[Any]:
         """Execute the middleware chain with ``handler`` as the terminal step.
 
-        Uses a recursive ``callRecursive`` function: each middleware calls
-        ``next()`` to recurse to the next index. When the index exceeds the
-        array length, the terminal ``handler`` is invoked.
+        Iterative loop (no recursion): each middleware receives a ``next()``
+        closure that advances an explicit index stack, avoiding RecursionError
+        on long chains.
         """
         middlewares = self._middlewares
 
-        def call_recursive(index: int) -> MiddlewareResult[Any]:
+        def _handler_call() -> MiddlewareResult[Any]:
             try:
-                if index >= len(middlewares):
-                    return handler(context)
-                mw = middlewares[index]
-
-                def next_fn() -> MiddlewareResult[Any]:
-                    return call_recursive(index + 1)
-
-                return mw(context, next_fn)
+                return handler(context)
             except AizeeError as e:
                 return MiddlewareResult(ok=False, error=e)
-            except Exception as e:  # intentional: wrap any error into MiddlewareResult
+            except Exception as e:
                 return MiddlewareResult(ok=False, error=normalize_error(e))
 
-        return call_recursive(0)
+        # Iteratively compose the onion chain backwards (no recursive dispatcher).
+        nxt: Callable[[], MiddlewareResult[Any]] = _handler_call
+        for rev in range(len(middlewares) - 1, -1, -1):
+            mw = middlewares[rev]
+            prev_nxt = nxt
 
+            def _make_call(
+                m: Middleware = mw,
+                n: Callable[[], MiddlewareResult[Any]] = prev_nxt,
+            ) -> Callable[[], MiddlewareResult[Any]]:
+                def _call() -> MiddlewareResult[Any]:
+                    try:
+                        return m(context, n)
+                    except AizeeError as e:
+                        return MiddlewareResult(ok=False, error=e)
+                    except Exception as e:
+                        return MiddlewareResult(ok=False, error=normalize_error(e))
 
-# -- Pattern 5: Pre-Compiled Enhancer Pipeline (NestJS) --------------------
+                return _call
 
+            nxt = _make_call()
+        try:
+            return nxt()
+        except AizeeError as e:
+            return MiddlewareResult(ok=False, error=e)
+        except Exception as e:
+            return MiddlewareResult(ok=False, error=normalize_error(e))
 
-class EnhancerType(str, Enum):
-    """Types of enhancers in the NestJS-style pipeline."""
-
-    GUARD = "guard"
-    INTERCEPTOR = "interceptor"
-    PIPE = "pipe"
-
-
-@dataclass
-class EnhancerMetadata:
-    """Metadata describing a registered enhancer.
-
-    Attributes:
-        enhancer_type: The type of enhancer (guard/interceptor/pipe).
-        priority: Execution priority (lower runs first).
-        handler: The enhancer callable.
-    """
-
-    enhancer_type: EnhancerType
-    priority: int
-    handler: Callable[..., Any]
-
-
-# Enhancer callable signatures.
-GuardFn = Callable[[ActionContext], bool]
-InterceptorFn = Callable[[ActionContext, NextFunction], MiddlewareResult[Any]]
-PipeFn = Callable[[ActionContext], ActionContext]
-
-
-def _wrap_interceptor(
-    interceptor: InterceptorFn,
-    context: ActionContext,
-    next_fn: Callable[[], MiddlewareResult[Any]],
-) -> Callable[[], MiddlewareResult[Any]]:
-    """Wrap an interceptor around a next() callable (onion model)."""
-
-    def wrapped() -> MiddlewareResult[Any]:
-        return interceptor(context, next_fn)
-
-    return wrapped
-
-
-class CompiledPipeline:
-    """Pre-compiled enhancer pipeline built once at registration.
-
-    Inspired by NestJS's ``RouterExecutionContext.create()``: the enhancer
-    chain (pipes → guards → interceptors → handler) is built once at
-    registration time and executed per-request without rebuilding.
-
-    - **Pipes**: input transform/validate. Each pipe receives the context
-      and returns a (possibly transformed) context for the next stage.
-    - **Guards**: binary allow/deny. If any guard returns False, the
-      pipeline short-circuits with ``MiddlewareResult(ok=False, error)``.
-    - **Interceptors**: before/after wrappers. Each interceptor receives
-      the context and a ``next()`` callable, analogous to tRPC middleware.
-    - **Handler**: the terminal function that produces the result.
-
-    Mapping to existing aiZee modules:
-    - Guards = ``guardian.py`` (binary allow/deny)
-    - Interceptors = ``audit.py`` + ``budget.py`` (before/after observation)
-    - Pipes = ``schemas.py`` validation (input transform/validate)
-    """
-
-    def __init__(self) -> None:
-        self._guards: list[GuardFn] = []
-        self._interceptors: list[InterceptorFn] = []
-        self._pipes: list[PipeFn] = []
-        self._handler: HandlerFn | None = None
-        self._compiled: bool = False
-        self._compiled_fn: Callable[[ActionContext], MiddlewareResult[Any]] | None = None
-
-    def add_guard(self, fn: GuardFn) -> None:
-        """Register a guard (binary allow/deny)."""
-        self._guards.append(fn)
-        self._compiled = False
-
-    def add_interceptor(self, fn: InterceptorFn) -> None:
-        """Register an interceptor (before/after wrapper)."""
-        self._interceptors.append(fn)
-        self._compiled = False
-
-    def add_pipe(self, fn: PipeFn) -> None:
-        """Register a pipe (input transform/validate)."""
-        self._pipes.append(fn)
-        self._compiled = False
-
-    def set_handler(self, fn: HandlerFn) -> None:
-        """Set the terminal handler that produces the final result."""
-        self._handler = fn
-        self._compiled = False
-
-    @property
-    def is_compiled(self) -> bool:
-        """True if the pipeline has been compiled into a single callable."""
-        return self._compiled
-
-    @property
-    def guard_count(self) -> int:
-        return len(self._guards)
-
-    @property
-    def interceptor_count(self) -> int:
-        return len(self._interceptors)
-
-    @property
-    def pipe_count(self) -> int:
-        return len(self._pipes)
-
-    def compile(self) -> None:
-        """Pre-build the enhancer chain into a single callable.
-
-        After compilation, ``execute()`` runs the pre-built function without
-        rebuilding the chain on each call.
-        """
-        if self._handler is None:
-            raise AizeeError(
-                error_code="PIPELINE_NOT_CONFIGURED",
-                message="Cannot compile pipeline without a handler",
-                severity=ErrorSeverity.HIGH,
-            )
-        guards = list(self._guards)
-        pipes = list(self._pipes)
-        interceptors = list(self._interceptors)
-        handler = self._handler
-
-        def run(context: ActionContext) -> MiddlewareResult[Any]:
-            try:
-                # 1. Pipes — transform/validate input (NestJS pipes run first)
-                ctx = context
-                for pipe in pipes:
-                    ctx = pipe(ctx)
-
-                # 2. Guards — binary allow/deny (short-circuit on False)
-                for guard in guards:
-                    if not guard(ctx):
-                        return MiddlewareResult(
-                            ok=False,
-                            error=AizeeError(
-                                error_code="GUARD_DENIED",
-                                message="Guard denied access",
-                                severity=ErrorSeverity.HIGH,
-                                context={"action_type": ctx.action_type},
-                            ),
-                        )
-
-                # 3. Interceptors — onion model wrapping the handler
-                def terminal() -> MiddlewareResult[Any]:
-                    return handler(ctx)
-
-                chain: Callable[[], MiddlewareResult[Any]] = terminal
-                for interceptor in reversed(interceptors):
-                    chain = _wrap_interceptor(interceptor, ctx, chain)
-                return chain()
-            except AizeeError as e:
-                return MiddlewareResult(ok=False, error=e)
-            except Exception as e:  # intentional: wrap any error into MiddlewareResult
-                return MiddlewareResult(ok=False, error=normalize_error(e))
-
-        self._compiled_fn = run
-        self._compiled = True
-
-    def execute(self, context: ActionContext) -> MiddlewareResult[Any]:
-        """Execute the pre-compiled pipeline.
-
-        If the pipeline has not been compiled yet, compiles it on first call
-        (lazy compilation). Subsequent calls use the cached compiled function.
-        """
-        if not self._compiled or self._compiled_fn is None:
-            self.compile()
-        assert self._compiled_fn is not None
-        return self._compiled_fn(context)

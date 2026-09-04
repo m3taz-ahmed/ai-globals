@@ -7,6 +7,7 @@ tool registration to the modules in ``aizee_mcp.tools``.
 
 from __future__ import annotations
 
+import functools
 import importlib
 import json
 import logging
@@ -67,7 +68,7 @@ def _auto_discover_tools() -> bool:
         try:
             mod = importlib.import_module(f"aizee_mcp.tools.{name}")
         except Exception:
-            logger.debug("Failed to import MCP tool module %s", name, exc_info=True)
+            logger.warning("Skipping MCP tool module %s: import failed", name, exc_info=True)
             continue
         # Prefer a no-arg ``register`` alias; fall back to ``register_*_tools``.
         register_fn = getattr(mod, "register", None)
@@ -84,24 +85,34 @@ def _auto_discover_tools() -> bool:
                 register_fn(mcp)
                 registered += 1
             except Exception:
-                logger.debug("Failed to register tools from module %s", name, exc_info=True)
+                logger.warning("Skipping MCP tool module %s: registration failed", name, exc_info=True)
                 continue
+    if registered == 0:
+        logger.warning("MCP auto-discovery registered 0 tool modules; using manual fallback")
     return registered > 0
 
 
 def _register_tools_fallback() -> None:
     """Manual registration fallback when auto-discovery fails."""
-    register_memory_tools(mcp)
-    register_workflow_tools(mcp)
-    register_policy_tools(mcp)
-    register_context_tools(mcp)
-    register_seo_tools(mcp)
-    register_ads_tools(mcp)
-    register_analytics_tools(mcp)
-    register_cro_tools(mcp)
-    register_email_tools(mcp)
-    register_freelance_tools(mcp)
-    register_social_tools(mcp)
+    for register_fn in (
+        register_memory_tools,
+        register_workflow_tools,
+        register_policy_tools,
+        register_context_tools,
+        register_seo_tools,
+        register_ads_tools,
+        register_analytics_tools,
+        register_cro_tools,
+        register_email_tools,
+        register_freelance_tools,
+        register_social_tools,
+    ):
+        if register_fn is None:
+            continue
+        try:
+            register_fn(mcp)
+        except Exception:
+            logger.warning("Fallback registration failed for %s", getattr(register_fn, "__name__", "?"), exc_info=True)
 
 
 # Auto-discover and register all tool modules; fall back to manual registration.
@@ -114,6 +125,12 @@ _register_plugins()
 # These reference the functions registered on the mcp instance.
 # The tool functions are closures inside the register_* functions, so we
 # expose them via the tool manager for backward compatibility.
+#
+# WARNING: ``mcp._tool_manager`` and ``mcp.add_tool`` are private FastMCP
+# internals. Monkey-patching them (see ``_register_tools_fallback`` and
+# the RBAC wrapper below) creates fragility against SDK updates. When
+# FastMCP exposes official permission hooks / tool decorators, migrate
+# to those and remove these private-API references.
 _tool_manager = mcp._tool_manager
 
 
@@ -123,6 +140,9 @@ def _get_tool_fn(name: str) -> Any:
     return tool.fn if tool else None
 
 
+_GUARDED_TOOL_NAMES: set[str] = set()
+
+
 def _wrap_tool_with_rbac(tool: Any) -> None:
     """Wrap a registered tool's callable with an RBAC permission guard.
 
@@ -130,36 +150,42 @@ def _wrap_tool_with_rbac(tool: Any) -> None:
     FastMCP) is left untouched; only the callable executed at call time is
     replaced. The permission check is fail-closed (default-deny): if it raises,
     the call is denied so a corrupted RBAC config cannot silently bypass gates.
+    Already-guarded tools are skipped (tracked in ``_GUARDED_TOOL_NAMES``).
     """
+    tool_name = str(getattr(tool, "name", "?"))
+    if tool_name in _GUARDED_TOOL_NAMES:
+        return
     original_fn = tool.fn
-    tool_name = tool.name
     is_async = bool(getattr(tool, "is_async", False))
 
     def _denied() -> str:
         return json.dumps({"ok": False, "error": "permission denied"})
 
     if is_async:
-        async def _guarded_async(**kwargs: Any) -> Any:
+        @functools.wraps(original_fn)
+        async def _guarded_async(*args: Any, **kwargs: Any) -> Any:
             try:
                 if not check_tool_permission(tool_name):
                     return _denied()
             except Exception as exc:
                 logger.warning("RBAC check failed for %s (fail-closed): %s", tool_name, exc)
                 return _denied()
-            return await original_fn(**kwargs)
+            return await original_fn(*args, **kwargs)
         guarded: Any = _guarded_async
     else:
-        def _guarded_sync(**kwargs: Any) -> Any:
+        @functools.wraps(original_fn)
+        def _guarded_sync(*args: Any, **kwargs: Any) -> Any:
             try:
                 if not check_tool_permission(tool_name):
                     return _denied()
             except Exception as exc:
                 logger.warning("RBAC check failed for %s (fail-closed): %s", tool_name, exc)
                 return _denied()
-            return original_fn(**kwargs)
+            return original_fn(*args, **kwargs)
         guarded = _guarded_sync
 
     tool.fn = guarded
+    _GUARDED_TOOL_NAMES.add(tool_name)
 
 
 def _apply_rbac_guard() -> None:
@@ -171,6 +197,26 @@ def _apply_rbac_guard() -> None:
 
 
 _apply_rbac_guard()
+
+
+# Guard tools added at runtime (plugins, late registration): patch add_tool
+# so anything registered after import is guarded too. Previously late-added
+# tools silently missed RBAC entirely.
+_original_add_tool = mcp.add_tool
+
+
+def _guarded_add_tool(tool: Any, *args: Any, **kwargs: Any) -> Any:
+    result = _original_add_tool(tool, *args, **kwargs)
+    try:
+        added = _tool_manager.get_tool(getattr(tool, "name", ""))
+        if added is not None:
+            _wrap_tool_with_rbac(added)
+    except Exception as exc:
+        logger.warning("RBAC guard failed for late-added tool: %s", exc)
+    return result
+
+
+mcp.add_tool = _guarded_add_tool
 
 
 

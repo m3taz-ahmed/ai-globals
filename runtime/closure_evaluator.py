@@ -35,6 +35,13 @@ from typing import Any
 from runtime.schemas import AizeeError, ErrorSeverity
 
 
+class _MISSING:
+    """Sentinel class distinguishing "no value" from explicit ``None``.
+
+    Identity-compared (``is _MISSING``); never instantiated.
+    """
+
+
 class ClosureResolutionError(AizeeError):
     """Raised when a closure parameter cannot be resolved."""
 
@@ -52,6 +59,11 @@ class ClosureEvaluator:
 
     Inspired by Filament's ``EvaluatesClosures`` trait. Resolves closure
     parameters by name, type, default, or evaluation identifier.
+
+    WARNING: ``evaluate`` invokes the given callable with resolved args.
+    Only pass trusted closures — arbitrary callables execute with the
+    caller's privileges (code-execution risk if closures come from
+    untrusted input).
 
     Attributes:
         evaluation_identifier: Name that maps to ``self`` if a closure
@@ -109,13 +121,13 @@ class ClosureEvaluator:
 
     def _try_named(self, param_name: str, named: dict[str, Any]) -> Any:
         """Step 1: Named injection (exact parameter name match)."""
-        return named.get(param_name) if param_name in named else None
+        return named.get(param_name, _MISSING)
 
     def _try_typed(self, annotation: Any, typed: dict[Any, Any]) -> Any:
         """Step 2: Typed injection (exact annotation match)."""
         if annotation is not inspect.Parameter.empty and annotation in typed:
             return typed[annotation]
-        return None
+        return _MISSING
 
     def _try_default_by_name(self, param_name: str) -> Any:
         """Step 3: Default dependency by name (subclass override)."""
@@ -125,13 +137,13 @@ class ClosureEvaluator:
         """Step 4: Default dependency by type (subclass override)."""
         if annotation is not inspect.Parameter.empty:
             return self.resolve_default_by_type(annotation)
-        return None
+        return _MISSING
 
     def _try_evaluation_identifier(self, param_name: str) -> Any:
         """Step 5: Evaluation identifier (if parameter name matches)."""
         if self.evaluation_identifier and param_name == self.evaluation_identifier:
             return self
-        return None
+        return _MISSING
 
     def _resolve_single_param(
         self,
@@ -152,35 +164,32 @@ class ClosureEvaluator:
             self._try_default_by_type(annotation),
             self._try_evaluation_identifier(param_name),
         ):
-            if value is not None:
+            if value is not _MISSING:
                 return value
 
         # Step 6: Parameter default value (if available)
         if param.default is not inspect.Parameter.empty:
             return param.default
 
-        # Step 7: None (if parameter is optional: VAR_POSITIONAL, VAR_KEYWORD)
-        if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
-            return None
-
-        # Step 8: Raise resolution error
+        # Step 7: Raise resolution error (VAR_* kinds are skipped in
+        # _resolve_dependencies, so no VAR fallback is reachable here).
         raise ClosureResolutionError(param_name, closure_name)
 
     def resolve_default_by_name(self, param_name: str) -> Any:
         """Override in subclass to provide default dependencies by name.
 
-        Return ``None`` to indicate no default found (not a valid dependency).
-        Use a sentinel object if ``None`` is a valid default value.
+        Return ``_MISSING`` to indicate no default found (not a valid dependency).
+        Explicit ``None`` is a valid dependency and is returned as-is.
         """
-        return None
+        return _MISSING
 
     def resolve_default_by_type(self, param_type: type) -> Any:
         """Override in subclass to provide default dependencies by type.
 
-        Return ``None`` to indicate no default found (not a valid dependency).
-        Use a sentinel object if ``None`` is a valid default value.
+        Return ``_MISSING`` to indicate no default found (not a valid dependency).
+        Explicit ``None`` is a valid dependency and is returned as-is.
         """
-        return None
+        return _MISSING
 
 
 class GuardianClosureEvaluator(ClosureEvaluator):
@@ -244,5 +253,10 @@ class GuardianClosureEvaluator(ClosureEvaluator):
             "user_id": attrs.get("user_id") or ctx.get("user_id"),
             "tenant_id": attrs.get("tenant_id") or ctx.get("tenant_id"),
         }
-        value = defaults.get(param_name, self._SENTINEL)
-        return None if value is self._SENTINEL else value
+        if param_name not in defaults:
+            return _MISSING
+        value = defaults[param_name]
+        # Fall through on None so later strategies/defaults can still resolve.
+        if value is None:
+            return _MISSING
+        return value

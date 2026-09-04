@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from memory.simhash import SimHashIndex
+from memory.simhash import SimHashIndex, compute_simhash, hamming_distance
 
 
 @dataclass
@@ -56,26 +56,32 @@ class ConsolidationEngine:
     ) -> ConsolidationReport:
         """Find and optionally merge duplicate entities.
 
-        Uses SimHash for near-duplicate detection.
+        Uses SimHash for near-duplicate detection. A dry run never touches
+        the shared ``simhash_index`` (previously it polluted the index, so
+        a second call found the first call's dry-run entries).
         """
         report = ConsolidationReport(operation="dedupe", dry_run=dry_run)
         seen: dict[str, str] = {}  # simhash → first entry_id
         for entry in entries:
-            entry_id = entry.get("id", "")
+            entry_id = str(entry.get("id", ""))
             content = entry.get("content", "")
-            sh = self.simhash_index.add(entry_id, content)
-            for existing_id, existing_hash in seen.items():
-                from memory.simhash import hamming_distance
-                if hamming_distance(sh, existing_hash) <= self.similarity_threshold:
-                    report.merged_count += 1
-                    report.details.append({
-                        "duplicate": entry_id,
-                        "original": existing_id,
-                        "action": "would_merge" if dry_run else "merged",
-                    })
-                    break
-            else:
-                seen[entry_id] = sh
+            if not isinstance(content, str):
+                content = str(content)
+            sh = compute_simhash(content)
+            if sh:
+                if not dry_run:
+                    self.simhash_index.add_hash(entry_id, sh)
+                for existing_id, existing_hash in seen.items():
+                    if hamming_distance(sh, existing_hash) <= self.similarity_threshold:
+                        report.merged_count += 1
+                        report.details.append({
+                            "duplicate": entry_id,
+                            "original": existing_id,
+                            "action": "would_merge" if dry_run else "merged",
+                        })
+                        break
+                else:
+                    seen[entry_id] = sh
             report.examined += 1
         return report
 
@@ -90,6 +96,8 @@ class ConsolidationEngine:
         report = ConsolidationReport(operation="summarize", dry_run=dry_run)
         for entry in entries:
             content = entry.get("content", "")
+            if not isinstance(content, str):
+                content = str(content)
             if len(content) > max_length:
                 report.summarized_count += 1
                 report.details.append({

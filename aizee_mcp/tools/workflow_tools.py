@@ -58,11 +58,25 @@ def register_workflow_tools(mcp: FastMCP) -> None:
 
         results: list[dict[str, Any]] = fts_results
         seen_files = {item["file"] for item in results}
-        for p in r.glob("rules/*.md"):
-            rel = str(p.relative_to(r))
+        # Capped scan: one unreadable/oversize file must not crash the tool
+        # or stall the server on huge rules dirs.
+        scanned = 0
+        for p in sorted(r.glob("rules/*.md")):
+            if scanned >= 200:
+                break
+            scanned += 1
+            try:
+                if p.stat().st_size > 200_000:
+                    continue
+                rel = str(p.relative_to(r))
+            except (OSError, ValueError):
+                continue
             if rel in seen_files:
                 continue
-            content = p.read_text(encoding="utf-8")
+            try:
+                content = p.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
             frontmatter, body = parse_frontmatter(content)
             if not matches_context(frontmatter, active_context):
                 continue
@@ -74,8 +88,13 @@ def register_workflow_tools(mcp: FastMCP) -> None:
     def run_workflow(id: str, context: dict[str, Any] | None = None) -> str:
         """Run a workflow by ID with optional context."""
         if not is_safe_name(id):
-            return json.dumps({"error": f"Invalid workflow ID: {id!r}"})
-        result = kernel().run_workflow(id, context or {})
+            return json.dumps({"ok": False, "error": f"Invalid workflow ID: {id!r}"})
+        clean = dict(context or {})
+        # Persona keys are server-routed, never caller-supplied: strip them
+        # so MCP callers cannot spoof persona/skill/lords via context.
+        for spoofable in ("persona", "personas", "skill", "skills", "lords"):
+            clean.pop(spoofable, None)
+        result = kernel().run_workflow(id, clean)
         return json.dumps(result, indent=2, default=str)
 
     @mcp.tool()
@@ -141,7 +160,16 @@ def register_workflow_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def compile_rule_files(globs: list[str] | None = None) -> str:
         """Compile rule/skill/workflow markdown files into Rule IR."""
-        rules = compile_rules(root(), globs=globs)
+        if globs is not None:
+            if not isinstance(globs, list) or len(globs) > 50:
+                return json.dumps({"ok": False, "error": "globs must be a list of at most 50 patterns"})
+            for g in globs:
+                if not isinstance(g, str) or not g or len(g) > 256 or ".." in g or g.startswith(("/", "\\")):
+                    return json.dumps({"ok": False, "error": f"Invalid glob pattern: {g!r}"})
+        try:
+            rules = compile_rules(root(), globs=globs)
+        except Exception as exc:
+            return json.dumps({"ok": False, "error": f"Rule compilation failed: {exc!s}"})
         return json.dumps(
             [{"file": r.file, "obj": r.obj, "rules_count": len(r.rules)} for r in rules],
             indent=2,
@@ -153,17 +181,27 @@ def register_workflow_tools(mcp: FastMCP) -> None:
         """Execute a multi-step plan across MCP tools."""
         if not isinstance(steps, list) or not steps:
             return json.dumps({"ok": False, "error": "steps must be a non-empty list"})
+        if len(steps) > 50:
+            return json.dumps({"ok": False, "error": "steps must contain at most 50 entries"})
         try:
             plan = Plan(
                 id="mcp-plan",
-                steps=[Step(**s) for s in steps],
+                steps=[Step(**s) for s in steps if isinstance(s, dict)],
             )
         except Exception as exc:
             return json.dumps({"ok": False, "error": f"Invalid plan: {exc!s}"})
+        if not plan.steps:
+            return json.dumps({"ok": False, "error": "steps must be a non-empty list of objects"})
         agent = McpAgent("mcp-server")
         orchestrator = McpOrchestrator(agent)
 
-        result = asyncio.run(orchestrator.execute(plan))
+        try:
+            running = asyncio.get_running_loop()
+        except RuntimeError:
+            running = None
+        if running is not None:
+            return json.dumps({"ok": False, "error": "run_mcp_plan cannot nest inside a running event loop"})
+        result = asyncio.run(orchestrator.execute_async(plan))
         return json.dumps(
             {step: {"status": r.status.value, "output": r.output, "error": r.error} for step, r in result.items()},
             indent=2,

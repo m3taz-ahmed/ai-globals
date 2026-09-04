@@ -9,9 +9,17 @@
 #
 # List the names of tools that should be restricted to admins. Tool names that
 # do not exist in the running server are simply ignored.
+# NOTE: names must match the actual @mcp.tool() function names (verified
+# 2026-09-04). Previous entries `saga_run`, `chat`, `memory_search` did not
+# exist and were silently ignored — fixed to the real names below.
 admin_required:
   - run_workflow
-  - saga_run
-  - chat
-  - memory_search
   - run_mcp_plan
+  - search_memory
+  - add_memory
+  - ingest_memory
+  - invalidate_memory
+  - email_send
+  - social_publish
+  - contract_create
+  - invoice_create

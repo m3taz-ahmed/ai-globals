@@ -59,28 +59,54 @@ class LocalResponder:
                 "rules · skills · tech stack. I answer from live kernel state — "
                 "I am not an LLM."
             )
-        if _INTENT_STATUS.search(message):
-            return _PREFIX + self._status_reply(ctx)
+        # Order: longer/more-specific keywords first (budget status before status).
         if _INTENT_BUDGET.search(message):
-            budgets = ctx.get("budgets") or []
+            budgets = ctx.get("budgets")
+            if isinstance(budgets, dict):
+                items = [f"{k}: {v}" for k, v in budgets.items()]
+                if not items:
+                    return _PREFIX + "No budget limits are configured (unlimited mode)."
+                return _PREFIX + f"{len(items)} active budget scope(s): {', '.join(items)}."
+            if not isinstance(budgets, list):
+                budgets = []
             if not budgets:
                 return _PREFIX + "No budget limits are configured (unlimited mode)."
             return _PREFIX + f"{len(budgets)} active budget scope(s): {', '.join(map(str, budgets))}."
+        if _INTENT_STATUS.search(message):
+            return _PREFIX + self._status_reply(ctx)
         if _INTENT_WORKFLOW.search(message):
-            workflows = ctx.get("workflows") or []
-            sample = ", ".join(workflows[:5])
+            workflows = ctx.get("workflows")
+            if isinstance(workflows, dict):
+                workflows = list(workflows.keys())
+            if not isinstance(workflows, list):
+                workflows = []
+            sample = ", ".join(map(str, workflows[:5]))
             more = f" … +{len(workflows) - 5} more" if len(workflows) > 5 else ""
             return _PREFIX + f"{len(workflows)} registered workflow(s): {sample}{more}."
         if _INTENT_RULES.search(message):
-            rules = ctx.get("rules") or []
-            guardian = ctx.get("guardian_rules") or []
+            rules = ctx.get("rules")
+            if isinstance(rules, dict):
+                rules = list(rules.keys())
+            if not isinstance(rules, list):
+                rules = []
+            guardian = ctx.get("guardian_rules")
+            if isinstance(guardian, dict):
+                guardian = list(guardian.keys())
+            if not isinstance(guardian, list):
+                guardian = []
             return _PREFIX + f"{len(rules)} policy rule(s), {len(guardian)} guardian rule(s) loaded."
         if _INTENT_SKILLS.search(message):
-            skills = ctx.get("skills") or []
+            skills = ctx.get("skills")
+            if isinstance(skills, dict):
+                skills = list(skills.keys())
+            if not isinstance(skills, list):
+                skills = []
             return _PREFIX + f"{len(skills)} skill(s) available via 'aizee skill list'."
         if _INTENT_STACK.search(message):
-            stack = ctx.get("tech_stack") or {}
-            names = ", ".join(sorted(stack)) or "none detected"
+            stack = ctx.get("tech_stack")
+            if not isinstance(stack, dict):
+                stack = {}
+            names = ", ".join(sorted(map(str, stack))) or "none detected"
             return _PREFIX + f"Detected tech stack: {names}."
         return (
             _PREFIX + "No LLM backend configured — I answer operational intents only "
@@ -90,11 +116,18 @@ class LocalResponder:
     def _status_reply(self, ctx: dict[str, Any]) -> str:
         if not ctx:
             return "Kernel state unavailable (provider not wired or failed)."
+        def _count(key: str) -> int:
+            val = ctx.get(key)
+            if isinstance(val, dict):
+                return len(val)
+            if isinstance(val, list):
+                return len(val)
+            return 0
         parts = [
             f"v{ctx.get('version', '?')}",
-            f"{len(ctx.get('workflows') or [])} workflows",
-            f"{len(ctx.get('rules') or [])} policy rules",
-            f"{len(ctx.get('personas') or [])} personas",
-            f"{len(ctx.get('skills') or [])} skills",
+            f"{_count('workflows')} workflows",
+            f"{_count('rules')} policy rules",
+            f"{_count('personas')} personas",
+            f"{_count('skills')} skills",
         ]
         return "Status: " + " · ".join(parts) + "."

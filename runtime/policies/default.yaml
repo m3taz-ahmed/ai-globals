@@ -43,6 +43,6 @@ rules:
     description: No unauthorized server actions.
 
   - name: allow-status-reads
-    condition: "type in ['git status', 'git diff', 'git log', 'ls', 'pwd']"
+    condition: "type in ['git status', 'git diff', 'git log', 'ls', 'pwd'] or command in ['git status', 'git diff', 'git log', 'ls', 'pwd']"
     action: allow
-    description: Safe read-only git/filesystem commands.
+    description: Safe read-only git/filesystem commands (exact match only — substring would over-match).

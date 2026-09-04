@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -9,6 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from runtime.kernel import Kernel
+
+_AGENT_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
 
 
 @dataclass
@@ -42,6 +45,10 @@ class AgentPool:
     ) -> SubAgent:
         from runtime.kernel import Kernel
 
+        if not isinstance(agent_id, str) or _AGENT_ID_RE.fullmatch(agent_id) is None:
+            raise ValueError(f"Invalid agent_id {agent_id!r}: use [A-Za-z0-9_.-], max 64 chars")
+        if not isinstance(scope, list) or not all(isinstance(s, str) and s for s in scope):
+            raise ValueError("scope must be a non-empty list of action-type strings")
         root = project_root or self.os_root / "state" / "agents" / agent_id
         root.mkdir(parents=True, exist_ok=True)
         for sub in ("runtime/policies", "state", "brain"):

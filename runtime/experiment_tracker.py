@@ -30,7 +30,14 @@ def _two_proportion_z(
     p_a = a_conv / a_vis
     p_b = b_conv / b_vis
     pooled = (a_conv + b_conv) / (a_vis + b_vis)
-    se = math.sqrt(pooled * (1.0 - pooled) * (1.0 / a_vis + 1.0 / b_vis))
+    pooled_se = math.sqrt(pooled * (1.0 - pooled) * (1.0 / a_vis + 1.0 / b_vis))
+    if pooled_se == 0 or a_conv == 0 or b_conv == 0:
+        # Pooled SE collapses to 0 when either arm has 0 conversions;
+        # fall back to unpooled SE so the z-score stays meaningful.
+        unpooled = math.sqrt(p_a * (1.0 - p_a) / a_vis + p_b * (1.0 - p_b) / b_vis)
+        se = unpooled
+    else:
+        se = pooled_se
     z = 0.0 if se == 0 else (p_a - p_b) / se
     p_value = 2.0 * (1.0 - _normal_cdf(abs(z)))
     return p_a, p_b, z, p_value
@@ -82,6 +89,14 @@ class ABResult:
             "method": self.method,
         }
 
+    # Backward-compat: allow dict-style reads (result["p_a"]) for callers
+    # pinned to the old raw-dict return shape.
+    def __getitem__(self, key: str) -> Any:
+        return self.to_dict()[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.to_dict().get(key, default)
+
 
 def analyze_ab_test(
     a_conv: int,
@@ -90,7 +105,8 @@ def analyze_ab_test(
     b_vis: int,
     confidence: float = 0.95,
     method: str = "z_test",
-) -> dict[str, Any]:
+    expected_ratio: float = 0.5,
+) -> ABResult:
     """Analyze a two-variant A/B test.
 
     Args:
@@ -101,10 +117,13 @@ def analyze_ab_test(
         confidence: Confidence level (e.g. 0.95).
         method: ``"z_test"`` (default) or an advanced method. Requesting
             ``"cuped"`` or ``"bayesian"`` raises ``NotImplementedError``.
+        expected_ratio: Expected share for variant A in the SRM check
+            (default 0.5 for 50/50).
 
     Returns:
-        Dict with conversion rates, z, p-value, SRM diagnostics, and the
-        winning variant (``"A"``/``"B"``/``None``).
+        ABResult with conversion rates, z, p-value, SRM diagnostics, and the
+        winning variant (``"A"``/``"B"``/``None``). Use ``.to_dict()`` for
+        the legacy dict shape.
 
     Raises:
         ValidationError: on non-positive visitor counts, bad confidence,
@@ -135,7 +154,7 @@ def analyze_ab_test(
         )
 
     p_a, p_b, z, p_value = _two_proportion_z(a_conv, a_vis, b_conv, b_vis)
-    srm = _srm_p_value(a_vis, b_vis)
+    srm = _srm_p_value(a_vis, b_vis, expected_ratio)
     srm_ok = srm >= 0.01
     alpha = 1.0 - confidence
     significant = p_value < alpha
@@ -157,4 +176,9 @@ def analyze_ab_test(
         significant=significant,
         winner=winner,
         method=method,
-    ).to_dict()
+    )
+
+
+def analyze_ab_test_dict(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Backward-compat dict alias for :func:`analyze_ab_test`."""
+    return analyze_ab_test(*args, **kwargs).to_dict()

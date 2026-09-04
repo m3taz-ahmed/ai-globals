@@ -79,8 +79,46 @@ class TelemetryCollector:
         events: list[dict[str, Any]] = []
         if not self.log_path.exists():
             return events
+        # Tail-read: use a bounded deque to avoid loading the entire file
+        # into memory (prevents RAM bloat on large telemetry logs). The bound
+        # is generous (10x limit, min 1000) so sparse event types are still
+        # found without scanning the whole file.
+        from collections import deque
+        tail: deque[str] = deque(maxlen=max(limit * 10, 1000))
         with self.log_path.open("r", encoding="utf-8") as f:
-            for line in reversed(f.readlines()):
+            for line in f:
+                tail.append(line)
+        for line in reversed(tail):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event_type and data.get("type") != event_type:
+                continue
+            events.append(data)
+            if len(events) >= limit:
+                break
+        return events
+
+    def summary(self, max_lines: int = 50000) -> dict[str, Any]:
+        total_events = 0
+        by_type: dict[str, int] = {}
+        by_status: dict[str, int] = {}
+        total_tokens = 0
+        total_cost = 0.0
+        if self.log_path.exists():
+            from collections import deque
+
+            # Tail-read: only process the last ``max_lines`` lines to avoid
+            # O(file-size) I/O on large telemetry logs (up to 100 MB).
+            tail: deque[str] = deque(maxlen=max_lines)
+            with self.log_path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    tail.append(line)
+            for line in tail:
                 line = line.strip()
                 if not line:
                     continue
@@ -88,34 +126,11 @@ class TelemetryCollector:
                     data = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                if event_type and data.get("type") != event_type:
-                    continue
-                events.append(data)
-                if len(events) >= limit:
-                    break
-        return events
-
-    def summary(self) -> dict[str, Any]:
-        total_events = 0
-        by_type: dict[str, int] = {}
-        by_status: dict[str, int] = {}
-        total_tokens = 0
-        total_cost = 0.0
-        if self.log_path.exists():
-            with self.log_path.open("r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        data = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    total_events += 1
-                    by_type[data.get("type", "unknown")] = by_type.get(data.get("type", "unknown"), 0) + 1
-                    by_status[data.get("status", "unknown")] = by_status.get(data.get("status", "unknown"), 0) + 1
-                    total_tokens += data.get("tokens", 0)
-                    total_cost += data.get("cost", 0.0)
+                total_events += 1
+                by_type[data.get("type", "unknown")] = by_type.get(data.get("type", "unknown"), 0) + 1
+                by_status[data.get("status", "unknown")] = by_status.get(data.get("status", "unknown"), 0) + 1
+                total_tokens += data.get("tokens", 0)
+                total_cost += data.get("cost", 0.0)
         return {
             "total_events": total_events,
             "by_type": by_type,

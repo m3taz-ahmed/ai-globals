@@ -100,6 +100,20 @@ def _validate_webhook_url(url: str) -> bool:
     return True
 
 
+class _SsrfSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Re-validate every redirect target (SSRF guard for urlopen's follow)."""
+
+    def redirect_request(  # type: ignore[no-untyped-def]
+        self, req, fp, code, msg, headers, newurl,
+    ):
+        target = urllib.parse.urljoin(req.full_url, newurl)
+        if not _validate_webhook_url(target):
+            raise urllib.error.HTTPError(
+                req.full_url, code, f"redirect to {target!r} blocked by SSRF guard", headers, fp,
+            )
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 class ApprovalStatus(str, Enum):
     """Lifecycle of an approval request."""
 
@@ -179,7 +193,8 @@ class WebhookChannel(NotificationChannel):
         payload = json.dumps(request.to_dict()).encode("utf-8")
         req = urllib.request.Request(self.url, data=payload, headers=self.headers, method="POST")
         try:
-            urllib.request.urlopen(req, timeout=5)
+            opener = urllib.request.build_opener(_SsrfSafeRedirectHandler())
+            opener.open(req, timeout=5)
             return True
         except Exception as exc:
             _logger.debug("webhook notification failed: %s", exc, exc_info=True)
@@ -217,12 +232,13 @@ class ApprovalService:
         **metadata: Any,
     ) -> ApprovalRequest:
         """Create a new pending approval request."""
+        effective_ttl = ttl if ttl is not None else self.default_ttl
         req = ApprovalRequest(
             id=uuid.uuid4().hex,
             action=action,
             args=args,
             reason=reason,
-            expires_at=(time.time() + (ttl or self.default_ttl or 0)) if (ttl or self.default_ttl) else None,
+            expires_at=(time.time() + effective_ttl) if effective_ttl else None,
             metadata=metadata,
         )
         with self._lock:
@@ -287,8 +303,9 @@ class ApprovalService:
         return req
 
     def cancel(self, request_id: str) -> ApprovalRequest | None:
+        """Cancel a PENDING request. Non-pending requests cannot be cancelled."""
         req = self._get(request_id)
-        if req is None:
+        if req is None or req.status is not ApprovalStatus.PENDING:
             return None
         self._update_status(req, ApprovalStatus.CANCELLED)
         return req

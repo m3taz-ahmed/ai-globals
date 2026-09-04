@@ -16,8 +16,10 @@ from runtime.mcp_client import McpClient, parse_mcp_command
 
 
 @pytest.fixture(autouse=True)
-def _reset_mcp_state():
+def _reset_mcp_state(monkeypatch):
     """Reset module-level pools/flags between tests."""
+    # Allow 'echo' and other test commands not in the production allowlist.
+    monkeypatch.setenv("AIZEE_MCP_ALLOW_UNLISTED", "1")
     mcp_client._PROC_POOL.clear()
     mcp_client._PROC_INIT.clear()
     mcp_client._SEND_LOCKS.clear()

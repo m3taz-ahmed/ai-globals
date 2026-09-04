@@ -19,7 +19,9 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 import config
-from runtime.repository import BaseRepository
+from runtime.repository import (
+    BaseRepository,  # LAYERING NOTE: memory→runtime cross-layer dep; tracked for refactor
+)
 
 from .hybrid import HybridSearcher
 from .schema_contract import verify_schema_integrity
@@ -83,14 +85,21 @@ def _sign_memory(
     return hmac.new(key.encode("utf-8"), payload, sha256).hexdigest()
 
 
-def _deterministic_id(content: str, kind: str, source: str = "") -> str:
+def _deterministic_id(
+    content: str,
+    kind: str,
+    source: str = "",
+    user_id: str | None = None,
+    agent_id: str | None = None,
+    session_id: str | None = None,
+) -> str:
     """WS-F W1: Generate a deterministic ID from content hash.
 
-    Uses SHA-256 of (kind, source, content) to produce a stable ID.
-    This enables deduplication: the same content always gets the same ID,
-    so re-adding it is a no-op rather than creating a duplicate.
+    Uses SHA-256 of (kind, source, tenant ids, content) to produce a stable
+    ID. Tenant ids are part of the hash so user B re-adding user A's content
+    gets a distinct row (no cross-tenant collision / stale valid_to return).
     """
-    h = sha256(f"{kind}|{source}|{content}".encode()).hexdigest()[:16]
+    h = sha256(f"{kind}|{source}|{user_id or ''}|{agent_id or ''}|{session_id or ''}|{content}".encode()).hexdigest()[:16]
     return f"mem_{h}"
 
 
@@ -224,7 +233,6 @@ class _SearchHelper:
     """Search helpers extracted from MemoryStore (CODE-03)."""
 
     _MAX_FTS_TOKEN_LEN: int = 64
-    _ALLOWED_FILTER_COLUMNS: frozenset[str] = frozenset({"kind", "source"})
 
     def __init__(self, store: MemoryStore) -> None:
         self._store = store
@@ -234,10 +242,11 @@ class _SearchHelper:
 
         Escapes double quotes, removes FTS5 boolean operators and wildcards,
         and caps token length to avoid injection and long queries.
+        Returns "" when nothing searchable remains (callers must skip MATCH).
         """
         tokens = query.split()
         if not tokens:
-            return '""'
+            return ""
         sanitized = []
         for token in tokens:
             token = re.sub(r'["*()\-]', "", token)
@@ -245,11 +254,13 @@ class _SearchHelper:
             token = token[: self._MAX_FTS_TOKEN_LEN]
             if token:
                 sanitized.append(f'"{token}"')
-        return " ".join(sanitized) if sanitized else '""'
+        return " ".join(sanitized)
 
     def search(self, query: str, kind: str | None = None, limit: int = 10) -> list[Memory]:
         """Search memory using FTS5 and optional kind filter; excludes invalidated memories."""
         q = self._fts_query(query)
+        if not q:
+            return []
         now = datetime.now(timezone.utc).isoformat()
         with self._store._conn() as conn:
             if kind:
@@ -297,7 +308,12 @@ class _SearchHelper:
                 params.append(source)
             where = " AND ".join(conditions)
             with self._store._conn() as conn:
-                rows = conn.execute(f"SELECT id FROM memories WHERE {where}", params).fetchall()
+                # Capped allowlist: unbounded id lists blow up vector-search
+                # memory on large DBs. Most-recent-first keeps it relevant.
+                rows = conn.execute(
+                    f"SELECT id FROM memories WHERE {where} ORDER BY created_at DESC LIMIT 10000",
+                    params,
+                ).fetchall()
             ids = [row["id"] for row in rows]
             if not ids:
                 return []
@@ -444,7 +460,7 @@ class _RelationHelper:
             integrity = "ok" if hmac.compare_digest(expected, sig) else "tampered"
         return Memory(
             id=row["id"], kind=kind, content=content,
-            source=row["source"], meta=row["meta"], created_at=created_at,
+            source=source, meta=row["meta"], created_at=created_at,
             valid_from=row["valid_from"], valid_to=row["valid_to"],
             integrity_sig=sig, integrity=integrity,
         )
@@ -642,7 +658,7 @@ class MemoryStore(BaseRepository):
         WS-F W2: Deduplicates — if a memory with the same content already
             exists, returns the existing one instead of creating a duplicate.
         """
-        mem_id = _deterministic_id(content, kind, source)
+        mem_id = _deterministic_id(content, kind, source, user_id, agent_id, session_id)
         existing = self.get(mem_id)
         if existing is not None:
             return existing
@@ -717,9 +733,12 @@ class MemoryStore(BaseRepository):
                  m.valid_from, m.valid_to, sig)
             )
         with self._conn() as conn:
+            # OR IGNORE: check-then-insert in add() races under concurrency;
+            # the PK makes the second writer a silent no-op instead of an
+            # IntegrityError crash.
             conn.executemany(
                 """
-                INSERT INTO memories (id, kind, content, source, meta, created_at, valid_from, valid_to, integrity_sig)
+                INSERT OR IGNORE INTO memories (id, kind, content, source, meta, created_at, valid_from, valid_to, integrity_sig)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 rows,
@@ -777,16 +796,17 @@ class MemoryStore(BaseRepository):
                 f"SELECT id FROM memories WHERE source IN ({placeholders})", sources
             ).fetchall()
             mem_ids = [row["id"] for row in rows]
-            if mem_ids:
-                id_placeholders = ",".join("?" for _ in mem_ids)
+            # Chunk IN-lists (SQLite variable limit is 999 by default).
+            for chunk in (mem_ids[i:i + 500] for i in range(0, len(mem_ids), 500)):
+                id_placeholders = ",".join("?" for _ in chunk)
                 conn.execute(
                     f"DELETE FROM relations WHERE source_id IN ({id_placeholders}) OR target_id IN ({id_placeholders})",
-                    mem_ids + mem_ids,
+                    chunk + chunk,
                 )
                 # Explicit decay cleanup for existing DBs where FK cascade is NO ACTION
                 conn.execute(
                     f"DELETE FROM memory_decay WHERE mem_id IN ({id_placeholders})",
-                    mem_ids,
+                    chunk,
                 )
             conn.execute(f"DELETE FROM memories WHERE source IN ({placeholders})", sources)
         if self.vector and self.vector.is_available() and mem_ids:
@@ -797,6 +817,7 @@ class MemoryStore(BaseRepository):
         now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
             conn.execute("UPDATE memories SET valid_to = ? WHERE id = ?", (now, mem_id))
+            conn.execute("DELETE FROM memory_decay WHERE mem_id = ?", (mem_id,))
         if self.vector and self.vector.is_available():
             self.vector.remove(mem_id)
 

@@ -13,8 +13,8 @@ analysis via a vision model.
 
 from __future__ import annotations
 
-import contextlib
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import ClassVar
@@ -60,6 +60,7 @@ class SlopVerdict:
     html: str
     findings: list[SlopFinding] = field(default_factory=list)
     passed: bool = True
+    slop_threshold: int = 30
 
     @property
     def score(self) -> int:
@@ -75,7 +76,7 @@ class SlopVerdict:
     @property
     def is_slop(self) -> bool:
         """True if the output has enough slop to warrant a redesign."""
-        return self.score >= 30 or any(
+        return self.score >= self.slop_threshold or any(
             f.severity == SlopSeverity.CRITICAL for f in self.findings
         )
 
@@ -176,6 +177,11 @@ class DesignSlopVerifier:
             judge_fn: Optional injectable vision-model judge. Receives
                 (html, screenshot_path) and returns additional findings.
         """
+        if slop_threshold < 0:
+            raise DesignSlopError(
+                f"slop_threshold must be >= 0, got {slop_threshold}",
+                context={"slop_threshold": slop_threshold},
+            )
         self._threshold = slop_threshold
         self._judge_fn = judge_fn
 
@@ -198,12 +204,20 @@ class DesignSlopVerifier:
         findings.extend(self._check_three_column_grid(html))
         findings.extend(self._check_ai_headlines(html))
 
-        # Optional vision-model judge
+        # Optional vision-model judge: failure must mark result uncertain,
+        # never silently pass.
         if self._judge_fn and screenshot_path:
-            with contextlib.suppress(Exception):
+            try:
                 findings.extend(self._judge_fn(html, screenshot_path))
+            except Exception as exc:
+                findings.append(SlopFinding(
+                    category=SlopCategory.SVG_ILLUSTRATIONS,
+                    severity=SlopSeverity.LOW,
+                    evidence=f"vision judge unavailable ({type(exc).__name__}); visual review uncertain",
+                    suggestion="Retry visual review manually or re-run with a working judge_fn.",
+                ))
 
-        verdict = SlopVerdict(html=html, findings=findings, passed=True)
+        verdict = SlopVerdict(html=html, findings=findings, passed=True, slop_threshold=self._threshold)
         verdict.passed = not verdict.is_slop
         return verdict
 
@@ -255,14 +269,20 @@ class DesignSlopVerifier:
     def _check_overused_fonts(self, html: str) -> list[SlopFinding]:
         results: list[SlopFinding] = []
         font_matches = re.findall(r"font-family\s*:\s*['\"]?([^;'\"{]+)", html, re.IGNORECASE)
-        font_matches.extend(re.findall(r"font-(?:sans|mono)\s*:.*?['\"]?([^;\"'\s]+)", html, re.IGNORECASE))
+        # Tailwind utility classes: class="... font-sans ...", class='... font-mono ...'
+        tailwind_fonts = re.findall(r"""class\s*=\s*["'][^"']*\bfont-(sans|mono)\b[^"']*["']""", html, re.IGNORECASE)
+        for tf in tailwind_fonts:
+            font_matches.append(tf)
         for font in font_matches:
             font_clean = font.strip().lower()
-            if font_clean in self._OVERUSED_FONTS:
+            if font_clean in self._OVERUSED_FONTS or font_clean in ("sans", "mono"):
+                label = f"'{font_clean}' is an overused AI-default font" if font_clean in self._OVERUSED_FONTS else (
+                    f"'font-{font_clean}' Tailwind default stack (often Inter/ui-monospace) — pick a distinctive pairing"
+                )
                 results.append(SlopFinding(
                     category=SlopCategory.OVERUSED_FONTS,
                     severity=SlopSeverity.MEDIUM,
-                    evidence=f"'{font_clean}' is an overused AI-default font",
+                    evidence=label,
                     suggestion="Pair a distinctive display font (e.g., Fraunces, Space Grotesk) with a clean body font.",
                 ))
                 break  # One finding per file is enough
@@ -283,7 +303,7 @@ class DesignSlopVerifier:
     def _check_three_column_grid(self, html: str) -> list[SlopFinding]:
         results: list[SlopFinding] = []
         for pattern, desc in self._THREE_COLUMN_PATTERNS:
-            if re.search(pattern, html, re.IGNORECASE):
+            if re.search(pattern, html, re.IGNORECASE | re.DOTALL):
                 results.append(SlopFinding(
                     category=SlopCategory.THREE_COLUMN_GRID,
                     severity=SlopSeverity.HIGH,
@@ -316,7 +336,3 @@ class DesignSlopError(AizeeError):
 
     def __init__(self, message: str, context: dict[str, object] | None = None) -> None:
         super().__init__("SLOP_ERROR", message, ErrorSeverity.MEDIUM, context)
-
-
-# Late import for type checking
-from collections.abc import Callable  # noqa: E402

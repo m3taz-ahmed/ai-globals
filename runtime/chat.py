@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import threading
+from collections import deque
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +28,7 @@ class ChatSession:
         self.session_id = session_id or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
         self.log_path = project_root / "state" / "chat_sessions.jsonl"
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.Lock()
 
     def add(self, role: str, content: str, metadata: dict[str, Any] | None = None) -> ChatMessage:
         msg = ChatMessage(
@@ -35,7 +38,7 @@ class ChatSession:
             content=content,
             metadata=metadata or {},
         )
-        with self.log_path.open("a", encoding="utf-8") as f:
+        with self._lock, self.log_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(asdict(msg), default=str) + "\n")
         return msg
 
@@ -44,7 +47,8 @@ class ChatSession:
         if not self.log_path.exists():
             return messages
         with self.log_path.open("r", encoding="utf-8") as f:
-            for line in reversed(f.readlines()):
+            tail = deque(f, maxlen=2000)
+            for line in reversed(tail):
                 line = line.strip()
                 if not line:
                     continue

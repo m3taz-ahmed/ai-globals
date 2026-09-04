@@ -10,6 +10,7 @@ an approval-required instruction object.
 from __future__ import annotations
 
 import json
+import math
 from enum import Enum
 from typing import Any
 
@@ -21,6 +22,20 @@ from .common import truncate, validate_query
 
 def _json(data: dict[str, Any]) -> str:
     return json.dumps(data, indent=2, default=str)
+
+
+def _finite(value: Any, name: str, minimum: float = 0.0, maximum: float = 1e15) -> float:
+    """Coerce to a finite float in [minimum, maximum]; raises ValidationError."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(f"'{name}' must be a number", context={"name": name}) from exc
+    if not math.isfinite(number) or not minimum <= number <= maximum:
+        raise ValidationError(
+            f"'{name}' must be finite and within [{minimum}, {maximum}]",
+            context={"name": name},
+        )
+    return number
 
 
 def _err(error: str, **extra: Any) -> str:
@@ -66,8 +81,10 @@ def register_ads_tools(mcp: FastMCP) -> None:
         """Create a paid campaign. WRITE/EXTERNAL — gated; returns proxy instruction (no inline API call)."""
         if err := validate_query(name):
             return err
-        if budget_daily <= 0:
-            return _err("'budget_daily' must be positive")
+        try:
+            budget_daily = _finite(budget_daily, "budget_daily", minimum=0.01)
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
         try:
             plat = _resolve_platform(platform)
         except ValidationError as exc:
@@ -104,6 +121,12 @@ def register_ads_tools(mcp: FastMCP) -> None:
         """Compute optimization recommendations from campaign metrics (pure logic)."""
         if err := validate_query(campaign_id):
             return err
+        try:
+            ctr = _finite(ctr, "ctr", maximum=100.0)
+            cpc = _finite(cpc, "cpc", maximum=1e6)
+            conversion_rate = _finite(conversion_rate, "conversion_rate", maximum=100.0)
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
         recommendations: list[str] = []
         if ctr < 0.01:
             recommendations.append("Low CTR (<1%): refine ad copy / creative and tighten targeting.")
@@ -132,8 +155,11 @@ def register_ads_tools(mcp: FastMCP) -> None:
             plat = _resolve_platform(platform)
         except ValidationError as exc:
             return _err(exc.message, context=exc.context)
-        if spend <= 0:
-            return _err("'spend' must be positive")
+        try:
+            spend = _finite(spend, "spend", minimum=0.01)
+            revenue = _finite(revenue, "revenue")
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
         roas = revenue / spend
         return _ok(
             platform=plat.value,
@@ -155,7 +181,10 @@ def register_ads_tools(mcp: FastMCP) -> None:
             return err
         if match_type not in ("broad", "phrase", "exact"):
             return _err("'match_type' must be broad/phrase/exact")
-        max_suggestions = max(1, min(int(max_suggestions), 50))
+        try:
+            max_suggestions = max(1, min(int(max_suggestions), 50))
+        except (TypeError, ValueError):
+            return _err("'max_suggestions' must be an integer")
         templates = [
             "{kw}",
             "best {kw}",
@@ -199,6 +228,11 @@ def register_ads_tools(mcp: FastMCP) -> None:
             plat = _resolve_platform(platform)
         except ValidationError as exc:
             return _err(exc.message, context=exc.context)
+        try:
+            age_min = int(age_min)
+            age_max = int(age_max)
+        except (TypeError, ValueError):
+            return _err("Age bounds must be integers")
         if age_min < 13 or age_max > 100 or age_min > age_max:
             return _err("Invalid age range (13-100, min<=max)")
         try:
@@ -222,20 +256,26 @@ def register_ads_tools(mcp: FastMCP) -> None:
         splits: str = "{}",
     ) -> str:
         """Distribute a total budget across channels by weight (pure computation)."""
-        if total_budget <= 0:
-            return _err("'total_budget' must be positive")
+        try:
+            total_budget = _finite(total_budget, "total_budget", minimum=0.01)
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
         try:
             split_map = json.loads(splits)
         except json.JSONDecodeError:
             return _err("'splits' must be valid JSON")
         if not isinstance(split_map, dict) or not split_map:
             split_map = dict.fromkeys(_ALLOWED_PLATFORMS, 1.0)
-        total_weight = sum(float(w) for w in split_map.values())
+        try:
+            weights = {str(ch): _finite(w, f"splits[{ch}]") for ch, w in split_map.items()}
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
+        total_weight = sum(weights.values())
         if total_weight <= 0:
             return _err("sum of weights must be positive")
         allocations = {
-            ch: round(total_budget * float(w) / total_weight, 2)
-            for ch, w in split_map.items()
+            ch: round(total_budget * w / total_weight, 2)
+            for ch, w in weights.items()
         }
         return _ok(
             total_budget=total_budget,

@@ -96,9 +96,14 @@ class ToolAccessRule:
     description: str = ""
 
     def matches_tool(self, tool_name: str) -> bool:
-        """Match tool name with ``*`` wildcard support."""
+        """Match tool name with ``*`` wildcard support.
+
+        Supports ``*`` (all), ``prefix*``, ``*suffix``, and ``*infix*``.
+        """
         if self.tool == "*":
             return True
+        if self.tool.startswith("*") and self.tool.endswith("*") and len(self.tool) > 1:
+            return self.tool[1:-1] in tool_name
         if self.tool.endswith("*"):
             return tool_name.startswith(self.tool[:-1])
         if self.tool.startswith("*"):
@@ -155,7 +160,14 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
     if isinstance(node, ast.Name):
         return env.get(node.id)
     if isinstance(node, ast.Attribute):
-        return getattr(_eval_node(node.value, env), node.attr, None)
+        # Block dunder traversal (__class__, __dict__, ...) — info-leak /
+        # sandbox-escape surface even without call support.
+        if node.attr.startswith("__") and node.attr.endswith("__"):
+            raise ValueError(f"blocked dunder attribute {node.attr!r}")
+        base = _eval_node(node.value, env)
+        if isinstance(base, dict):
+            return base.get(node.attr)
+        return getattr(base, node.attr, None)
     if isinstance(node, ast.Subscript):
         target = _eval_node(node.value, env)
         key = _eval_node(node.slice, env)
@@ -166,7 +178,16 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
         fn = _ALLOWED_BINOPS.get(type(node.op))
         if fn is None:
             raise ValueError(f"unsupported binop {type(node.op).__name__}")
-        return fn(_eval_node(node.left, env), _eval_node(node.right, env))
+        left = _eval_node(node.left, env)
+        right = _eval_node(node.right, env)
+        # Missing attribute in a membership test is simply False (a tool
+        # without `command` is not running `rm -rf`) — not an error.
+        # Either side may be the missing (None) one.
+        if isinstance(node.op, ast.In):
+            return False if left is None or right is None else left in right
+        if isinstance(node.op, ast.NotIn):
+            return True if left is None or right is None else left not in right
+        return fn(left, right)
     if isinstance(node, ast.UnaryOp):
         fn = _ALLOWED_UNARYOPS.get(type(node.op))
         if fn is None:
@@ -179,6 +200,14 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
             if fn is None:
                 raise ValueError(f"unsupported compare {type(op_node).__name__}")
             right = _eval_node(right_node, env)
+            # Missing attribute in a membership test: `in` → False,
+            # `not in` → True (same rule as BinOp above). Either side
+            # may be the missing (None) one.
+            if isinstance(op_node, ast.In) and (left is None or right is None):
+                return False
+            if isinstance(op_node, ast.NotIn) and (left is None or right is None):
+                left = right
+                continue
             if not fn(left, right):
                 return False
             left = right
@@ -241,6 +270,15 @@ class McpFirewall:
                     logger.warning(
                         "firewall rule %s condition error: %s", rule.name, exc
                     )
+                    # Fail closed: a broken DENY rule still denies; a broken
+                    # ALLOW rule is skipped (never allow on error).
+                    if rule.action is FirewallAction.DENY:
+                        self._denials[rule.name] = self._denials.get(rule.name, 0) + 1
+                        return FirewallVerdict(
+                            action=FirewallAction.DENY,
+                            rule_name=rule.name,
+                            reason="condition_error: fail-closed deny",
+                        )
                     continue
             if rule.action is FirewallAction.DENY:
                 self._denials[rule.name] = self._denials.get(rule.name, 0) + 1

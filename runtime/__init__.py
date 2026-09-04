@@ -25,6 +25,7 @@ import config
 
 __version__ = config.VERSION
 
+# Re-export the production Kernel facade and managers.
 # Re-export new governance modules for convenient access.
 import runtime.attribution_model as attribution_model
 import runtime.billing_ledger as billing_ledger
@@ -105,6 +106,8 @@ from runtime.injection_detector import InjectionSeverity as InjectionSeverity
 from runtime.injection_detector import InjectionSignal as InjectionSignal
 from runtime.injection_detector import InjectionTechnique as InjectionTechnique
 from runtime.injection_detector import InjectionVerdict as InjectionVerdict
+from runtime.kernel import Kernel as Kernel
+from runtime.kernel import KernelBuilder as KernelBuilder
 from runtime.layers import Layer as Layer
 from runtime.layers import LayerManifest as LayerManifest
 from runtime.learning_loop import LearningLoop as LearningLoop
@@ -115,8 +118,6 @@ from runtime.mcp_securable import McpPermission as McpPermission
 from runtime.mcp_securable import McpSecurableRegistry as McpSecurableRegistry
 from runtime.mcp_securable import McpServer as McpServer
 from runtime.middleware import ActionContext as ActionContext
-from runtime.middleware import CompiledPipeline as CompiledPipeline
-from runtime.middleware import EnhancerType as EnhancerType
 from runtime.middleware import MiddlewarePipeline as MiddlewarePipeline
 from runtime.middleware import MiddlewareResult as MiddlewareResult
 from runtime.mobile_patterns import MobileAuditConfig as MobileAuditConfig
@@ -205,7 +206,6 @@ __all__ = [
     "CommandBus",
     "CommandResult",
     "CommandStatus",
-    "CompiledPipeline",
     "CompositeIdentity",
     "CompositeIdentityRegistry",
     "ConfidenceGate",
@@ -232,7 +232,6 @@ __all__ = [
     "DualLLMError",
     "DualLLMOrchestrator",
     "DualLLMResult",
-    "EnhancerType",
     "Evidence",
     "FailureCategory",
     "Finding",
@@ -251,6 +250,8 @@ __all__ = [
     "InjectionSignal",
     "InjectionTechnique",
     "InjectionVerdict",
+    "Kernel",
+    "KernelBuilder",
     "LLMRole",
     "Layer",
     "LayerManifest",

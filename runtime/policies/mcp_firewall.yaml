@@ -11,14 +11,14 @@ rules:
   - name: deny-destructive-command
     tool: "*"
     action: deny
-    condition: 'command and ("rm -rf /" in command or "DROP TABLE" in command)'
+    condition: 'command and ("rm -rf" in command or "rm -fr" in command or "DROP TABLE" in command or "drop table" in command or "DROP DATABASE" in command or "drop database" in command or "TRUNCATE" in command or "truncate" in command or "mkfs" in command)'
     priority: 100
     description: Block tool calls whose command attempts destructive operations
 
   - name: deny-secret-search
     tool: "search_*"
     action: deny
-    condition: 'query and query in ["secret", "password", "api_key", "token"]'
+    condition: 'query and ("secret" in query or "Secret" in query or "SECRET" in query or "password" in query or "Password" in query or "PASSWORD" in query or "api_key" in query or "API_KEY" in query or "api-key" in query or "token" in query or "Token" in query or "TOKEN" in query)'
     priority: 90
     description: Block searches that look like secret harvesting
 

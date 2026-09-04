@@ -26,11 +26,24 @@ class GovernanceHooks:
         self.telemetry = telemetry
 
     @contextmanager
-    def around_action(self, action: str, **kwargs: Any) -> Iterator[GovernanceHooks]:
+    def around_action(self, action: str, *args: Any, **kwargs: Any) -> Iterator[None]:
         """Context manager that audits and records telemetry around an action."""
-        self.audit.log(action, kwargs)
+        redacted_kwargs: Any = kwargs
+        redactor = getattr(self.audit, "_redact", None)
+        if callable(redactor):
+            try:
+                redacted_kwargs = redactor(kwargs)
+            except Exception:
+                redacted_kwargs = kwargs
+        redacted_args: Any = args
+        if callable(redactor) and args:
+            try:
+                redacted_args = redactor(list(args))
+            except Exception:
+                redacted_args = args
+        self.audit.log(action, {"args": redacted_args, "kwargs": redacted_kwargs})
         try:
-            yield self
+            yield None
         except Exception as exc:
             _logger.debug("governance action %s failed: %s", action, exc, exc_info=True)
             self.telemetry.record(
@@ -45,14 +58,14 @@ class GovernanceHooks:
                 event_type="action",
                 action=action,
                 status="completed",
-                metadata=kwargs,
+                metadata={"args": redacted_args, "kwargs": redacted_kwargs},
             )
 
     def wrap(self, action: str, fn: Callable[..., Any]) -> Callable[..., Any]:
         """Wrap a function with governance hooks."""
 
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            with self.around_action(action, **kwargs):
+            with self.around_action(action, *args, **kwargs):
                 return fn(*args, **kwargs)
 
         return wrapper

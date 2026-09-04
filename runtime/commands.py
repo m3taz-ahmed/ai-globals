@@ -103,9 +103,10 @@ class CommandBus:
         """Execute all commands in order. On failure, optionally rollback completed commands."""
         ctx = dict(context or {})
         results: list[CommandResult] = []
-        completed: list[tuple[int, Command]] = []
+        completed: list[Command] = []
+        skipped: list[Command] = []
 
-        for idx, cmd in enumerate(self._commands):
+        for cmd in self._commands:
             try:
                 result = cmd.execute(ctx)
             except CommandError:
@@ -116,23 +117,33 @@ class CommandBus:
 
             results.append(result)
             if result.is_success:
-                completed.append((idx, cmd))
-            elif self._rollback_on_failure:
-                self._rollback_completed(completed, ctx, results)
+                completed.append(cmd)
+            elif result.status is CommandStatus.SKIPPED:
+                # SKIPPED is neither success nor failure: track separately,
+                # continue without triggering rollback.
+                skipped.append(cmd)
+                continue
+            elif result.status is CommandStatus.FAILED:
+                if self._rollback_on_failure:
+                    self._rollback_completed(completed, ctx, results)
                 break
 
         return results
 
     def _rollback_completed(
         self,
-        completed: list[tuple[int, Command]],
+        completed: list[Command],
         ctx: dict[str, Any],
         results: list[CommandResult],
     ) -> None:
         """Rollback completed commands in reverse order."""
-        for _, cmd in reversed(completed):
+        for cmd in reversed(completed):
             try:
                 rb = cmd.rollback(ctx)
+                # Keep SKIPPED no-op rollbacks distinguishable: do not
+                # mix them into the main results list.
+                if rb.status is CommandStatus.SKIPPED:
+                    continue
                 results.append(rb)
             except Exception as exc:
                 _logger.debug("command rollback failed: %s", exc, exc_info=True)

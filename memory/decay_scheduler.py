@@ -62,7 +62,7 @@ class DecayScheduler:
         created_at: float | None = None,
     ) -> DecayableEntry:
         """Register a memory entry for decay tracking."""
-        now = created_at or time.time()
+        now = created_at if created_at is not None else time.time()
         entry = DecayableEntry(
             id=entry_id, sector=sector,
             initial_salience=salience, created_at=now,
@@ -71,12 +71,17 @@ class DecayScheduler:
         return entry
 
     def run_cycle(self, now: float | None = None) -> dict[str, Any]:
-        """Run one decay cycle. Returns summary stats."""
-        current_time = now or time.time()
+        """Run one decay cycle. Returns summary stats.
+
+        Decay is computed from the entry's TOTAL age (``now - created_at``),
+        not since the last cycle — otherwise salience would jump back up
+        after every cycle and eviction would never fire.
+        """
+        current_time = now if now is not None else time.time()
         decayed_count = 0
         evicted: list[str] = []
         for entry_id, entry in list(self._entries.items()):
-            days_since = (current_time - entry.last_decayed_at) / 86400.0
+            days_since = max(0.0, (current_time - entry.created_at) / 86400.0)
             new_salience = self._classifier.decay_score(
                 entry.sector, entry.initial_salience, days_since,
             )
@@ -96,7 +101,7 @@ class DecayScheduler:
 
     def should_run(self, now: float | None = None) -> bool:
         """Check if enough time has passed for another cycle."""
-        current_time = now or time.time()
+        current_time = now if now is not None else time.time()
         return (current_time - self._last_run) >= self.interval_seconds
 
     def get_entry(self, entry_id: str) -> DecayableEntry | None:

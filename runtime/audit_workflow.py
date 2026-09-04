@@ -119,8 +119,11 @@ class AuditResult:
             "current_phase": self.current_phase.value,
             "failed_phase": self.failed_phase.value if self.failed_phase else None,
             "pages_crawled": self.pages_crawled,
+            "issues": list(self.issues),
             "issue_count": len(self.issues),
             "health_score": self.health_score,
+            "started_at": self.started_at,
+            "completed_at": self.completed_at,
             "is_completed": self.is_completed,
             "is_failed": self.is_failed,
             "duration_ms": round(self.duration_ms, 2),
@@ -130,6 +133,7 @@ class AuditResult:
                     "success": p.success,
                     "duration_ms": round(p.duration_ms, 2),
                     "error": p.error,
+                    "data": dict(p.data),
                 }
                 for p in self.phases
             ],
@@ -209,6 +213,9 @@ class AuditWorkflow:
         for phase in PHASE_ORDER:
             if phase in completed_phases:
                 continue
+            # Avoid duplicating PhaseResult on retry: drop prior
+            # failed attempt(s) for this phase before re-running.
+            self._result.phases = [p for p in self._result.phases if p.phase != phase]
             self._result.current_phase = phase
             phase_result = self._execute_phase(phase)
             self._result.phases.append(phase_result)
@@ -273,23 +280,39 @@ class AuditWorkflow:
             _logger.warning("Failed to load audit checkpoint: %s", exc)
             return None
         # Reconstruct result
+        try:
+            current_phase = AuditPhase(data.get("current_phase", "discovery"))
+        except ValueError:
+            _logger.warning("Unknown current_phase %r in checkpoint; defaulting to DISCOVERY", data.get("current_phase"))
+            current_phase = AuditPhase.DISCOVERY
         result = AuditResult(
             audit_id=data.get("audit_id", self.audit_id),
             config=self.config,
-            current_phase=AuditPhase(data.get("current_phase", "discovery")),
+            current_phase=current_phase,
             pages_crawled=data.get("pages_crawled", 0),
+            issues=data.get("issues", []),
             health_score=data.get("health_score", 100),
             started_at=data.get("started_at", time.time()),
+            completed_at=data.get("completed_at", 0.0),
         )
         failed = data.get("failed_phase")
         if failed:
-            result.failed_phase = AuditPhase(failed)
+            try:
+                result.failed_phase = AuditPhase(failed)
+            except ValueError:
+                _logger.warning("Unknown failed_phase %r in checkpoint; ignoring", failed)
         for p in data.get("phases", []):
+            try:
+                phase = AuditPhase(p["phase"])
+            except (ValueError, KeyError):
+                _logger.warning("Skipping checkpoint phase with bad value %r", p.get("phase"))
+                continue
             result.phases.append(
                 PhaseResult(
-                    phase=AuditPhase(p["phase"]),
+                    phase=phase,
                     success=p["success"],
                     duration_ms=p.get("duration_ms", 0.0),
+                    data=p.get("data", {}),
                     error=p.get("error", ""),
                 )
             )

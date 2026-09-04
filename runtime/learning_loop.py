@@ -32,7 +32,8 @@ from __future__ import annotations
 
 import json
 import logging
-from collections import defaultdict
+import threading
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,28 @@ from typing import Any
 from runtime.hook_lifecycle import HookContext, HookPhase, HookRegistry
 
 logger = logging.getLogger(__name__)
+
+_SENSITIVE_KEYS = {"password", "secret", "token", "api_key", "apikey", "auth", "credential"}
+
+
+def _redact_result(result: dict[str, Any]) -> dict[str, Any]:
+    """Drop sensitive keys before persisting learning outcomes."""
+    return {k: v for k, v in result.items() if k.lower() not in _SENSITIVE_KEYS}
+
+
+def _parse_ts(value: str) -> datetime:
+    """Parse ISO-8601 timestamp; fall back to epoch on garbage."""
+    try:
+        return datetime.fromisoformat(value)
+    except (ValueError, TypeError):
+        return datetime.fromtimestamp(0, tz=timezone.utc)
+
+
+def _coerce_ok(value: Any) -> bool:
+    """Explicit bool coercion: the string "false" is falsy, not truthy."""
+    if isinstance(value, str):
+        return value.strip().lower() not in ("", "false", "0", "no", "off", "none", "null")
+    return bool(value)
 
 
 @dataclass
@@ -116,8 +139,12 @@ class LearningLoop:
     """
 
     def __init__(self, persist_path: Path | None = None) -> None:
-        self._outcomes: list[Outcome] = []
+        self._outcomes: deque[Outcome] = deque(maxlen=10000)
         self._persist_path = persist_path
+        self._lock = threading.RLock()
+        self._dirty = False
+        self._persist_counter = 0
+        self._persist_batch_size = 100  # persist every 100 records
         self._load()
 
     # --- LEARN-01: Hook bindings -----------------------------------------
@@ -131,11 +158,12 @@ class LearningLoop:
         def record_outcome(ctx: HookContext) -> None:
             result = ctx.results.get("response", {})
             if not isinstance(result, dict):
+                logger.debug("learning_loop: skipping non-dict result for %s", ctx.action)
                 return
             self.record(
                 action=ctx.action,
                 result=result,
-                success=bool(result.get("ok", False)),
+                success=_coerce_ok(result.get("ok", False)),
                 gate=str(result.get("gate", "")),
             )
 
@@ -162,16 +190,27 @@ class LearningLoop:
         session_id: str = "",
     ) -> Outcome:
         """LEARN-02 Stage 1: Record an action outcome."""
+        if result is not None and not isinstance(result, dict):
+            logger.warning("learning_loop.record: result must be dict, got %s; skipping", type(result).__name__)
+            raise TypeError(f"result must be dict or None, got {type(result).__name__}")
         outcome = Outcome(
             action=action,
-            result=result or {},
+            result=_redact_result(result or {}),
             success=success,
             gate=gate,
             timestamp=datetime.now(timezone.utc).isoformat(),
             session_id=session_id,
         )
-        self._outcomes.append(outcome)
-        self._persist()
+        with self._lock:
+            self._outcomes.append(outcome)
+            self._dirty = True
+            # Batch persist: only write to disk every ``_persist_batch_size``
+            # records or when the deque is full, to avoid O(n) disk I/O on
+            # every record() call.
+            self._persist_counter += 1
+            if self._persist_counter >= self._persist_batch_size:
+                self._persist()
+                self._persist_counter = 0
         return outcome
 
     # --- LEARN-02: Consolidate -------------------------------------------
@@ -189,7 +228,8 @@ class LearningLoop:
             total = len(outcomes)
             successes = sum(1 for o in outcomes if o.success)
             failures = total - successes
-            last_seen = max(o.timestamp for o in outcomes) if outcomes else ""
+            # ISO timestamps: parse, don't lexicographic-max.
+            last_seen = max(_parse_ts(o.timestamp) for o in outcomes).isoformat() if outcomes else ""
             patterns.append(Pattern(
                 action=action,
                 gate=gate,
@@ -199,6 +239,11 @@ class LearningLoop:
                 success_rate=successes / total if total > 0 else 0.0,
                 last_seen=last_seen,
             ))
+        # Flush any dirty state when consolidating.
+        with self._lock:
+            if self._dirty:
+                self._persist()
+                self._persist_counter = 0
         return patterns
 
     # --- LEARN-02: Rank --------------------------------------------------
@@ -246,10 +291,18 @@ class LearningLoop:
         """Total number of recorded outcomes."""
         return len(self._outcomes)
 
+    def flush(self) -> None:
+        """Force-persist any dirty outcomes to disk immediately."""
+        with self._lock:
+            if self._dirty:
+                self._persist()
+                self._persist_counter = 0
+
     def clear(self) -> None:
         """Clear all recorded outcomes."""
-        self._outcomes.clear()
-        self._persist()
+        with self._lock:
+            self._outcomes.clear()
+            self._persist()
 
     def _persist(self) -> None:
         """Persist outcomes to disk if a path is configured."""

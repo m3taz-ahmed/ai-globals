@@ -4,8 +4,36 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-09-01
+[UPDATED] 2026-09-04
 [NOTES]
+- **v5.10.1 release — security hardening + architecture cleanup — 2026-09-04**:
+  - **SSRF**: IPv4+IPv6 private IP blocking via `ipaddress` module, DNS resolution re-check, `_validate_endpoint()` extracted, `launch()` uses `_a2a_open()`.
+  - **RBAC**: `AIZEE_RBAC_STRICT=1` denies admin-only tools (logic bug fixed — was denying all).
+  - **Audit**: fail-closed default (`AIZEE_AUDIT_STRICT="1"`).
+  - **MCP client**: default env allowlist (no secret leakage); `AIZEE_MCP_ENV_PASSTHROUGH=1` for opt-out.
+  - **Supply chain**: all GitHub Actions SHA-pinned; pip-audit/bandit/build/twine version-pinned.
+  - **Architecture**: CompiledPipeline deleted, Kernel/KernelBuilder exported, RLock+atomic writes, bounded dashboard threads.
+  - **Performance**: telemetry tail-read, metrics sort-once, learning_loop batch persist.
+  - **Coverage**: 80%→95% across all gates. **Tests**: 3865 total.
+  - **Docs**: counts synced (109/110/54/197/3865), stale refs fixed, garbled tree fixed.
+- **Comprehensive audit review + full remediation — 2026-09-04 (SEC + PERF + DEVX personas)**:
+  - **Audit review**: Verified all 28 issues from the v5.10.0 audit report against actual code in both `.ai` (working) and `aizee` (deployment). Found that 14 issues were ALREADY FIXED in `.ai` from prior sessions but not synced to `aizee`. The audit report had reviewed the stale `aizee` copy.
+  - **Already-fixed issues (14)**: #1 (audit fail-open+counter), #2 (guardian _MISSING sentinel), #3 (_async_spawn validation), #4 (binary allowlist deny), #9 (storage_backend table regex), #10 (budget is None), #12 (audit rotation prev_hash), #16 (regex cache limit), #21 (plugin traversal check), #22 (RBAC allow-all warning), #24 (yaml literals .lower()), #25 (SSE CORS _origin()), #26 (policy AST cache).
+  - **Fixed in this session (10)**:
+    - **#6 HIGH**: `runtime/kernel.py` — `KernelBuilder.build()` now syncs `budget`/`audit` to `policy_mgr` (was only syncing `policy`/`guardian` → stale references).
+    - **#19 MED**: `runtime/skill_resolver.py` — `list_skills()` now excludes `README`/`EVAL` stems (was counting `README.md` as a skill → 111 instead of 110).
+    - **#20 MED**: `config.py` — fallback version `"5.0.0"` → `"5.10.0"`.
+    - **#27 LOW**: `runtime/telemetry.py` — `query()` now uses bounded `deque(maxlen=limit*10, min 1000)` instead of `readlines()` (prevents RAM bloat on large logs).
+    - **#28 LOW**: `aizee_cli.py` — `main()` now catches `KeyboardInterrupt` (exit 130) + generic `Exception` (exit 2, with `--verbose` re-raise) instead of only `CLIInputError`.
+    - **#23 LOW**: `Memory.md` — fixed `bun-1` file reference (validate-globals was flagging the old `.md` suffix as a broken link).
+    - **D1**: `runtime/kernel.py` — removed dead code: `_act_via_compiled_pipeline`, `_get_compiled_pipeline`, `register_action_pipeline`, `_pipeline_builders`, `_compiled_pipelines` (deprecated GATE-B4, never called from `act()`).
+    - **D4**: `runtime/supply_chain_guard.py` — fixed `OsvDevClient` docstring from "fail-open" to "fail-closed" (code was already fail-closed, docstring was wrong).
+    - **D5**: `memory/checkpoint.py` — documented why single connection is intentional (serial access, WAL, RLock-guarded — pool would add complexity without benefit).
+    - **D7**: `README.md` + `spec.md` + `AGENTS.md` — updated counts: runtime 108→109, MCP 36→84 (all 4 locations).
+  - **Lint fixes (pre-existing, 8 ruff + 7 mypy)**: `defensive_injection.py` (zip strict=False), `feature_flags.py` (combined nested if), `learning_loop.py` (extraneous parens), `mobile_patterns.py` (unused Callable import, combined if branches, unicode comment), `storage_backend.py` (parenthesize and subexpression), `experiment_tracker.py` (unused type:ignore), `error_classifier.py` (type:ignore code fix), `metrics.py` (unused type:ignore), `cro_tools.py` (hasattr instead of `in` for dataclass), `test_closure_evaluator.py` (import sorting).
+  - **Review subagents**: 2 read-only subagents reviewed all 18 modified files + project-wide health. Found 3 issues in my changes (README stale counts in 2 more lines, telemetry bound too small, CLI --debug dead branch) — all fixed immediately.
+  - **Quality gates (all green)**: ruff PASS (0 errors), mypy PASS (276 files, 0 errors), pytest 104 passed (50 targeted + 54 middleware/closure), validate-globals Errors=0 (was 1).
+  - **Sync**: `.ai` → `aizee` via `update_aizee.bat` — complete. `aizee` now also green (ruff PASS, validate-globals Errors=0).
 - **Dashboard settings full wiring + UI improvements — 2026-09-01 (ARCH persona)**:
   - **All 14 settings sections now APPLIED** (previously only mcp_servers was wired; the other 13 were cosmetic-only). Added `apply_settings_to_kernel()` in `runtime/settings.py` — called by `Kernel.__init__` after managers + compat attributes are initialized, and re-applied on dashboard restart (new kernel picks up overrides automatically).
   - **Per-section override appliers**: `_apply_budget_overrides` (0=unlimited skip), `_apply_guardian_overrides` (Decision enum mapping), `_apply_firewall_overrides` (FirewallAction enum mapping), `_apply_policy_overrides`, `_apply_loop_detector_overrides`, `_apply_injection_defense_overrides` (instance attr shadows ClassVar), `_apply_persona_overrides`, `_apply_audit_overrides`, `_apply_telemetry_overrides`, `_apply_memory_overrides`, `_apply_design_overrides`.
@@ -50,7 +78,7 @@
     - **I15**: `runtime/__init__.py` — Added documentation distinguishing production-wired vs retained-for-compatibility exports.
     - **D2**: `scripts/sync_docs.py` run — AGENTS.md, spec.md, README.md, README-AR.md counts updated (108 runtime, 110 skills, 54 numbered workflows, 197 stack, 3753 tests).
     - **D3**: `manifest.json` — Added missing triggers for WF 27 (NativePHP) + WF 31 (drafter-reviewer).
-    - **D4**: `scripts/validate-globals.py` — Version 5.8.0→5.10.0 in argparse + banner. Removed stale `nuxt-4.md`/`drizzle-orm.md`/`bun-1.md` from IGNORED_FILE_REFS.
+    - **D4**: `scripts/validate-globals.py` — Version 5.8.0→5.10.0 in argparse + banner. Removed stale `nuxt-4`/`drizzle-orm`/`bun-1` references from IGNORED_FILE_REFS.
     - **D5**: `pyproject.toml` — Added `psutil`, `sentry-sdk`, `defusedxml` to dev deps (matching mypy overrides).
     - **D6**: `runtime/tech_stack.py` — Fixed `turbovec` alias (added `turbovec-standards`) + `graphifyy` alias (added `graphifyy`).
     - **B5-B9 (SEC)**: Webhook SSRF validation (`approval_service.py`), Audit HMAC chain (`audit.py`), Guardian ReDoS protection (`guardian.py`), SEO OOM limit (`seo_tools.py` 2000→500 pages + 512MB check), Dashboard token to file not stdout (`dashboard/server.py`).

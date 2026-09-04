@@ -41,10 +41,15 @@ class _AstryxVisitor(ast.NodeVisitor):
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         if node.type is None:
             self._add("no-bare-except", node, "Avoid bare except clauses")
+        elif isinstance(node.type, ast.Name) and node.type.id == "Exception":
+            self._add("no-broad-except", node, "Avoid broad except Exception clauses")
         self.generic_visit(node)
 
     def _check_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        body_lines = node.end_lineno - (node.lineno or 1) + 1 if node.end_lineno else 0
+        if node.end_lineno and node.body and getattr(node.body[0], "lineno", None):
+            body_lines = node.end_lineno - node.body[0].lineno + 1
+        else:
+            body_lines = node.end_lineno - (node.lineno or 1) + 1 if node.end_lineno else 0
         if body_lines > self._max_lines:
             self._add(
                 "function-too-long",
@@ -52,10 +57,7 @@ class _AstryxVisitor(ast.NodeVisitor):
                 f"Function has {body_lines} lines (limit {self._max_lines})",
             )
         params = len(node.args.args) + len(node.args.kwonlyargs)
-        if node.args.vararg:
-            params += 1
-        if node.args.kwarg:
-            params += 1
+        # *args/**kwargs count as 0 extra (unbounded, not fixed arity).
         if params > self._max_params:
             self._add("too-many-params", node, f"Function has {params} parameters (limit {self._max_params})")
         for default in node.args.defaults + node.args.kw_defaults:
@@ -80,7 +82,13 @@ class AstryxLinter:
         self._max_params = max_params
 
     def lint(self, source: str | Path) -> list[LintFinding]:
-        text = source.read_text(encoding="utf-8") if isinstance(source, Path) else source
+        if isinstance(source, Path):
+            try:
+                text = source.read_text(encoding="utf-8")
+            except (IsADirectoryError, OSError) as exc:
+                return [LintFinding(rule="file-read-error", line=0, message=f"{exc!s}", severity="error")]
+        else:
+            text = source
         try:
             tree = ast.parse(text)
         except SyntaxError as exc:

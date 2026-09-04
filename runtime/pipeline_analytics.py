@@ -7,6 +7,7 @@ analytics gap in the freelance report (2.7.9). Pure-Python aggregation.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from runtime.schemas import ValidationError
@@ -47,8 +48,12 @@ class PipelineAnalytics:
         """
         if won is not None and not isinstance(won, bool):
             raise ValidationError("won must be bool or None")
-        if amount < 0:
-            raise ValidationError("amount must be non-negative")
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("amount must be a number") from exc
+        if not math.isfinite(amount) or amount < 0:
+            raise ValidationError("amount must be a finite non-negative number")
         self._bids.append(_Bid(platform=platform, niche=niche, amount=amount, won=won))
 
     def record_proposal_variant(self, variant: str, won: bool) -> None:

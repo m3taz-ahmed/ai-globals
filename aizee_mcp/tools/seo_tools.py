@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import html.parser
+import http.client
 import ipaddress
 import json
 import re
@@ -85,6 +86,9 @@ _ISSUE_TYPE_TO_CATEGORY: dict[str, str] = {
     "broken-internal-link": "Core",
     "thin-content": "Content",
     "images-missing-alt": "Images",
+    "images-missing-dims": "Images",
+    "og-title-missing": "Social",
+    "og-desc-missing": "Social",
     "slow-response": "Performance",
     "deep-page": "Architecture",
     "missing-structured-data": "Schema",
@@ -156,7 +160,9 @@ def _resolves_to_private_ip(host: str) -> bool:
             except ValueError:
                 continue
     except (socket.gaierror, OSError):
-        pass  # DNS resolution failed — let the fetch attempt proceed
+        # DNS resolution failed — fail closed: refuse the fetch rather than
+        # letting it proceed to an unvalidated (possibly rebound) target.
+        return True
     return False
 
 
@@ -168,9 +174,15 @@ class _SsrfSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
     ):
         # Resolve relative redirect URLs against the original request URL
         absolute_url = urllib.parse.urljoin(req.full_url, newurl)
-        # Validate redirect target — block redirects to private/internal IPs
+        # Validate redirect target — block redirects to private/internal IPs.
+        # Must RAISE (not return None): urllib only aborts the redirect on
+        # exception; a None return is version-dependent and unreliable.
         if _validate_url(absolute_url) is not None:
-            return None  # Block redirect to unsafe target
+            raise urllib.error.HTTPError(
+                req.full_url, code,
+                f"Redirect to {absolute_url!r} blocked by SSRF guard",
+                hdrs, fp,
+            )
         return super().redirect_request(req, fp, code, msg, hdrs, absolute_url)
 
 
@@ -185,6 +197,9 @@ def _validate_url(url: str) -> str | None:
         return json.dumps({"ok": False, "error": "URL must use http or https"})
     if not parsed.netloc:
         return json.dumps({"ok": False, "error": "URL must have a domain"})
+    # Reject credentialed URLs (user:pass@host) — credentials leak into logs.
+    if parsed.username or parsed.password:
+        return json.dumps({"ok": False, "error": "URLs with embedded credentials are not allowed"})
     # SSRF protection: block private/loopback/link-local IP ranges
     if _is_private_ip(parsed.hostname or ""):
         return json.dumps({"ok": False, "error": "Private/internal IP addresses are not allowed"})
@@ -236,6 +251,10 @@ def _fetch(url: str) -> tuple[int | None, str, dict[str, str]]:
     except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError, LookupError):
         # LookupError covers unknown charset encoding; HTTPError for blocked redirects
         return None, "", {}
+    except http.client.HTTPException:
+        # IncompleteRead/BadStatusLine/RemoteDisconnected are not OSError
+        # subclasses — a malformed response must not crash the tool.
+        return None, "", {}
 
 
 # --- HTML parser -----------------------------------------------------------
@@ -261,10 +280,11 @@ class _SeoHtmlParser(html.parser.HTMLParser):
         self._script_type = ""
         self._script_content: list[str] = []
         self._tag_stack: list[str] = []
-        self._current_attrs: dict[str, str] = {}
         self._in_a = False
         self._current_link_href = ""
         self._current_link_text: list[str] = []
+        self.heading_order: list[int] = []  # document-order heading levels
+        self.has_hreflang = False
 
     @property
     def _current_tag(self) -> str:
@@ -285,6 +305,8 @@ class _SeoHtmlParser(html.parser.HTMLParser):
         href = attr_dict.get("href", "")
         if rel == "canonical" and href:
             self.canonical = href
+        if rel == "alternate" and attr_dict.get("hreflang"):
+            self.has_hreflang = True
 
     def _handle_img_tag(self, attr_dict: dict[str, str]) -> None:
         self.images.append({
@@ -297,7 +319,8 @@ class _SeoHtmlParser(html.parser.HTMLParser):
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attr_dict = {k: (v or "") for k, v in attrs}
         self._tag_stack.append(tag)
-        self._current_attrs = attr_dict
+        if tag in ("h1", "h2", "h3"):
+            self.heading_order.append(int(tag[1]))
         if tag == "title":
             self._in_title = True
         elif tag == "meta":
@@ -446,10 +469,6 @@ def _parser_to_page_data(parser: _SeoHtmlParser, body: str, url: str, status_cod
     no_alt = [img for img in parser.images if not img.get("alt")]
     no_dims = [img for img in parser.images if not img.get("width") or not img.get("height")]
     robots_meta = parser.meta.get("robots", "").lower()
-    heading_order: list[int] = []
-    heading_order.extend([1] * len(parser.h1s))
-    heading_order.extend([2] * len(parser.h2s))
-    heading_order.extend([3] * len(parser.h3s))
 
     return PageData(
         url=url,
@@ -459,7 +478,7 @@ def _parser_to_page_data(parser: _SeoHtmlParser, body: str, url: str, status_cod
         meta_description=parser.meta.get("description", "") or None,
         canonical_url=parser.canonical or None,
         h1_count=len(parser.h1s),
-        heading_order=heading_order,
+        heading_order=list(parser.heading_order),
         is_indexable="noindex" not in robots_meta,
         robots_meta=robots_meta or None,
         word_count=wc,
@@ -469,7 +488,7 @@ def _parser_to_page_data(parser: _SeoHtmlParser, body: str, url: str, status_cod
         og_title=parser.og_tags.get("og:title") or None,
         og_description=parser.og_tags.get("og:description") or None,
         has_structured_data=bool(parser.json_ld),
-        has_hreflang=False,  # Not currently extracted by _SeoHtmlParser
+        has_hreflang=parser.has_hreflang,
     )
 
 
@@ -591,15 +610,25 @@ def register_seo_tools(mcp: FastMCP) -> None:
         err = _validate_url(start_url)
         if err:
             return err
-        max_pages = max(1, min(max_pages, _MAX_PAGES))
+        try:
+            max_pages = max(1, min(int(max_pages), _MAX_PAGES))
+        except (TypeError, ValueError):
+            max_pages = 100
         parsed = urllib.parse.urlparse(start_url)
         base_domain = parsed.netloc
         visited: set[str] = set()
         queue: deque[str] = deque([start_url])
         all_issues: list[dict[str, str]] = []
         page_results: list[dict[str, Any]] = []
+        skipped_pages = 0
+        # Total time budget: 500 pages x 15s worst case would hold a server
+        # thread for hours on slow targets. Cap the whole crawl at 10 min.
+        import time as _time
+        deadline = _time.monotonic() + 600.0
 
         while queue and len(visited) < max_pages:
+            if _time.monotonic() > deadline:
+                break
             # B8: Memory guard — abort crawl if process RSS exceeds threshold.
             try:
                 import psutil
@@ -622,11 +651,20 @@ def register_seo_tools(mcp: FastMCP) -> None:
             if normalized in visited:
                 continue
             visited.add(normalized)
-            status, body, _ = _fetch(normalized)
+            try:
+                status, body, _ = _fetch(normalized)
+            except Exception:
+                skipped_pages += 1
+                continue
             if status is None or not body:
                 continue
-            parser = _parse_html(body)
-            issues = _audit_page_issues(parser, body, normalized)
+            try:
+                parser = _parse_html(body)
+                issues = _audit_page_issues(parser, body, normalized)
+            except Exception:
+                # One bad page must not abort the whole crawl.
+                skipped_pages += 1
+                continue
             all_issues.extend(issues)
             page_results.append({
                 "url": normalized,
@@ -658,6 +696,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
             "ok": True,
             "start_url": start_url,
             "pages_crawled": len(visited),
+            "pages_skipped": skipped_pages,
             "overall_score": overall_score,
             "total_issues": len(all_issues),
             "critical": critical,
@@ -713,7 +752,9 @@ def register_seo_tools(mcp: FastMCP) -> None:
             inp_value = int(round(percentile, 0))
         metrics["inp"] = {"value": inp_value, "status": _cwv_status("inp", inp_value)}
 
-        overall_good = all(m["status"] == "GOOD" for m in metrics.values() if m["value"] is not None)
+        # all() over zero measured metrics is True — require at least one.
+        measured = [m for m in metrics.values() if m["value"] is not None]
+        overall_good = bool(measured) and all(m["status"] == "GOOD" for m in measured)
         result: dict[str, Any] = {
             "ok": True,
             "url": url,
@@ -921,12 +962,22 @@ def register_seo_tools(mcp: FastMCP) -> None:
         cannibalization: dict[str, set[str]] = {}
 
         for row in rows:
+            if not isinstance(row, dict):
+                continue
             query = row.get("query", "")
             page = row.get("page", "")
             clicks = row.get("clicks", 0)
             impressions = row.get("impressions", 0)
             ctr = row.get("ctr", 0)
-            position = row.get("position", 0)
+            try:
+                position = float(row.get("position", 0))
+            except (TypeError, ValueError):
+                position = 0.0
+
+            # Cannibalization: multiple pages for same query (deduplicate).
+            # Bookkept FIRST so rows with invalid positions still count.
+            if query and page:
+                cannibalization.setdefault(query, set()).add(page)
 
             # Striking distance: pos 4-20, ≥20 impressions
             if 4 <= position <= 20 and impressions >= 20:
@@ -939,10 +990,6 @@ def register_seo_tools(mcp: FastMCP) -> None:
             expected = expected_ctr.get(pos_int, 0.01)
             if ctr < expected * 0.5 and impressions >= 10:
                 low_ctr.append({"query": query, "page": page, "position": round(position, 1), "ctr": round(ctr * 100, 2), "expected_ctr": round(expected * 100, 2), "impressions": impressions})
-
-            # Cannibalization: multiple pages for same query (deduplicate)
-            if query and page:
-                cannibalization.setdefault(query, set()).add(page)
 
         cannibalization_issues = [
             {"query": q, "pages": sorted(pages)}

@@ -60,8 +60,9 @@ class McpSecurableRegistry:
     """Thread-safe registry of MCP server securables and grants.
 
     Grants are keyed by ``(server_id, principal, permission)`` so a
-    duplicate grant is idempotent. ``ADMIN`` does not implicitly imply
-    ``USE`` — each permission must be granted explicitly.
+    duplicate grant is idempotent. ``ADMIN`` implies ``USE`` (an admin can
+    always use the server) — unlike the earlier documented behavior, which
+    was a footgun (admins locked out of use).
     """
 
     def __init__(self) -> None:
@@ -73,6 +74,8 @@ class McpSecurableRegistry:
 
     def register_server(self, server: McpServer) -> None:
         """Register or replace a server by its ``server_id``."""
+        if not server.server_id or not isinstance(server.server_id, str):
+            raise ValueError("server_id must be a non-empty string")
         with self._lock:
             self._servers[server.server_id] = server
 
@@ -89,8 +92,16 @@ class McpSecurableRegistry:
     # -- grants ----------------------------------------------------------
 
     def grant(self, grant: Grant) -> None:
-        """Add a grant (idempotent for the same triple)."""
+        """Add a grant (idempotent for the same triple).
+
+        Raises ``ValueError`` for grants on unregistered servers (no
+        orphan grants that silently never match).
+        """
         with self._lock:
+            if grant.server_id not in self._servers:
+                raise ValueError(f"Cannot grant on unknown server {grant.server_id!r}")
+            if not grant.principal or not isinstance(grant.principal, str):
+                raise ValueError("grant principal must be a non-empty string")
             self._grants[(grant.server_id, grant.principal, grant.permission)] = grant
 
     def revoke(
@@ -105,9 +116,16 @@ class McpSecurableRegistry:
     def check_permission(
         self, server_id: str, principal: str, permission: McpPermission,
     ) -> bool:
-        """True if the principal holds the permission on the server."""
+        """True if the principal holds the permission on the server.
+
+        ``ADMIN`` implies ``USE``.
+        """
         with self._lock:
-            return (server_id, principal, permission) in self._grants
+            if (server_id, principal, permission) in self._grants:
+                return True
+            if permission is McpPermission.USE:
+                return (server_id, principal, McpPermission.ADMIN) in self._grants
+            return False
 
     def list_grants(self, server_id: str | None = None) -> list[Grant]:
         """List grants, optionally filtered by ``server_id``."""
@@ -126,6 +144,18 @@ class McpSecurableRegistry:
             if server is None:
                 return False
             return tool_name in server.allowed_tools
+
+    def check_tool_use(
+        self, server_id: str, principal: str, tool_name: str,
+    ) -> bool:
+        """Complete gate: server exists + tool allowlisted + principal may USE.
+
+        Callers must use this (not ``is_tool_allowed`` alone) — the allowlist
+        without the grant check is only half the gate.
+        """
+        if not self.is_tool_allowed(server_id, tool_name):
+            return False
+        return self.check_permission(server_id, principal, McpPermission.USE)
 
     # -- maintenance -----------------------------------------------------
 

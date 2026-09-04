@@ -22,7 +22,7 @@
 19. [CMD] Validation Gate `[OS-VAL-01]`: Before handoff, run `python eval/harness.py` and ensure `all_pass: true`. Fix all `ruff`/`mypy`/`pytest`/`validate-globals` failures first.
 20. [CMD] Project Testing `[OS-TEST-01]`: For ANY project under aiZee, follow two-tier testing `[TEST-07]`:
     - FAST tier (during iteration): run ONLY targeted tests for touched code (~5s max). See `workflows/testing-tiers.md` for per-stack commands. Full fast tier (`aizee test`, all non-slow, no cov) is ~60-120s Linux / ~180s Windows — NOT 12s.
-    - FULL tier (before declaring done): run the project's complete test suite + coverage. Must pass green (~180-300s, 3561 tests).
+    - FULL tier (before declaring done): run the project's complete test suite + coverage. Must pass green (~180-300s, 3865 tests).
     - NEVER run the full suite on every change. NEVER skip the full suite before done.
     - If no test framework exists, write the first test for touched code before done `[TEST-09]`.
 21. [CMD] Cleanup Gate `[OS-CLEAN-01]`: Before handoff, run `workflows/16-cleanup-and-scm.md` to remove temporary files and stage only relevant changes.

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -110,7 +111,12 @@ class _SpecValidator:
 
 def _render_markdown(spec: Spec) -> str:
     """Render the spec as a Markdown artifact string."""
-    requirements_state = "validated" if spec.phase.value >= SpecPhase.PLAN.value else "pending"
+    try:
+        phase_idx = PHASE_ORDER.index(spec.phase)
+        plan_idx = PHASE_ORDER.index(SpecPhase.PLAN)
+    except ValueError:
+        phase_idx, plan_idx = 0, 0
+    requirements_state = "validated" if phase_idx >= plan_idx else "pending"
     lines: list[str] = [
         f"# Spec: {spec.title}",
         "",
@@ -152,7 +158,22 @@ class _SpecDriftHelper:
         self._engine = engine
 
     def get_manifest(self, spec_id: str) -> SpecManifest:
-        """Get the hash-tracked manifest for a spec's files."""
+        """Get the hash-tracked manifest for a spec's files.
+
+        Loads the persisted baseline written by ``_save`` when present, so
+        drift detection compares against the last save — not against the
+        current file contents (which would always report "unmodified").
+        Falls back to recording current hashes (and persisting them) when
+        no baseline exists yet.
+        """
+        baseline_path = self._engine._manifest_path(spec_id)
+        if baseline_path.exists():
+            try:
+                return SpecManifest.from_dict(
+                    json.loads(baseline_path.read_text(encoding="utf-8"))
+                )
+            except (ValueError, KeyError, TypeError, OSError):
+                pass
         manifest = SpecManifest()
         json_path = self._engine._spec_path(spec_id)
         md_path = self._engine._spec_md_path(spec_id)
@@ -160,6 +181,8 @@ class _SpecDriftHelper:
             manifest.record_file(json_path.name, json_path.read_text(encoding="utf-8"))
         if md_path.exists():
             manifest.record_file(md_path.name, md_path.read_text(encoding="utf-8"))
+        with contextlib.suppress(OSError):
+            baseline_path.write_text(json.dumps(manifest.to_dict()), encoding="utf-8")
         return manifest
 
     def is_file_modified(self, spec_id: str, file_type: str = "json") -> bool:
@@ -253,6 +276,10 @@ class _SpecDriftHelper:
 
         Returns a paginated result with items, total, page, and has_more.
         """
+        if page < 1:
+            raise ValueError(f"page must be >= 1, got {page}")
+        if not 1 <= page_size <= 100:
+            raise ValueError(f"page_size must be 1..100, got {page_size}")
         all_specs = self._engine.list_specs()
         total = len(all_specs)
         start = (page - 1) * page_size
@@ -276,7 +303,7 @@ class _SpecContentHelper:
     def add_requirement(self, spec_id: str, description: str, priority: str = "must", user_story: str = "") -> Requirement:
         """Add a requirement to a spec (Specify phase)."""
         spec = self._e._require_phase(spec_id, SpecPhase.SPECIFY, "add requirements")
-        req_id = f"REQ-{len(spec.requirements) + 1:03d}"
+        req_id = self._e._next_id(spec_id, "REQ", [r.id for r in spec.requirements])
         req = Requirement(id=req_id, description=description, priority=priority, user_story=user_story)
         spec.requirements.append(req)
         self._e._save(spec)
@@ -291,14 +318,18 @@ class _SpecContentHelper:
     def add_task(self, spec_id: str, description: str, depends_on: list[str] | None = None, estimate_hours: float = 0.0) -> Task:
         """Add a task to a spec (Tasks phase)."""
         spec = self._e._require_phase(spec_id, SpecPhase.TASKS, "add tasks")
-        task_id = f"TASK-{len(spec.tasks) + 1:03d}"
+        task_id = self._e._next_id(spec_id, "TASK", [t.id for t in spec.tasks])
         task = Task(id=task_id, description=description, depends_on=depends_on or [], estimate_hours=estimate_hours)
         spec.tasks.append(task)
         self._e._save(spec)
         return task
 
+    _VALID_TASK_STATUSES: frozenset[str] = frozenset({"pending", "in_progress", "done", "blocked"})
+
     def update_task_status(self, spec_id: str, task_id: str, status: str) -> bool:
         """Update a task's status (Implement phase). WS-E W1: done requires evidence."""
+        if status not in self._VALID_TASK_STATUSES:
+            raise ValueError(f"Invalid task status {status!r}: expected one of {sorted(self._VALID_TASK_STATUSES)}")
         spec = self._e.load_spec(spec_id)
         if spec is None:
             return False
@@ -353,6 +384,22 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
         """Get the markdown artifact path for a spec."""
         return self.specs_dir / f"{spec_id}.md"
 
+    def _manifest_path(self, spec_id: str) -> Path:
+        """Get the persisted manifest baseline path for a spec."""
+        return self.specs_dir / f"{spec_id}.manifest.json"
+
+    def _write_manifest(self, spec: Spec) -> None:
+        """Persist the hash baseline after every save (drift detection basis)."""
+        manifest = SpecManifest()
+        json_path = self._spec_path(spec.id)
+        md_path = self._spec_md_path(spec.id)
+        if json_path.exists():
+            manifest.record_file(json_path.name, json_path.read_text(encoding="utf-8"))
+        if md_path.exists():
+            manifest.record_file(md_path.name, md_path.read_text(encoding="utf-8"))
+        with contextlib.suppress(OSError):
+            self._manifest_path(spec.id).write_text(json.dumps(manifest.to_dict()), encoding="utf-8")
+
     # --- CRUD ----------------------------------------------------------------
 
     def init_spec(
@@ -374,20 +421,26 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
         return spec
 
     def load_spec(self, spec_id: str) -> Spec | None:
-        """Load a specification by ID."""
+        """Load a specification by ID. Returns None when missing or corrupt."""
         path = self._spec_path(spec_id)
         if not path.exists():
             return None
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return Spec.from_dict(data)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return Spec.from_dict(data)
+        except (ValueError, KeyError, TypeError, OSError) as exc:
+            import logging
+            logging.getLogger(__name__).warning("Spec %s unreadable, treated as missing: %s", spec_id, exc)
+            return None
 
     def _save(self, spec: Spec) -> None:
-        """Save a spec to disk (JSON state + Markdown artifact)."""
+        """Save a spec to disk (JSON state + Markdown artifact + manifest)."""
         spec.updated_at = datetime.now(timezone.utc).isoformat()
         self._spec_path(spec.id).write_text(
             json.dumps(spec.to_dict(), indent=2), encoding="utf-8",
         )
         self._write_markdown(spec)
+        self._write_manifest(spec)
 
     def list_specs(self) -> list[dict[str, Any]]:
         """List all specs."""
@@ -407,15 +460,24 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
         return specs
 
     def delete_spec(self, spec_id: str) -> bool:
-        """Delete a spec."""
+        """Delete a spec and all its artifacts (json/md/plan/tasks/checklist/manifest)."""
         deleted = False
-        json_path = self._spec_path(spec_id)
-        md_path = self._spec_md_path(spec_id)
-        if json_path.exists():
-            json_path.unlink()
-            deleted = True
-        if md_path.exists():
-            md_path.unlink()
+        paths = [
+            self._spec_path(spec_id),
+            self._spec_md_path(spec_id),
+            self._manifest_path(spec_id),
+            self.specs_dir / f"{spec_id}.plan.md",
+            self.specs_dir / f"{spec_id}.tasks.md",
+            self.specs_dir / f"{spec_id}.spec.md",
+            self.specs_dir / f"{spec_id}.checklist.md",
+        ]
+        for path in paths:
+            try:
+                if path.exists():
+                    path.unlink()
+                    deleted = True
+            except OSError:
+                continue
         return deleted
 
     # --- Phase content (delegates to _SpecContentHelper) ---
@@ -449,9 +511,9 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
         if reason is not None:
             if spec.phase == SpecPhase.DONE:
                 raise ValueError("Spec is already done")
-            if spec.phase == SpecPhase.IMPLEMENT and "not done" in reason.lower():
+            if spec.phase == SpecPhase.IMPLEMENT and reason.startswith("Tasks not done"):
                 raise ValueError("Cannot advance: not all tasks are done")
-            if spec.phase == SpecPhase.IMPLEMENT and "not verified" in reason.lower():
+            if spec.phase == SpecPhase.IMPLEMENT and reason.startswith("Tasks not verified"):
                 raise ValueError(f"Cannot advance: {reason}")
             raise ValueError(f"Cannot advance: {reason[0].lower()}{reason[1:]}")
         current_idx = PHASE_ORDER.index(spec.phase)
@@ -483,6 +545,25 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
         if spec.phase != phase:
             raise ValueError(f"Cannot {verb} in {spec.phase.value} phase")
         return spec
+
+    @staticmethod
+    def _next_id(spec_id: str, prefix: str, existing: list[str]) -> str:
+        """Allocate the next ID as max(existing numeric suffix) + 1.
+
+        ``len()+1`` collides after removals; scanning the max suffix keeps
+        IDs unique within the spec.
+        """
+        import re
+        taken: set[str] = set(existing)
+        max_n = 0
+        for ident in existing:
+            m = re.fullmatch(rf"{re.escape(prefix)}-(\d+)", ident)
+            if m:
+                max_n = max(max_n, int(m.group(1)))
+        candidate = max_n + 1
+        while f"{prefix}-{candidate:03d}" in taken:
+            candidate += 1
+        return f"{prefix}-{candidate:03d}"
 
     # --- Deltas & manifest ------------------------------------------------------
 

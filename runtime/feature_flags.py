@@ -46,18 +46,44 @@ class FeatureFlagger:
             True if the flag is enabled for this identity.
 
         Raises:
-            ValidationError: if any percentage is outside [0, 100].
+            ValidationError: if any percentage is outside [0, 100], or if
+                ``segments`` configs are not dicts.
         """
+        if segments is None:
+            segments = {}
+        if not isinstance(segments, dict):
+            raise ValidationError(
+                "segments must be a dict",
+                context={"segments": type(segments).__name__},
+            )
         self._check_pct(rollout_pct, "rollout_pct")
         for seg_name, cfg in segments.items():
-            cfg = cfg or {}
+            if cfg is None:
+                cfg = {}
+            if not isinstance(cfg, dict):
+                raise ValidationError(
+                    f"segments.{seg_name} must be a dict",
+                    context={f"segments.{seg_name}": type(cfg).__name__},
+                )
             ids = cfg.get("ids")
-            if ids and identity in ids:
+            # Exact identity match on list items (not substring `in` on str).
+            if isinstance(ids, (list, tuple, set)):
+                if identity in list(ids):
+                    return True
+            elif isinstance(ids, str) and identity == ids:
                 return True
             seg_pct = cfg.get("pct")
             if seg_pct is not None:
+                if isinstance(seg_pct, bool) or not isinstance(seg_pct, int):
+                    raise ValidationError(
+                        f"segments.{seg_name}.pct must be an int in [0, 100]",
+                        context={f"segments.{seg_name}.pct": seg_pct},
+                    )
                 self._check_pct(seg_pct, f"segments.{seg_name}.pct")
-                if _bucket(f"{flag_name}:{seg_name}", identity) < seg_pct:
+                # Consistent with global: same _bucket(flag, identity) scheme;
+                # segment is mixed into the identity side so buckets stay
+                # isolated per segment but hashed identically.
+                if _bucket(flag_name, f"{seg_name}:{identity}") < seg_pct:
                     return True
 
         return _bucket(flag_name, identity) < rollout_pct

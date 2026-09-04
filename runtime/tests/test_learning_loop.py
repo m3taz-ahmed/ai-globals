@@ -180,6 +180,7 @@ class TestPersistence:
         loop1 = LearningLoop(persist_path=path)
         loop1.record("exec", {"ok": True}, success=True, gate="probity")
         loop1.record("Read", {"ok": True}, success=True, gate="policy")
+        loop1.flush()  # Force persist before creating a new loop
         # Create new loop with same path
         loop2 = LearningLoop(persist_path=path)
         assert loop2.outcome_count == 2

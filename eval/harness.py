@@ -183,7 +183,7 @@ class EvalHarness:
                 "--cov=plugins",
                 "--cov=eval",
                 "--cov-report=term-missing",
-                "--cov-fail-under=80",
+                "--cov-fail-under=95",
             ],
         )
         # Supply-chain step: generate_sbom.py can be run beforehand to emit

@@ -1,4 +1,4 @@
-"""Design Library — 58 brand design systems loaded on demand.
+"""Design Library — 56 brand design systems loaded on demand.
 
 Inspired by zeta92/design-library-plugin. Provides a catalog of real-world
 brand design systems (Stripe, Linear, Vercel, Figma, etc.) that can be loaded
@@ -15,6 +15,7 @@ The library supports:
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -90,7 +91,7 @@ class DesignLibrary:
 
     DESIGN_FILE: ClassVar[str] = "DESIGN.md"
 
-    # Curated catalog of 58 brand design systems.
+    # Curated catalog of 56 unique brand design systems.
     # In production, these would be downloaded from the awesome-design-md repo.
     CATALOG: ClassVar[list[str]] = [
         "stripe", "linear", "vercel", "figma", "google", "anthropic",
@@ -101,8 +102,8 @@ class DesignLibrary:
         "sentry", "datadog", "cloudflare", "netlify", "railway",
         "fly", "render", "heroku", "digitalocean", "linode",
         "tailwind", "shadcn", "radix", "cmdk", "vaul", "sonner",
-        "astria", "creatio", "dub", "envshare", "nutlope",
-        "resend", "react-email", "koala", "flightscope",
+        "astria", "creatio", "envshare", "nutlope",
+        "react-email", "koala", "flightscope",
         "chronark", "leerob", "steven-tey", "shadcn-personal",
     ]
 
@@ -148,7 +149,10 @@ class DesignLibrary:
         Returns:
             BrandDesignSystem or None if not found.
         """
-        key = brand.lower()
+        key = brand.lower().strip()
+        # Confine brand key: reject path traversal and separators.
+        if not key or key in (".", "..") or ".." in key or "/" in key or "\\" in key:
+            return None
         if key in self._cache:
             return self._cache[key]
 
@@ -197,7 +201,10 @@ class DesignLibrary:
         sections_content: list[str] = []
         mapping_str: dict[str, str] = {}
         for section, brand_name in section_mapping.items():
-            system = next((s for s in loaded if s.name == brand_name.lower()), loaded[0])
+            # Fail-closed: unknown brand in mapping → abort mix (return None).
+            system = next((s for s in loaded if s.name == brand_name.lower()), None)
+            if system is None:
+                return None
             section_text = system.get_section(section)
             if section_text:
                 sections_content.append(section_text)
@@ -213,7 +220,7 @@ class DesignLibrary:
 
     def suggest(self, project_type: ProjectType) -> list[str]:
         """Suggest best-fit brands for a project type."""
-        return self.PROJECT_SUGGESTIONS.get(project_type, self.PROJECT_SUGGESTIONS[ProjectType.UNKNOWN])
+        return list(self.PROJECT_SUGGESTIONS.get(project_type, self.PROJECT_SUGGESTIONS[ProjectType.UNKNOWN]))
 
     def detect_project_type(self, project_dir: Path) -> ProjectType:
         """Detect project type from directory contents."""
@@ -232,9 +239,35 @@ class DesignLibrary:
         ]
 
         all_files: list[str] = []
-        for f in project_dir.rglob("*"):
-            if f.is_file() and ".git" not in str(f) and "node_modules" not in str(f):
-                all_files.append(str(f).lower())
+        # Bounded scan: max 2000 files, skip vendored dirs, no symlink follow.
+        _skip_dirs = {"node_modules", ".git", ".venv", "__pycache__"}
+        _count = 0
+        _stack: list[Path] = [project_dir]
+        while _stack and _count < 2000:
+            current = _stack.pop()
+            try:
+                if current.is_symlink():
+                    continue
+                if current.is_dir():
+                    if current.name in _skip_dirs and current != project_dir:
+                        continue
+                    try:
+                        with os.scandir(current) as it:
+                            entries = list(it)
+                    except OSError:
+                        continue
+                    for entry in entries:
+                        try:
+                            if entry.is_symlink():
+                                continue
+                        except OSError:
+                            continue
+                        _stack.append(Path(entry.path))
+                elif current.is_file():
+                    _count += 1
+                    all_files.append(str(current).lower())
+            except OSError:
+                continue
 
         scores: dict[ProjectType, int] = {}
         for ptype, keywords in indicators:

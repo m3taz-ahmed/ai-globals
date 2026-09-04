@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import abc
 import json
+import re
 from enum import Enum
 from typing import Any
 
@@ -21,6 +22,23 @@ from runtime import crm_manager, drip_engine
 from runtime.schemas import ValidationError
 
 from .common import validate_query
+
+_EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+_MAX_EMAIL_BODY = 200_000  # 200KB cap on inline bodies
+
+
+def _clean_header(value: Any, name: str, limit: int = 998) -> str:
+    """Validate an email header field: str, no CR/LF (header injection), bounded.
+
+    Raises ValidationError on violation.
+    """
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError(f"'{name}' is required")
+    if "\n" in value or "\r" in value:
+        raise ValidationError(f"'{name}' must not contain line breaks (header injection)")
+    if len(value) > limit:
+        raise ValidationError(f"'{name}' exceeds {limit} chars")
+    return value.strip()
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -53,6 +71,8 @@ class EmailBackend(abc.ABC):
     """
 
     provider: EmailProvider
+    #: Provider events endpoint (never derived from the send endpoint).
+    EVENTS_ENDPOINT: str = ""
 
     @abc.abstractmethod
     def build_send_instruction(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -61,6 +81,7 @@ class EmailBackend(abc.ABC):
 
 class BrevoBackend(EmailBackend):
     provider = EmailProvider.BREVO
+    EVENTS_ENDPOINT = "https://api.brevo.com/v3/smtp/statistics/events"
 
     def build_send_instruction(self, payload: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -79,6 +100,7 @@ class BrevoBackend(EmailBackend):
 
 class ListmonkBackend(EmailBackend):
     provider = EmailProvider.LISTMONK
+    EVENTS_ENDPOINT = "/api/subscribers/events"
 
     def build_send_instruction(self, payload: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -97,6 +119,7 @@ class ListmonkBackend(EmailBackend):
 
 class MailchimpBackend(EmailBackend):
     provider = EmailProvider.MAILCHIMP
+    EVENTS_ENDPOINT = "/3.0/reports"
 
     def build_send_instruction(self, payload: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -145,12 +168,22 @@ def register_email_tools(mcp: FastMCP) -> None:
         provider: str = "brevo",
     ) -> str:
         """Send a transactional email. WRITE/EXTERNAL — gated by guardian; requires human approval before the ESP call executes. Returns a JSON instruction object (proxy) describing the send."""
-        if not to or "@" not in to:
+        try:
+            to = _clean_header(to, "to", 254)
+            subject = _clean_header(subject, "subject")
+            sender = _clean_header(sender, "sender", 254) if sender else ""
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
+        if not _EMAIL_RE.match(to):
             return _err("'to' must be a valid email address")
-        if not subject:
-            return _err("'subject' is required")
+        if sender and not _EMAIL_RE.match(sender):
+            return _err("'sender' must be a valid email address")
+        if not isinstance(html, str) or not isinstance(text, str):
+            return _err("Provide 'html' or 'text' body as strings")
         if not html and not text:
             return _err("Provide 'html' or 'text' body")
+        if len(html) + len(text) > _MAX_EMAIL_BODY:
+            return _err(f"Email body exceeds {_MAX_EMAIL_BODY} chars")
         try:
             backend = _resolve_backend(provider)
         except ValidationError as exc:
@@ -241,13 +274,16 @@ def register_email_tools(mcp: FastMCP) -> None:
             backend = _resolve_backend(provider)
         except ValidationError as exc:
             return _err(exc.message, context=exc.context)
-        since_days = max(1, min(since_days, 90))
+        try:
+            since_days = max(1, min(int(since_days), 90))
+        except (TypeError, ValueError):
+            since_days = 7
         return _json({
             "ok": True,
             "provider": backend.provider.value,
             "since_days": since_days,
             "instruction": {
-                "endpoint": f"{backend.build_send_instruction({}).get('endpoint', '')}/events",
+                "endpoint": backend.EVENTS_ENDPOINT,
                 "method": "GET",
                 "requires_api_key_env": "AIZEE_" + backend.provider.value.upper() + "_API_KEY",
                 "query": {"since": f"{since_days}d"},
@@ -291,8 +327,10 @@ def register_email_tools(mcp: FastMCP) -> None:
         """Assemble a campaign from a template + list. WRITE/EXTERNAL — gated; returns proxy instruction."""
         if err := validate_query(name):
             return err
-        if not subject:
-            return _err("'subject' is required")
+        try:
+            subject = _clean_header(subject, "subject")
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
         try:
             backend = _resolve_backend(provider)
         except ValidationError as exc:
@@ -319,10 +357,13 @@ def register_email_tools(mcp: FastMCP) -> None:
         provider: str = "brevo",
     ) -> str:
         """Subscribe an email to a list (GDPR/CAN-SPAM aware). WRITE/EXTERNAL — gated; returns proxy instruction. double_opt_in enforces consent."""
-        if not email or "@" not in email:
+        try:
+            email = _clean_header(email, "email", 254)
+            list_id = _clean_header(list_id, "list_id", 128)
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
+        if not _EMAIL_RE.match(email):
             return _err("'email' must be valid")
-        if not list_id:
-            return _err("'list_id' is required")
         try:
             backend = _resolve_backend(provider)
         except ValidationError as exc:
@@ -349,10 +390,13 @@ def register_email_tools(mcp: FastMCP) -> None:
         provider: str = "brevo",
     ) -> str:
         """Unsubscribe an email from a list (honors unsubscribe requests). WRITE/EXTERNAL — gated; returns proxy instruction."""
-        if not email or "@" not in email:
+        try:
+            email = _clean_header(email, "email", 254)
+            list_id = _clean_header(list_id, "list_id", 128)
+        except ValidationError as exc:
+            return _err(exc.message, context=exc.context)
+        if not _EMAIL_RE.match(email):
             return _err("'email' must be valid")
-        if not list_id:
-            return _err("'list_id' is required")
         try:
             backend = _resolve_backend(provider)
         except ValidationError as exc:
@@ -392,12 +436,16 @@ def register_email_tools(mcp: FastMCP) -> None:
     def drip_ready_steps(
         sequence_name: str,
         context: str = "{}",
+        steps: str = "[]",
     ) -> str:
         """List ready-to-fire steps in a drip sequence via runtime.drip_engine. Pure computation.
 
         Args:
             sequence_name: Name of the sequence to check.
             context: JSON object with runtime context for condition evaluation.
+            steps: JSON array of {trigger, action, delay_hours,
+                entered_hours_ago, fired} defining the sequence inline
+                (the tool is stateless — sequences do not persist across calls).
         """
         if err := validate_query(sequence_name):
             return err
@@ -405,12 +453,37 @@ def register_email_tools(mcp: FastMCP) -> None:
             ctx = json.loads(context)
         except json.JSONDecodeError:
             return _err("'context' must be valid JSON")
+        if not isinstance(ctx, dict):
+            return _err("'context' must be a JSON object")
         try:
+            steps_list = json.loads(steps)
+        except json.JSONDecodeError:
+            return _err("'steps' must be valid JSON")
+        if not isinstance(steps_list, list):
+            return _err("'steps' must be a JSON array")
+        try:
+            from datetime import datetime, timedelta, timezone
             engine = drip_engine.DripEngine()
-            try:
-                engine.add_sequence(sequence_name)
-            except ValidationError:
-                engine.sequence(sequence_name)
+            seq = engine.add_sequence(sequence_name)
+            for i, s in enumerate(steps_list):
+                if not isinstance(s, dict):
+                    return _err(f"step {i} must be an object")
+                try:
+                    trigger = drip_engine.Trigger(str(s.get("trigger", "on_enter")))
+                except ValueError:
+                    return _err(f"step {i}: invalid trigger {[t.value for t in drip_engine.Trigger]}")
+                try:
+                    delay = float(s.get("delay_hours", 0.0))
+                    entered_ago = float(s.get("entered_hours_ago", 0.0))
+                except (TypeError, ValueError):
+                    return _err(f"step {i}: delay_hours/entered_hours_ago must be numbers")
+                if delay < 0 or entered_ago < 0:
+                    return _err(f"step {i}: delays must be non-negative")
+                step = engine.add_step(seq, trigger, None, str(s.get("action", "")), delay_hours=delay)
+                if bool(s.get("entered", True)):
+                    engine.enter(step, datetime.now(timezone.utc) - timedelta(hours=entered_ago))
+                if s.get("fired"):
+                    engine.mark_fired(step)
             ready = engine.ready_steps(context=ctx)
         except (ValidationError, TypeError, ValueError) as exc:
             return _err(exc.message if hasattr(exc, "message") else str(exc))
@@ -454,6 +527,13 @@ def register_email_tools(mcp: FastMCP) -> None:
             target = crm_manager.OpportunityStage(to_stage)
         except ValueError:
             return _err(f"invalid stage; valid: {[s.value for s in crm_manager.OpportunityStage]}")
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            return _err("'amount' must be a number")
+        import math
+        if not math.isfinite(amount) or amount < 0 or amount > 1e15:
+            return _err("'amount' must be finite within [0, 1e15]")
         opp = crm_manager.Opportunity(
             opportunity_id=opportunity_id,
             company_id=company_id,

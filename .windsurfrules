@@ -1,4 +1,4 @@
-# aiZee
+﻿# aiZee
 
 # aiZee — Global Bootloader
 
@@ -8,7 +8,7 @@
 
 ## Working Directory [DIR-01]
 - **Working directory: D:\server\.ai ONLY.** All edits, new files, and modifications go here.
-- **D:\server\aizee is READ-ONLY.** Never edit files in izee directly. It is the deployment/usage folder, updated only via the batch update script.
+- **D:\server\aizee is READ-ONLY.** Never edit files in aizee directly. It is the deployment/usage folder, updated only via the batch update script.
 
 ## Cold Start
 1. Read `global-roles.md`, `global-workflow.md`, and `Memory.md`.

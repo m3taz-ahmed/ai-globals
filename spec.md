@@ -26,12 +26,12 @@ aiZee is a sovereign, version-controlled operating system that sits between you 
 aizee/                         # Sovereign root (discovered via AIZEE_ROOT)
 ├── aizee_cli.py               # CLI entry point (aizee command)
 ├── config.py                  # Root discovery + version
-├── runtime/                   # Kernel: policy, budget, audit, 108 governance modules
+├── runtime/                   # Kernel: policy, budget, audit, 109 governance modules
 │   ├── kernel.py              # Facade delegating to managers
 │   ├── managers/              # PolicyManager, WorkflowManager, AgentManager, ChatManager
 │   ├── uninstaller.py         # Interactive uninstaller with backup
-│   └── ...                    # 108 governance modules
-├── aizee_mcp/                 # MCP server (36 tools, 3 resources)
+│   └── ...                    # 109 governance modules
+├── aizee_mcp/                 # MCP server (84 tools, 3 resources)
 │   ├── aizee_server.py        # FastMCP server
 │   └── tools/                 # Tool modules by responsibility
 ├── memory/                    # SQLite + FTS5 + vector memory
@@ -63,7 +63,7 @@ aizee uninstall       # Interactive uninstall with backup
 | Types | `mypy` | 0 errors (strict, 345 files) |
 | Tests (targeted) | `pytest path/to/test_file.py -q` | ~5s max, during iteration |
 | Tests (fast) | `aizee test` | ~60-120s Linux / ~180s Windows, no cov |
-| Tests (full) | `aizee test --full` | 3561 tests, 80%+ coverage (actual 96%), ~180-300s |
+| Tests (full) | `aizee test --full` | 3865 tests, 95%+ coverage (actual 96%), ~180-300s |
 | E2E | `python eval/harness.py` | all_pass: true (read-only) |
 
 ## Non-Goals

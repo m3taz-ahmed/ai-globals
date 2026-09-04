@@ -70,7 +70,9 @@ _SECTOR_CONFIGS: dict[Sector, SectorConfig] = {
         weight=1.1,
         patterns=[
             re.compile(r"\b(how\s+to|step\s+by\s+step|instructions)\b", re.I),
-            re.compile(r"\b(First|Then|Finally|Next)\b", re.I),
+            # Sequence markers only count at a sentence start or after a
+            # colon/semicolon — bare "then"/"next" mid-sentence FP'd badly.
+            re.compile(r"(?:^|[.!?;:\n]\s*)(first|then|finally|next)\b[:,.]?\s+\w", re.I),
             re.compile(r"\b(deploy|install|configure|setup|run)\b", re.I),
         ],
     ),
@@ -112,7 +114,12 @@ class SectorClassifier:
     """
 
     def classify(self, text: str) -> Sector:
-        """Classify text into a cognitive sector."""
+        """Classify text into a cognitive sector.
+
+        Ties resolve deterministically by sector declaration order
+        (EPISODIC first), documented here instead of relying on dict
+        insertion accidents.
+        """
         scores: dict[Sector, int] = {}
         for sector, config in _SECTOR_CONFIGS.items():
             score = sum(1 for p in config.patterns if p.search(text))
@@ -120,14 +127,22 @@ class SectorClassifier:
                 scores[sector] = score
         if not scores:
             return Sector.SEMANTIC  # Default
-        return max(scores, key=lambda s: scores[s])
+        best = max(scores.values())
+        for sector in _SECTOR_CONFIGS:
+            if scores.get(sector) == best:
+                return sector
+        return Sector.SEMANTIC
 
     def decay_score(
-        self, sector: Sector, initial_salience: float, days_since: float,
+        self, sector: Sector | str, initial_salience: float, days_since: float,
     ) -> float:
         """Compute decayed salience for a sector (from OpenMemory)."""
-        cfg = _SECTOR_CONFIGS[sector]
-        decayed = initial_salience * math.exp(-cfg.decay_lambda * days_since)
+        try:
+            key = sector if isinstance(sector, Sector) else Sector(str(sector).lower())
+            cfg = _SECTOR_CONFIGS[key]
+        except (KeyError, ValueError):
+            cfg = _SECTOR_CONFIGS[Sector.SEMANTIC]
+        decayed = initial_salience * math.exp(-cfg.decay_lambda * max(0.0, days_since))
         return max(0.0, min(1.0, decayed))
 
     def sector_weight(self, sector: Sector) -> float:

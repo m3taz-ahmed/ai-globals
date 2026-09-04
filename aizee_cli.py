@@ -16,6 +16,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 import config
+from runtime.schemas import AizeeError
 
 if TYPE_CHECKING:
     from runtime.kernel import Kernel
@@ -849,7 +850,7 @@ def cmd_test(args: argparse.Namespace) -> int:
             "--tb=short", "-p", "no:warnings",
             "--cov=runtime", "--cov=memory", "--cov=aizee_mcp",
             "--cov-report=term-missing",
-            "--cov-fail-under=80",
+            "--cov-fail-under=95",
         ]
         console.print("[cyan]Running FULL test suite (all tests + coverage)...[/]")
     else:
@@ -1089,6 +1090,26 @@ def main(argv: list[str] | None = None) -> int:
     except CLIInputError as exc:
         console.print(f"[red]{exc}[/red]")
         return 1
+    except KeyboardInterrupt:
+        console.print("[yellow]Interrupted.[/yellow]")
+        return 130
+    except AizeeError as exc:
+        # Structured handling for AizeeError (carries error_code, severity, context).
+        error_code = exc.error_code
+        severity = exc.severity
+        console.print(f"[red]Error [{error_code}][/red] (severity: {severity}): {exc}")
+        if exc.context:
+            console.print(f"[dim]Context: {exc.context}[/dim]")
+        console.print("[dim]Run 'aizee doctor' to diagnose, or use --verbose for full traceback.[/dim]")
+        if getattr(args, "verbose", False) or "--verbose" in sys.argv:
+            raise
+        return 2
+    except Exception as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        console.print("[dim]Run 'aizee doctor' to diagnose, or use --verbose for full traceback.[/dim]")
+        if getattr(args, "verbose", False) or "--verbose" in sys.argv:
+            raise
+        return 2
 
 
 if __name__ == "__main__":

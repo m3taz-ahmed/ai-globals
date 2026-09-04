@@ -11,6 +11,7 @@ network libraries imported. Experiment analysis delegates to
 from __future__ import annotations
 
 import json
+import re
 from enum import Enum
 from typing import Any
 
@@ -78,7 +79,10 @@ def register_cro_tools(mcp: FastMCP) -> None:
         url: str = "",
         areas: str = '["copy","design","speed","form","trust"]',
     ) -> str:
-        """Run a CRO audit checklist across areas. Pure computation of prioritized checks."""
+        """Return a CRO audit checklist for the given areas (proxy — no live fetch).
+
+        ``url`` labels the checklist; use seo_audit_page for a live fetch.
+        """
         try:
             area_list = json.loads(areas)
         except json.JSONDecodeError:
@@ -96,7 +100,7 @@ def register_cro_tools(mcp: FastMCP) -> None:
             area_count=len(area_list),
             check_count=len(checks),
             checks=checks,
-            note="Complete each check; then cro_run_experiment to validate impact.",
+            note="Static checklist (no live page fetch). Complete each check; then cro_run_experiment to validate impact.",
         )
 
     @mcp.tool()
@@ -111,16 +115,30 @@ def register_cro_tools(mcp: FastMCP) -> None:
         if err := validate_query(name):
             return err
         try:
+            counts = {
+                "a_conv": int(variant_a_conv), "a_vis": int(variant_a_samples),
+                "b_conv": int(variant_b_conv), "b_vis": int(variant_b_samples),
+            }
+        except (TypeError, ValueError):
+            return _err("conversion/sample counts must be integers")
+        if any(v < 0 or v > 10**12 for v in counts.values()):
+            return _err("conversion/sample counts must be within [0, 1e12]")
+        if counts["a_conv"] > counts["a_vis"] or counts["b_conv"] > counts["b_vis"]:
+            return _err("conversions cannot exceed samples")
+        try:
             result = experiment_tracker.analyze_ab_test(
-                a_conv=variant_a_conv,
-                a_vis=variant_a_samples,
-                b_conv=variant_b_conv,
-                b_vis=variant_b_samples,
+                a_conv=counts["a_conv"],
+                a_vis=counts["a_vis"],
+                b_conv=counts["b_conv"],
+                b_vis=counts["b_vis"],
                 confidence=0.95,
                 method="z_test",
             )
         except (ValidationError, TypeError, ValueError, ZeroDivisionError) as exc:
-            return _err(exc.message if hasattr(exc, "message") else str(exc))
+            return _err(getattr(exc, "message", str(exc)))
+        for required in ("p_a", "p_b", "z", "p_value", "srm_ok", "significant", "winner"):
+            if not hasattr(result, required):
+                return _err(f"experiment backend returned unexpected shape (missing {required!r})")
         return _ok(
             experiment=name,
             variant_a_rate=round(result["p_a"], 4),
@@ -142,9 +160,17 @@ def register_cro_tools(mcp: FastMCP) -> None:
         """Create a feature flag config via runtime.feature_flags. WRITE — gated."""
         if err := validate_query(name):
             return err
+        try:
+            rollout_percent = int(rollout_percent)
+        except (TypeError, ValueError):
+            return _err("'rollout_percent' must be an integer")
         if not 0 <= rollout_percent <= 100:
             return _err("'rollout_percent' must be 0-100")
-        key = name.replace(" ", "_").lower()
+        # Sanitize the flag key: interpolated into an evaluate_command string,
+        # so quotes/slashes would break it (or worse, inject).
+        key = re.sub(r"[^a-z0-9_]", "_", name.strip().lower().replace(" ", "_"))[:64].strip("_")
+        if not key:
+            return _err("flag name must contain alphanumeric characters")
         return _json({
             "ok": True,
             "gated": True,
@@ -176,6 +202,14 @@ def register_cro_tools(mcp: FastMCP) -> None:
         """
         if err := validate_query(key):
             return err
+        if err := validate_query(identifier):
+            return err
+        try:
+            rollout_percent = int(rollout_percent)
+        except (TypeError, ValueError):
+            return _err("'rollout_percent' must be an integer")
+        if not 0 <= rollout_percent <= 100:
+            return _err("'rollout_percent' must be 0-100")
         try:
             segs = json.loads(segments)
         except json.JSONDecodeError:
@@ -191,7 +225,7 @@ def register_cro_tools(mcp: FastMCP) -> None:
                 rollout_pct=rollout_percent,
             )
         except (ValidationError, TypeError, ValueError, AttributeError) as exc:
-            return _err(exc.message if hasattr(exc, "message") else str(exc))
+            return _err(getattr(exc, "message", str(exc)))
         return _ok(
             key=key,
             identifier=identifier,

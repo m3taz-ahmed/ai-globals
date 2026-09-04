@@ -107,7 +107,7 @@ pytest tests/test_auth.py -q --no-cov --tb=short
 pytest tests/test_auth.py::test_login -q --no-cov
 
 # FULL — before done
-pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+pytest --cov=src --cov-report=term-missing --cov-fail-under=95
 pytest -q  # if coverage is in pyproject.toml addopts
 ```
 

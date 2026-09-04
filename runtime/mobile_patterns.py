@@ -11,12 +11,20 @@ Swift (iOS native), Kotlin (Android native).
 
 from __future__ import annotations
 
+import json
+import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from runtime.schemas import ValidationError
+
+
+class _PatternCheck(Protocol):
+    """A zero-arg pattern check returning a PatternResult."""
+
+    def __call__(self) -> PatternResult: ...
 
 
 class MobilePlatform(str, Enum):
@@ -154,17 +162,111 @@ _RN_PATTERNS: set[MobilePattern] = {
     MobilePattern.CI_CD_PIPELINE,
 }
 
+# Native/KMP platforms get their own sets — never the Flutter+RN union.
+# Flutter-only (router_refresh, freezed_failure, usecase, type_safe_routing
+# Flutter branch) and RN-only (ordered_logout, query_cache_buster) are excluded.
+_KMP_PATTERNS: set[MobilePattern] = {
+    MobilePattern.FEATURE_FIRST_ARCHITECTURE,
+    MobilePattern.CLEAN_LAYERING,
+    MobilePattern.BACKEND_ISOLATION,
+    MobilePattern.OFFLINE_FIRST_SYNC,
+    MobilePattern.SECURE_TOKEN_STORAGE,
+    MobilePattern.DESIGN_TOKEN_SYSTEM,
+    MobilePattern.I18N_WITH_RTL,
+    MobilePattern.TWO_TIER_TESTING,
+    MobilePattern.AI_INSTRUCTION_FILES,
+    MobilePattern.COMPONENT_LIBRARY,
+    MobilePattern.OBSERVABILITY_WIRED,
+    MobilePattern.CI_CD_PIPELINE,
+}
+
+_SWIFT_PATTERNS: set[MobilePattern] = {
+    MobilePattern.FEATURE_FIRST_ARCHITECTURE,
+    MobilePattern.CLEAN_LAYERING,
+    MobilePattern.BACKEND_ISOLATION,
+    MobilePattern.OFFLINE_FIRST_SYNC,
+    MobilePattern.SECURE_TOKEN_STORAGE,
+    MobilePattern.DESIGN_TOKEN_SYSTEM,
+    MobilePattern.I18N_WITH_RTL,
+    MobilePattern.TWO_TIER_TESTING,
+    MobilePattern.AI_INSTRUCTION_FILES,
+    MobilePattern.COMPONENT_LIBRARY,
+    MobilePattern.OBSERVABILITY_WIRED,
+    MobilePattern.CI_CD_PIPELINE,
+}
+
+_KOTLIN_PATTERNS: set[MobilePattern] = {
+    MobilePattern.FEATURE_FIRST_ARCHITECTURE,
+    MobilePattern.CLEAN_LAYERING,
+    MobilePattern.BACKEND_ISOLATION,
+    MobilePattern.OFFLINE_FIRST_SYNC,
+    MobilePattern.SECURE_TOKEN_STORAGE,
+    MobilePattern.DESIGN_TOKEN_SYSTEM,
+    MobilePattern.I18N_WITH_RTL,
+    MobilePattern.TWO_TIER_TESTING,
+    MobilePattern.AI_INSTRUCTION_FILES,
+    MobilePattern.COMPONENT_LIBRARY,
+    MobilePattern.OBSERVABILITY_WIRED,
+    MobilePattern.CI_CD_PIPELINE,
+}
+
 
 def _applicable_patterns(platform: MobilePlatform) -> set[MobilePattern]:
     """Return patterns applicable to the given platform."""
     if platform == MobilePlatform.FLUTTER:
-        return _FLUTTER_PATTERNS
+        return set(_FLUTTER_PATTERNS)
     if platform == MobilePlatform.REACT_NATIVE:
-        return _RN_PATTERNS
-    return _FLUTTER_PATTERNS | _RN_PATTERNS
+        return set(_RN_PATTERNS)
+    if platform == MobilePlatform.KOTLIN_MULTIPLATFORM:
+        return set(_KMP_PATTERNS)
+    if platform == MobilePlatform.SWIFT:
+        return set(_SWIFT_PATTERNS)
+    if platform == MobilePlatform.KOTLIN_NATIVE:
+        return set(_KOTLIN_PATTERNS)
+    return set(_KMP_PATTERNS)
 
 
 # -- Helper utilities ------------------------------------------------------
+
+_MAX_SCAN_FILES = 2000
+_SKIP_DIRS = {"node_modules", ".git", ".venv", "__pycache__", ".dart_tool", "build"}
+
+
+def _iter_files_bounded(base: Path, pattern: str = "*", max_files: int = _MAX_SCAN_FILES) -> list[Path]:
+    """Bounded recursive file walk: skips vendored dirs, no symlink follow."""
+    results: list[Path] = []
+    stack: list[Path] = [base]
+    while stack and len(results) < max_files:
+        current = stack.pop()
+        try:
+            if current.is_symlink():
+                continue
+        except OSError:
+            continue
+        try:
+            if current.is_dir():
+                if current.name in _SKIP_DIRS and current != base:
+                    continue
+                try:
+                    with os.scandir(current) as it:
+                        entries = list(it)
+                except OSError:
+                    continue
+                for entry in entries:
+                    try:
+                        if entry.is_symlink():
+                            continue
+                    except OSError:
+                        continue
+                    stack.append(Path(entry.path))
+            elif current.is_file():
+                # Simple pattern match on name (supports "*suffix" globs).
+                name = current.name
+                if pattern == "*" or (pattern.startswith("*") and name.endswith(pattern[1:])) or pattern == name:
+                    results.append(current)
+        except OSError:
+            continue
+    return results
 
 
 def _has_dir(root: Path, *parts: str) -> bool:
@@ -190,13 +292,21 @@ def _file_contains(root: Path, parts: list[str], needle: str) -> bool:
 
 
 def _dir_contains_recursive(root: Path, dir_parts: list[str], needle: str, suffix: str = ".dart") -> bool:
-    """Check if any file under a directory contains a string (recursive)."""
+    """Check if any file under a directory contains a string (recursive, bounded)."""
     base = root.joinpath(*dir_parts)
     if not base.exists():
         return False
     if base.is_file():
         return _file_contains(root, dir_parts, needle)
-    for f in base.rglob(f"*{suffix}"):
+    # Support .ts + .tsx when scanning TypeScript (suffix=".ts" covers both).
+    suffixes = (".ts", ".tsx") if suffix in (".ts", ".tsx") else (suffix,)
+    count = 0
+    for f in _iter_files_bounded(base):
+        if f.suffix not in suffixes:
+            continue
+        count += 1
+        if count > _MAX_SCAN_FILES:
+            break
         try:
             text = f.read_text(encoding="utf-8", errors="ignore").lower()
         except OSError:
@@ -207,11 +317,11 @@ def _dir_contains_recursive(root: Path, dir_parts: list[str], needle: str, suffi
 
 
 def _rglob_exists(root: Path, dir_parts: list[str], pattern: str) -> bool:
-    """Check if any file matching a pattern exists recursively under a dir."""
+    """Check if any file matching a pattern exists recursively under a dir (bounded)."""
     base = root.joinpath(*dir_parts)
     if not base.is_dir():
         return False
-    return bool(list(base.rglob(pattern)))
+    return len(_iter_files_bounded(base, pattern)) > 0
 
 
 # -- Auditor ---------------------------------------------------------------
@@ -234,8 +344,8 @@ class MobilePatternAuditor:
         self._all_patterns = config.check_patterns or _applicable_patterns(self._platform)
 
     def audit(self) -> list[PatternResult]:
-        """Run all applicable pattern checks and return results."""
-        check_map: dict[MobilePattern, Any] = {
+        """Run all applicable pattern checks and return results (deterministic order)."""
+        check_map: dict[MobilePattern, _PatternCheck] = {
             MobilePattern.FEATURE_FIRST_ARCHITECTURE: self._check_feature_first,
             MobilePattern.CLEAN_LAYERING: self._check_clean_layering,
             MobilePattern.BACKEND_ISOLATION: self._check_backend_isolation,
@@ -256,7 +366,7 @@ class MobilePatternAuditor:
             MobilePattern.CI_CD_PIPELINE: self._check_ci_cd,
         }
         results: list[PatternResult] = []
-        for pattern in self._all_patterns:
+        for pattern in sorted(self._all_patterns, key=lambda p: p.value):
             checker = check_map.get(pattern)
             if checker is not None:
                 results.append(checker())
@@ -288,8 +398,13 @@ class MobilePatternAuditor:
         """Check for feature-first directory structure."""
         if self._platform == MobilePlatform.FLUTTER:
             ok = _has_dir(self._root, "lib", "features")
+        elif self._platform == MobilePlatform.REACT_NATIVE:
+            # Avoid trivially-true has_dir("app"): require expo config proof.
+            ok = _has_dir(self._root, "src", "features") or (
+                _has_file(self._root, "app.json") or _has_file(self._root, "app.config.js")
+            )
         else:
-            ok = _has_dir(self._root, "src", "features") or _has_dir(self._root, "app")
+            ok = _has_dir(self._root, "lib", "features") or _has_dir(self._root, "src", "features")
         return PatternResult(
             MobilePattern.FEATURE_FIRST_ARCHITECTURE,
             ok,
@@ -331,7 +446,7 @@ class MobilePatternAuditor:
                 return PatternResult(MobilePattern.BACKEND_ISOLATION, False, PatternSeverity.WARNING,
                                      "No features dir to check backend isolation", "lib/features/")
             violations: list[str] = []
-            for f in domain_dir.rglob("*.dart"):
+            for f in _iter_files_bounded(domain_dir, "*.dart"):
                 parts = f.parts
                 if "domain" in parts or "presentation" in parts:
                     try:
@@ -339,7 +454,10 @@ class MobilePatternAuditor:
                     except OSError:
                         continue
                     if "package:firebase" in text or "package:supabase" in text:
-                        violations.append(str(f.relative_to(self._root)))
+                        try:
+                            violations.append(str(f.relative_to(self._root)))
+                        except ValueError:
+                            violations.append(str(f))
             ok = len(violations) == 0
             return PatternResult(
                 MobilePattern.BACKEND_ISOLATION, ok, PatternSeverity.CRITICAL if not ok else PatternSeverity.INFO,
@@ -347,13 +465,20 @@ class MobilePatternAuditor:
                 else f"Backend SDK found in domain/presentation: {violations[:3]}",
                 "lib/features/",
             )
+        if self._platform != MobilePlatform.REACT_NATIVE:
+            return PatternResult(
+                MobilePattern.BACKEND_ISOLATION, False, PatternSeverity.INFO,
+                "Backend isolation check skipped (Flutter/RN-only)", None,
+            )
         # RN: check that @supabase / firebase imports are not in components/ or hooks/ (only services/)
         features_dir = self._root / "src" / "features"
         if not features_dir.is_dir():
             return PatternResult(MobilePattern.BACKEND_ISOLATION, True, PatternSeverity.INFO,
                                  "No src/features/ dir to check backend isolation (RN)", None)
         rn_violations: list[str] = []
-        for f in features_dir.rglob("*.ts"):
+        for f in _iter_files_bounded(features_dir, "*"):
+            if f.suffix not in (".ts", ".tsx"):
+                continue
             parts = f.parts
             if "components" in parts or "hooks" in parts:
                 try:
@@ -361,7 +486,10 @@ class MobilePatternAuditor:
                 except OSError:
                     continue
                 if "@supabase/supabase-js" in text or "firebase/auth" in text or "firebase/firestore" in text:
-                    rn_violations.append(str(f.relative_to(self._root)))
+                    try:
+                        rn_violations.append(str(f.relative_to(self._root)))
+                    except ValueError:
+                        rn_violations.append(str(f))
         ok_rn = len(rn_violations) == 0
         return PatternResult(
             MobilePattern.BACKEND_ISOLATION, ok_rn, PatternSeverity.CRITICAL if not ok_rn else PatternSeverity.INFO,
@@ -372,6 +500,11 @@ class MobilePatternAuditor:
 
     def _check_router_refresh(self) -> PatternResult:
         """Check for Router Refresh Pattern (Flutter-specific)."""
+        if self._platform != MobilePlatform.FLUTTER:
+            return PatternResult(
+                MobilePattern.ROUTER_REFRESH_PATTERN, False, PatternSeverity.INFO,
+                "Router refresh check skipped (Flutter-only)", None,
+            )
         ok = _rglob_exists(self._root, ["lib"], "*router*.dart") and (
             _dir_contains_recursive(self._root, ["lib"], "refreshListenable")
             or _dir_contains_recursive(self._root, ["lib"], "RouterRefreshNotifier")
@@ -386,6 +519,11 @@ class MobilePatternAuditor:
 
     def _check_freezed_failure(self) -> PatternResult:
         """Check for Freezed Failure union type (Flutter-specific)."""
+        if self._platform != MobilePlatform.FLUTTER:
+            return PatternResult(
+                MobilePattern.FREEZED_FAILURE_UNION, False, PatternSeverity.INFO,
+                "Freezed failure check skipped (Flutter-only)", None,
+            )
         ok = _file_contains(self._root, ["pubspec.yaml"], "freezed") and (
             _rglob_exists(self._root, ["lib"], "failure*.dart")
             and _dir_contains_recursive(self._root, ["lib"], "@freezed")
@@ -404,8 +542,13 @@ class MobilePatternAuditor:
                 _dir_contains_recursive(self._root, ["lib"], "TypedGoRoute")
                 or _dir_contains_recursive(self._root, ["lib"], "TypedStatefulShellRoute")
             )
+        elif self._platform == MobilePlatform.REACT_NATIVE:
+            ok = self._has_expo_typed_routes()
         else:
-            ok = _file_contains(self._root, ["app.json"], "typedRoutes")
+            return PatternResult(
+                MobilePattern.TYPE_SAFE_ROUTING, False, PatternSeverity.INFO,
+                "Type-safe routing check skipped (Flutter/RN-only)", None,
+            )
         return PatternResult(
             MobilePattern.TYPE_SAFE_ROUTING, ok, PatternSeverity.WARNING if not ok else PatternSeverity.INFO,
             "Type-safe routing enabled" if ok
@@ -413,8 +556,28 @@ class MobilePatternAuditor:
             "lib/core/router/" if self._platform == MobilePlatform.FLUTTER else "app.json",
         )
 
+    def _has_expo_typed_routes(self) -> bool:
+        """JSON-parse app config for expo.typedRoutes (not substring)."""
+        for name in ("app.json", "app.config.json"):
+            path = self._root / name
+            if not path.is_file():
+                continue
+            try:
+                data = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
+            except (OSError, ValueError):
+                continue
+            expo = data.get("expo", data) if isinstance(data, dict) else {}
+            if isinstance(expo, dict) and expo.get("typedRoutes") is True:
+                return True
+        return False
+
     def _check_usecase_pattern(self) -> PatternResult:
         """Check for UseCase pattern (Flutter-specific)."""
+        if self._platform != MobilePlatform.FLUTTER:
+            return PatternResult(
+                MobilePattern.USECASE_PATTERN, False, PatternSeverity.INFO,
+                "UseCase check skipped (Flutter-only)", None,
+            )
         ok = _rglob_exists(self._root, ["lib"], "use_case*.dart") or _rglob_exists(self._root, ["lib"], "usecase*.dart")
         return PatternResult(
             MobilePattern.USECASE_PATTERN, ok, PatternSeverity.INFO,
@@ -457,7 +620,7 @@ class MobilePatternAuditor:
         """Check for ordered logout cleanup pattern (RN-specific)."""
         if self._platform != MobilePlatform.REACT_NATIVE:
             return PatternResult(
-                MobilePattern.ORDERED_LOGOUT_CLEANUP, True, PatternSeverity.INFO,
+                MobilePattern.ORDERED_LOGOUT_CLEANUP, False, PatternSeverity.INFO,
                 "Ordered logout check skipped (RN-only)", None,
             )
         src_dirs = ["src", "app", "lib"]
@@ -477,7 +640,7 @@ class MobilePatternAuditor:
         """Check for query cache buster pattern (RN-specific)."""
         if self._platform != MobilePlatform.REACT_NATIVE:
             return PatternResult(
-                MobilePattern.QUERY_CACHE_BUSTER, True, PatternSeverity.INFO,
+                MobilePattern.QUERY_CACHE_BUSTER, False, PatternSeverity.INFO,
                 "Query cache buster check skipped (RN-only)", None,
             )
         src_dirs = ["src", "app", "lib"]

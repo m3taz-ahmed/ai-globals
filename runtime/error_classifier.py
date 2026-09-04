@@ -32,32 +32,55 @@ from runtime.schemas import (
 ErrorClass = type[AizeeError]
 
 
-def _instantiate_error(error_class: ErrorClass, message: str) -> AizeeError:
+def _truncate(detail: str, limit: int = 500) -> str:
+    """Truncate raw exception text before interpolating into new messages."""
+    if len(detail) > limit:
+        return detail[:limit] + "...[truncated]"
+    return detail
+
+
+def _instantiate_error(
+    error_class: ErrorClass,
+    message: str,
+    *,
+    context: dict[str, Any] | None = None,
+    severity: ErrorSeverity | None = None,
+) -> AizeeError:
     """Instantiate an AizeeError subclass with the correct constructor signature.
 
     Subclasses (BudgetExceededError, PolicyDeniedError, ValidationError)
     take ``(message, context=None)``, but the base ``AizeeError`` takes
     ``(error_code, message, severity, context)``. This helper handles
     both cases so callers don't need to know which they got.
+    Preserves caller-provided context/severity where supported.
     """
     if error_class is AizeeError:
         return AizeeError(
-            "UNEXPECTED_ERROR", message, ErrorSeverity.MEDIUM,
+            "UNEXPECTED_ERROR", message, severity or ErrorSeverity.MEDIUM, context,
         )
-    return error_class(message)  # type: ignore[call-arg]
+    try:
+        return error_class(message, context)  # type: ignore[arg-type]
+    except TypeError:
+        return error_class(message)  # type: ignore[call-arg]
 
 
 # Pattern → (ErrorClass, message_template) mappings.
-# Checked in order; first match wins.
+# Checked in order; first match wins. Specific quota/budget patterns come
+# first so they win over generic validation matches.
 _CLASSIFICATION_RULES: list[tuple[re.Pattern[str], ErrorClass, str]] = [
-    # Budget / rate limit
+    # Budget / rate limit (specific first)
+    (
+        re.compile(r"budget.?exceeded|quota.?exceeded|usage.?limit", re.IGNORECASE),
+        BudgetExceededError,
+        "Budget/quota exceeded: {detail}",
+    ),
     (
         re.compile(r"rate.?limit|too many requests|429", re.IGNORECASE),
         BudgetExceededError,
         "Rate limit exceeded: {detail}",
     ),
     (
-        re.compile(r"quota|usage.?limit|budget.?exceeded", re.IGNORECASE),
+        re.compile(r"\bquota\b", re.IGNORECASE),
         BudgetExceededError,
         "Budget/quota exceeded: {detail}",
     ),
@@ -72,16 +95,11 @@ _CLASSIFICATION_RULES: list[tuple[re.Pattern[str], ErrorClass, str]] = [
         PolicyDeniedError,
         "Blocked by policy: {detail}",
     ),
-    # Validation
+    # Validation (generic input errors)
     (
         re.compile(r"validation|invalid|malformed|bad.?request|400", re.IGNORECASE),
         ValidationError,
         "Validation error: {detail}",
-    ),
-    (
-        re.compile(r"type.?error|attribute.?error|key.?error|index.?error", re.IGNORECASE),
-        ValidationError,
-        "Type/attribute error: {detail}",
     ),
 ]
 
@@ -94,12 +112,22 @@ def classify_error(exc: Exception) -> tuple[ErrorClass, str]:
     representation is matched against classification rules to determine
     the appropriate subclass.
     """
-    # If already an AizeeError, pass through
+    # If already an AizeeError, pass through via its structured message field.
     if isinstance(exc, AizeeError):
-        return type(exc), str(exc.args[0]) if exc.args else str(exc)
+        return type(exc), exc.message
 
-    detail = str(exc)
+    detail = _truncate(str(exc))
     exc_type_name = type(exc).__name__
+
+    # Type/Key/Attribute/Index errors are internal bugs, not input validation,
+    # unless the message clearly shows input-caused failure. Map to generic
+    # internal error but keep the original traceback note.
+    if isinstance(exc, (TypeError, KeyError, AttributeError, IndexError)):
+        tb_note = f"{exc_type_name}: {detail}"
+        # Clearly input-caused phrasing still maps to ValidationError.
+        if re.search(r"validation|invalid|malformed|bad.?request", detail, re.IGNORECASE):
+            return ValidationError, f"Validation error: {detail} (orig {tb_note})"
+        return AizeeError, f"Unexpected error ({tb_note})"
 
     # Check classification rules
     for pattern, error_class, template in _CLASSIFICATION_RULES:
@@ -135,8 +163,8 @@ def classify_error_with_context(
     if operation:
         ctx["operation"] = operation
     ctx["original_exception"] = type(exc).__name__
-    # Construct with context — subclasses accept (message, context),
-    # but AizeeError base requires (error_code, message, severity, context).
-    if error_class is AizeeError:
-        return AizeeError("UNEXPECTED_ERROR", message, ErrorSeverity.MEDIUM, ctx)
-    return error_class(message, ctx)  # type: ignore[arg-type]
+    # Preserve context/severity via helper (base needs error_code+severity).
+    severity = exc.severity if isinstance(exc, AizeeError) else ErrorSeverity.MEDIUM
+    orig_ctx = dict(exc.context) if isinstance(exc, AizeeError) else {}
+    merged = {**orig_ctx, **ctx}
+    return _instantiate_error(error_class, message, context=merged, severity=severity)

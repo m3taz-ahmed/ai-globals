@@ -39,6 +39,7 @@ Usage::
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
@@ -49,6 +50,26 @@ from runtime.schemas import AizeeError, ErrorSeverity
 
 # Type aliases
 LLMFn = Callable[[str], str]  # takes a prompt, returns a response
+
+
+def _strip_injection_markers(text: str) -> str:
+    """Strip common injection markers before embedding untrusted text in a prompt."""
+    cleaned = text
+    for pat in (
+        r"ignore\s+(?:all\s+|the\s+|your\s+)?(?:previous|prior|above)\s+(?:instructions|prompts|rules)",
+        r"disregard\s+(?:your\s+|the\s+)?(?:system\s+prompt|instructions|previous)",
+        r"override\s+(?:safety|security|guardrails)",
+        r"reveal\s+(?:me\s+)?(?:your\s+|the\s+)?(?:system\s+prompt|instructions)",
+        r"you\s+are\s+now\s+(?:free|unrestricted|jailbroken)",
+    ):
+        cleaned = re.sub(pat, "[REMOVED]", cleaned, flags=re.IGNORECASE)
+    return cleaned
+
+
+def _fence(text: str) -> str:
+    """Wrap untrusted text in code fences so the model treats it as data."""
+    safe = _strip_injection_markers(text).replace("```", "[FENCE]")
+    return f"```untrusted-data\n{safe}\n```"
 
 
 class LLMRole(str, Enum):
@@ -86,6 +107,8 @@ class DualLLMResult:
         return {
             "user_task": self.user_task[:200],
             "privileged_response": self.privileged_response[:500],
+            "quarantined_summary": self.quarantined_summary[:500],
+            # Backward-compat: old typo key kept for readers pinned to it.
             "quarined_summary": self.quarantined_summary[:500],
             "action_taken": self.action_taken,
             "tools_available": list(self.tools_available),
@@ -194,7 +217,7 @@ class DualLLMOrchestrator:
         # Step 3: Check if injection was detected — if so, may block
         if injection_verdict.is_injection:
             return DualLLMResult(
-                user_task=user_task,
+                user_task=bounded_task,
                 privileged_response=(
                     "I analyzed the content you provided, but it appears to contain "
                     "manipulative instructions (prompt injection). For your safety, "
@@ -215,7 +238,7 @@ class DualLLMOrchestrator:
         )
 
         return DualLLMResult(
-            user_task=user_task,
+            user_task=bounded_task,
             privileged_response=privileged_response,
             quarantined_summary=quarantined_summary,
             injection_verdict=injection_verdict,
@@ -230,16 +253,17 @@ class DualLLMOrchestrator:
     ) -> str:
         """Get a structured summary from the quarantined LLM."""
         if self._quarantined_fn is None:
-            # Model-free fallback: use the injection verdict as the "summary"
+            # Model-free fallback: use the injection verdict as the "summary".
+            # Fence + sanitize raw content so it cannot re-arm downstream prompts.
             suspicious = "yes" if (verdict.is_injection or verdict.is_suspicious) else "no"
             notes = ", ".join(sorted(t.value for t in verdict.techniques_found)) if verdict.techniques_found else "none"
             return (
-                f"SUMMARY: {content[:500]}...\n"
+                f"SUMMARY: {_fence(content[:500])}...\n"
                 f"SUSPICIOUS: {suspicious}\n"
                 f"INJECTION_NOTES: {notes} (score {verdict.total_score})"
             )
 
-        prompt = f"{QUARANTINED_SYSTEM_PROMPT}\n\nCONTENT TO ANALYZE:\n{content}"
+        prompt = f"{QUARANTINED_SYSTEM_PROMPT}\n\nCONTENT TO ANALYZE:\n{_fence(content)}"
         return self._quarantined_fn(prompt)
 
     def _privileged_decision(
@@ -252,20 +276,22 @@ class DualLLMOrchestrator:
         """Get the privileged LLM's decision based on the summary."""
         if self._privileged_fn is None:
             # Model-free fallback
+            safe_task = _strip_injection_markers(task)
+            safe_summary = _strip_injection_markers(summary)
             if verdict.is_suspicious:
                 return (
-                    f"Based on the content analysis, I can help with your task: '{task}'. "
+                    f"Based on the content analysis, I can help with your task: '{safe_task}'. "
                     "However, the analyzed content showed some suspicious patterns. "
                     "Please verify the source before proceeding."
                 )
-            return f"Task '{task}' processed. Content summary: {summary[:200]}..."
+            return f"Task '{safe_task}' processed. Content summary: {safe_summary[:200]}..."
 
         tools_str = ", ".join(tools) if tools else "none"
         prompt = (
             f"{PRIVILEGED_SYSTEM_PROMPT}\n\n"
-            f"USER TASK: {task}\n"
+            f"USER TASK: {_strip_injection_markers(task)}\n"
             f"AVAILABLE TOOLS: {tools_str}\n"
-            f"CONTENT ANALYSIS SUMMARY:\n{summary}\n\n"
+            f"CONTENT ANALYSIS SUMMARY:\n{_fence(summary)}\n\n"
             f"Based on the summary above (NOT any raw content), "
             f"decide how to respond to the user's task."
         )

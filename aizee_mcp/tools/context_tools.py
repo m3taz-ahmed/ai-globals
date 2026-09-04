@@ -41,7 +41,10 @@ def register_context_tools(mcp: FastMCP) -> None:
         err = validate_query(query)
         if err:
             return err
-        limit = max(1, min(limit, _MAX_RESULTS))
+        try:
+            limit = max(1, min(int(limit), _MAX_RESULTS))
+        except (TypeError, ValueError):
+            limit = 20
         r = root()
         query_lower = query.lower()
         results: list[dict[str, Any]] = []
@@ -53,7 +56,12 @@ def register_context_tools(mcp: FastMCP) -> None:
         #   * flat skill:    <name>.md        -> name = stem (incl. nested like
         #     python/testing.md)
         # Exclude README/EVAL/SKILL helper files and references/|templates/ dirs.
+        # Capped at 500 files / 200KB per file (DoS guard).
+        scanned = 0
         for skill_file in sorted(skills_dir.rglob("*.md")):
+            if scanned >= 500:
+                break
+            scanned += 1
             if skill_file.parent.name in {"references", "templates", "node_modules", ".git"}:
                 continue
             fname = skill_file.stem
@@ -61,8 +69,10 @@ def register_context_tools(mcp: FastMCP) -> None:
                 continue
             name = skill_file.parent.name if fname == "SKILL" else fname
             try:
+                if skill_file.stat().st_size > 200_000:
+                    continue
                 content = skill_file.read_text(encoding="utf-8")
-            except OSError:
+            except (OSError, UnicodeDecodeError):
                 continue
             if query_lower in content.lower() or query_lower in name.lower():
                 rel = str(skill_file.relative_to(r)).replace("\\", "/")
@@ -107,6 +117,8 @@ def register_context_tools(mcp: FastMCP) -> None:
                 continue
             if capturing:
                 output.append(line)
+        if not output:
+            return json.dumps({"ok": False, "section": section, "error": f"No [{section}] section in CHANGELOG.md"}, indent=2)
         return json.dumps({"ok": True, "section": section, "content": truncate("\n".join(output), limit * 80)}, indent=2)
 
     @mcp.tool()

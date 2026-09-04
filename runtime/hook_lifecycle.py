@@ -124,9 +124,25 @@ class HookRegistry:
         return ctx
 
     def run_error(self, context: HookContext, error: Exception) -> None:
-        """Run the ON_ERROR phase with the error recorded in context."""
+        """Run the ON_ERROR phase with the error recorded in context.
+
+        If an ON_ERROR hook raises, the new error is chained from the
+        original (``raise ... from original``) so neither is discarded;
+        both are kept in ``context.errors``.
+        """
         context.add_error(f"{type(error).__name__}: {error}")
-        self.run_phase(HookPhase.ON_ERROR, context)
+        try:
+            self.run_phase(HookPhase.ON_ERROR, context)
+        except Exception as hook_exc:
+            context.add_error(f"{type(hook_exc).__name__}: {hook_exc}")
+            _logger.debug(
+                "ON_ERROR hook failed while handling %s: %s",
+                type(error).__name__, hook_exc, exc_info=True,
+            )
+            raise HookError(
+                HookPhase.ON_ERROR.value,
+                f"ON_ERROR handler failed ({hook_exc}) while handling original {type(error).__name__}: {error}",
+            ) from error
 
     def hooks_for(self, phase: HookPhase) -> list[HookCallable]:
         """List hooks registered for a phase (read-only copy)."""

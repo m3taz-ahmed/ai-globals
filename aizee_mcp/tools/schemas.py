@@ -161,17 +161,25 @@ class PaginatedResultSchema:
         next_cursor: str | None = None,
         per_page: int = 50,
     ) -> dict[str, Any]:
-        """Build a paginated response dict."""
+        """Build a paginated response dict matching the declared structures."""
         result: dict[str, Any] = {"data": items}
         if next_cursor is not None:
+            result["links"] = ["first", "next"]
             result["meta"] = {
+                "path": "",
                 "per_page": per_page,
                 "next_cursor": next_cursor,
+                "prev_cursor": None,
             }
         else:
+            count = total if total is not None else len(items)
+            result["links"] = ["first", "last", "prev", "next"]
             result["meta"] = {
+                "current_page": 1,
+                "from": 1 if count else 0,
+                "to": count,
                 "per_page": per_page,
-                "total": total if total is not None else len(items),
+                "total": count,
             }
         return result
 
@@ -279,6 +287,8 @@ ALL_SCHEMAS: dict[str, list[str]] = {
     "seo_audit": SeoAuditSchema.JSON_STRUCTURE,
     "seo_cwv": SeoCwvSchema.JSON_STRUCTURE,
     "seo_schema": SeoSchemaSchema.JSON_STRUCTURE,
+    "pagination": PaginatedResultSchema.PAGINATION_JSON_STRUCTURE["meta"],
+    "cursor_pagination": PaginatedResultSchema.CURSOR_PAGINATION_JSON_STRUCTURE["meta"],
 }
 
 

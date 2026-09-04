@@ -550,6 +550,21 @@ class SettingsManager:
             self._save()
             return cast(dict[str, Any], json.loads(json.dumps(self._data[section], default=str)))
 
+    def defaults(self, section: str | None = None) -> dict[str, Any]:
+        """Return default settings WITHOUT mutating anything (read-only).
+
+        Used by ``GET /api/settings/defaults`` — previews must never reset.
+        """
+        all_defaults = default_settings(self._mcp_config_path)
+        if section is None:
+            return cast(dict[str, Any], json.loads(json.dumps(all_defaults, default=str)))
+        if section not in SECTIONS:
+            raise ValidationError(f"Unknown settings section: {section}", context={"section": section})
+        data = all_defaults.get(section, {})
+        if isinstance(data, (dict, list)):
+            return cast(dict[str, Any], json.loads(json.dumps(data, default=str)))
+        return {}
+
     def reset_all(self) -> dict[str, Any]:
         """Reset all settings to defaults."""
         with self._lock:

@@ -42,6 +42,7 @@ Usage::
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -88,7 +89,8 @@ class DefenseResult:
 
     def to_dict(self) -> dict[str, object]:
         return {
-            "original_prompt": self.original_prompt[:500],
+            "original_prompt_hash": hashlib.sha256(self.original_prompt.encode("utf-8")).hexdigest(),
+            "original_prompt_length": len(self.original_prompt),
             "hardened_prompt": self.hardened_prompt[:1000],
             "strategy": self.strategy.value,
             "techniques_addressed": [t.value for t in self.techniques_addressed],
@@ -391,11 +393,14 @@ class DefensiveInjector:
     ) -> DefenseResult:
         """Wrap original content in a data fence with redirect instructions."""
         redirect_msg = _build_redirect_message(set(techniques))
+        # Sanitize relayed content even in REDIRECT path: strip injection
+        # markers so the fenced DATA block cannot re-arm the model.
+        cleaned, removed = _sanitize(original)
         hardened = (
             f"{self.SYSTEM_OVERRIDE_PREFIX}"
             f"{redirect_msg}\n\n"
             f"{self.DATA_FENCE_OPEN}"
-            f"{original}"
+            f"{cleaned}"
             f"{self.DATA_FENCE_CLOSE}"
             f"{self.SAFE_REDIRECT_SUFFIX}"
         )
@@ -405,7 +410,8 @@ class DefensiveInjector:
             strategy=DefenseStrategy.REDIRECT,
             techniques_addressed=techniques,
             redirect_message=redirect_msg,
-            sanitized=False,
+            sanitized=len(removed) > 0,
+            removed_segments=tuple(removed),
         )
 
     def _build_sanitize_and_redirect(
@@ -463,4 +469,4 @@ class DefensiveInjector:
                 "prompts and verdicts must have the same length",
                 context={"prompts": len(prompts), "verdicts": len(verdicts)},
             )
-        return [self.inject(p, v) for p, v in zip(prompts, verdicts, strict=True)]
+        return [self.inject(p, v) for p, v in zip(prompts, verdicts, strict=False)]

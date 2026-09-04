@@ -11,22 +11,31 @@ from typing import Any
 
 
 class ApprovalCache:
-    """Cache of approved actions keyed by a normalized subset of fields.
+    """Cache of approved actions keyed by a full-action fingerprint.
 
-    The default key fields are ``type``, ``command``, ``tool`` and ``path``.
-    A stable JSON serialization + SHA-256 hash is used so equivalent actions
-    produce identical keys regardless of dict ordering or extra fields.
+    By default the key covers the ENTIRE action dict (minus volatile
+    bookkeeping fields below), so approving ``ls`` cannot be replayed as
+    ``ls`` with different ``args``/``env``/``flags``. Pass explicit
+    ``fields`` only to opt back into legacy subset keying.
+
+    Volatile fields excluded from the fingerprint: ``approved``, ``tokens``,
+    ``cost`` (these vary per call and are enforced separately by the
+    Policy ASK gate and the Budget gate).
     """
 
     _DEFAULT_FIELDS: tuple[str, ...] = ("type", "command", "tool", "path")
+    _VOLATILE_FIELDS: frozenset[str] = frozenset({"approved", "tokens", "cost"})
 
     def __init__(self, fields: Iterable[str] | None = None) -> None:
-        self.fields = tuple(fields) if fields is not None else self._DEFAULT_FIELDS
+        self.fields = tuple(fields) if fields is not None else None
         self._approved: set[str] = set()
         self._lock = threading.Lock()
 
     def _key(self, action: dict[str, Any]) -> str:
-        subset = {field: action.get(field) for field in self.fields}
+        if self.fields is None:
+            subset = {k: v for k, v in action.items() if k not in self._VOLATILE_FIELDS}
+        else:
+            subset = {field: action.get(field) for field in self.fields}
         serialized = json.dumps(
             subset,
             sort_keys=True,

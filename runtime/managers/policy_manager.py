@@ -12,7 +12,7 @@ from runtime.approval_service import ApprovalService
 from runtime.audit import AuditLogger
 from runtime.budget import BudgetManager
 from runtime.enums import ActionResultStatus, Decision
-from runtime.guardian import ActionRequest, DecisionStatus, Guardian
+from runtime.guardian import ActionRequest, DecisionStatus, GuardConfig, Guardian
 from runtime.metrics import Counter
 from runtime.policy import READ_ACTIONS, PolicyEngine
 from runtime.preloop import FeedbackLoop, Outcome
@@ -61,8 +61,18 @@ class PolicyManager:
         for root in roots:
             path = root / "runtime" / "policies" / "guardian.yaml"
             if path.exists():
-                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-                rules.extend(data.get("rules", []))
+                try:
+                    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                    loaded = data.get("rules", [])
+                    if isinstance(loaded, list):
+                        rules.extend(loaded)
+                    else:
+                        _logger.error("Guardian config %s: 'rules' is not a list — ignored", path)
+                except Exception as exc:
+                    # Fail closed: a corrupted guardian config must never
+                    # silently allow actions. Deny everything until fixed.
+                    _logger.error("Guardian config %s unreadable (fail-closed deny-all): %s", path, exc)
+                    return Guardian([], config=GuardConfig(default_decision=DecisionStatus.DENY))
         return Guardian(rules)
 
     def _build_probity(self) -> Guardrails:
@@ -81,8 +91,15 @@ class PolicyManager:
         for root in roots:
             path = root / "runtime" / "policies" / "probity.yaml"
             if path.exists():
-                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-                rules.extend(data.get("rules", []))
+                try:
+                    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                    loaded = data.get("rules", [])
+                    if isinstance(loaded, list):
+                        rules.extend(loaded)
+                    else:
+                        _logger.error("Probity config %s: 'rules' is not a list — ignored", path)
+                except Exception as exc:
+                    _logger.error("Probity config %s unreadable — those rules skipped: %s", path, exc)
         return Guardrails({"rules": rules}) if rules else Guardrails()
 
     # Read-only actions skip the guardian gate. Derived from the canonical
@@ -217,16 +234,16 @@ class PolicyManager:
         telemetry: Any,
     ) -> dict[str, Any]:
         if not dry_run:
-            self.audit.log("policy.denied", {"action": action_data["type"], "args": kwargs, "decision": decision})
+            self.audit.log("policy.denied", {"action": action_data.get("type", "unknown"), "args": kwargs, "decision": decision})
         telemetry.record(
             event_type="action",
-            action=action_data["type"],
+            action=action_data.get("type", "unknown"),
             status="policy_denied",
             tokens=action_data.get("tokens", 0),
             cost=action_data.get("cost", 0.0),
             metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
         )
-        return {"ok": False, "error": f"Policy denied by {decision['rule']}", "decision": decision}
+        return {"ok": False, "error": f"Policy denied by {decision.get('rule', 'unknown')}", "decision": decision}
 
     def handle_policy_ask(
         self,
@@ -237,10 +254,10 @@ class PolicyManager:
         telemetry: Any,
     ) -> dict[str, Any]:
         if not dry_run:
-            self.audit.log("policy.asked", {"action": action_data["type"], "args": kwargs, "decision": decision})
+            self.audit.log("policy.asked", {"action": action_data.get("type", "unknown"), "args": kwargs, "decision": decision})
         telemetry.record(
             event_type="action",
-            action=action_data["type"],
+            action=action_data.get("type", "unknown"),
             status=Decision.ASK.value,
             tokens=action_data.get("tokens", 0),
             cost=action_data.get("cost", 0.0),
@@ -279,12 +296,13 @@ class PolicyManager:
         if dry_run:
             return
         self.budget.save()
-        if not budget_result["ok"]:
-            self.audit.log("budget.blocked", {"action": action_data["type"], "args": kwargs, "budget": budget_result})
+        action_type = action_data.get("type", "unknown")
+        if not budget_result.get("ok", False):
+            self.audit.log("budget.blocked", {"action": action_type, "args": kwargs, "budget": budget_result})
         else:
             self.audit.log(
                 "action.allowed",
-                {"action": action_data["type"], "args": kwargs, "decision": decision, "budget": budget_result},
+                {"action": action_type, "args": kwargs, "decision": decision, "budget": budget_result},
             )
 
     def finalize_action(
@@ -297,31 +315,34 @@ class PolicyManager:
         telemetry: Any,
     ) -> dict[str, Any]:
         self.audit_budget(action_data, kwargs, decision, budget_result, dry_run)
-        ok = budget_result["ok"]
+        ok = budget_result.get("ok", False)
         telemetry.record(
             event_type="action",
-            action=action_data["type"],
+            action=action_data.get("type", "unknown"),
             status=ActionResultStatus.ALLOWED.value if ok else ActionResultStatus.BUDGET_BLOCKED.value,
             tokens=action_data.get("tokens", 0),
             cost=action_data.get("cost", 0.0),
             metadata={"decision": decision, "dry_run": dry_run, "args": kwargs},
         )
         if not ok:
-            return {"ok": False, "error": budget_result["reason"], "budget": budget_result}
+            return {"ok": False, "error": budget_result.get("reason", "budget blocked"), "budget": budget_result}
         return {
             "ok": True,
             "decision": decision,
             "budget": budget_result,
-            "action": action_data["type"],
+            "action": action_data.get("type", "unknown"),
             "args": kwargs,
         }
 
     def record_preloop(self, action_type: str, result: dict[str, Any], decision: dict[str, Any]) -> None:
+        tag = decision.get("decision", "unknown")
+        if not isinstance(tag, str):
+            tag = "unknown"
         self.preloop.record(
             Outcome(
                 action=action_type,
                 ok=result.get("ok", False),
                 reward=1.0 if result.get("ok") else 0.0,
-                tags=[decision["decision"]],
+                tags=[tag],
             )
         )

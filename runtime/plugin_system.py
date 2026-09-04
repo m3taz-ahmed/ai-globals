@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -83,12 +84,19 @@ class PluginManifest:
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> PluginManifest:
         """Parse a plugin.json dict into a PluginManifest."""
+        if not isinstance(data, dict):
+            raise PluginError("Plugin manifest must be a JSON object")
         name = str(data.get("name", ""))
         version = str(data.get("version", "0.0.0"))
         description = str(data.get("description", ""))
         if not name or not description:
             raise PluginError("Plugin manifest must have 'name' and 'description'")
-        ptype = PluginType(str(data.get("type", "bundle")))
+        if len(name) > 128 or re.search(r"[^\w.-]", name):
+            raise PluginError(f"Invalid plugin name {name!r}: use [A-Za-z0-9_.-], max 128 chars")
+        try:
+            ptype = PluginType(str(data.get("type", "bundle")))
+        except ValueError as exc:
+            raise PluginError(f"Invalid plugin type {data.get('type')!r}") from exc
         hooks_raw = data.get("hooks", {})
         hooks: dict[str, str] = {}
         if isinstance(hooks_raw, dict):
@@ -186,8 +194,9 @@ class PluginRegistry:
                 self._plugins[manifest.name] = plugin
                 self._index_plugin(plugin)
                 count += 1
-            except (json.JSONDecodeError, PluginError, OSError):
-                # Skip broken plugins silently — isolation
+            except (json.JSONDecodeError, PluginError, OSError, ValueError):
+                # Skip broken plugins — one bad manifest must not kill
+                # discover() (previously an invalid `type` ValueError did).
                 continue
 
         return count
@@ -228,11 +237,17 @@ class PluginRegistry:
         return True
 
     def find_by_keyword(self, keyword: str) -> list[Plugin]:
-        """Find plugins matching a keyword (case-insensitive)."""
+        """Find plugins matching a keyword (case-insensitive).
+
+        Matches when the query contains an indexed keyword OR an indexed
+        keyword contains the query (previously only the latter, so
+        multi-word queries like "flutter app" never matched "flutter").
+        """
         kw_lower = keyword.lower()
         names: set[str] = set()
         for indexed_kw, plugin_names in self._keyword_index.items():
-            if kw_lower in indexed_kw.lower():
+            indexed_lower = indexed_kw.lower()
+            if kw_lower in indexed_lower or indexed_lower in kw_lower:
                 names.update(plugin_names)
         return [self._plugins[n] for n in names if n in self._plugins]
 
@@ -240,6 +255,15 @@ class PluginRegistry:
         """Find plugins relevant to a persona."""
         names = self._persona_index.get(persona, [])
         return [self._plugins[n] for n in names if n in self._plugins]
+
+    def _confined_path(self, plugin: Plugin, *parts: str) -> Path | None:
+        """Resolve path parts under the plugin dir; None on traversal escape."""
+        try:
+            resolved = (plugin.path.joinpath(*parts)).resolve()
+            resolved.relative_to(plugin.path.resolve())
+        except (OSError, ValueError):
+            return None
+        return resolved
 
     def load_skill(self, plugin_name: str, skill_name: str) -> str | None:
         """Load a skill's SKILL.md content from a plugin.
@@ -249,22 +273,27 @@ class PluginRegistry:
         plugin = self._plugins.get(plugin_name)
         if plugin is None or not plugin.is_active:
             return None
-        skill_path = plugin.path / "skills" / skill_name / self.SKILL_FILE
-        if not skill_path.exists():
-            skill_path = plugin.path / "skills" / f"{skill_name}.md"
-        if not skill_path.exists():
+        if not skill_name or ".." in skill_name or skill_name.startswith(("/", "\\")):
+            return None
+        skill_path = self._confined_path(plugin, "skills", skill_name, self.SKILL_FILE)
+        if skill_path is None or not skill_path.is_file():
+            skill_path = self._confined_path(plugin, "skills", f"{skill_name}.md")
+        if skill_path is None or not skill_path.is_file():
             return None
         try:
+            if skill_path.stat().st_size > 200_000:
+                return None
             return skill_path.read_text(encoding="utf-8")
-        except OSError:
+        except (OSError, UnicodeDecodeError):
             return None
 
     def run_hook(self, plugin_name: str, phase: HookPhase, context: dict[str, object]) -> str | None:
         """Run a hook script for a plugin. Returns the script output or None.
 
-        Executes the hook via ``subprocess.run`` with a 30-second timeout.
-        Hook failures are logged but never crash the OS — a broken plugin
-        is isolated from the kernel.
+        Executes the hook via ``subprocess.run`` with a 30-second timeout,
+        confined to the plugin directory (``../../`` escapes rejected, only
+        ``.py`` scripts), with stdout capped at 64KB. Hook failures are
+        logged but never crash the OS — a broken plugin is isolated.
         """
         plugin = self._plugins.get(plugin_name)
         if plugin is None or not plugin.is_active:
@@ -272,11 +301,14 @@ class PluginRegistry:
         hook_path = plugin.manifest.hooks.get(phase.value)
         if hook_path is None:
             return None
-        full_path = plugin.path / hook_path
-        if not full_path.exists():
+        if not hook_path.endswith(".py") or ".." in hook_path or hook_path.startswith(("/", "\\")):
+            _logger.warning("Hook path rejected for plugin %s phase %s: %r", plugin_name, phase.value, hook_path)
+            return None
+        full_path = self._confined_path(plugin, hook_path)
+        if full_path is None or not full_path.is_file():
             _logger.warning(
                 "Hook script not found for plugin %s phase %s: %s",
-                plugin_name, phase.value, full_path,
+                plugin_name, phase.value, hook_path,
             )
             return None
         try:
@@ -287,6 +319,7 @@ class PluginRegistry:
                 text=True,
                 timeout=30,
                 check=False,
+                cwd=str(plugin.path),
             )
         except subprocess.TimeoutExpired:
             _logger.warning(
@@ -303,14 +336,14 @@ class PluginRegistry:
         if result.returncode != 0:
             _logger.warning(
                 "Hook script exited with code %d for plugin %s phase %s: %s",
-                result.returncode, plugin_name, phase.value, result.stderr.strip(),
+                result.returncode, plugin_name, phase.value, result.stderr.strip()[:2000],
             )
             return None
         _logger.debug(
             "Hook script succeeded for plugin %s phase %s",
             plugin_name, phase.value,
         )
-        return result.stdout.strip() or None
+        return result.stdout.strip()[:65_536] or None
 
     def stats(self) -> dict[str, int]:
         """Return registry statistics."""

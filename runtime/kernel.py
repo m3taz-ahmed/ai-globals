@@ -6,7 +6,6 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -25,7 +24,6 @@ from .mcp_firewall import McpFirewall
 from .metrics import CollectorRegistry, Counter, Gauge
 from .middleware import (
     ActionContext,
-    CompiledPipeline,
     Middleware,
     MiddlewarePipeline,
     MiddlewareResult,
@@ -337,6 +335,7 @@ def _act_via_middleware(
     dry_run: bool,
     kwargs: dict[str, Any],
     session_id: str | None,
+    fresh_context: bool = False,
 ) -> dict[str, Any]:
     """Execute action through the flat middleware array (Pattern 4).
 
@@ -352,54 +351,20 @@ def _act_via_middleware(
 
     def handler(ctx: ActionContext) -> MiddlewareResult[dict[str, Any]]:
         result = kernel._act_direct(
-            ctx.action_type, ctx.dry_run, ctx.data, ctx.session_id, fresh_context=False,
+            ctx.action_type, ctx.dry_run, ctx.data, ctx.session_id, fresh_context=fresh_context,
         )
-        return MiddlewareResult(ok=bool(result.get("ok", False)), data=result)
+        return MiddlewareResult(ok=bool(result.get("ok", False)), data=result, error=result.get("error"))
 
     mw_result = kernel._middleware_pipeline.execute(context, handler)
     if mw_result.ok:
         return mw_result.data if mw_result.data is not None else {"ok": True}
+    # Preserve the full denial payload from _act_direct() (reason, gate, decision, detail).
+    if mw_result.data is not None and isinstance(mw_result.data, dict):
+        return mw_result.data
     err_msg = str(mw_result.error) if mw_result.error else "middleware error"
     return {"ok": False, "error": err_msg}
 
 
-def _act_via_compiled_pipeline(
-    kernel: Kernel,
-    action_type: str,
-    dry_run: bool,
-    kwargs: dict[str, Any],
-    session_id: str | None,
-    pipeline: CompiledPipeline,
-) -> dict[str, Any]:
-    """Execute action through the pre-compiled enhancer pipeline (Pattern 5)."""
-    context = ActionContext(
-        action_type=action_type,
-        data=dict(kwargs),
-        dry_run=dry_run,
-        session_id=session_id,
-    )
-    result = pipeline.execute(context)
-    if result.ok:
-        return result.data if result.data is not None else {"ok": True}
-    err_msg = str(result.error) if result.error else "pipeline error"
-    return {"ok": False, "error": err_msg}
-
-
-def _get_compiled_pipeline(kernel: Kernel, action_type: str) -> CompiledPipeline | None:
-    """Get or lazily compile the pipeline for an action type.
-
-    Returns None if no builder is registered for the action type.
-    On first access, the builder configures the pipeline and it is
-    compiled and cached. Subsequent calls return the cached instance.
-    """
-    if action_type not in kernel._pipeline_builders:
-        return None
-    if action_type not in kernel._compiled_pipelines:
-        pipeline = CompiledPipeline()
-        kernel._pipeline_builders[action_type](pipeline)
-        pipeline.compile()
-        kernel._compiled_pipelines[action_type] = pipeline
-    return kernel._compiled_pipelines[action_type]
 
 
 class Kernel:
@@ -459,11 +424,6 @@ class Kernel:
         self._memory: MemoryStore | None = None
         # Pattern 4: Flat middleware array (tRPC-style callRecursive)
         self._middleware_pipeline = MiddlewarePipeline()
-        # Pattern 5: Pre-compiled enhancer pipeline (NestJS-style)
-        # Builders configure a CompiledPipeline per action type; compiled
-        # pipelines are cached after first execution.
-        self._pipeline_builders: dict[str, Callable[[CompiledPipeline], None]] = {}
-        self._compiled_pipelines: dict[str, CompiledPipeline] = {}
 
     @property
     def plugins(self) -> PluginManager:
@@ -528,7 +488,7 @@ class Kernel:
             if fresh_context and session_id is None:
                 session_id = uuid.uuid4().hex
             if self._middleware_pipeline.has_middlewares():
-                return _act_via_middleware(self, action_type, dry_run, kwargs, session_id)
+                return _act_via_middleware(self, action_type, dry_run, kwargs, session_id, fresh_context)
             return self._act_direct(action_type, dry_run, kwargs, session_id, fresh_context)
 
     def _act_direct(
@@ -590,36 +550,6 @@ class Kernel:
         through the flat middleware array instead of the direct path.
         """
         self._middleware_pipeline.use(mw)
-
-    def register_action_pipeline(
-        self,
-        action_type: str,
-        builder: Callable[[CompiledPipeline], None],
-    ) -> None:
-        """Register a compiled pipeline builder for an action type (Pattern 5).
-
-        .. deprecated::
-            GATE-B4: This API allowed gate-free handlers that could bypass
-            the 5-gate pipeline. It is no longer dispatched from ``act()``.
-            All actions now flow through the gated ``_act_direct`` path.
-            Will be removed in the next minor version.
-
-        The builder receives a ``CompiledPipeline`` and adds guards,
-        interceptors, pipes, and a handler. The pipeline is compiled on
-        first ``act()`` call for that action type and cached thereafter.
-        """
-        import warnings
-
-        warnings.warn(
-            "register_action_pipeline() is deprecated (GATE-B4) and no longer "
-            "dispatched from act(). All actions flow through the gated path. "
-            "Will be removed in the next minor version.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._pipeline_builders[action_type] = builder
-        # Invalidate any previously cached compiled pipeline for this action
-        self._compiled_pipelines.pop(action_type, None)
 
     # --- Workflow (delegates to WorkflowManager) ---
     def run_workflow(
@@ -729,6 +659,7 @@ class KernelBuilder:
         self._audit_logger: AuditLogger | None = None
         self._policy_engine: PolicyEngine | None = None
         self._guardian: Guardian | None = None
+        self._probity: Guardrails | None = None
         self._memory: MemoryStore | None = None
 
     def with_root(self, root: Path) -> KernelBuilder:
@@ -763,6 +694,10 @@ class KernelBuilder:
         self._guardian = g
         return self
 
+    def with_probity(self, p: Guardrails) -> KernelBuilder:
+        self._probity = p
+        return self
+
     def with_memory(self, m: MemoryStore) -> KernelBuilder:
         self._memory = m
         return self
@@ -780,8 +715,14 @@ class KernelBuilder:
         kernel = Kernel(**kwargs)
         if self._budget_manager is not None:
             kernel.budget = self._budget_manager
+            # L1: sync the manager's budget reference so PolicyManager
+            # never holds a stale default BudgetManager.
+            kernel.policy_mgr.budget = self._budget_manager
         if self._audit_logger is not None:
             kernel.audit = self._audit_logger
+            # L1: sync the manager's audit reference so PolicyManager
+            # never holds a stale default AuditLogger.
+            kernel.policy_mgr.audit = self._audit_logger
         if self._policy_engine is not None:
             kernel.policy = self._policy_engine
             # L1: keep the manager's reference in sync with the facade so the
@@ -791,6 +732,10 @@ class KernelBuilder:
             kernel.guardian = self._guardian
             # L1: same sync for the Guardian instance.
             kernel.policy_mgr.guardian = self._guardian
+        if self._probity is not None:
+            kernel.probity = self._probity
+            # L1: same sync for the Probity/Guardrails instance.
+            kernel.policy_mgr.probity = self._probity
         if self._memory is not None:
             # Wire memory to kernel and plugins (used by load_plugins).
             kernel._memory = self._memory

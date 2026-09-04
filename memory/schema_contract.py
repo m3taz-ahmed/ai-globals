@@ -144,34 +144,52 @@ def _extract_columns(ddl: str) -> list[str]:
     if start == -1 or end == -1 or end <= start:
         return []
     body = ddl[start + 1:end]
-    # Split on commas, but respect nested parens (e.g., CHECK constraints)
+    # Split on commas, respecting nested parens (CHECK constraints) AND
+    # quoted strings (DEFAULT 'a,b' must not split).
     columns: list[str] = []
     depth = 0
+    quote: str | None = None
     current: list[str] = []
-    for char in body:
-        if char == "(":
+    i = 0
+    while i < len(body):
+        char = body[i]
+        if quote is not None:
+            current.append(char)
+            if char == quote and body[i - 1] != "\\":
+                # SQL escapes '' by doubling; a doubled quote stays quoted.
+                if i + 1 < len(body) and body[i + 1] == quote:
+                    current.append(body[i + 1])
+                    i += 1
+                else:
+                    quote = None
+        elif char in ("'", '"', "`"):
+            quote = char
+            current.append(char)
+        elif char == "(":
             depth += 1
             current.append(char)
         elif char == ")":
             depth -= 1
             current.append(char)
         elif char == "," and depth == 0:
-            col_def = "".join(current).strip()
-            if col_def:
-                col_name = col_def.split()[0].lower() if col_def.split() else ""
-                # Skip table-level constraints (PRIMARY KEY, FOREIGN KEY, etc.)
-                if col_name and not col_name.startswith(("primary", "foreign", "unique", "check", "constraint", "default")):
-                    columns.append(col_name)
+            _append_column(columns, "".join(current))
             current = []
         else:
             current.append(char)
+        i += 1
     # Last column
-    col_def = "".join(current).strip()
-    if col_def:
-        col_name = col_def.split()[0].lower() if col_def.split() else ""
-        if col_name and not col_name.startswith(("primary", "foreign", "unique", "check", "constraint", "default")):
-            columns.append(col_name)
+    _append_column(columns, "".join(current))
     return columns
+
+
+def _append_column(columns: list[str], col_def: str) -> None:
+    col_def = col_def.strip().strip('"').strip("`").strip("[]")
+    if not col_def:
+        return
+    first = col_def.split()[0].strip('"').strip("`").strip("[]").lower()
+    # Skip table-level constraints (PRIMARY KEY, FOREIGN KEY, etc.)
+    if first and not first.startswith(("primary", "foreign", "unique", "check", "constraint", "default")):
+        columns.append(first)
 
 
 # ---------------------------------------------------------------------------
@@ -263,8 +281,12 @@ def verify_schema_integrity(
     if expected is None:
         expected = default_memory_contract()
     actual_tables, actual_indexes = _read_db_schema(db_path)
+    # FTS5 shadow tables (memories_fts*) are auto-created by SQLite and are
+    # not part of any contract — exclude them from hashing so the fast path
+    # works when FTS exists (previously the hash always differed).
+    hash_tables = {k: v for k, v in actual_tables.items() if not k.startswith("memories_fts")}
     actual_contract = SchemaContract(
-        tables=actual_tables,
+        tables=hash_tables,
         indexes=actual_indexes,
         version=expected.version,
     )

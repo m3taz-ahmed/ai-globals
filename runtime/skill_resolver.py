@@ -59,12 +59,15 @@ class SkillResolver:
 
     def list_skills(self) -> list[str]:
         """Return all valid skill names found in OS and project `skills/`."""
+        _excluded = {"README", "EVAL"}
         names: set[str] = set()
         for directory in (self.project_skills_dir, self.skills_dir):
             if directory is None or not directory.is_dir():
                 continue
             for path in directory.iterdir():
                 if path.is_file() and path.suffix == ".md":
+                    if path.stem in _excluded:
+                        continue
                     names.add(path.stem)
                 elif path.is_dir() and (path / "SKILL.md").is_file():
                     names.add(path.name)

@@ -5,17 +5,16 @@ from __future__ import annotations
 
 import hashlib
 import json
-import uuid
 import warnings
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import cast
 
 import config
 
-from .store import Memory, MemoryStore
+from .store import Memory, MemoryStore, _deterministic_id
 
 _AI_TITLE_TAGS = ("[FILE]", "[TECH]", "[WORKFLOW]", "[SKILL]")
+_MAX_INGEST_BYTES = 500_000  # skip files larger than this (OOM guard)
 
 # (source_prefix, kind, recursive)
 _TRACKED: tuple[tuple[str, str, bool], ...] = (
@@ -36,14 +35,20 @@ class Ingestor:
 
     def _load_manifest(self) -> dict[str, str]:
         if self.manifest_path.exists():
-            with self.manifest_path.open("r", encoding="utf-8") as f:
-                return cast(dict[str, str], json.load(f))
+            try:
+                data = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError, UnicodeDecodeError):
+                return {}
+            if isinstance(data, dict):
+                return {str(k): str(v) for k, v in data.items()}
         return {}
 
     def _save_manifest(self, manifest: dict[str, str]) -> None:
         self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.manifest_path.open("w", encoding="utf-8") as f:
+        tmp = self.manifest_path.with_suffix(".json.tmp")
+        with tmp.open("w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
+        tmp.replace(self.manifest_path)
 
     @staticmethod
     def _sig(content: str) -> str:
@@ -59,7 +64,8 @@ class Ingestor:
 
     def _is_ai_file(self, content: str) -> bool:
         body = self._body_after_frontmatter(content)
-        first = body.lstrip().splitlines()[0].strip() if body else ""
+        stripped = body.lstrip() if body else ""
+        first = stripped.splitlines()[0].strip() if stripped else ""
         return any(first.startswith(tag) for tag in _AI_TITLE_TAGS)
 
     def _validate(self, content: str, source: str) -> bool:
@@ -72,8 +78,11 @@ class Ingestor:
 
     def _memory(self, source: str, kind: str, content: str) -> Memory:
         now = datetime.now(timezone.utc).isoformat()
+        # Deterministic id (not uuid4): if the manifest is lost, re-ingest
+        # maps to the same rows and INSERT OR IGNORE dedups instead of
+        # duplicating every file.
         return Memory(
-            id=str(uuid.uuid4()),
+            id=_deterministic_id(content, kind, source),
             kind=kind,
             content=content,
             source=source,
@@ -82,6 +91,21 @@ class Ingestor:
             valid_from=now,
             valid_to=None,
         )
+
+    def _read_tracked(self, p: Path) -> str | None:
+        """Read a tracked file with size cap + symlink containment. None = skip."""
+        try:
+            if p.stat().st_size > _MAX_INGEST_BYTES:
+                warnings.warn(f"Skipping oversize ingest file {p} (>500KB)", stacklevel=2)
+                return None
+            resolved = p.resolve()
+            resolved.relative_to(self.root.resolve())
+        except (OSError, ValueError):
+            return None
+        try:
+            return resolved.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
 
     def _collect_dir(
         self,
@@ -104,7 +128,9 @@ class Ingestor:
                 continue
             rel = p.relative_to(dir_path)
             source = f"{source_prefix}/{rel.as_posix()}"
-            content = p.read_text(encoding="utf-8")
+            content = self._read_tracked(p)
+            if content is None:
+                continue
             if not self._validate(content, source):
                 continue
             sig = self._sig(content)
@@ -121,7 +147,9 @@ class Ingestor:
         if not p.is_file():
             return [], {}, set()
         source = "AGENTS.md"
-        content = p.read_text(encoding="utf-8")
+        content = self._read_tracked(p)
+        if content is None:
+            return [], {}, set()
         if not self._validate(content, source):
             return [], {}, set()
         sig = self._sig(content)

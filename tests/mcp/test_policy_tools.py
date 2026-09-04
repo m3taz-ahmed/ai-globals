@@ -111,7 +111,8 @@ class TestRunGuardianCheck:
         with patch("aizee_mcp.tools.policy_tools.kernel", return_value=mock_k):
             result = _call("run_guardian_check", {"tool": "Write"})
             data = json.loads(result)
-            assert data["ok"] is True
+            # ok is True only for explicit ALLOW (fail-closed semantics)
+            assert data["ok"] is False
             assert data["status"] == "deny"
 
     def test_guardian_with_no_attributes(self):

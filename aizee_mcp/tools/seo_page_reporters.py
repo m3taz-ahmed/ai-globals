@@ -86,6 +86,9 @@ def run_page_reporters(page: PageData) -> list[dict[str, Any]]:
         report("blocked-page", {"statusCode": page.status_code})
         return issues
     if page.fetch_class == "error":
+        # A fetch failure is not a healthy page — emit an explicit issue
+        # instead of returning zero issues (indistinguishable from clean).
+        report("server-error", {"statusCode": page.status_code})
         return issues
 
     # Status code checks
@@ -96,7 +99,11 @@ def run_page_reporters(page: PageData) -> list[dict[str, Any]]:
         report("broken-page", {"statusCode": page.status_code})
         return issues
     if page.status_code >= 300:
-        return issues  # Redirects are normal; chains/loops flagged in multipage
+        # Redirects are normal; chains/loops flagged in multipage.
+        # Emit a marker issue so redirect pages are never "clean".
+        report("redirect-chain",
+               {"statusCode": page.status_code, "redirectUrl": page.redirect_url})
+        return issues
 
     # Slow response
     if page.response_time_ms > SLOW_RESPONSE_MS:
@@ -150,6 +157,14 @@ def run_page_reporters(page: PageData) -> list[dict[str, Any]]:
     # Images
     if page.images_missing_alt > 0:
         report("images-missing-alt", {"count": page.images_missing_alt})
+    if page.images_missing_dims > 0:
+        report("images-missing-dims", {"count": page.images_missing_dims})
+
+    # Open Graph (basic presence — detailed checks live in _audit_page_issues)
+    if not page.og_title:
+        report("og-title-missing")
+    if not page.og_description:
+        report("og-desc-missing")
 
     # Structured data
     if not page.has_structured_data:

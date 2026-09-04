@@ -19,6 +19,7 @@ Usage::
 
 from __future__ import annotations
 
+import copy
 import threading
 from dataclasses import dataclass, field
 from enum import Enum
@@ -54,7 +55,14 @@ class CatalogAgent:
 
 @dataclass
 class CatalogFlow:
-    """A registered flow (multi-step agent procedure)."""
+    """A registered flow (multi-step agent procedure).
+
+    ``allowed_agents`` is enforced by
+    :meth:`AgentCatalog.is_flow_allowed_for_agent` in addition to the
+    agent-side ``CatalogAgent.allowed_flows`` allowlist: when non-empty,
+    the agent must be listed here AND the flow must be listed on the
+    agent. An empty list means "no flow-side restriction".
+    """
 
     flow_id: str
     name: str
@@ -133,7 +141,12 @@ class AgentCatalog:
             agent = self._agents.get(agent_id)
             if agent is None or agent.status != AgentStatus.ALLOWED:
                 return False
-            return flow_id in agent.allowed_flows
+            if flow_id not in agent.allowed_flows:
+                return False
+            flow = self._flows.get(flow_id)
+            if flow is None:
+                return False
+            return not flow.allowed_agents or agent_id in flow.allowed_agents
 
     def is_model_allowed_for_agent(self, agent_id: str, model_id: str) -> bool:
         """True if the agent is allowed and the model is in its allowlist."""
@@ -141,14 +154,16 @@ class AgentCatalog:
             agent = self._agents.get(agent_id)
             if agent is None or agent.status != AgentStatus.ALLOWED:
                 return False
-            return model_id in agent.allowed_models
+            if model_id not in agent.allowed_models:
+                return False
+            return model_id in self._models
 
     # -- listings --------------------------------------------------------
 
     def list_agents(self, status: AgentStatus | None = None) -> list[CatalogAgent]:
         """List agents, optionally filtered by status."""
         with self._lock:
-            agents = list(self._agents.values())
+            agents = [copy.deepcopy(a) for a in self._agents.values()]
         if status is None:
             return agents
         return [a for a in agents if a.status == status]
@@ -156,12 +171,12 @@ class AgentCatalog:
     def list_flows(self) -> list[CatalogFlow]:
         """List all registered flows."""
         with self._lock:
-            return list(self._flows.values())
+            return [copy.deepcopy(f) for f in self._flows.values()]
 
     def list_models(self, tier: ModelTier | None = None) -> list[CatalogModel]:
         """List models, optionally filtered by tier."""
         with self._lock:
-            models = list(self._models.values())
+            models = [copy.deepcopy(m) for m in self._models.values()]
         if tier is None:
             return models
         return [m for m in models if m.tier == tier]

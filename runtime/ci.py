@@ -8,6 +8,8 @@ from pathlib import Path
 
 
 def run_command(cmd: list[str], cwd: Path) -> tuple[int, str]:
+    if not cwd.is_dir():
+        return 1, f"Invalid cwd (not a directory): {cwd}"
     try:
         result = subprocess.run(
             cmd,
@@ -15,10 +17,13 @@ def run_command(cmd: list[str], cwd: Path) -> tuple[int, str]:
             capture_output=True,
             text=True,
             check=False,
+            timeout=120,
         )
         return result.returncode, (result.stdout + result.stderr).strip()
     except FileNotFoundError as exc:
         return 1, f"Command not found: {exc}"
+    except (OSError, TimeoutError, PermissionError) as exc:
+        return 1, f"Command failed: {exc}"
 
 
 class CIPipeline:
@@ -50,6 +55,12 @@ class CIPipeline:
         return 0 if all_ok else 1
 
     def report(self) -> dict[str, object]:
+        if not self.results:
+            return {
+                "ok": False,
+                "reason": "no runs recorded",
+                "results": self.results,
+            }
         return {
             "ok": all(r["ok"] for r in self.results),
             "results": self.results,

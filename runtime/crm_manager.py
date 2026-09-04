@@ -48,9 +48,17 @@ _OPPORTUNITY_TRANSITIONS: dict[OpportunityStage, set[OpportunityStage]] = {
 _TASK_TRANSITIONS: dict[TaskStage, set[TaskStage]] = {
     TaskStage.TODO: {TaskStage.IN_PROGRESS, TaskStage.CANCELLED, TaskStage.DONE},
     TaskStage.IN_PROGRESS: {TaskStage.DONE, TaskStage.CANCELLED, TaskStage.TODO},
-    TaskStage.DONE: {TaskStage.TODO},
+    TaskStage.DONE: set(),
     TaskStage.CANCELLED: set(),
 }
+
+# Terminal stages have no outgoing transitions (not re-enterable, not leavable).
+_TERMINAL_OPPORTUNITY: frozenset[OpportunityStage] = frozenset({OpportunityStage.WON, OpportunityStage.LOST})
+_TERMINAL_TASK: frozenset[TaskStage] = frozenset({TaskStage.DONE, TaskStage.CANCELLED})
+
+# NOTE (transition asymmetry, intentional): Opportunity requires stepwise
+# progression (NEW→QUALIFIED→PROPOSAL→WON, no skips), while Task allows a
+# TODO→DONE fast-track for trivial tasks. Kept for backward compatibility.
 
 
 @dataclass
@@ -86,8 +94,18 @@ class Opportunity:
 
     def validate_transition(self, target: OpportunityStage) -> None:
         """Raise if moving to ``target`` is not allowed from current stage."""
-        if target is self.stage:
+        if target == self.stage:
+            if self.stage in _TERMINAL_OPPORTUNITY:
+                raise ValidationError(
+                    "terminal opportunity stage is not re-enterable",
+                    context={"from": self.stage.value, "to": target.value, "allowed": []},
+                )
             return
+        if self.stage in _TERMINAL_OPPORTUNITY:
+            raise ValidationError(
+                "terminal opportunity stage has no outgoing transitions",
+                context={"from": self.stage.value, "to": target.value, "allowed": []},
+            )
         allowed = _OPPORTUNITY_TRANSITIONS.get(self.stage, set())
         if target not in allowed:
 
@@ -117,8 +135,18 @@ class Task:
     meta: dict[str, Any] = field(default_factory=dict)
 
     def validate_transition(self, target: TaskStage) -> None:
-        if target is self.stage:
+        if target == self.stage:
+            if self.stage in _TERMINAL_TASK:
+                raise ValidationError(
+                    "terminal task stage is not re-enterable",
+                    context={"from": self.stage.value, "to": target.value, "allowed": []},
+                )
             return
+        if self.stage in _TERMINAL_TASK:
+            raise ValidationError(
+                "terminal task stage has no outgoing transitions",
+                context={"from": self.stage.value, "to": target.value, "allowed": []},
+            )
         allowed = _TASK_TRANSITIONS.get(self.stage, set())
         if target not in allowed:
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 import ast
 import functools
 import operator
+import re
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -44,7 +45,11 @@ _DESTRUCTIVE_ACTIONS: frozenset[str] = frozenset({
 def _classify_action(action_type: str) -> Action:
     """Classify an action type into a default decision (allow/ask/deny)."""
     at = action_type.strip()
-    if at in _DESTRUCTIVE_ACTIONS or any(d in at for d in ("rm -rf", "drop", "truncate", "destroy")):
+    lowered = at.lower()
+    # Whole-token match only: a substring check for "drop" false-denies
+    # innocent labels like "raindrop" or "eavesdrop".
+    tokens = set(re.split(r"[^a-z0-9_-]+", lowered))
+    if tokens & _DESTRUCTIVE_ACTIONS or "rm -rf" in lowered:
         return "deny"
     if at in READ_ACTIONS:
         return "allow"
@@ -61,6 +66,8 @@ class PolicyRule:
     description: str = ""
     approvers: list[str] = field(default_factory=list)
     priority: int = 0  # Higher priority wins; tie → file order (GATE-B3)
+    # Pre-parsed condition AST (compiled once at load, not per evaluation).
+    _tree: ast.Expression | None = field(default=None, repr=False, compare=False)
 
 
 def _safe_priority(raw: Any) -> int:
@@ -144,12 +151,17 @@ class _SafeEvaluator(ast.NodeVisitor):
         if isinstance(node, ast.Set):
             return {self.visit(elt) for elt in node.elts}
         if isinstance(node, ast.Name):
-            if node.id in self._yaml_literals:
-                return self._yaml_literals[node.id]
-            # Return _MISSING sentinel for absent attributes so comparisons
-            # fail-closed (see _MISSING docstring).
+            # Explicit action attributes win over literals; otherwise match
+            # YAML literals case-insensitively (TRUE/FALSE/NULL), not just
+            # lowercase — an uppercase literal previously fell through to
+            # _MISSING and silently changed rule semantics.
             if node.id in self.action:
                 return self.action[node.id]
+            literal = self._yaml_literals.get(node.id.lower())
+            if literal is not None or node.id.lower() in ("null", "none"):
+                return literal
+            # Return _MISSING sentinel for absent attributes so comparisons
+            # fail-closed (see _MISSING docstring).
             return self._MISSING
         if isinstance(node, ast.Subscript):
             value = self.visit(node.value)
@@ -204,12 +216,27 @@ class _SafeEvaluator(ast.NodeVisitor):
                 left = right
             return True
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
-            return self.visit(node.left) + self.visit(node.right)
+            left = self.visit(node.left)
+            right = self.visit(node.right)
+            if left is self._MISSING or right is self._MISSING:
+                return self._MISSING
+            try:
+                result = left + right
+            except TypeError:
+                return self._MISSING
+            # Cap concatenation: hostile conditions like "x"*huge via
+            # repeated + could blow up CPU/memory per evaluation.
+            try:
+                if len(result) > 10_000:
+                    raise ValueError("policy string/list concatenation exceeds 10k")
+            except TypeError:
+                pass
+            return result
         raise ValueError(f"Unsupported node: {type(node).__name__}")
 
-    def evaluate(self, expression: str) -> bool:
+    def evaluate(self, expression: str, _tree: ast.Expression | None = None) -> bool:
         try:
-            tree = ast.parse(expression, mode="eval")
+            tree = _tree if _tree is not None else ast.parse(expression, mode="eval")
             return bool(self.visit(tree))
         except Exception as exc:
             warnings.warn(f"Policy condition evaluation failed for '{expression}': {exc}", stacklevel=2)
@@ -224,7 +251,9 @@ class PolicyEngine:
         self.project_root = project_root
         self.rules: list[PolicyRule] = []
         self.default_action: Action = "ask"
+        self._ordered: list[PolicyRule] = []
         self._load()
+        self._resort()
 
     def _load(self) -> None:
         roots = [self.os_root]
@@ -281,6 +310,11 @@ class PolicyEngine:
             except Exception as exc:
                 warnings.warn(f"Skipping malformed rule in {path}: {exc}", stacklevel=2)
                 continue
+            try:
+                tree = ast.parse(validated.condition, mode="eval")
+            except SyntaxError as exc:
+                warnings.warn(f"Skipping rule with invalid condition in {path}: {exc}", stacklevel=2)
+                continue
             self.rules.append(
                 PolicyRule(
                     name=validated.name,
@@ -289,8 +323,16 @@ class PolicyEngine:
                     description=validated.description,
                     approvers=validated.approvers,
                     priority=_safe_priority(r.get("priority", 0)),
+                    _tree=tree,
                 )
             )
+        self._resort()
+
+    def _resort(self) -> None:
+        """Rebuild the cached priority order (highest first, file order ties)."""
+        self._ordered = [
+            rule for _, rule in sorted(enumerate(self.rules), key=lambda pair: (-pair[1].priority, pair[0]))
+        ]
 
     def evaluate(self, action: dict[str, Any]) -> dict[str, Any]:
         """Evaluate an action and return decision.
@@ -299,10 +341,12 @@ class PolicyEngine:
         file order (insertion order). This makes precedence deterministic and
         independent of filename sorting (GATE-B3).
         """
-        # Sort by priority descending; stable sort preserves file order for ties.
-        ordered = sorted(enumerate(self.rules), key=lambda pair: (-pair[1].priority, pair[0]))
-        for _, rule in ordered:
-            if _SafeEvaluator(action).evaluate(rule.condition):
+        ordered = getattr(self, "_ordered", None)
+        if ordered is None:
+            self._resort()
+            ordered = self._ordered
+        for rule in ordered:
+            if _SafeEvaluator(action).evaluate(rule.condition, rule._tree):
                 return {
                     "decision": rule.action,
                     "rule": rule.name,
@@ -334,11 +378,10 @@ class PolicyEngine:
         }
 
     def can(self, action_type: str, **kwargs: Any) -> dict[str, Any]:
-        # Policies reference `command` in membership checks; ensure it is a
-        # string to avoid `NoneType` iteration warnings when the action does
-        # not carry a shell command (e.g. `write`, `edit`).
-        if "command" not in kwargs or kwargs.get("command") is None:
-            kwargs["command"] = ""
+        # No attribute injection: a missing `command` resolves to _MISSING
+        # inside the evaluator (fail-closed) rather than "" — an empty
+        # string could satisfy `command == ""`-style rules for actions
+        # that carry no command at all.
         return self.evaluate({"type": action_type, **kwargs})
 
 

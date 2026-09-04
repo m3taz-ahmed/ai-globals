@@ -34,6 +34,7 @@ Usage::
 
 from __future__ import annotations
 
+import logging
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -41,6 +42,8 @@ from enum import Enum
 from typing import ClassVar
 
 from runtime.schemas import AizeeError, ErrorSeverity
+
+_logger = logging.getLogger(__name__)
 
 
 class AnomalyType(str, Enum):
@@ -102,6 +105,12 @@ class AnomalyAlert:
 
     @property
     def is_anomalous(self) -> bool:
+        """Always True: existence of an alert implies anomaly.
+
+        Kept as a property (not a stored field) so callers can
+        uniformly test ``if alert and alert.is_anomalous`` without
+        None-checks; a None return from ``check()`` means "not anomalous".
+        """
         return True  # AnomalyAlert is always anomalous by definition
 
     def to_dict(self) -> dict[str, object]:
@@ -249,6 +258,48 @@ class AgentBaseline:
                     severity=0.5,
                 )
 
+        # Check: volume spike (recent rate vs baseline mean rate)
+        spike = self._check_volume_spike(action)
+        if spike is not None:
+            return spike
+
+        return None
+
+    def _check_volume_spike(self, action: AgentAction) -> AnomalyAlert | None:
+        """Compare recent action rate vs baseline mean rate.
+
+        Recent rate = VOLUME_SPIKE_WINDOW actions over their time span;
+        baseline mean = all retained observations over their time span.
+        Flags VOLUME_SPIKE when recent rate exceeds mean by
+        VOLUME_SPIKE_MULTIPLIER. Returns None on insufficient data or
+        zero-duration windows (clock granularity).
+        """
+        window = self.VOLUME_SPIKE_WINDOW
+        recent = self._recent_timestamps
+        if len(recent) < window:
+            return None
+        try:
+            recent_span = (recent[-1] - recent[-window]).total_seconds()
+            total_span = (recent[-1] - recent[0]).total_seconds()
+        except Exception:
+            return None
+        if recent_span <= 0 or total_span <= 0:
+            return None
+        recent_rate = window / recent_span
+        mean_rate = len(recent) / total_span
+        if mean_rate <= 0:
+            return None
+        if recent_rate > mean_rate * self.VOLUME_SPIKE_MULTIPLIER:
+            return AnomalyAlert(
+                anomaly_type=AnomalyType.VOLUME_SPIKE,
+                agent_id=self.agent_id,
+                action=action,
+                reason=(
+                    f"volume spike: recent rate {recent_rate:.2f}/s > "
+                    f"{self.VOLUME_SPIKE_MULTIPLIER}x baseline {mean_rate:.2f}/s"
+                ),
+                severity=0.6,
+            )
         return None
 
     def stats(self) -> dict[str, object]:
@@ -288,7 +339,11 @@ class BaselineRegistry:
 
     def check(self, agent_id: str, action: AgentAction) -> AnomalyAlert | None:
         """Check an action against an agent's baseline."""
-        return self.get_or_create(agent_id).check(action)
+        if agent_id not in self._baselines:
+            _logger.info("unknown agent %s: treating as LEARNING (creating baseline)", agent_id)
+            self._baselines[agent_id] = AgentBaseline(agent_id)
+            return None
+        return self._baselines[agent_id].check(action)
 
     def all_stats(self) -> dict[str, dict[str, object]]:
         """Return stats for all tracked agents."""

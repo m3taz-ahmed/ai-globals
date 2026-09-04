@@ -1,6 +1,6 @@
-# `skills/` — Persona & Lord Skills
+﻿# `skills/` — Persona & Lord Skills
 
-This directory contains **80 skills** (38 directory-based `SKILL.md` + 42 flat `.md` = 80 logical skills; `glob skills/**/*.md` returns ~115 files because directory skills have `references/` and `templates/`). Each skill is a compact rule set loaded lazily — only matching skills enter the AI's context window.
+This directory contains **110 skills** (69 directory-based `SKILL.md` + 41 flat `.md` = 110 logical skills; `glob skills/**/*.md` returns ~150+ files because directory skills have `references/` and `templates/`). Each skill is a compact rule set loaded lazily — only matching skills enter the AI's context window.. Each skill is a compact rule set loaded lazily — only matching skills enter the AI's context window.
 
 ## New Skills (2026-08-28) — Imported from Claude Code Ecosystem
 
@@ -51,7 +51,7 @@ skills/seo-lord/
 └── templates/            # Output templates
 ```
 
-## Current Skills (72 total = 38 dir + 34 flat)
+## Current Skills (110 total = 69 dir + 41 flat)
 
 | Skill | Type | Domain |
 |-------|------|--------|

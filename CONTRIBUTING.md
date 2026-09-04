@@ -1,4 +1,4 @@
-# Contributing to aiZee
+﻿# Contributing to aiZee
 
 Thank you for contributing! aiZee follows its own governance rules — this
 document is the fast path for humans and AI agents alike.
@@ -25,7 +25,7 @@ python -m pytest -q              # FAST tier while iterating (~12s)
 ruff check .                     # lint gate
 python -m mypy runtime memory aizee_mcp config.py aizee_cli.py dashboard/server.py
 
-python -m pytest --cov-fail-under=80   # FULL tier before declaring done
+python -m pytest --cov-fail-under=95   # FULL tier before declaring done
 python scripts/sync_docs.py --check    # docs must match reality
 ```
 
@@ -34,7 +34,7 @@ python scripts/sync_docs.py --check    # docs must match reality
 - **FAST tier (iteration):** run ONLY tests for code you touched,
   ~5s max. Example:
   `python -m pytest runtime/tests/test_kernel.py -q`
-- **FULL tier (before done):** complete suite + coverage ≥ 80%. Green or
+- **FULL tier (before done):** complete suite + coverage ≥ 95%. Green or
   it doesn't ship. Never run the full suite on every save; never skip it
   at the end.
 

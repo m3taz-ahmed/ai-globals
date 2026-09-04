@@ -42,6 +42,7 @@ from __future__ import annotations
 import base64
 import binascii
 import re
+import time
 import urllib.parse
 from dataclasses import dataclass, field
 from enum import Enum
@@ -112,7 +113,17 @@ class InjectionVerdict:
 
     @property
     def is_injection(self) -> bool:
-        return self.total_score >= InjectionDetector.BLOCK_THRESHOLD
+        # BLOCK requires threshold AND at least one MEDIUM+ signal —
+        # two LOWs alone (6+6=12) stay SUSPICIOUS, not BLOCK.
+        if self.total_score < InjectionDetector.BLOCK_THRESHOLD:
+            return False
+        order = {
+            InjectionSeverity.LOW: 1,
+            InjectionSeverity.MEDIUM: 2,
+            InjectionSeverity.HIGH: 3,
+            InjectionSeverity.CRITICAL: 4,
+        }
+        return any(order.get(s.severity, 0) >= 2 for s in self.signals)
 
     @property
     def is_suspicious(self) -> bool:
@@ -418,31 +429,41 @@ def _build_patterns() -> list[_Pattern]:
 
 
 def _try_decode_base64(text: str) -> str | None:
-    """Extract and decode the longest Base64-looking substring."""
+    """Extract and decode ALL Base64-looking substrings (joined)."""
     # Find Base64-looking tokens (min 20 chars to avoid false positives)
     candidates = re.findall(r"[A-Za-z0-9+/]{20,}={0,2}", text)
+    decoded_parts: list[str] = []
     for token in candidates:
         try:
             decoded = base64.b64decode(token, validate=True).decode("utf-8", errors="replace")
-            # Only return if decoded text looks like natural language (has spaces/words)
+            # Only keep if decoded text looks like natural language (has spaces/words)
             if len(decoded) > 10 and any(c.isalpha() for c in decoded):
-                return decoded
+                decoded_parts.append(decoded)
         except (binascii.Error, ValueError):
             continue
-    return None
+    if not decoded_parts:
+        return None
+    return "\n".join(decoded_parts)
 
 
 def _try_decode_hex(text: str) -> str | None:
-    """Extract and decode hex-encoded strings."""
-    candidates = re.findall(r"\b[0-9a-fA-F]{40,}\b", text)
+    """Extract and decode ALL hex-encoded strings (min 20 chars, high bar)."""
+    candidates = re.findall(r"\b[0-9a-fA-F]{20,}\b", text)
+    decoded_parts: list[str] = []
     for token in candidates:
+        # Require even length for fromhex; skip odd-length noise.
+        if len(token) % 2 != 0:
+            continue
         try:
             decoded = bytes.fromhex(token).decode("utf-8", errors="replace")
+            # High threshold: must look like language, not just hex noise.
             if len(decoded) > 10 and any(c.isalpha() for c in decoded):
-                return decoded
+                decoded_parts.append(decoded)
         except (ValueError):
             continue
-    return None
+    if not decoded_parts:
+        return None
+    return "\n".join(decoded_parts)
 
 
 def _try_decode_url(text: str) -> str | None:
@@ -490,48 +511,60 @@ class InjectionDetector:
         if not text or not text.strip():
             return InjectionVerdict(text=text)
 
+        # Per-call wall-time guard: stop scanning after ~2s (ReDoS safety).
+        deadline = time.monotonic() + 2.0
+
+        def _expired() -> bool:
+            return time.monotonic() > deadline
+
         # Bound input length to prevent ReDoS on pathological inputs.
         # M9: scan BOTH head and tail so a payload placed at the end of a long
         # input is not silently ignored. We scan the first MAX_TEXT_LENGTH
         # chars and, if the text is longer, the last MAX_TEXT_LENGTH chars too.
         bounded = text[: self.MAX_TEXT_LENGTH]
         tail = ""
+        tail_offset = 0
         if len(text) > self.MAX_TEXT_LENGTH:
             tail = text[-self.MAX_TEXT_LENGTH:]
+            tail_offset = len(text) - self.MAX_TEXT_LENGTH
 
         signals: list[InjectionSignal] = []
-        seen: set[str] = set()  # dedup by (pattern_id, match-start)
+        seen: set[str] = set()  # dedup by (pattern_id, layer, absolute-offset)
 
         # Layer 1: scan raw text (head)
-        self._scan_text(bounded, signals, seen)
-        if tail:
-            self._scan_text(tail, signals, seen, source_label="tail")
+        self._scan_text(bounded, signals, seen, base_offset=0)
+        if tail and not _expired():
+            self._scan_text(tail, signals, seen, source_label="tail", base_offset=tail_offset)
 
         # Layer 2: normalize Unicode and re-scan (catches homoglyphs)
         normalized = _normalize_unicode(bounded)
-        if normalized != bounded:
-            self._scan_text(normalized, signals, seen, source_label="unicode_normalized")
-        if tail:
+        if normalized != bounded and not _expired():
+            self._scan_text(normalized, signals, seen, source_label="unicode_normalized", base_offset=0)
+        if tail and not _expired():
             normalized_tail = _normalize_unicode(tail)
             if normalized_tail != tail:
-                self._scan_text(normalized_tail, signals, seen, source_label="unicode_normalized_tail")
+                self._scan_text(normalized_tail, signals, seen, source_label="unicode_normalized_tail", base_offset=tail_offset)
 
         # Layer 3: decode encodings and scan decoded content.
         # Apply to both head and tail so an obfuscated payload at the end of
         # a long input is caught (parity with the tail-scan fix above).
-        if scan_encodings:
+        if scan_encodings and not _expired():
             for decoder_name, decoder_fn in [
                 ("base64", _try_decode_base64),
                 ("hex", _try_decode_hex),
                 ("url", _try_decode_url),
             ]:
+                if _expired():
+                    break
                 decoded = decoder_fn(bounded)
                 if decoded and decoded != bounded:
-                    self._scan_text(decoded, signals, seen, source_label=decoder_name)
-                if tail:
+                    self._scan_text(decoded, signals, seen, source_label=decoder_name, base_offset=0)
+                    if _expired():
+                        break
+                if tail and not _expired():
                     decoded_tail = decoder_fn(tail)
                     if decoded_tail and decoded_tail != tail:
-                        self._scan_text(decoded_tail, signals, seen, source_label=f"{decoder_name}_tail")
+                        self._scan_text(decoded_tail, signals, seen, source_label=f"{decoder_name}_tail", base_offset=tail_offset)
 
         # Aggregate
         total_score = sum(s.score for s in signals)
@@ -550,11 +583,15 @@ class InjectionDetector:
         seen: set[str],
         *,
         source_label: str = "raw",
+        base_offset: int = 0,
     ) -> None:
         """Scan a single text variant and append signals."""
         for pat in self._patterns:
             for match in pat.regex.finditer(text):
-                key = f"{pat.pid}:{match.start()}"
+                # Absolute offset dedup: layer + absolute position so
+                # head/tail overlap doesn't double-count or miss.
+                abs_pos = base_offset + match.start()
+                key = f"{pat.pid}:{source_label}:{abs_pos}"
                 if key in seen:
                     continue
                 seen.add(key)

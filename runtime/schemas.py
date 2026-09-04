@@ -75,10 +75,19 @@ class BudgetExceededError(AizeeError):
 
 
 class ValidationError(AizeeError):
-    """Raised when input validation fails."""
+    """Raised when input validation fails.
+
+    NOTE: This name collides with ``pydantic.ValidationError``. When importing
+    both in the same module, use ``from runtime.schemas import ValidationError as AizeeValidationError``
+    or use the ``AizeeValidationError`` alias below.
+    """
 
     def __init__(self, message: str, context: dict[str, Any] | None = None) -> None:
         super().__init__("VALIDATION_ERROR", message, ErrorSeverity.MEDIUM, context)
+
+
+# Alias to avoid collision with pydantic.ValidationError.
+AizeeValidationError = ValidationError
 
 
 class StorageError(AizeeError):

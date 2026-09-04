@@ -110,7 +110,10 @@ class ScaffoldingMixin:
             "failing_items": [],
         }
         checks = [
-            ("no_implementation_details", "No implementation details" in spec_md or "NEEDS CLARIFICATION" not in spec_md),
+            # No unresolved clarification markers remain in the rendered spec.
+            # (The auto-rendered artifact never contains implementation code
+            # itself, so the operative signal is unresolved clarifications.)
+            ("no_implementation_details", "[NEEDS CLARIFICATION" not in spec_md),
             ("has_user_scenarios", "User Story" in spec_md or len(spec.requirements) > 0),
             ("has_requirements", len(spec.requirements) > 0),
             ("has_success_criteria", "Success Criteria" in spec_md or "SC-" in spec_md),

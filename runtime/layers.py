@@ -85,7 +85,7 @@ class LayerManifest:
         src_layer = self.layer_of(source)
         tgt_layer = self.layer_of(target)
         if src_layer is None or tgt_layer is None:
-            return True  # unregistered packages are unconstrained
+            return False  # fail-closed: unknown packages are constrained
         # A package may depend on same or lower layer, never higher.
         return src_layer >= tgt_layer
 
@@ -102,12 +102,15 @@ def check_import_layering(
 ) -> LayerViolation | None:
     """Check if an import from source_file to import_target violates layering.
 
-    ``import_target`` is the top-level module name (e.g. ``runtime``, ``aizee_mcp``).
+    ``import_target`` is the dotted module name (e.g. ``runtime``,
+    ``runtime.managers``). For ``runtime.*`` two levels are kept
+    (``runtime/managers``) to preserve managers precision; otherwise the
+    top-level package is used.
     Returns a LayerViolation if the dependency is illegal, None if OK.
     """
     man = manifest or LayerManifest()
     source_pkg = _package_for_path(source_file)
-    target_pkg = import_target.split(".")[0]
+    target_pkg = _package_for_import(import_target)
     if not man.can_depend(source_pkg, target_pkg):
         src_layer = man.layer_of(source_pkg) or Layer.CORE
         tgt_layer = man.layer_of(target_pkg) or Layer.CORE
@@ -121,14 +124,43 @@ def check_import_layering(
     return None
 
 
+def enforce_import_layering(
+    source_file: Path,
+    import_target: str,
+    manifest: LayerManifest | None = None,
+) -> None:
+    """Like :func:`check_import_layering` but raises :class:`LayerError`."""
+    violation = check_import_layering(source_file, import_target, manifest)
+    if violation is not None:
+        raise LayerError(
+            f"Layer violation: {violation.detail}",
+            context={"source": violation.source, "target": violation.target},
+        )
+
+
+def _package_for_import(import_target: str) -> str:
+    """Derive manifest key from a dotted import (keep 2 levels for runtime.*)."""
+    parts = import_target.split(".")
+    if len(parts) >= 2 and parts[0] == "runtime":
+        return "/".join(parts[:2])
+    return parts[0] if parts else import_target
+
+
 def _package_for_path(path: Path) -> str:
     """Derive the aiZee package name from a file path (best effort)."""
     parts = path.parts
     for key in ("runtime", "aizee_mcp", "memory", "eval", "dashboard", "scripts", "aizee_cli", "config"):
         if key in parts:
             idx = parts.index(key)
-            sub = "/".join(parts[idx : idx + 2])
-            return sub if idx + 1 < len(parts) else key
+            # Proper package path derivation: take key plus the next
+            # path component ONLY if it is a directory (no file suffix).
+            # This keeps `runtime/managers` precision without leaking
+            # filenames like `runtime/kernel.py`.
+            if idx + 1 < len(parts):
+                nxt = parts[idx + 1]
+                if "." not in nxt:
+                    return f"{key}/{nxt}"
+            return key
     # Check if the file stem itself is a known package (e.g. config.py → "config")
     stem = path.stem
     if stem in DEFAULT_LAYERS:

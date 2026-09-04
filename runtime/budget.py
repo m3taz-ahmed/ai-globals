@@ -77,7 +77,12 @@ class BudgetWindow:
 
 
 def _period_seconds(period: str) -> float:
-    """Return the duration in seconds for a window period."""
+    """Return the duration in seconds for a window period.
+
+    Unknown periods (including "session", which has no fixed wall-clock
+    length) raise instead of silently returning a daily window — a wrong
+    window length silently under/over-enforces budgets.
+    """
     if period == "hourly":
         return 3600.0
     if period == "daily":
@@ -86,7 +91,7 @@ def _period_seconds(period: str) -> float:
         return 604800.0
     if period == "monthly":
         return 2592000.0  # 30 days
-    return 86400.0
+    raise ValueError(f"Unknown budget period {period!r}: expected hourly/daily/weekly/monthly")
 
 
 class BudgetWindowManager:
@@ -261,10 +266,15 @@ class BudgetWindowManager:
         """
         with self._lock:
             for entry in audit_entries:
+                if not isinstance(entry, dict):
+                    continue
                 scope_str = entry.get("scope")
                 scope_id = entry.get("scope_id", "")
-                cost = float(entry.get("cost", 0.0))
-                ts = float(entry.get("timestamp", 0.0))
+                try:
+                    cost = float(entry.get("cost", 0.0))
+                    ts = float(entry.get("timestamp", 0.0))
+                except (TypeError, ValueError):
+                    continue
                 if not scope_str:
                     continue
                 try:
@@ -531,7 +541,7 @@ class BudgetManager:
         max_tokens: int | None,
         threshold: float | None,
     ) -> str | None:
-        if not max_tokens or threshold is None:
+        if max_tokens is None or threshold is None:
             return None
         threshold_tokens = threshold * max_tokens
         if usage_tokens < threshold_tokens <= projected_tokens:
@@ -566,7 +576,7 @@ class BudgetManager:
 
             reminder = self._rollout_reminder(u["tokens"], projected_tokens, max_tokens, threshold)
             if not dry_run:
-                u.update({"tokens": projected_tokens, "cost": projected_cost, "calls": 0})
+                u.update({"tokens": projected_tokens, "cost": projected_cost, "calls": u["calls"] + 1})
                 self._dirty = True
 
             return {

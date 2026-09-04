@@ -65,6 +65,28 @@ def _py_type_to_ts(py_type: str) -> str:
     return mapping.get(py_type, "any")
 
 
+def _field_def_to_ts(field_def: dict[str, Any], root_schema: dict[str, Any]) -> str:
+    """Map a JSON-Schema field def to TS, resolving $ref/anyOf where known."""
+    if "$ref" in field_def:
+        ref = str(field_def["$ref"])
+        # Resolve local refs like #/$defs/Name or #/definitions/Name.
+        name = ref.rsplit("/", 1)[-1]
+        return name or "any"
+    if "anyOf" in field_def and isinstance(field_def["anyOf"], list):
+        parts = [_field_def_to_ts(p, root_schema) for p in field_def["anyOf"]]
+        seen: list[str] = []
+        for p in parts:
+            if p not in seen:
+                seen.append(p)
+        return " | ".join(seen) if seen else "any"
+    if "type" in field_def:
+        ftype = field_def["type"]
+        if isinstance(ftype, list):
+            return " | ".join(_py_type_to_ts(str(t)) for t in ftype)
+        return _py_type_to_ts(str(ftype))
+    return "any"
+
+
 def emit_contract(
     schema_class: type,
     *,
@@ -80,11 +102,13 @@ def emit_contract(
     fields_info: dict[str, str] = {}
 
     if hasattr(schema_class, "model_json_schema"):
-        json_schema = schema_class.model_json_schema()
+        try:
+            json_schema = schema_class.model_json_schema()
+        except Exception as exc:
+            raise ContractEmitError(f"Cannot emit contract for {artifact_name}: {exc}") from exc
         props = json_schema.get("properties", {})
         for field_name, field_def in props.items():
-            ftype = field_def.get("type", "any")
-            fields_info[field_name] = _py_type_to_ts(ftype)
+            fields_info[field_name] = _field_def_to_ts(field_def, json_schema)
     elif hasattr(schema_class, "__annotations__") and schema_class.__annotations__:
         json_schema = {
             "type": "object",
@@ -102,8 +126,14 @@ def emit_contract(
         )
 
     ts_lines = [f"export interface {artifact_name} {{"]
+    required = set(json_schema.get("required", [])) if isinstance(json_schema.get("required", []), list) else set()
     for fname, ftype in fields_info.items():
-        ts_lines.append(f"  {fname}: {ftype};")
+        # Honor required[]: only listed fields are required; others optional.
+        mark = "" if fname in required else "?"
+        # When schema has no required[] (dataclass fallback), keep all required for compat.
+        if "required" not in json_schema:
+            mark = ""
+        ts_lines.append(f"  {fname}{mark}: {ftype};")
     ts_lines.append("}")
     ts_stub = "\n".join(ts_lines)
 
@@ -122,15 +152,35 @@ def emit_contracts(
     for each artifact.
     """
     artifacts: dict[str, ContractArtifact] = {}
+    resolved_dir: Path | None = None
+    if output_dir is not None:
+        try:
+            resolved_dir = output_dir.resolve()
+            resolved_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise ContractEmitError(f"Cannot create output_dir {output_dir}: {exc}") from exc
     for cls in schema_classes:
-        artifact = emit_contract(cls)
+        try:
+            artifact = emit_contract(cls)
+        except ContractEmitError:
+            raise
+        except Exception as exc:
+            raise ContractEmitError(f"Cannot emit contract: {exc}") from exc
         artifacts[artifact.name] = artifact
-        if output_dir is not None:
-            output_dir.mkdir(parents=True, exist_ok=True)
-            (output_dir / f"{artifact.name}.json").write_text(artifact.to_json(), encoding="utf-8")
-            (output_dir / f"{artifact.name}.d.ts").write_text(
-                artifact.to_typescript(), encoding="utf-8"
-            )
+        if resolved_dir is not None:
+            for filename, content in (
+                (f"{artifact.name}.json", artifact.to_json()),
+                (f"{artifact.name}.d.ts", artifact.to_typescript()),
+            ):
+                target = (resolved_dir / filename).resolve()
+                try:
+                    target.relative_to(resolved_dir)
+                except ValueError:
+                    raise ContractEmitError(f"Refusing to write outside output_dir: {filename}") from None
+                try:
+                    target.write_text(content, encoding="utf-8")
+                except OSError as exc:
+                    raise ContractEmitError(f"Cannot write {target}: {exc}") from exc
     return artifacts
 
 
@@ -142,7 +192,12 @@ def validate_contract(artifact: ContractArtifact, data: dict[str, Any]) -> list[
     """
     errors: list[str] = []
     props = artifact.json_schema.get("properties", {})
-    for field_name in props:
+    if "required" not in artifact.json_schema:
+        required_set = set(props)
+    else:
+        required = artifact.json_schema.get("required", [])
+        required_set = set(required) if isinstance(required, list) else set(props)
+    for field_name in required_set:
         if field_name not in data:
             errors.append(f"missing required field: {field_name}")
     for key, value in data.items():

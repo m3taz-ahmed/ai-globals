@@ -19,15 +19,42 @@ DEFAULT_WEIGHTS: dict[str, float] = {
 class LeadScorer:
     """Scores leads from three normalized signals."""
 
-    def __init__(self, weights: dict[str, float] | None = None) -> None:
-        self._weights = dict(weights or DEFAULT_WEIGHTS)
-        total = sum(self._weights.values())
+    _REQUIRED_KEYS: tuple[str, ...] = ("fit", "intent", "behavior")
+
+    def __init__(self, weights: dict[str, float] | None = None, *, normalize: bool = False) -> None:
+        if weights is not None and len(weights) == 0:
+            raise ValidationError(
+                "weights must not be empty; provide fit/intent/behavior weights",
+                context={"weights": weights},
+            )
+        resolved = dict(weights) if weights is not None else dict(DEFAULT_WEIGHTS)
+        missing = [k for k in self._REQUIRED_KEYS if k not in resolved]
+        if missing:
+            raise ValidationError(
+                f"weights missing required keys: {missing}",
+                context={"weights": resolved, "missing": missing},
+            )
+        extra = [k for k in resolved if k not in self._REQUIRED_KEYS]
+        if extra:
+            raise ValidationError(
+                f"weights contain unknown keys: {extra}",
+                context={"weights": resolved, "extra": extra},
+            )
+        total = sum(resolved.values())
         if total <= 0:
             raise ValidationError(
                 "weights must sum to a positive value",
-                context={"weights": self._weights},
+                context={"weights": resolved},
             )
-        self._weights = {k: v / total for k, v in self._weights.items()}
+        # No silent renormalization: sum must be 1 unless normalize=True.
+        if abs(total - 1.0) > 1e-9:
+            if not normalize:
+                raise ValidationError(
+                    f"weights must sum to 1.0 (got {total}); pass normalize=True to rescale",
+                    context={"weights": resolved, "total": total},
+                )
+            resolved = {k: v / total for k, v in resolved.items()}
+        self._weights = resolved
 
     def score_lead(self, fit: float, intent: float, behavior: float) -> int:
         """Return a 0-100 lead score.

@@ -23,23 +23,35 @@ class TestApprovalCacheKeying:
         cache.approve(action1)
         assert cache.is_approved(action2)
 
-    def test_extra_fields_ignored(self) -> None:
+    def test_extra_fields_distinguish_actions(self) -> None:
+        # Security: the default fingerprint covers the full action, so an
+        # approval cannot be replayed with different extra fields
+        # (e.g. different args/env/flags smuggled alongside the same command).
         cache = ApprovalCache()
         action1 = {"type": "bash", "command": "ls", "extra": "ignored"}
         action2 = {"type": "bash", "command": "ls", "extra": "different"}
         cache.approve(action1)
-        assert cache.is_approved(action2)
+        assert not cache.is_approved(action2)
+
+    def test_volatile_fields_ignored(self) -> None:
+        # tokens/cost/approved vary per call and are enforced by other
+        # gates, so they must not invalidate a cached approval.
+        cache = ApprovalCache()
+        cache.approve({"type": "bash", "command": "ls"})
+        assert cache.is_approved({"type": "bash", "command": "ls", "tokens": 500, "cost": 0.01, "approved": True})
 
     def test_different_command_not_approved(self) -> None:
         cache = ApprovalCache()
         cache.approve({"type": "bash", "command": "ls"})
         assert not cache.is_approved({"type": "bash", "command": "rm"})
 
-    def test_missing_fields_treated_as_none(self) -> None:
+    def test_missing_fields_are_distinct(self) -> None:
+        # A missing field is not the same as an explicit None — prevents
+        # shape-shifting replays against the fingerprint.
         cache = ApprovalCache()
         cache.approve({"type": "bash"})
-        assert cache.is_approved({"type": "bash", "command": None})
-        assert cache.is_approved({"type": "bash", "tool": None})
+        assert not cache.is_approved({"type": "bash", "command": None})
+        assert not cache.is_approved({"type": "bash", "tool": None})
 
     def test_custom_fields(self) -> None:
         cache = ApprovalCache(fields=("type", "command"))

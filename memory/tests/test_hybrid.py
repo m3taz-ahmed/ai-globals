@@ -248,9 +248,9 @@ class TestHybridSearcherEdgeCases:
         assert candidates == {}
 
     def test_apply_bm25_empty_query_skips(self):
-        """Line 133: _apply_bm25 returns early when FTS query is empty ('""')."""
+        """Line 133: _apply_bm25 returns early when FTS query is empty ("")."""
         store = MagicMock()
-        store._fts_query.return_value = '""'
+        store._fts_query.return_value = ""
         searcher = HybridSearcher(store)
         mem = _mem(content="hello")
         candidates = {"id1": {"memory": mem, "bm25": None, "semantic": None}}

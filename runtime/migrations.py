@@ -19,6 +19,7 @@ import json
 import logging
 import shutil
 import sqlite3
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -72,6 +73,12 @@ def register_hash_edge(from_version: int, to_version: int, expected_hash: str) -
 def hash_edge(from_version: int) -> MigrationEdge | None:
     """Return the registered hash edge for a version, if any."""
     return _HASH_EDGES.get(from_version)
+
+
+# Default hash edges (verification opt-in: empty expected_hash skips the
+# check but keeps the edge registry wired so the verification path is live).
+register_hash_edge(0, 1, "")
+register_hash_edge(1, 2, "")
 
 
 def compute_schema_hash(conn: sqlite3.Connection) -> str:
@@ -168,6 +175,18 @@ class MigrationRunner:
 
     def __init__(self, db_path: Path) -> None:
         self.db_path = Path(db_path)
+        self._lock = threading.RLock()
+
+    def peek_version(self) -> int:
+        """Read-only version peek (opens SQLite with mode=ro)."""
+        if not self.db_path.exists():
+            return 0
+        uri = f"file:{self.db_path}?mode=ro"
+        try:
+            with sqlite3.connect(uri, uri=True) as conn:
+                return self._get_version(conn)
+        except sqlite3.OperationalError:
+            return 0
 
     def _get_version(self, conn: sqlite3.Connection) -> int:
         """Get the current schema version, or 0 if not tracked."""
@@ -178,7 +197,7 @@ class MigrationRunner:
             return 0
 
     def _set_version(self, conn: sqlite3.Connection, version: int) -> None:
-        """Record a new schema version."""
+        """Record a new schema version (caller owns the transaction)."""
         conn.execute(
             "CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER, applied_at TEXT)"
         )
@@ -186,38 +205,42 @@ class MigrationRunner:
             "INSERT INTO _schema_version (version, applied_at) VALUES (?, ?)",
             (version, datetime.now(timezone.utc).isoformat()),
         )
-        conn.commit()
 
     def run_migrations(self) -> int:
         """Run all pending migrations. Returns the final version.
 
-        When a hash-verified edge is registered for a migration step, the
-        resulting schema hash is checked after applying the migration. A
-        mismatch logs a warning but does not block (additive verification).
+        Check-then-insert is wrapped in a transaction/lock (BEGIN IMMEDIATE)
+        so concurrent runners cannot interleave. Missing migration functions
+        fail loudly (raise). Hash mismatches raise (fail-closed).
         """
-        with sqlite3.connect(self.db_path) as conn:
-            version = self._get_version(conn)
-            if version >= CURRENT_VERSION:
-                logger.debug("Schema already at version %d", version)
-                return version
-            for v in range(version, CURRENT_VERSION):
-                fn = _MIGRATIONS.get(v)
-                if fn is None:
-                    logger.warning("No migration from version %d", v)
-                    break
-                logger.info("Migrating schema %d -> %d", v, v + 1)
-                fn(conn)
-                self._set_version(conn, v + 1)
-                # Additive hash verification (non-blocking).
-                edge = hash_edge(v)
-                if edge and edge.expected_hash:
-                    actual = compute_schema_hash(conn)
-                    if actual != edge.expected_hash:
-                        logger.warning(
-                            "Schema hash mismatch after migration %d -> %d: "
-                            "expected %s, got %s",
-                            v, v + 1, edge.expected_hash, actual,
-                        )
+        with self._lock, sqlite3.connect(self.db_path) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                version = self._get_version(conn)
+                if version >= CURRENT_VERSION:
+                    logger.debug("Schema already at version %d", version)
+                    conn.commit()
+                    return version
+                for v in range(version, CURRENT_VERSION):
+                    fn = _MIGRATIONS.get(v)
+                    if fn is None:
+                        raise RuntimeError(f"No migration registered from version {v} to {v + 1}")
+                    logger.info("Migrating schema %d -> %d", v, v + 1)
+                    fn(conn)
+                    self._set_version(conn, v + 1)
+                    # Hash verification (fail-closed when an edge is registered).
+                    edge = hash_edge(v)
+                    if edge and edge.expected_hash:
+                        actual = compute_schema_hash(conn)
+                        if actual != edge.expected_hash:
+                            raise RuntimeError(
+                                f"Schema hash mismatch after migration {v} -> {v + 1}: "
+                                f"expected {edge.expected_hash}, got {actual}"
+                            )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
             return self._get_version(conn)
 
     def rollback(self, version: int) -> int:
@@ -225,8 +248,13 @@ class MigrationRunner:
 
         Reverses each migration step from the current version down to *version*.
         If no rollback exists for a step, raises a clear ``ValueError``.
-        Returns the resulting schema version after rollback.
+        Rolling back to a future version (> CURRENT_VERSION) raises
+        ``NotImplementedError``. Returns the resulting schema version.
         """
+        if version > CURRENT_VERSION:
+            raise NotImplementedError(
+                f"Cannot roll back to future version {version} (current max {CURRENT_VERSION})"
+            )
         with sqlite3.connect(self.db_path) as conn:
             current = self._get_version(conn)
             if current <= version:
@@ -263,9 +291,15 @@ def backup_database(db_path: Path, backup_dir: Path, max_backups: int = 5) -> Pa
         counter += 1
     shutil.copy2(db_path, backup_path)
 
-    # Retention: keep only the latest max_backups
-    backups = sorted(backup_dir.glob(f"{db_path.stem}_backup_*.db"))
-    if len(backups) > max_backups:
+    # Retention: keep only the latest max_backups (0 means keep-none).
+    backups = sorted(
+        backup_dir.glob(f"{db_path.stem}_backup_*.db"),
+        key=lambda p: (p.stat().st_mtime, p.name),
+    )
+    if max_backups <= 0:
+        for old in backups:
+            old.unlink()
+    elif len(backups) > max_backups:
         for old in backups[:-max_backups]:
             old.unlink()
     return backup_path

@@ -17,12 +17,9 @@ given the current spend and limit.
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
-
-_logger = logging.getLogger(__name__)
 
 
 class EscalationStage(str, Enum):
@@ -31,14 +28,6 @@ class EscalationStage(str, Enum):
     NOTICE = "notice"    # First band crossed — begin planning wind-down
     URGENT = "urgent"    # Second band — prioritize wrapping up
     CRITICAL = "critical"  # Third band — stop immediately
-
-
-# Human-readable labels for injection into agent context.
-_STAGE_LABELS: dict[EscalationStage, str] = {
-    EscalationStage.NOTICE: "NOTICE",
-    EscalationStage.URGENT: "URGENT",
-    EscalationStage.CRITICAL: "CRITICAL",
-}
 
 
 # Default utilization bands for each stage.
@@ -92,17 +81,27 @@ _SUBAGENT_DIRECTIVES: dict[EscalationStage, str] = {
 
 @dataclass(frozen=True)
 class EscalationConfig:
-    """Configuration for budget escalation behavior."""
+    """Configuration for budget escalation behavior.
+
+    ``root_bands``/``subagent_bands`` must be sorted ascending
+    (NOTICE < URGENT < CRITICAL); unsorted bands raise ValueError.
+    """
 
     root_bands: tuple[float, float, float] = DEFAULT_ROOT_BANDS
     subagent_bands: tuple[float, float, float] = DEFAULT_SUBAGENT_BANDS
     subagent_reserve: float = DEFAULT_SUBAGENT_RESERVE
     root_directives: dict[EscalationStage, str] = field(
-        default_factory=lambda: dict(_ROOT_DIRECTIVES)
+        default_factory=lambda: dict(_ROOT_DIRECTIVES), compare=False, hash=False
     )
     subagent_directives: dict[EscalationStage, str] = field(
-        default_factory=lambda: dict(_SUBAGENT_DIRECTIVES)
+        default_factory=lambda: dict(_SUBAGENT_DIRECTIVES), compare=False, hash=False
     )
+
+    def __post_init__(self) -> None:
+        for name in ("root_bands", "subagent_bands"):
+            bands = getattr(self, name)
+            if tuple(bands) != tuple(sorted(bands)):
+                raise ValueError(f"{name} must be sorted ascending, got {bands!r}")
 
 
 @dataclass(frozen=True)
@@ -162,7 +161,7 @@ def compute_escalation(
     message = directives.get(stage, "")
     return EscalationDirective(
         stage=stage,
-        label=_STAGE_LABELS[stage],
+        label=stage.value.upper(),
         message=message,
         utilization=utilization,
         is_root=is_root,

@@ -90,6 +90,43 @@ REM Sync plugins/ (plugin subsystem) — previously missing from sync (SYNC fix)
 echo Syncing plugins/...
 xcopy "%SOURCE%\plugins\*" "%TARGET%\plugins\" /E /I /Y /Q >nul
 
+REM Sync rules/ (compressed behavioral rules)
+echo Syncing rules/...
+if exist "%SOURCE%\rules" (
+    xcopy "%SOURCE%\rules\*" "%TARGET%\rules\" /E /I /Y /Q >nul
+)
+
+REM Sync .devin/ (Devin CLI config + skills)
+echo Syncing .devin/...
+if exist "%SOURCE%\.devin" (
+    xcopy "%SOURCE%\.devin\*" "%TARGET%\.devin\" /E /I /Y /Q >nul
+)
+
+REM Sync .github/ (CI/CD workflows)
+echo Syncing .github/...
+if exist "%SOURCE%\.github" (
+    xcopy "%SOURCE%\.github\*" "%TARGET%\.github\" /E /I /Y /Q >nul
+)
+
+REM Sync installer/ (GUI installer)
+echo Syncing installer/...
+if exist "%SOURCE%\installer" (
+    xcopy "%SOURCE%\installer\*" "%TARGET%\installer\" /E /I /Y /Q >nul
+)
+
+REM Sync additional root files
+echo Syncing additional root files...
+if exist "%SOURCE%\global-roles.md" copy /Y "%SOURCE%\global-roles.md" "%TARGET%\global-roles.md" >nul
+if exist "%SOURCE%\global-workflow.md" copy /Y "%SOURCE%\global-workflow.md" "%TARGET%\global-workflow.md" >nul
+if exist "%SOURCE%\.env.example" copy /Y "%SOURCE%\.env.example" "%TARGET%\.env.example" >nul
+if exist "%SOURCE%\.gitignore" copy /Y "%SOURCE%\.gitignore" "%TARGET%\.gitignore" >nul
+if exist "%SOURCE%\.editorconfig" copy /Y "%SOURCE%\.editorconfig" "%TARGET%\.editorconfig" >nul
+if exist "%SOURCE%\.bandit" copy /Y "%SOURCE%\.bandit" "%TARGET%\.bandit" >nul
+if exist "%SOURCE%\LICENSE" copy /Y "%SOURCE%\LICENSE" "%TARGET%\LICENSE" >nul
+if exist "%SOURCE%\NOTICE" copy /Y "%SOURCE%\NOTICE" "%TARGET%\NOTICE" >nul
+if exist "%SOURCE%\CONTRIBUTING.md" copy /Y "%SOURCE%\CONTRIBUTING.md" "%TARGET%\CONTRIBUTING.md" >nul
+if exist "%SOURCE%\DESIGN.md" copy /Y "%SOURCE%\DESIGN.md" "%TARGET%\DESIGN.md" >nul
+
 echo.
 echo === Sync Complete ===
 echo Verify with: cd %TARGET% ^&^& python eval\harness.py

@@ -82,9 +82,11 @@ class ChatManager:
             session_id=session_id,
             fresh_context=fresh_context,
         )
-        if result["ok"]:
+        if not isinstance(result, dict):
+            return {"ok": False, "error": "Action evaluation returned invalid result"}
+        if result.get("ok"):
             reply = self.responder.reply(message)
-            session.add("assistant", reply, metadata={"decision": result["decision"]})
+            session.add("assistant", reply, metadata={"decision": result.get("decision")})
             result["reply"] = reply
         if session_id is not None:
             result["session_id"] = session_id

@@ -58,6 +58,10 @@ class Evidence:
     weight: float
     detail: str = ""
 
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.weight <= 1.0:
+            raise ValueError(f"Evidence weight must be between 0.0 and 1.0, got {self.weight}")
+
 
 @dataclass(frozen=True)
 class ConfidenceVerdict:
@@ -98,8 +102,11 @@ class ConfidenceGate:
     blocks the action (fail-closed).
     """
 
-    def __init__(self, threshold: float = 0.7) -> None:
+    def __init__(self, threshold: float = 0.7, *, normalize: bool = False) -> None:
+        if not 0.0 <= threshold <= 1.0:
+            raise ValueError(f"threshold must be in [0, 1], got {threshold}")
         self.threshold = threshold
+        self._normalize = normalize
         self._evidence: list[Evidence] = []
 
     def add_evidence(self, evidence: Evidence) -> None:
@@ -138,6 +145,11 @@ class ConfidenceGate:
                 level=ConfidenceLevel.CRITICAL,
                 reason="Total evidence weight is zero",
                 evidence=tuple(self._evidence),
+            )
+        if not self._normalize and abs(total - 1.0) > 1e-9:
+            raise ValueError(
+                f"Evidence weights must sum to 1.0, got {total}; "
+                "pass normalize=True to auto-normalize"
             )
         # Compute weighted score: sum(passed * weight) / total_weight
         score = sum((1.0 if e.passed else 0.0) * e.weight for e in self._evidence) / total

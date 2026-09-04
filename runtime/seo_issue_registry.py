@@ -235,6 +235,24 @@ _register(
     "One or more images on the page lack alt text. Alt text is an accessibility signal and helps image search visibility.",
     "Add descriptive alt text to all informative images. Use empty alt (alt=\"\") for purely decorative images.",
 )
+_register(
+    "images-missing-dims", IssueSeverity.INFO,
+    "Images missing dimensions",
+    "One or more images lack width/height attributes, causing layout shift (CLS).",
+    "Add explicit width and height attributes (or aspect-ratio CSS) to all images.",
+)
+_register(
+    "og-title-missing", IssueSeverity.INFO,
+    "Missing og:title",
+    "The page has no Open Graph title, so social shares fall back to the document title.",
+    "Add an og:title meta tag tuned for social sharing.",
+)
+_register(
+    "og-desc-missing", IssueSeverity.INFO,
+    "Missing og:description",
+    "The page has no Open Graph description, so social shares lack a summary.",
+    "Add an og:description meta tag tuned for social sharing.",
+)
 
 # -- Info issues ------------------------------------------------------------
 

@@ -148,6 +148,19 @@ class Spec:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Spec:
+        if not isinstance(data, dict):
+            raise ValueError("Spec data must be a mapping")
+        plan = data.get("plan", {})
+        if not isinstance(plan, dict):
+            raise ValueError("Spec 'plan' must be a mapping")
+        history = data.get("state_history", [])
+        if not isinstance(history, list):
+            raise ValueError("Spec 'state_history' must be a list")
+        requirements = data.get("requirements", [])
+        tasks = data.get("tasks", [])
+        deltas = data.get("deltas", [])
+        if not isinstance(requirements, list) or not isinstance(tasks, list) or not isinstance(deltas, list):
+            raise ValueError("Spec requirements/tasks/deltas must be lists")
         return cls(
             id=data["id"],
             title=data["title"],
@@ -158,17 +171,18 @@ class Spec:
                     id=r["id"], description=r["description"],
                     priority=r.get("priority", "must"), user_story=r.get("user_story", ""),
                 )
-                for r in data.get("requirements", [])
+                for r in requirements
             ],
-            plan=data.get("plan", {}),
+            plan=plan,
             tasks=[
                 Task(
                     id=t["id"], description=t["description"], status=t.get("status", "pending"),
-                    depends_on=t.get("depends_on", []), estimate_hours=t.get("estimate_hours", 0.0),
+                    depends_on=t.get("depends_on", []) if isinstance(t.get("depends_on", []), list) else [],
+                    estimate_hours=t.get("estimate_hours", 0.0),
                     verification_evidence=t.get("verification_evidence", ""),
-                    verified=t.get("verified", False),
+                    verified=bool(t.get("verified", False)),
                 )
-                for t in data.get("tasks", [])
+                for t in tasks
             ],
             created_at=data.get("created_at", ""),
             updated_at=data.get("updated_at", ""),
@@ -181,7 +195,7 @@ class Spec:
                     old_description=d.get("old_description", ""),
                     priority=d.get("priority", "must"),
                 )
-                for d in data.get("deltas", [])
+                for d in deltas
             ],
-            state_history=list(data.get("state_history", [])),
+            state_history=list(history),
         )

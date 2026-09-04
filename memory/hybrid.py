@@ -129,7 +129,7 @@ class HybridSearcher:
         source: str | None,
     ) -> None:
         q_fts = self.memory_store._fts_query(query)
-        if q_fts == '""':
+        if not q_fts:
             return
         for row in self._bm25_rows(q_fts, max(k, _FTS_LIMIT), kind, source):
             mid = row["id"]

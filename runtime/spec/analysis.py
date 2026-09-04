@@ -12,6 +12,9 @@ _VAGUE_TERMS = ["fast", "scalable", "secure", "intuitive", "robust", "efficient"
 _STOPWORDS = {"system", "must", "should", "user", "users", "shall", "able"}
 _CODE_EXTENSIONS = {".py", ".php", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java", ".kt", ".swift"}
 _IGNORE_DIRS = {".git", "__pycache__", "node_modules", "vendor", ".venv", "venv", "dist", "build"}
+_MAX_CONVERGE_FILES = 500  # hard cap on walked files (perf guard)
+_MAX_CONVERGE_BYTES = 2_000_000  # hard cap on sampled code text (OOM guard)
+_MAX_FILE_BYTES = 200_000  # per-file read cap
 
 
 def _finding_id(prefix: str, seed: str) -> str:
@@ -67,23 +70,30 @@ class AnalysisMixin:
         fr_ids = set(re.findall(r"\bFR-\d{3}\b", spec_md))
         sc_ids = set(re.findall(r"\bSC-\d{3}\b", spec_md))
 
-        # Coverage: requirements with no task reference
-        uncovered_reqs = [
-            req.id for req in spec.requirements
-            if req.id not in tasks_md and req.description[:20] not in tasks_md
-        ]
+        # Coverage: requirements with no task reference. Match on the full
+        # requirement id or on a word-boundary search of a stable 20-char
+        # excerpt (plain substring on [:20] false-matches on truncation).
+        uncovered_reqs = []
+        for req in spec.requirements:
+            excerpt = req.description.strip()[:20]
+            excerpt_hit = bool(excerpt) and re.search(rf"\b{re.escape(excerpt)}", tasks_md) is not None
+            if req.id not in tasks_md and not excerpt_hit:
+                uncovered_reqs.append(req.id)
 
-        # Ambiguity: vague adjectives without measurable criteria
+        # Ambiguity: vague adjectives without measurable criteria. Scan a
+        # symmetric window (60 chars before + 100 after) so a unit stated
+        # *before* the term ("100ms fast response") still counts as measured.
         ambiguity_findings: list[dict[str, Any]] = []
+        unit_re = re.compile(
+            r"\d+\s*(ms|s|sec|second|%|user|concurrent|minute|hour)",
+            re.IGNORECASE,
+        )
         for term in _VAGUE_TERMS:
             pattern = rf"\b{term}\b"
             if re.search(pattern, spec_md, re.IGNORECASE):
                 for match in re.finditer(pattern, spec_md, re.IGNORECASE):
-                    context_window = spec_md[match.start():match.start() + 100]
-                    if not re.search(
-                        r"\d+\s*(ms|s|sec|second|%|user|concurrent|minute|hour)",
-                        context_window, re.IGNORECASE,
-                    ):
+                    context_window = spec_md[max(0, match.start() - 60):match.start() + 100]
+                    if not unit_re.search(context_window):
                         ambiguity_findings.append({"term": term, "position": match.start()})
 
         # Unresolved placeholders
@@ -110,7 +120,7 @@ class AnalysisMixin:
             })
         for amb in ambiguity_findings[:10]:
             findings.append({
-                "id": f"AMB-{amb['term']}",
+                "id": _finding_id("AMB", f"{amb['term']}:{amb['position']}"),
                 "category": "ambiguity",
                 "severity": "MEDIUM",
                 "location": f"spec.md:{amb['position']}",
@@ -171,22 +181,40 @@ class AnalysisMixin:
         spec = self.load_spec(spec_id)
         if spec is None:
             return {"error": f"Spec not found: {spec_id}"}
-        if not codebase_dir.is_dir():
+        try:
+            resolved = codebase_dir.resolve()
+        except OSError:
+            return {"error": f"Codebase dir not resolvable: {codebase_dir}"}
+        if not resolved.is_dir():
             return {"error": f"Codebase dir not found: {codebase_dir}"}
 
+        # Single walk (not one rglob per extension), deterministic order,
+        # hard-capped file count and byte budget.
         source_files: list[Path] = []
-        for ext in _CODE_EXTENSIONS:
-            source_files.extend(codebase_dir.rglob(f"*{ext}"))
-        source_files = [f for f in source_files if not any(part in _IGNORE_DIRS for part in f.parts)]
-        source_files = source_files[:500]  # Cap for performance
+        for path in sorted(resolved.rglob("*")):
+            if len(source_files) >= _MAX_CONVERGE_FILES:
+                break
+            if not path.is_file() or path.suffix not in _CODE_EXTENSIONS:
+                continue
+            if any(part in _IGNORE_DIRS for part in path.parts):
+                continue
+            source_files.append(path)
 
-        # Build a keyword index from requirements
-        all_code_text = ""
+        # Build a keyword index from requirements (byte-capped sample).
+        chunks: list[str] = []
+        budget = _MAX_CONVERGE_BYTES
         for f in source_files[:100]:  # Sample first 100 files for text search
             try:
-                all_code_text += f.read_text(encoding="utf-8", errors="ignore").lower() + "\n"
+                if f.stat().st_size > _MAX_FILE_BYTES:
+                    continue
+                text = f.read_text(encoding="utf-8", errors="ignore").lower()
             except OSError:
                 continue
+            chunks.append(text[:budget])
+            budget -= len(chunks[-1])
+            if budget <= 0:
+                break
+        all_code_text = "\n".join(chunks)
 
         findings: list[dict[str, str]] = []
         for req in spec.requirements:

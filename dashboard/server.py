@@ -10,6 +10,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 import signal
 import sys
 import threading
@@ -57,7 +58,34 @@ def _env_first(*names: str, default: str = "") -> str:
             return v
     return default
 
-_MAX_BODY_SIZE = int(_env_first("AIZEE_DASHBOARD_MAX_BODY_SIZE", "AGENT_OS_DASHBOARD_MAX_BODY_SIZE", default="1048576"))
+
+def _env_int(*names: str, default: int, minimum: int = 1, maximum: int = 1_000_000_000) -> int:
+    """Parse an int env var defensively: garbage → default (never crash import)."""
+    try:
+        value = int(_env_first(*names, default=str(default)))
+    except (ValueError, TypeError):
+        return default
+    return max(minimum, min(value, maximum))
+
+
+def _env_float(*names: str, default: float, minimum: float = 0.001) -> float:
+    """Parse a float env var defensively: garbage → default."""
+    try:
+        value = float(_env_first(*names, default=str(default)))
+    except (ValueError, TypeError):
+        return default
+    return max(minimum, value)
+
+
+_ACTION_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_. /-]{0,127}")
+
+
+def _valid_action(action: object) -> bool:
+    """Action labels like run_workflow / graphify query contain _/./space."""
+    return isinstance(action, str) and bool(_ACTION_RE.fullmatch(action))
+
+
+_MAX_BODY_SIZE = _env_int("AIZEE_DASHBOARD_MAX_BODY_SIZE", "AGENT_OS_DASHBOARD_MAX_BODY_SIZE", default=1048576)
 _ALLOWED_ORIGINS = {o.strip() for o in _env_first("AIZEE_DASHBOARD_ORIGINS", "AGENT_OS_DASHBOARD_ORIGINS", default="http://127.0.0.1:8080,http://localhost:8080").split(",") if o.strip()}
 _TRUSTED_PROXIES = {ip.strip() for ip in _env_first("AIZEE_DASHBOARD_TRUSTED_PROXIES", "AGENT_OS_DASHBOARD_TRUSTED_PROXIES", default="").split(",") if ip.strip()}
 
@@ -68,12 +96,12 @@ _cache_lock = threading.Lock()
 
 # Simple per-IP fixed-window rate limiter.
 # Clamp to >=1 so a misconfigured env var (0 or negative) cannot disable rate limiting.
-_rate_limit = max(1, int(_env_first("AIZEE_DASHBOARD_RATE_LIMIT", "AGENT_OS_DASHBOARD_RATE_LIMIT", default="120")))
-_rate_window = max(1.0, float(_env_first("AIZEE_DASHBOARD_RATE_WINDOW", "AGENT_OS_DASHBOARD_RATE_WINDOW", default="60")))
+_rate_limit = _env_int("AIZEE_DASHBOARD_RATE_LIMIT", "AGENT_OS_DASHBOARD_RATE_LIMIT", default=120)
+_rate_window = _env_float("AIZEE_DASHBOARD_RATE_WINDOW", "AGENT_OS_DASHBOARD_RATE_WINDOW", default=60.0)
 _rate_state: dict[str, tuple[int, float]] = {}
 _rate_lock = threading.Lock()
 # Max number of tracked IPs; oldest entries evicted when exceeded. Clamp to >=1.
-_rate_max_entries = max(1, int(_env_first("AIZEE_DASHBOARD_RATE_MAX_ENTRIES", "AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES", default="10000")))
+_rate_max_entries = _env_int("AIZEE_DASHBOARD_RATE_MAX_ENTRIES", "AGENT_OS_DASHBOARD_RATE_MAX_ENTRIES", default=10000)
 
 
 def _kernel_instance() -> Kernel:
@@ -332,12 +360,23 @@ def _dashboard_token(root: Path) -> str | None:
 def _write_dashboard_token_file(root: Path, token: str) -> Path:
     """Persist an auto-generated dashboard token to ``state/dashboard.token`` (B9).
 
-    The file is created with 0o600 permissions. The token is never printed
-    to stdout — only the file path is logged.
+    The file is created atomically with 0o600 permissions (no world-readable
+    window between write and chmod). The token is never printed to stdout —
+    only the file path is logged.
     """
     token_file = root / "state" / "dashboard.token"
     token_file.parent.mkdir(parents=True, exist_ok=True)
-    token_file.write_text(token, encoding="utf-8")
+    if os.name == "nt":
+        token_file.write_text(token, encoding="utf-8")
+    else:
+        fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(token)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.close(fd)
+            raise
     try:
         import platform
 
@@ -365,6 +404,10 @@ def _write_dashboard_token_file(root: Path, token: str) -> Path:
 
 class DashboardHandler(BaseHTTPRequestHandler):
     """HTTP request handler with shared kernel/memory and per-IP rate limiting."""
+
+    # Per-request socket timeout (no read can hang a thread forever) and
+    # daemon threads so shutdown never blocks on lingering connections.
+    timeout = 30
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.root = config.discover_root()
@@ -587,10 +630,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return None
         try:
             data = self.rfile.read(content_length)
-            return cast(dict[str, Any], json.loads(data.decode("utf-8")))
+            parsed = json.loads(data.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             self._send(400, b"Invalid JSON body")
             return None
+        if not isinstance(parsed, dict):
+            self._send(400, b"JSON body must be an object")
+            return None
+        return cast(dict[str, Any], parsed)
 
     def _send_status(self) -> None:
         self._send(200, json.dumps(self.kernel.status(), default=str).encode("utf-8"), "application/json")
@@ -609,7 +656,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         """
         qs = urllib.parse.parse_qs(query)
         action = qs.get("action", [""])[0]
-        if not action or not action.isalnum():
+        if not _valid_action(action):
             self._send(400, b"Invalid action format")
             return
         if qs.get("approve", [""])[0]:
@@ -622,8 +669,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(query)
         q = qs.get("q", [""])[0]
         kind = qs.get("kind", [""])[0] or None
-        results = self.memory.search(q, kind)
-        items = [{"id": r.id, "kind": r.kind, "source": r.source, "content": r.content} for r in results]
+        try:
+            limit = min(int(qs.get("limit", ["50"])[0]), 100)
+        except (ValueError, TypeError):
+            limit = 50
+        results = self.memory.search(q, kind, limit=max(1, limit))
+        items = [
+            {"id": r.id, "kind": r.kind, "source": r.source, "content": r.content[:2000]}
+            for r in results
+        ]
         self._send(200, json.dumps(items).encode("utf-8"), "application/json")
 
     def _send_policy_test(self) -> None:
@@ -631,7 +685,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if body is None:
             return
         action = body.get("action", "")
-        if not action or not action.isalnum():
+        if not _valid_action(action):
             self._send(400, b"Invalid action format")
             return
         args = body.get("args", {}) if isinstance(body.get("args"), dict) else {}
@@ -670,7 +724,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         result = self.kernel.run_saga(saga_id, steps, context)
         self._send(200, json.dumps(result, default=str).encode("utf-8"), "application/json")
 
-    def _send_saga_get(self, saga_id: str) -> None:
+    def _send_saga_get(self, raw_id: str) -> None:
+        saga_id = urllib.parse.unquote(raw_id).strip()
+        if not saga_id or len(saga_id) > 256 or "/" in saga_id or "\\" in saga_id or ".." in saga_id:
+            self._send(400, b"Invalid saga_id")
+            return
         result = self.kernel.saga.get_saga(saga_id)
         if result is None:
             self._send(404, b"Saga not found")
@@ -773,7 +831,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if not isinstance(code, str):
             self._send(400, b"Missing or invalid code")
             return
-        linter = AstryxLinter(max_lines=body.get("max_lines", 50), max_params=body.get("max_params", 7))
+        try:
+            max_lines = max(1, min(int(body.get("max_lines", 50)), 5000))
+        except (TypeError, ValueError):
+            max_lines = 50
+        try:
+            max_params = max(1, min(int(body.get("max_params", 7)), 50))
+        except (TypeError, ValueError):
+            max_params = 7
+        linter = AstryxLinter(max_lines=max_lines, max_params=max_params)
         findings = linter.lint_text(code)
         self._send(
             200,
@@ -829,6 +895,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._send(200, json.dumps({"ok": True, "section": section, "data": updated}, default=str).encode("utf-8"), "application/json")
 
     def _send_settings_defaults(self) -> None:
+        # Read-only preview of defaults. MUST NOT mutate: a previous version
+        # called reset_section/reset_all here, so any cross-origin GET
+        # (img prefetch, link preview) wiped all settings (CSRF-exempt GET).
+        # Resets live only behind POST /api/settings/reset (+ CSRF header).
         sm = _settings_instance()
         section = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("section", [""])[0]
         if section:
@@ -836,12 +906,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._send(400, b"Invalid section")
                 return
             try:
-                defaults = sm.reset_section(section)
+                defaults = sm.defaults(section)
             except Exception as exc:
                 self._send(400, json.dumps({"error": str(exc)}).encode("utf-8"), "application/json")
                 return
         else:
-            defaults = sm.reset_all()
+            defaults = sm.defaults()
         self._send(200, json.dumps({"ok": True, "data": defaults}, default=str).encode("utf-8"), "application/json")
 
     def _send_settings_reset(self) -> None:
@@ -920,14 +990,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if not graph_path.exists():
             self._send(200, json.dumps({"ok": False, "error": "graph.json not found"}).encode("utf-8"), "application/json")
             return
-        # Check If-None-Match / mtime cache
+        # Check If-None-Match / mtime cache (single stat: no TOCTOU race).
         try:
-            mtime = graph_path.stat().st_mtime
+            st = graph_path.stat()
+            mtime = st.st_mtime
+            size = st.st_size
         except OSError:
-            mtime = 0
+            self._send(200, json.dumps({"ok": False, "error": "graph.json not found"}).encode("utf-8"), "application/json")
+            return
         cache_key = str(graph_path)
         # Handle ETag/If-None-Match
-        etag = f'W/"{int(mtime)}-{graph_path.stat().st_size if graph_path.exists() else 0}"'
+        etag = f'W/"{int(mtime)}-{size}"'
         if self.headers.get("If-None-Match") == etag:
             self.send_response(304)
             self.send_header("ETag", etag)
@@ -948,7 +1021,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 return
         # DASH-7 fix: check size before loading the whole file into memory to
         # avoid a memory-exhaustion DoS on very large graph.json files.
-        if graph_path.stat().st_size > 2 * 1024 * 1024:
+        if size > 2 * 1024 * 1024:
             self._send(200, json.dumps({"ok": False, "error": "graph too large for dashboard; use graphify MCP"}).encode("utf-8"), "application/json")
             return
         data = graph_path.read_bytes()
@@ -964,12 +1037,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _send_graph_stats(self) -> None:
-        """Return summary stats from the graphify graph."""
+        """Return summary stats from the graphify graph (2MB cap like /api/graph)."""
         graph_path = self.root / "graphify-out" / "graph.json"
         if not graph_path.exists():
             self._send(200, json.dumps({"ok": False, "error": "graph.json not found"}).encode("utf-8"), "application/json")
             return
         try:
+            if graph_path.stat().st_size > 2 * 1024 * 1024:
+                self._send(200, json.dumps({"ok": False, "error": "graph too large for dashboard; use graphify MCP"}).encode("utf-8"), "application/json")
+                return
             data = json.loads(graph_path.read_text(encoding="utf-8"))
             nodes = data.get("nodes", [])
             links = data.get("links", [])
@@ -1007,10 +1083,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "no-referrer")
-        if _ALLOWED_ORIGINS:
-            origin = self.headers.get("Origin", "")
-            if origin in _ALLOWED_ORIGINS:
-                self.send_header("Access-Control-Allow-Origin", origin)
+        # Same origin policy as the REST API: reflect only an allowlisted
+        # request Origin (incl. the configured AIZEE_DASHBOARD_ORIGIN), with
+        # Vary + credentials handling — not the raw _ALLOWED_ORIGINS set.
+        origin = self._origin()
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Credentials", "true")
+            self.send_header("Vary", "Origin")
         self.end_headers()
         try:
             # 10 min max (120 iterations x 5s), down from 60s x 1s polling
@@ -1037,8 +1117,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format: str, *args: object) -> None:
         """Log only errors and warnings, silence routine access logs."""
-        msg = format % args
-        if " 4" in msg or " 5" in msg:
+        try:
+            msg = format % args
+        except (TypeError, ValueError):
+            return
+        # Access log lines look like: "GET /path HTTP/1.1" 200 -
+        # Parse the status code properly instead of substring matching
+        # (which false-positived on paths like /api/v5 or timings like 0.4s).
+        match = re.search(r'"\s(\d{3})\s', msg)
+        if match and int(match.group(1)) >= 400:
             print(f"[dashboard] {msg}", file=sys.stderr)
 
 
@@ -1075,7 +1162,12 @@ def _is_loopback_host(host: str) -> bool:
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+    try:
+        port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+    except (ValueError, TypeError) as exc:
+        raise SystemExit(f"Invalid port {sys.argv[1]!r}: must be an integer 1..65535") from exc
+    if not 1 <= port <= 65535:
+        raise SystemExit(f"Invalid port {port}: must be 1..65535")
     host = _env_first("AIZEE_DASHBOARD_HOST", "AGENT_OS_HOST", default="127.0.0.1")
     token = _dashboard_token(Path(os.environ.get("AIZEE_ROOT", ".")))
     # SEC-W1: refuse to bind non-loopback host without authentication. When no
@@ -1111,7 +1203,32 @@ if __name__ == "__main__":
         )
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
-    server = ThreadingHTTPServer((host, port), DashboardHandler)
+    # Bounded thread pool: cap concurrent connections to prevent thread
+    # exhaustion under burst load. Default 64, configurable via env.
+    import threading as _threading
+
+    _max_threads = int(os.environ.get("AIZEE_DASHBOARD_MAX_THREADS", "64"))
+    _thread_semaphore = _threading.Semaphore(_max_threads)
+
+    class _BoundedThreadingHTTPServer(ThreadingHTTPServer):
+        daemon_threads = True
+
+        def process_request(self, request: Any, client_address: Any) -> None:
+            # Acquire semaphore before spawning a thread; release on finish.
+            _thread_semaphore.acquire()
+            try:
+                super().process_request(request, client_address)
+            except Exception:
+                _thread_semaphore.release()
+                raise
+
+        def process_request_thread(self, request: Any, client_address: Any) -> None:
+            try:
+                super().process_request_thread(request, client_address)
+            finally:
+                _thread_semaphore.release()
+
+    server = _BoundedThreadingHTTPServer((host, port), DashboardHandler)
     print(f"aiZee dashboard: http://{host}:{port}")
     if not token:
         print("Open-access mode: APIs are unauthenticated (localhost only). "

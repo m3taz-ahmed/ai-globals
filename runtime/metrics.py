@@ -14,7 +14,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
 
-from runtime.schemas import AizeeError, ErrorSeverity
+from runtime.schemas import AizeeError, ErrorSeverity, ValidationError
 
 
 class MetricNameError(AizeeError):
@@ -77,6 +77,10 @@ class Metric(Generic[T]):
     """Base class for all metrics."""
 
     _type: ClassVar[str] = ""
+    # Bound cardinality: max distinct label-sets per metric family.
+    # Summary children each hold a bounded deque (see _SummaryChild);
+    # this caps the number of children so total memory stays bounded.
+    MAX_CHILDREN: ClassVar[int] = 1000
 
     def __init__(self, name: str, documentation: str, labels: tuple[str, ...] = ()) -> None:
         _validate_name(name)
@@ -109,9 +113,16 @@ class Metric(Generic[T]):
                     self._default_child = self._new_child()
                 return self._default_child
 
-        label_values = tuple(str(kwargs.get(k, "")) for k in self._label_names)
+        missing = [k for k in self._label_names if k not in kwargs]
+        if missing:
+            raise LabelValueError(f"Metric {self._name!r} missing labels: {missing}")
+        label_values = tuple(str(kwargs[k]) for k in self._label_names)
         with self._lock:
             if label_values not in self._children:
+                if len(self._children) >= self.MAX_CHILDREN:
+                    raise LabelValueError(
+                        f"Metric {self._name!r} exceeds max cardinality ({self.MAX_CHILDREN})"
+                    )
                 self._children[label_values] = self._new_child()
             return self._children[label_values]
 
@@ -140,6 +151,8 @@ class _CounterChild(_MetricChild):
         self._lock = threading.Lock()
 
     def inc(self, amount: float = 1.0) -> None:
+        if amount < 0:
+            raise ValidationError(f"Counter.inc amount must be >= 0, got {amount}")
         with self._lock:
             self._value += amount
 
@@ -283,10 +296,11 @@ class _SummaryChild(_MetricChild):
             self._sum += value
             self._count += 1
 
-    def _quantile(self, q: float) -> float:
+    def _quantile(self, q: float, sorted_values: list[float] | None = None) -> float:
         if not self._values:
             return 0.0
-        sorted_values = sorted(self._values)
+        if sorted_values is None:
+            sorted_values = sorted(self._values)
         idx = q * (len(sorted_values) - 1)
         lower = int(idx)
         upper = lower + 1
@@ -299,9 +313,11 @@ class _SummaryChild(_MetricChild):
             Sample(name=name + "_sum", labels=labels, value=self._sum),
             Sample(name=name + "_count", labels=labels, value=self._count),
         ]
+        # Sort values once and reuse for all quantiles (avoids O(k·n log n)).
+        sorted_values = sorted(self._values) if self._values else None
         for q in self._quantiles:
             q_labels = {**labels, "quantile": str(q)}
-            samples.append(Sample(name=name, labels=q_labels, value=self._quantile(q)))
+            samples.append(Sample(name=name, labels=q_labels, value=self._quantile(q, sorted_values)))
         return samples
 
 
@@ -409,16 +425,21 @@ def unregister(metric: Metric[_MetricChild]) -> None:
 
 def _base_name(sample_name: str) -> str:
     """Return the metric family base name from a sample name."""
-    for suffix in ("_total", "_sum", "_count", "_bucket"):
+    for suffix in ("_total", "_sum", "_count", "_bucket", "_info"):
         if sample_name.endswith(suffix):
             return sample_name[: -len(suffix)]
     return sample_name
 
 
+def _escape_label_value(value: str) -> str:
+    """Escape backslash, double-quote, and newline for exposition format."""
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+
 def _format_labels(labels: dict[str, str]) -> str:
     if not labels:
         return ""
-    return "{" + ",".join(f'{k}="{v}"' for k, v in labels.items()) + "}"
+    return "{" + ",".join(f'{k}="{_escape_label_value(str(v))}"' for k, v in labels.items()) + "}"
 
 
 def generate_latest(registry: CollectorRegistry | None = None) -> str:
@@ -428,7 +449,16 @@ def generate_latest(registry: CollectorRegistry | None = None) -> str:
     seen_help: set[str] = set()
     seen_type: set[str] = set()
 
-    for metric in registry._collectors.values():
+    # Iterate collectors properly: RestrictedRegistry exposes only a subset
+    # via its parent, so resolve visible collectors explicitly to emit HELP/TYPE.
+    if isinstance(registry, RestrictedRegistry):
+        visible: list[Metric[_MetricChild]] = [
+            m for name, m in registry._parent._collectors.items() if name in registry._names
+        ]
+    else:
+        with registry._lock:
+            visible = list(registry._collectors.values())
+    for metric in visible:
         if metric.name not in seen_help:
             lines.append(f"# HELP {metric.name} {metric.documentation}")
             seen_help.add(metric.name)
@@ -492,18 +522,33 @@ if TYPE_CHECKING:
 def format_metrics(k: Kernel) -> str:
     """Return Prometheus exposition text for key runtime metrics (dashboard)."""
     status = k.status()
+    workflows = status.get("workflows", [])
+    rules = status.get("rules", [])
+    budgets = status.get("budgets", [])
+    try:
+        n_workflows = len(workflows)
+    except TypeError:
+        n_workflows = 0
+    try:
+        n_rules = len(rules)
+    except TypeError:
+        n_rules = 0
+    try:
+        n_budgets = len(budgets)
+    except TypeError:
+        n_budgets = 0
     lines: list[str] = [
         "# HELP aizee_workflows_total Total number of registered workflows",
         "# TYPE aizee_workflows_total gauge",
-        f"aizee_workflows_total {len(status['workflows'])}",
+        f"aizee_workflows_total {n_workflows}",
         "",
         "# HELP aizee_rules_total Total number of loaded policy rules",
         "# TYPE aizee_rules_total gauge",
-        f"aizee_rules_total {len(status['rules'])}",
+        f"aizee_rules_total {n_rules}",
         "",
         "# HELP aizee_budgets_total Total number of configured budgets",
         "# TYPE aizee_budgets_total gauge",
-        f"aizee_budgets_total {len(status['budgets'])}",
+        f"aizee_budgets_total {n_budgets}",
         "",
     ]
 

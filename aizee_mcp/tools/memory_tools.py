@@ -24,6 +24,15 @@ from .common import (
 )
 
 
+def _coerce_limit(value: Any, default: int = 20) -> int:
+    """Coerce a caller-supplied limit/k to a bounded int (never raises)."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(1, min(number, _MAX_RESULTS))
+
+
 def register_memory_tools(mcp: FastMCP) -> None:
     """Register all memory-related MCP tools."""
 
@@ -36,7 +45,7 @@ def register_memory_tools(mcp: FastMCP) -> None:
         err = validate_kind(kind)
         if err:
             return err
-        limit = max(1, min(limit, _MAX_RESULTS))
+        limit = _coerce_limit(limit)
         results = memory().search(query, kind, limit=limit)
         return json.dumps(
             [{"id": r.id, "kind": r.kind, "source": r.source, "content": truncate(r.content)} for r in results],
@@ -52,7 +61,7 @@ def register_memory_tools(mcp: FastMCP) -> None:
         err = validate_kind(kind)
         if err:
             return err
-        k = max(1, min(k, _MAX_RESULTS))
+        k = _coerce_limit(k, default=5)
         results = memory().search_vector(query, k=k, kind=kind)
         return json.dumps(results, indent=2)
 
@@ -65,7 +74,7 @@ def register_memory_tools(mcp: FastMCP) -> None:
         err = validate_kind(kind)
         if err:
             return err
-        k = max(1, min(k, _MAX_RESULTS))
+        k = _coerce_limit(k, default=5)
         store = memory()
         fts_results = store.search(query, kind=kind, limit=k)
         vector_results = store.search_vector(query, k=k, kind=kind)
@@ -87,11 +96,16 @@ def register_memory_tools(mcp: FastMCP) -> None:
             )
 
         for vr in vector_results:
-            mem_id = vr["id"]
+            if not isinstance(vr, dict):
+                continue
+            mem_id = vr.get("id")
+            score = vr.get("score", 0.0)
+            if not isinstance(mem_id, str):
+                continue
             if mem_id in seen:
                 for item in items:
                     if item["id"] == mem_id:
-                        item["score"] = vr["score"]
+                        item["score"] = score
                         item["vector"] = True
                 continue
             record = store.get(mem_id)
@@ -104,7 +118,7 @@ def register_memory_tools(mcp: FastMCP) -> None:
                     "source": record.source,
                     "content": truncate(record.content),
                     "fts": False,
-                    "score": vr["score"],
+                    "score": score,
                     "vector": True,
                 }
             )
@@ -161,9 +175,14 @@ def register_memory_tools(mcp: FastMCP) -> None:
             return json.dumps({"ok": False, "error": "Invalid db_path"})
         r = root()
         target = resolve_path(r, Path(db_path))
-        if target is None or not target.exists():
+        if target is None or not target.is_file():
             return json.dumps({"ok": False, "error": "Database not found"})
-        graph = SchemaGraph(str(target)).build()
+        if target.suffix.lower() not in (".db", ".sqlite", ".sqlite3"):
+            return json.dumps({"ok": False, "error": "Not a SQLite database file"})
+        try:
+            graph = SchemaGraph(str(target)).build()
+        except Exception as exc:
+            return json.dumps({"ok": False, "error": f"Graph build failed: {exc}"})
         return json.dumps(
             {"ok": True, "nodes": len(graph.nodes), "edges": len(graph.edges), "nodes_list": [n.id for n in graph.nodes]},
             indent=2,

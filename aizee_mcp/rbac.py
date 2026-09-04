@@ -54,11 +54,27 @@ def _load_admin_required(path: Path = DEFAULT_CONFIG_PATH) -> frozenset[str]:
 
 _ADMIN_REQUIRED = _load_admin_required()
 
+_warned_default_allow = False
+
+
+def reload_rbac(path: Path = DEFAULT_CONFIG_PATH) -> frozenset[str]:
+    """Reload the admin-required set from disk (picks up rbac.yaml edits).
+
+    Updates the module-level ``_ADMIN_REQUIRED`` so long-running servers can
+    apply config changes without a restart. Returns the new set.
+    """
+    global _ADMIN_REQUIRED
+    _ADMIN_REQUIRED = _load_admin_required(path)
+    return _ADMIN_REQUIRED
+
 
 def get_roles_from_env() -> set[str]:
-    """Derive the caller's roles from ``AIZEE_MCP_ROLES`` (comma-separated)."""
+    """Derive the caller's roles from ``AIZEE_MCP_ROLES`` (comma-separated).
+
+    Roles are lowercased so ``Admin``/``ADMIN`` match the ``admin`` role.
+    """
     raw = os.environ.get("AIZEE_MCP_ROLES", "")
-    return {role.strip() for role in raw.split(",") if role.strip()}
+    return {role.strip().lower() for role in raw.split(",") if role.strip()}
 
 
 def check_tool_permission(tool_name: str, roles: set[str] | None = None) -> bool:
@@ -77,4 +93,17 @@ def check_tool_permission(tool_name: str, roles: set[str] | None = None) -> bool
     # Fail-closed: corrupted config denies everything to non-admins
     if _ADMIN_REQUIRED is _RBAC_BROKEN_SENTINEL:
         return ADMIN_ROLE in roles if roles else False
+    if not roles:
+        global _warned_default_allow
+        if not _warned_default_allow:
+            _warned_default_allow = True
+            _logger.warning(
+                "AIZEE_MCP_ROLES is unset: RBAC is default-allow (no tool "
+                "restrictions). Set AIZEE_MCP_ROLES to enforce rbac.yaml, "
+                "or AIZEE_RBAC_STRICT=1 to fail-closed when no roles are set."
+            )
+        # Fail-closed when AIZEE_RBAC_STRICT is set: deny admin-required
+        # tools if no roles are configured. Non-admin tools stay allowed.
+        if os.environ.get("AIZEE_RBAC_STRICT") == "1" and tool_name in _ADMIN_REQUIRED:
+            return False
     return not (roles and tool_name in _ADMIN_REQUIRED and ADMIN_ROLE not in roles)

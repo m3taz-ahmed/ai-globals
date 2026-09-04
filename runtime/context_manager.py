@@ -20,7 +20,9 @@ Usage::
     from runtime.context_manager import ContextManager, Message
     cm = ContextManager(max_tokens=8000, recent_window=6)
     trimmed = cm.trim(messages)
-    assert cm.estimate_tokens(trimmed) <= 8000
+    # NOTE: output can still exceed max_tokens when a single atomic
+    # group (or system messages) alone is oversized — atomic groups
+    # are never split, so the budget is best-effort in that case.
 """
 
 from __future__ import annotations
@@ -63,11 +65,17 @@ def _estimate_tokens(text: str) -> int:
 
 
 def _is_atomic_group(messages: list[Message], idx: int) -> bool:
-    """Check if message at idx is part of an atomic group (assistant+tool)."""
+    """Check if message at idx is part of an atomic group (assistant+tool).
+
+    O(1): only checks immediate neighbours for a shared group_id, using
+    a precomputable grouping invariant (same group_id = same atomic unit).
+    """
     msg = messages[idx]
     if msg.group_id is None:
         return False
-    return any(m.group_id == msg.group_id for j, m in enumerate(messages) if j != idx)
+    prev_match = idx > 0 and messages[idx - 1].group_id == msg.group_id
+    next_match = idx + 1 < len(messages) and messages[idx + 1].group_id == msg.group_id
+    return bool(prev_match or next_match)
 
 
 class ContextManager:
@@ -100,7 +108,11 @@ class ContextManager:
         return sum(m.tokens for m in messages)
 
     def trim(self, messages: list[Message]) -> list[Message]:
-        """Trim messages to fit within max_tokens using 3-level strategy."""
+        """Trim messages to fit within max_tokens using 3-level strategy.
+
+        Best-effort: output can exceed max_tokens when system messages or
+        a single atomic group alone exceeds the budget (groups are never split).
+        """
         if self.estimate_tokens(messages) <= self.max_tokens:
             return list(messages)
         # Level 1: preserve system messages.
@@ -133,9 +145,12 @@ class ContextManager:
             return list(messages), []
         # Find a split point that doesn't break an atomic group.
         split = len(messages) - window
-        # Walk backward to avoid splitting a group.
-        while split > 0 and _is_atomic_group(messages, split - 1) and _is_atomic_group(messages, split):
-            if messages[split - 1].group_id == messages[split].group_id:
+        # Move the whole group into recent: loop until the boundary no
+        # longer cuts inside a group with the same group_id.
+        while split > 0:
+            prev_gid = messages[split - 1].group_id
+            cur_gid = messages[split].group_id
+            if prev_gid is not None and prev_gid == cur_gid:
                 split -= 1
             else:
                 break
@@ -154,10 +169,13 @@ class ContextManager:
             target = max(1, int(msg.tokens * self.compression_ratio))
             if current_tokens + target > budget and compressed:
                 # Stop adding — remaining messages get summarized into the last one.
+                old_tokens = compressed[-1].tokens
                 compressed[-1] = self._merge(compressed[-1], msg)
+                current_tokens += compressed[-1].tokens - old_tokens
                 continue
-            compressed.append(self._compress_one(msg, target))
-            current_tokens += target
+            item = self._compress_one(msg, target)
+            compressed.append(item)
+            current_tokens += item.tokens
         return compressed
 
     def _compress_one(self, msg: Message, target_tokens: int) -> Message:
@@ -170,10 +188,10 @@ class ContextManager:
         if len(sentences) <= 2:
             # Truncate to target chars.
             keep = content[: target_tokens * 4]
-            return Message(role=msg.role, content=keep + "…", tokens=target_tokens, group_id=msg.group_id)
+            return Message(role=msg.role, content=keep + "…", tokens=target_tokens, group_id=msg.group_id, metadata=dict(msg.metadata))
         first, last = sentences[0], sentences[-1]
         merged = f"{first} […] {last}"
-        return Message(role=msg.role, content=merged, tokens=_estimate_tokens(merged), group_id=msg.group_id)
+        return Message(role=msg.role, content=merged, tokens=_estimate_tokens(merged), group_id=msg.group_id, metadata=dict(msg.metadata))
 
     def _summarize_all(self, messages: list[Message]) -> Message:
         """Create a single summary message from a list."""
@@ -185,7 +203,8 @@ class ContextManager:
     def _merge(self, a: Message, b: Message) -> Message:
         """Merge two messages into one compressed summary."""
         content = f"{a.content} [+1 msg]"
-        return Message(role=a.role, content=content, tokens=_estimate_tokens(content))
+        merged_meta = {**a.metadata, **b.metadata}
+        return Message(role=a.role, content=content, tokens=_estimate_tokens(content), group_id=a.group_id, metadata=merged_meta)
 
 
 def compress_with_llm(

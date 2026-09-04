@@ -26,6 +26,14 @@ from typing import Any
 _logger = logging.getLogger(__name__)
 
 _SENSITIVE_KEYS = re.compile(r"(token|key|secret|password|credential|auth|api[_-]?key)", re.IGNORECASE)
+# Content redaction (values, not keys): only assignment-like secrets
+# (`password=...`, `token: ...`) or known token prefixes — never bare
+# substrings (which redacted innocent words like "monkey" via "key").
+_SECRET_VALUE_RE = re.compile(
+    r"(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|bearer|credential|token)s?\s*[:=]\s*\S+"
+    r"|sk-[A-Za-z0-9]{8,}|ghp_[A-Za-z0-9]{8,}|xox[bpas]-[A-Za-z0-9-]{8,}|AKIA[0-9A-Z]{16}",
+    re.IGNORECASE,
+)
 
 _GENESIS_HASH = "0" * 64
 
@@ -151,14 +159,24 @@ class AuditLogger:
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
         # Cache last hash in memory to avoid O(n) file scan on every log() call.
-        # Initialized lazily on first use; invalidated only on rotation.
+        # Initialized lazily on first use; carried across rotation.
         self._cached_last_hash: str | None = None
         self._cache_lock = threading.Lock()
+        # Dropped-write counter: fail-open writes are counted (never silent).
+        self.dropped = 0
 
     def _rotate_if_needed(self) -> None:
-        """Rotate the audit log if it exceeds the max size."""
+        """Rotate the audit log if it exceeds the max size.
+
+        Chain continuity: the new file's first entry links to the last hash
+        of the rotated file (cached before rename), so the HMAC chain
+        survives rotation instead of restarting at genesis.
+        """
         try:
             if self.log_file.exists() and self.log_file.stat().st_size > self._MAX_LOG_SIZE:
+                # Capture the chain tip BEFORE rename so the new file continues it.
+                with self._cache_lock:
+                    tip = self._cached_last_hash or self._last_hash_nolock()
                 # Rotate: audit.log -> audit.log.1, audit.log.1 -> audit.log.2, etc.
                 for i in range(self._MAX_ROTATED - 1, 0, -1):
                     old = self.log_file.with_suffix(f".log.{i}")
@@ -167,9 +185,10 @@ class AuditLogger:
                         old.rename(new)
                 rotated = self.log_file.with_suffix(".log.1")
                 self.log_file.rename(rotated)
-                # Invalidate cache after rotation — new file starts from genesis
+                _logger.info("Audit log rotated to %s (chain tip %s...)", rotated.name, tip[:12])
+                # Seed the new file's chain from the rotated tip.
                 with self._cache_lock:
-                    self._cached_last_hash = None
+                    self._cached_last_hash = tip
         except OSError as exc:
             # L2: log rotation failures so operators notice disk/permission
             # issues instead of silently losing the audit trail.
@@ -179,7 +198,8 @@ class AuditLogger:
         """Redact sensitive values using both key-name and content matching.
 
         - If the key name matches a sensitive pattern, the entire value is redacted.
-        - If the value (string) contains a sensitive keyword, it is redacted.
+        - String values are redacted only on assignment-like secrets or known
+          token prefixes (never bare substrings — "monkey" stays intact).
         - Recursively processes dicts and lists.
         """
         # Key-based redaction: if the key name looks sensitive, redact entire value
@@ -189,7 +209,7 @@ class AuditLogger:
             return {k: self._redact(v, key_name=k) for k, v in value.items()}
         if isinstance(value, list):
             return [self._redact(v, key_name=key_name) for v in value]
-        if isinstance(value, str) and _SENSITIVE_KEYS.search(value):
+        if isinstance(value, str) and _SECRET_VALUE_RE.search(value):
             return "[REDACTED]"
         return value
 
@@ -208,6 +228,10 @@ class AuditLogger:
         with self._cache_lock:
             if self._cached_last_hash is not None:
                 return self._cached_last_hash
+            return self._last_hash_nolock()
+
+    def _last_hash_nolock(self) -> str:
+        """Tail-scan for the last hash. Caller must hold ``_cache_lock``."""
         if not self.log_file.exists():
             return _GENESIS_HASH
         last_line: str | None = None
@@ -250,8 +274,9 @@ class AuditLogger:
         try:
             entry = json.loads(last_line)
             h = str(entry.get("hash", _GENESIS_HASH))
-            with self._cache_lock:
-                self._cached_last_hash = h
+            # Caller holds _cache_lock — assign directly (never re-acquire;
+            # threading.Lock is not re-entrant and would deadlock).
+            self._cached_last_hash = h
             return h
         except (json.JSONDecodeError, KeyError):
             return _GENESIS_HASH
@@ -271,9 +296,11 @@ class AuditLogger:
     def log(self, event_type: str, details: dict[str, Any]) -> None:
         """Append a new hash-chained entry to the audit log.
 
-        Fail-open: if the audit log cannot be written (disk full, permission
-        error, etc.), the error is logged but NOT raised. Observability must
-        never crash the agent.
+        Fail-closed by default: if the audit log cannot be written (disk full,
+        permission error, etc.), the error is raised. Dropped writes increment
+        ``self.dropped`` (visible via ``stats()``) so audit loss is never silent.
+        Set ``AIZEE_AUDIT_STRICT=0`` to enable fail-open mode (log but do not
+        raise — useful for dev/observability-only deployments).
         """
         with self._lock:
             try:
@@ -288,16 +315,24 @@ class AuditLogger:
                 entry["hash"] = self._compute_hash(entry)
                 with self.log_file.open("a", encoding="utf-8") as f:
                     f.write(json.dumps(entry, default=str) + "\n")
+                    f.flush()
+                    with contextlib.suppress(OSError):
+                        os.fsync(f.fileno())
                 # Update cache with the new hash for O(1) next call
                 with self._cache_lock:
                     self._cached_last_hash = entry["hash"]
             except OSError as exc:
+                self.dropped += 1
                 _logger.error(
-                    "Audit log write failed (fail-open): %s — event_type=%s",
-                    exc, event_type,
+                    "Audit log write failed (fail-open, dropped=%d): %s — event_type=%s",
+                    self.dropped, exc, event_type,
                 )
-                if os.environ.get("AIZEE_AUDIT_STRICT"):
+                if os.environ.get("AIZEE_AUDIT_STRICT", "1") == "1":
                     raise
+
+    def stats(self) -> dict[str, Any]:
+        """Return audit health stats (entries are counted lazily)."""
+        return {"log_file": str(self.log_file), "dropped": self.dropped}
 
     def log_admission(self, record: dict[str, Any]) -> None:
         """Append an admission event with identity keys (Hazem R1-R15).

@@ -27,6 +27,13 @@ class Trigger(str, Enum):
     MANUAL = "manual"
 
 
+def _as_aware(moment: datetime) -> datetime:
+    """Coerce a naive datetime to UTC (aware datetimes pass through)."""
+    if moment.tzinfo is None:
+        return moment.replace(tzinfo=timezone.utc)
+    return moment
+
+
 @dataclass
 class Step:
     """A single step in a drip sequence."""
@@ -107,25 +114,35 @@ class DripEngine:
         A step is "ready" if it has been entered (``entered_at`` set), its
         delay has elapsed, it has not already fired, and its condition (if
         any) evaluates True against ``context`` (defaults to empty dict).
+        Naive datetimes are treated as UTC; a raising condition skips only
+        its own step instead of aborting the whole scan.
         """
-        now = now or datetime.now(timezone.utc)
+        now = _as_aware(now or datetime.now(timezone.utc))
         ctx = context or {}
         ready: list[Step] = []
         for seq in self._sequences.values():
             for step in seq.steps:
                 if step.fired or step.entered_at is None:
                     continue
-                elapsed = (now - step.entered_at).total_seconds() / 3600.0
+                try:
+                    entered = _as_aware(step.entered_at)
+                    elapsed = (now - entered).total_seconds() / 3600.0
+                except (TypeError, ValueError, OverflowError):
+                    continue
                 if elapsed < step.delay_hours:
                     continue
-                if step.condition is not None and not step.condition(ctx):
-                    continue
+                if step.condition is not None:
+                    try:
+                        if not step.condition(ctx):
+                            continue
+                    except Exception:
+                        continue
                 ready.append(step)
         return ready
 
     def enter(self, step: Step, now: datetime | None = None) -> None:
         """Mark a step as entered (starts its delay countdown)."""
-        step.entered_at = now or datetime.now(timezone.utc)
+        step.entered_at = _as_aware(now or datetime.now(timezone.utc))
 
     def mark_fired(self, step: Step) -> None:
         """Mark a step as fired so it is not returned again."""

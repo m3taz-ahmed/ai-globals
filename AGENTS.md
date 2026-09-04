@@ -76,7 +76,7 @@ Before declaring done, run from the OS root:
 
 - `mypy` (strict, 345 files)
 
-- `aizee test --full` (full suite with coverage, ~180-300s, 3561 tests, 95% cov)
+- `aizee test --full` (full suite with coverage, ~180-300s, 3865 tests, 95% cov)
 
 - `python eval/harness.py` (read-only: ruff + mypy + pytest + validate-globals)
 
@@ -142,9 +142,9 @@ aiZee follows a layered design:
 
 - **Managers** — `runtime/managers/` (PolicyManager, WorkflowManager, AgentManager, ChatManager).
 
-- **Runtime Modules** — 108 governance modules in `runtime/`.
+- **Runtime Modules** — 109 governance modules in `runtime/`.
 
-- **MCP Server** — `aizee_mcp/` exposes 36 tools via FastMCP.
+- **MCP Server** — `aizee_mcp/` exposes 84 tools via FastMCP.
 
 - **Memory** — `memory/` SQLite + FTS5 + vector store.
 
@@ -191,40 +191,23 @@ aiZee follows a layered design:
 ```
 
 aizee/                         # Sovereign root (AIZEE_ROOT)
-
-—”œ—”€—”€ aizee_cli.py               # CLI entry point
-
-—”œ—”€—”€ config.py                  # Root discovery + version
-
-—”œ—”€—”€ runtime/                   # Kernel + 108 governance modules
-
-—”‚   —”œ—”€—”€ kernel.py              # Facade
-
-—”‚   —”œ—”€—”€ managers/              # Policy/Workflow/Agent/Chat managers
-
-—”‚   —”œ—”€—”€ storage_backend.py     # StorageBackend protocol + factory
-
-—”‚   —”œ—”€—”€ service_catalog.py     # ServiceDescriptor + multi-index catalog
-
-—”‚   —”œ—”€—”€ schemas.py             # Pydantic + exceptions + pagination
-
-—”‚   —””—”€—”€ ...                    # 108 governance modules
-
-—”œ—”€—”€ aizee_mcp/                 # MCP server (36 tools)
-
-—”œ—”€—”€ memory/                    # SQLite + FTS5 + vector
-
-—”œ—”€—”€ skills/                    # 110 persona + lord skills
-
-—”œ—”€—”€ workflows/                 # 54 trigger-based execution protocols
-
-—”œ—”€—”€ rules/                     # Compressed behavioral rules
-
-—”œ—”€—”€ tech-stack/                # 197 version-locked stack references
-
-—”‚   —””—”€—”€ spec-driven-templates/ # SDD templates (spec/plan/tasks/constitution/checklist)
-
-—””—”€—”€ eval/                      # Agent benchmark harness
+├── aizee_cli.py               # CLI entry point
+├── config.py                  # Root discovery + version
+├── runtime/                   # Kernel + 109 governance modules
+│   ├── kernel.py              # Facade
+│   ├── managers/              # Policy/Workflow/Agent/Chat managers
+│   ├── storage_backend.py     # StorageBackend protocol + factory
+│   ├── service_catalog.py     # ServiceDescriptor + multi-index catalog
+│   ├── schemas.py             # Pydantic + exceptions + pagination
+│   └── ...                    # 109 governance modules
+├── aizee_mcp/                 # MCP server (84 tools)
+├── memory/                    # SQLite + FTS5 + vector
+├── skills/                    # 110 persona + lord skills
+├── workflows/                 # 54 trigger-based execution protocols
+├── rules/                     # Compressed behavioral rules
+├── tech-stack/                # 197 version-locked stack references
+│   └── spec-driven-templates/ # SDD templates (spec/plan/tasks/constitution/checklist)
+└── eval/                      # Agent benchmark harness
 
 ```
 
@@ -427,4 +410,3 @@ If behavior is unclear:
 - Stage only files YOU modified (`git add <file>`, never `git add .`)
 
 - No `git commit` / `git push` without explicit user approval
-

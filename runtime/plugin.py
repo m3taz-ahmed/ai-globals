@@ -8,6 +8,7 @@ import fnmatch
 import functools
 import importlib.util
 import logging
+import re
 import threading
 import warnings
 from abc import ABC, abstractmethod
@@ -55,7 +56,7 @@ _DENYLISTED_BUILTIN_NAMES: set[str] = {
 
 _DANGEROUS_CALLS: set[str] = {
     "eval", "exec", "compile", "open", "__import__", "getattr", "setattr",
-    "literal_eval",
+    "delattr", "hasattr", "literal_eval", "breakpoint",
 }
 
 
@@ -190,9 +191,18 @@ class PluginGuard:
     def wrap(self, fn: Callable[..., Any], plugin_name: str) -> Callable[..., Any]:
         @functools.wraps(fn)
         def guarded(*args: Any, **kwargs: Any) -> Any:
-            action = kwargs.get("action") or (args[0] if args else "unknown")
-            if not self.is_allowed(str(action)):
-                raise PluginSandboxError(plugin_name, str(action))
+            # Inspect every string-typed argument (not just kwargs["action"]
+            # / args[0]) — other signatures previously bypassed the guard.
+            candidates: list[str] = [str(a) for a in args if isinstance(a, str)]
+            for key in ("action", "tool", "command", "operation"):
+                value = kwargs.get(key)
+                if isinstance(value, str):
+                    candidates.append(value)
+            if not candidates:
+                candidates = ["unknown"]
+            for action in candidates:
+                if not self.is_allowed(action):
+                    raise PluginSandboxError(plugin_name, action)
             return fn(*args, **kwargs)
 
         return guarded
@@ -213,8 +223,12 @@ class PluginManager:
 
     def _load_config(self) -> dict[str, Any]:
         if self.config_path.exists():
-            data = yaml.safe_load(self.config_path.read_text(encoding="utf-8")) or {}
-            return data
+            try:
+                data = yaml.safe_load(self.config_path.read_text(encoding="utf-8")) or {}
+            except (OSError, yaml.YAMLError, UnicodeDecodeError):
+                _logger.warning("plugins.yaml unreadable — no plugins enabled")
+                return {"plugins": {}}
+            return data if isinstance(data, dict) else {}
         return {}
 
     def _plugin_configs(self) -> dict[str, dict[str, Any]]:
@@ -236,15 +250,39 @@ class PluginManager:
         return PluginGuard(cfg.get("permissions"))
 
     def _load_plugin_module(self, name: str) -> Any | None:
-        """Load the plugin module using its package path after a static safety scan."""
-        init_file = self.plugins_dir / name / "__init__.py"
+        """Load the plugin module using its package path after a static safety scan.
+
+        NOTE: the scan is heuristic defense-in-depth (denylists are
+        bypassable by determined code). Every ``.py`` file in the plugin
+        package is scanned — previously only ``__init__.py`` was, so
+        submodules bypassed the sandbox entirely.
+        """
+        if not name or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", name) or ".." in name:
+            warnings.warn(f"Plugin '{name}' has an unsafe name", stacklevel=2)
+            return None
+        pkg_dir = self.plugins_dir / name
+        init_file = pkg_dir / "__init__.py"
         if not init_file.is_file():
             return None
-        source = init_file.read_text(encoding="utf-8")
-        safe, reason = _is_plugin_source_safe(source, str(init_file))
-        if not safe:
-            warnings.warn(f"Plugin '{name}' blocked by sandbox: {reason}", stacklevel=2)
+        try:
+            files = sorted(p for p in pkg_dir.rglob("*.py") if p.is_file())
+        except OSError:
             return None
+        if len(files) > 200:
+            warnings.warn(f"Plugin '{name}' has too many files ({len(files)})", stacklevel=2)
+            return None
+        for py_file in files:
+            try:
+                if py_file.stat().st_size > 500_000:
+                    warnings.warn(f"Plugin '{name}' file too large: {py_file.name}", stacklevel=2)
+                    return None
+                source = py_file.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                return None
+            safe, reason = _is_plugin_source_safe(source, str(py_file))
+            if not safe:
+                warnings.warn(f"Plugin '{name}' blocked by sandbox: {reason}", stacklevel=2)
+                return None
         spec = importlib.util.spec_from_file_location(f"plugins.{name}", init_file)
         if spec is None or spec.loader is None:
             return None
@@ -260,21 +298,24 @@ class PluginManager:
     def _discover_plugins(self) -> list[tuple[str, type[AIOSPlugin]]]:
         """Return enabled plugin classes from the plugins directory.
 
-        If ``plugins.yaml`` exists and lists enabled plugins, only those are
-        loaded (explicit mode). If ``plugins.yaml`` is missing or empty, all
-        subdirectories of ``plugins/`` with a valid ``__init__.py`` are
-        auto-discovered (auto-discovery mode).
+        If ``plugins.yaml`` exists (even with an empty ``plugins:`` map),
+        only listed+enabled plugins load (explicit mode — an existing file
+        with nothing enabled loads nothing, so disable-all is possible).
+        Auto-discovery of every subdirectory happens only when the file is
+        missing entirely.
         """
         if not self.plugins_dir.is_dir():
             return []
 
+        explicit_file = self.config_path.exists()
         enabled = self._enabled_plugins()
         discovered: list[tuple[str, type[AIOSPlugin]]] = []
         for candidate in self.plugins_dir.iterdir():
             if not candidate.is_dir() or candidate.name.startswith("_") or candidate.name.startswith("."):
                 continue
-            # In explicit mode, only load plugins listed in plugins.yaml
-            if enabled and candidate.name not in enabled:
+            # Explicit mode (plugins.yaml exists): only listed plugins load.
+            # Auto-discovery (file missing): every valid subdirectory loads.
+            if explicit_file and candidate.name not in enabled:
                 continue
             module = self._load_plugin_module(candidate.name)
             if module is None:

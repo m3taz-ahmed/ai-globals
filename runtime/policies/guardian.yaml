@@ -38,6 +38,9 @@ rules:
       - {key: "args.command", op: "contains", value: "DROP TABLE"}
       - {key: "args.command", op: "contains", value: "DROP DATABASE"}
       - {key: "args.command", op: "contains", value: "TRUNCATE"}
+      - {key: "args.command", op: "contains", value: "drop table"}
+      - {key: "args.command", op: "contains", value: "drop database"}
+      - {key: "args.command", op: "contains", value: "truncate table"}
     decision: deny
     description: "Destructive SQL operations blocked by guardian"
 
@@ -67,7 +70,9 @@ rules:
     tool: Bash
     any:
       - {key: "args.command", op: "contains", value: "curl "}
+      - {key: "args.command", op: "contains", value: "curl|"}
       - {key: "args.command", op: "contains", value: "wget "}
+      - {key: "args.command", op: "contains", value: "wget|"}
     decision: require_approval
     description: "Network requests require approval"
 
@@ -75,8 +80,12 @@ rules:
     tool: Bash
     any:
       - {key: "args.command", op: "contains", value: "pip install"}
+      - {key: "args.command", op: "contains", value: "pip3 install"}
       - {key: "args.command", op: "contains", value: "npm install"}
       - {key: "args.command", op: "contains", value: "yarn add"}
+      - {key: "args.command", op: "contains", value: "poetry add"}
+      - {key: "args.command", op: "contains", value: "uv pip install"}
+      - {key: "args.command", op: "contains", value: "uv add"}
     decision: require_approval
     description: "Package installations require approval"
 

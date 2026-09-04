@@ -60,7 +60,7 @@ class AgentDiscovery:
     what agents are installed. Does not modify anything.
     """
 
-    # (kind, name, relative_path_from_home, is_active_check)
+    # (kind, name, relative_path_from_home)
     _TARGETS: ClassVar[list[tuple[str, str, str]]] = [
         ("claude_code", "Claude Code", ".claude/settings.json"),
         ("claude_code", "Claude Code (project)", ".claude.json"),
@@ -82,8 +82,9 @@ class AgentDiscovery:
     def discover(self) -> list[DiscoveredAgent]:
         """Scan home + project root for agent configs."""
         found: list[DiscoveredAgent] = []
+        bases = (self.home,) if self.home == self.project_root else (self.home, self.project_root)
         for kind, name, rel in self._TARGETS:
-            for base in (self.home, self.project_root):
+            for base in bases:
                 path = base / rel
                 if path.exists():
                     agent = self._parse_config(kind, name, path)
@@ -109,7 +110,10 @@ class AgentDiscovery:
         )
         if path.is_dir():
             # Rules directory — count files.
-            count = sum(1 for _ in path.iterdir() if _.is_file())
+            try:
+                count = sum(1 for _ in path.iterdir() if _.is_file())
+            except OSError:
+                count = 0
             agent.metadata["file_count"] = count
             return agent
         if path.suffix == ".json":
@@ -219,9 +223,10 @@ def skill_to_entity(skill_path: Path, name: str) -> CatalogEntity:
     try:
         text = skill_path.read_text(encoding="utf-8")
         frontmatter, body = _parse_frontmatter(text)
-        description = (
+        description = str(
             frontmatter.get("description")
             or _first_prose_line(body)
+            or ""
         )
     except OSError:
         logger.debug("Failed to read skill file %s", skill_path, exc_info=True)

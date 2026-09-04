@@ -26,12 +26,48 @@ HEAT_GAMMA = 0.3   # recency weight
 RECENCY_TAU_HOURS = 24.0  # recency decay time constant
 
 
+def _to_float(value: Any) -> float:
+    """Coerce a possibly-string number to float; unparseable → 0.0."""
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip())
+        except ValueError:
+            return 0.0
+    return 0.0
+
+
+def _to_timestamp(value: Any) -> float | None:
+    """Coerce a timestamp (epoch number or ISO string) to epoch float."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        text = value.strip()
+        try:
+            return float(text)
+        except ValueError:
+            pass
+        try:
+            from datetime import datetime
+            return datetime.fromisoformat(text).timestamp()
+        except ValueError:
+            return None
+    return None
+
+
 @dataclass
 class HeatScorer:
     """Compute heat scores for memory prioritization.
 
-    Higher heat = more important/relevant memory. Uses max-heap
-    semantics for hottest-section tracking.
+    Higher heat = more important/relevant memory. Ranking is a descending
+    sort (not a heap — the docstring previously claimed max-heap).
     """
 
     alpha: float = HEAT_ALPHA
@@ -41,10 +77,10 @@ class HeatScorer:
 
     def compute(
         self,
-        visit_count: int = 0,
-        interaction_length: int = 0,
+        visit_count: float = 0,
+        interaction_length: float = 0,
         last_accessed: float | None = None,
-        max_interaction: int = 1000,
+        max_interaction: float = 1000,
     ) -> float:
         """Compute heat score in range [0, 1].
 
@@ -72,13 +108,17 @@ class HeatScorer:
         return math.exp(-hours_ago / self.tau_hours)
 
     def rank(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Rank entries by heat score (highest first)."""
+        """Rank entries by heat score (highest first).
+
+        Coerces string numbers / ISO timestamps defensively; unparseable
+        values fall back to 0 instead of raising TypeError.
+        """
         scored = []
         for entry in entries:
             heat = self.compute(
-                visit_count=entry.get("visit_count", 0),
-                interaction_length=entry.get("interaction_length", 0),
-                last_accessed=entry.get("last_accessed"),
+                visit_count=_to_float(entry.get("visit_count", 0)),
+                interaction_length=_to_float(entry.get("interaction_length", 0)),
+                last_accessed=_to_timestamp(entry.get("last_accessed")),
             )
             scored.append({**entry, "heat": heat})
         scored.sort(key=lambda e: e["heat"], reverse=True)

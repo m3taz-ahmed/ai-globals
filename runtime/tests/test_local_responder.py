@@ -7,7 +7,7 @@ from runtime.local_responder import LocalResponder
 
 def _ctx() -> dict:
     return {
-        "version": "5.10.0",
+        "version": "5.10.1",
         "workflows": ["w1", "w2", "w3"],
         "rules": ["r1", "r2"],
         "guardian_rules": ["g1"],
@@ -26,7 +26,7 @@ def test_help_intent() -> None:
 def test_status_intent() -> None:
     r = LocalResponder(_ctx)
     reply = r.reply("what is the status?")
-    assert "5.10.0" in reply
+    assert "5.10.1" in reply
     assert "3 workflows" in reply
 
 
@@ -106,4 +106,4 @@ def test_arabic_help_intent() -> None:
 def test_arabic_status_intent() -> None:
     r = LocalResponder(_ctx)
     reply = r.reply("ايه حالة النظام؟")
-    assert "5.10.0" in reply
+    assert "5.10.1" in reply

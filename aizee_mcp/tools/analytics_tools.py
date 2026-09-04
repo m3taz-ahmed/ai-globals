@@ -11,6 +11,7 @@ and funnel computation delegate to ``runtime.attribution_model`` and
 from __future__ import annotations
 
 import json
+import math
 from typing import Any
 
 from aizee_mcp._compat import FastMCP  # pyright: ignore
@@ -24,6 +25,20 @@ from runtime import (
 from runtime.schemas import ValidationError
 
 from .common import truncate, validate_query
+
+
+def _finite(value: Any, name: str, minimum: float = 0.0, maximum: float = 1e15) -> float:
+    """Coerce to a finite float in [minimum, maximum]; raises ValidationError."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(f"'{name}' must be a number", context={"name": name}) from exc
+    if not math.isfinite(number) or not minimum <= number <= maximum:
+        raise ValidationError(
+            f"'{name}' must be finite and within [{minimum}, {maximum}]",
+            context={"name": name},
+        )
+    return number
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -194,7 +209,13 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         for s in steps_list:
             if not isinstance(s, dict) or "count" not in s:
                 return _err("each step needs a 'count' field")
-            counts.append(int(s["count"]))
+            try:
+                count = int(s["count"])
+            except (TypeError, ValueError):
+                return _err("each step 'count' must be an integer")
+            if count < 0 or count > 10**12:
+                return _err("each step 'count' must be within [0, 1e12]")
+            counts.append(count)
         top = counts[0] or 1
         stages = []
         prev = counts[0]
@@ -226,12 +247,16 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         avg_lifetime_months: float = 12.0,
     ) -> str:
         """Compute CAC, LTV, and LTV:CAC ratio. Pure computation."""
-        if spend <= 0:
-            return _err("'spend' must be positive")
+        try:
+            spend = _finite(spend, "spend", minimum=0.01)
+            new_customers = int(new_customers)
+            arpu = _finite(arpu, "arpu")
+            gross_margin = _finite(gross_margin, "gross_margin", minimum=1e-9, maximum=1.0)
+            avg_lifetime_months = _finite(avg_lifetime_months, "avg_lifetime_months", maximum=1200.0)
+        except (ValidationError, TypeError, ValueError) as exc:
+            return _err(exc.message if hasattr(exc, "message") else str(exc))
         if new_customers <= 0:
             return _err("'new_customers' must be positive")
-        if arpu < 0 or not 0.0 < gross_margin <= 1.0:
-            return _err("'arpu' must be >=0 and 'gross_margin' in (0,1]")
         cac = spend / new_customers
         ltv = arpu * gross_margin * avg_lifetime_months
         ratio = ltv / cac if cac else 0.0
@@ -296,13 +321,38 @@ def register_analytics_tools(mcp: FastMCP) -> None:
     def pipeline_win_rate(
         platform: str = "",
         niche: str = "",
+        bids: str = "[]",
     ) -> str:
         """Compute freelance win rate from recorded bids via runtime.pipeline_analytics.
 
-        Returns 0.0 if no bids recorded. Use pipeline_record_bid first.
+        Pass ``bids`` as a JSON array of {platform, niche, amount, won}
+        objects (won: true/false/null for pending). Without bids the tool
+        reports 0.0 with recorded=false — per-call engines hold no state.
         """
         try:
+            bids_list = json.loads(bids)
+        except json.JSONDecodeError:
+            return _err("'bids' must be valid JSON")
+        if not isinstance(bids_list, list):
+            return _err("'bids' must be a JSON array")
+        try:
             pa = pipeline_analytics.PipelineAnalytics()
+            for b in bids_list:
+                if not isinstance(b, dict):
+                    return _err("each bid must be a JSON object")
+                try:
+                    amount = _finite(b.get("amount", 0), "bid.amount")
+                except ValidationError as exc:
+                    return _err(exc.message, context=exc.context)
+                won = b.get("won")
+                if won is not None and not isinstance(won, bool):
+                    return _err("each bid 'won' must be true/false/null")
+                pa.record_bid(
+                    platform=str(b.get("platform", "")),
+                    niche=str(b.get("niche", "")),
+                    amount=amount,
+                    won=won,
+                )
             plat = platform or None
             nich = niche or None
             rate = pa.win_rate(platform=plat, niche=nich)
@@ -312,7 +362,8 @@ def register_analytics_tools(mcp: FastMCP) -> None:
             win_rate=round(rate, 4),
             platform=plat,
             niche=nich,
-            note="Computed via runtime.pipeline_analytics. Instantiate PipelineAnalytics and call record_bid to track bids.",
+            bids_recorded=len(bids_list),
+            note="Computed via runtime.pipeline_analytics from the supplied bids (stateless tool).",
         )
 
     @mcp.tool()
@@ -330,12 +381,20 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         if not isinstance(steps_list, list) or not steps_list:
             return _err("'steps' must be a non-empty JSON array")
         try:
-            f = funnel_tracker.Funnel(steps_list[0].get("label", "funnel"))
+            first = steps_list[0]
+            label = first.get("label", "funnel") if isinstance(first, dict) else "funnel"
+            f = funnel_tracker.Funnel(label)
             for s in steps_list:
                 if not isinstance(s, dict):
                     return _err("each step must be a JSON object")
+                try:
+                    count = int(s.get("count", 0))
+                except (TypeError, ValueError):
+                    return _err("each step 'count' must be an integer")
+                if count < 0 or count > 10**12:
+                    return _err("each step 'count' must be within [0, 1e12]")
                 step = f.add_step(s.get("label", "step"))
-                step.reached = int(s.get("count", 0))
+                step.reached = count
             dropoff = f.dropoff()
         except (ValidationError, KeyError, TypeError, ValueError, AttributeError) as exc:
             return _err(exc.message if hasattr(exc, "message") else str(exc))

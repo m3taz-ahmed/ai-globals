@@ -6,6 +6,7 @@ from __future__ import annotations
 import pytest
 
 from runtime.closure_evaluator import (
+    _MISSING,
     ClosureEvaluator,
     ClosureResolutionError,
     GuardianClosureEvaluator,
@@ -192,9 +193,12 @@ def test_guardian_evaluator_evaluation_identifier():
 
 def test_guardian_evaluator_resolve_default_by_name_unknown_returns_none():
     evaluator = GuardianClosureEvaluator()
-    assert evaluator.resolve_default_by_name("nonexistent") is None
+    # Justification: None-sentinel conflated explicit None with miss;
+    # unknown names now return _MISSING sentinel (fix: distinguish None from miss).
+    assert evaluator.resolve_default_by_name("nonexistent") is _MISSING
 
 
 def test_guardian_evaluator_resolve_default_by_type_returns_none():
     evaluator = GuardianClosureEvaluator()
-    assert evaluator.resolve_default_by_type(str) is None
+    # Justification: see above — miss sentinel is _MISSING, not None.
+    assert evaluator.resolve_default_by_type(str) is _MISSING

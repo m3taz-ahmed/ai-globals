@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -57,6 +58,7 @@ class SagaOrchestrator(BaseRepository):
             saga_id TEXT NOT NULL,
             context TEXT NOT NULL,
             steps TEXT NOT NULL,
+            completed TEXT NOT NULL DEFAULT '[]',
             status TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
@@ -67,6 +69,7 @@ class SagaOrchestrator(BaseRepository):
     def __init__(self, root: Path) -> None:
         self.root = root
         super().__init__(root / "state" / "saga.db")
+        self._ensure_progress_column()
 
     def run(
         self,
@@ -81,7 +84,9 @@ class SagaOrchestrator(BaseRepository):
 
         for index, step in enumerate(saga.steps):
             result = self._execute_step(saga_id, index, step, context, act)
-            if result["ok"]:
+            if not isinstance(result, dict):
+                result = {"ok": False, "error": "saga step returned invalid result"}
+            if result.get("ok"):
                 completed.append({"step": index, **result})
                 self._checkpoint(saga_id, index, result)
                 continue
@@ -105,23 +110,39 @@ class SagaOrchestrator(BaseRepository):
         self._finish_saga(saga_id, SagaStatus.COMPLETED.value)
         return {"ok": True, "saga_id": saga_id, "status": SagaStatus.COMPLETED.value, "steps": completed}
 
+    def _ensure_progress_column(self) -> None:
+        """Add the durable-progress column to pre-existing saga.db files."""
+        with self._conn() as conn:
+            cols = {row[1] for row in conn.execute("PRAGMA table_info(saga_state)").fetchall()}
+            if "completed" not in cols:
+                conn.execute("ALTER TABLE saga_state ADD COLUMN completed TEXT NOT NULL DEFAULT '[]'")
+
     def _start_saga(self, saga: Saga, context: dict[str, Any]) -> str:
-        saga_id = f"{saga.id}-{datetime.now(timezone.utc).isoformat()}"
+        # Filesystem/URL-safe unique id (isoformat contains ':' and can collide).
+        saga_id = f"{saga.id}-{uuid.uuid4().hex[:12]}"
         now = datetime.now(timezone.utc).isoformat()
         steps_json = json.dumps([s.to_dict() for s in saga.steps])
         with self._conn() as conn:
             conn.execute(
-                "INSERT INTO saga_state (id, saga_id, context, steps, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (saga_id, saga.id, json.dumps(context), steps_json, SagaStatus.RUNNING.value, now, now),
+                "INSERT INTO saga_state (id, saga_id, context, steps, completed, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (saga_id, saga.id, json.dumps(context), steps_json, "[]", SagaStatus.RUNNING.value, now, now),
             )
         return saga_id
 
     def _checkpoint(self, saga_id: str, step: int, result: dict[str, Any]) -> None:
         now = datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
+            row = conn.execute("SELECT completed FROM saga_state WHERE id = ?", (saga_id,)).fetchone()
+            try:
+                completed = json.loads(row["completed"]) if row else []
+            except (ValueError, TypeError, KeyError):
+                completed = []
+            if not isinstance(completed, list):
+                completed = []
+            completed.append({"step": step, "ok": result.get("ok", False), "at": now})
             conn.execute(
-                "UPDATE saga_state SET updated_at = ? WHERE id = ?",
-                (now, saga_id),
+                "UPDATE saga_state SET completed = ?, updated_at = ? WHERE id = ?",
+                (json.dumps(completed), now, saga_id),
             )
 
     def _finish_saga(self, saga_id: str, status: str) -> None:
@@ -176,11 +197,16 @@ class SagaOrchestrator(BaseRepository):
             row = conn.execute("SELECT * FROM saga_state WHERE id = ?", (saga_id,)).fetchone()
         if not row:
             return None
+        try:
+            completed = json.loads(row["completed"]) if "completed" in row.keys() else []  # noqa: SIM118 — sqlite3.Row has no __contains__; .keys() required
+        except (ValueError, TypeError):
+            completed = []
         return {
             "id": row["id"],
             "saga_id": row["saga_id"],
             "context": json.loads(row["context"]),
             "steps": json.loads(row["steps"]),
+            "completed": completed,
             "status": row["status"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],

@@ -19,6 +19,7 @@ Usage::
 
 from __future__ import annotations
 
+import math
 import threading
 from dataclasses import dataclass
 from enum import Enum
@@ -61,7 +62,7 @@ class CostAnomaly:
     anomaly_type: CostAnomalyType
     agent_id: str
     detail: str
-    severity: str = "high"
+    severity: ErrorSeverity = ErrorSeverity.HIGH
 
 
 class CostAttribution:
@@ -75,16 +76,20 @@ class CostAttribution:
         self,
         budget_per_agent: dict[str, float] | None = None,
         spike_threshold: float = 10.0,
+        expected_providers: set[str] | None = None,
     ) -> None:
         self._lock = threading.RLock()
         self._records: list[CostRecord] = []
         self._budgets: dict[str, float] = dict(budget_per_agent or {})
         self._spike_threshold = spike_threshold
+        self._expected_providers = set(expected_providers) if expected_providers is not None else None
 
     # -- recording -------------------------------------------------------
 
     def record(self, rec: CostRecord) -> list[CostAnomaly]:
         """Append a cost record and return anomalies it triggered."""
+        if not math.isfinite(rec.cost_usd):
+            raise CostAttributionError("Cost must be finite", context={"agent_id": rec.agent_id, "cost": rec.cost_usd})
         if rec.cost_usd < 0:
             raise CostAttributionError("Cost cannot be negative", context={"agent_id": rec.agent_id, "cost": rec.cost_usd})
         with self._lock:
@@ -103,6 +108,15 @@ class CostAttribution:
                     f"spike threshold {self._spike_threshold}"
                 ),
             ))
+        if self._expected_providers is not None:
+            provider = rec.model_id.split("/", 1)[0].split(":", 1)[0] if rec.model_id else ""
+            if provider not in self._expected_providers:
+                anomalies.append(CostAnomaly(
+                    anomaly_type=CostAnomalyType.UNEXPECTED_PROVIDER,
+                    agent_id=rec.agent_id,
+                    detail=f"provider {provider!r} not in expected {sorted(self._expected_providers)}",
+                    severity=ErrorSeverity.MEDIUM,
+                ))
         budget = self._budgets.get(rec.agent_id)
         if budget is not None:
             agent_total = sum(
@@ -181,6 +195,10 @@ class CostAttribution:
 
     def set_budget(self, agent_id: str, budget_usd: float) -> None:
         """Set or replace the USD budget for an agent."""
+        if not math.isfinite(budget_usd):
+            raise CostAttributionError("Budget must be finite", context={"agent_id": agent_id})
+        if budget_usd < 0:
+            raise CostAttributionError("Budget cannot be negative", context={"agent_id": agent_id, "budget": budget_usd})
         with self._lock:
             self._budgets[agent_id] = budget_usd
 

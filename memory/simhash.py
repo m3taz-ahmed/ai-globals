@@ -35,10 +35,15 @@ def _token_hash(token: str) -> int:
 
 
 def compute_simhash(text: str) -> str:
-    """Compute a 64-bit SimHash for the given text."""
+    """Compute a 64-bit SimHash for the given text.
+
+    Tokenless input (empty / punctuation-only / single chars) has no
+    signal — returns "" (empty fingerprint) instead of the all-zero hash,
+    so short texts do not all collide as "duplicates".
+    """
     tokens = _canonical_tokens(text)
     if not tokens:
-        return "0" * 16
+        return ""
     weights: list[int] = [0] * _SIMHASH_BITS
     for token in tokens:
         h = _token_hash(token)
@@ -52,8 +57,16 @@ def compute_simhash(text: str) -> str:
     return f"{result:016x}"
 
 
+def _valid_hash(value: str) -> bool:
+    return isinstance(value, str) and len(value) == 16 and all(
+        c in "0123456789abcdef" for c in value.lower()
+    )
+
+
 def hamming_distance(h1: str, h2: str) -> int:
     """Compute Hamming distance between two hex SimHash strings."""
+    if not _valid_hash(h1) or not _valid_hash(h2):
+        raise ValueError(f"Invalid SimHash value: {h1!r} / {h2!r}")
     v1 = int(h1, 16)
     v2 = int(h2, 16)
     return bin(v1 ^ v2).count("1")
@@ -85,8 +98,12 @@ class SimHashIndex:
     ) -> bool:
         """Check if text is a near-duplicate of any existing entry."""
         new_hash = compute_simhash(text)
+        if not new_hash:
+            return False
         for eid, existing in self._entries.items():
             if exclude_self and eid == entry_id:
+                continue
+            if not _valid_hash(existing):
                 continue
             if hamming_distance(new_hash, existing) <= self.threshold:
                 return True
@@ -98,8 +115,12 @@ class SimHashIndex:
         """Return IDs of all near-duplicate entries."""
         new_hash = compute_simhash(text)
         dupes: list[str] = []
+        if not new_hash:
+            return dupes
         for eid, existing in self._entries.items():
             if exclude_self and eid == entry_id:
+                continue
+            if not _valid_hash(existing):
                 continue
             if hamming_distance(new_hash, existing) <= self.threshold:
                 dupes.append(eid)
@@ -121,8 +142,18 @@ class SimHashIndex:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SimHashIndex:
-        idx = cls(threshold=data.get("threshold", 3))
-        idx._entries = dict(data.get("entries", {}))
+        if not isinstance(data, dict):
+            raise ValueError("SimHashIndex data must be a mapping")
+        try:
+            threshold = int(data.get("threshold", 3))
+        except (TypeError, ValueError):
+            threshold = 3
+        entries = data.get("entries", {})
+        if not isinstance(entries, dict):
+            raise ValueError("SimHashIndex 'entries' must be a mapping")
+        clean = {str(k): str(v) for k, v in entries.items() if _valid_hash(str(v))}
+        idx = cls(threshold=threshold)
+        idx._entries = clean
         return idx
 
 

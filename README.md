@@ -4,8 +4,8 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.10.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.10.0">
-    <img src="https://img.shields.io/badge/Tests-3753%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3753 passed">
+    <img src="https://img.shields.io/badge/Version-5.10.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.10.1">
+    <img src="https://img.shields.io/badge/Tests-3865%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3865 passed">
     <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
@@ -87,9 +87,9 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 108 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 109 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
-├── aizee_mcp/                # MCP server (36 tools, 3 resources)
+├── aizee_mcp/                # MCP server (84 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
 ├── skills/                  # 110 persona + lord skills
 ├── workflows/               # 54 trigger-based execution protocols
@@ -140,7 +140,7 @@ aizee memory search "docker" # Full-text + vector search
 ```bash
 ruff check .                 # 0 warnings
 mypy                         # Strict typing, 345 files
-pytest -q                    # 3561 tests, 95% coverage
+pytest -q                    # 3865 tests, 95% coverage
 python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 ```
 
@@ -148,6 +148,20 @@ python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
 
 ---
+
+## What's New in v5.10.1
+
+### Security Hardening + Architecture Cleanup + Docs Sync
+- **SSRF protection (A2A adapters):** IPv4 + IPv6 private/reserved IP blocking, DNS resolution re-check, redirect confinement for both `launch()` and `poll()`.
+- **RBAC fail-closed:** `AIZEE_RBAC_STRICT=1` denies admin-required tools when no roles are set (non-admin tools stay allowed).
+- **Audit fail-closed:** `AIZEE_AUDIT_STRICT` defaults to `"1"` (raise on write failure); `=0` for fail-open.
+- **MCP client env allowlist:** `_build_spawn_env()` now uses a default allowlist (essential + AIZEE_* + common API key prefixes); `AIZEE_MCP_ENV_PASSTHROUGH=1` for full inherit.
+- **Supply chain:** all GitHub Actions pinned by 40-char SHA across release/security/supply-chain/validate workflows; pip-audit/bandit/build/twine version-pinned.
+- **Architecture:** `CompiledPipeline` deleted (orphaned), `Kernel`/`KernelBuilder` exported, `KernelBuilder.with_probity()` added, `JsonFileStorage` uses `RLock` + atomic writes, `_BoundedThreadingHTTPServer` for dashboard.
+- **Performance:** telemetry `summary()` tail-read with `deque(maxlen=...)`, metrics `_quantile` accepts pre-sorted values, learning loop batch persist + `flush()`.
+- **Coverage:** `fail_under` raised from 80% → 95% across `pyproject.toml`, CLI, eval harness, and all CI workflows.
+- **Tests:** new `aizee_mcp/tests/` package with MCP command injection tests; 3865 tests total.
+- **Docs:** counts synced (109 modules / 110 skills / 54 workflows / 197 tech-stack / 3865 tests), stale 80% references fixed, garbled tree characters fixed.
 
 ## What's New in v5.10.0
 
@@ -203,7 +217,7 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 - **3 Critical fixes:** k8s NetworkPolicy egress (`to: []` → allow HTTPS), `memory_decay` missing from schema contract, `mcp_firewall.yaml` default_action silently ignored.
 - **3 High fixes:** missing `runtime/__init__.py` exports (12), probity normalization, constitution regex.
 - **5 Medium fixes:** source length validation, weight validation, LazyImport errors, priority parsing, FTS5 sanitization.
-- **Quality gates:** ruff PASS, mypy PASS (345 files), 3561 tests collected, validate-globals PASS, sync_docs PASS.
+- **Quality gates:** ruff PASS, mypy PASS (345 files), 3865 tests collected, validate-globals PASS, sync_docs PASS.
 - **Infra fixes (this release):** eval/harness `--fix` side-effect removed + mypy coverage unified, KernelBuilder memory wiring, dashboard X-Forwarded-For + env unification, config project-root shadowing fixed, budget save robustness, memory watch collision fix.
 
 ## What's New in v5.7.0 — Implementation Plan Remediation (8 workstreams, 40+ items)
@@ -426,7 +440,7 @@ The installer auto-symlinks these to the correct global locations.
 
 | Server | Purpose | Requires |
 | :--- | :--- | :--- |
-| `aizee` | Core OS tools (36 tools) | Python |
+| `aizee` | Core OS tools (84 tools) | Python |
 | `graphify` | Codebase knowledge graph | Python + graphify |
 | `context7` | Live library documentation | Node.js 18+ |
 | `upwork` | Upwork job search + proposals | Node.js + OAuth |
@@ -506,7 +520,7 @@ Settings persist to `state/settings.json` (gitignored, survives updates). Schema
 
 - **Core:** Pure Python 3.10+ (no Node.js required for core OS)
 - **Memory:** SQLite + FTS5 + optional SentenceTransformers vectors
-- **MCP:** FastMCP server with 36 tools
+- **MCP:** FastMCP server with 84 tools
 - **Dashboard:** Python stdlib HTTP server + SQLite
 - **Knowledge graph:** graphify (optional)
 - **Dependencies:** pyyaml, pydantic, rich, cryptography, numpy, turbovec

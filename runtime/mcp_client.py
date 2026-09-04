@@ -201,9 +201,13 @@ def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
 
     Rejects:
     - Shell metacharacters in command or args (injection prevention).
-    - Commands that are not in the allowlist (when basename doesn't match).
+    - Commands whose basename is not in the allowlist — unless
+      ``AIZEE_MCP_ALLOW_UNLISTED=1`` is set (fail-closed by default;
+      previously warn-only, which executed unlisted binaries).
     - Absolute paths to non-standard locations (must resolve via PATH or be in allowlist).
     """
+    import os as _os
+
     if not cmd or not isinstance(cmd, str):
         raise ValueError(f"MCP command is empty or not a string: {cmd!r}")
     # Check for shell metacharacters in command
@@ -217,12 +221,10 @@ def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
             raise ValueError(f"MCP arg contains shell metacharacters: {arg!r}")
     # Extract basename for allowlist check
     cmd_basename = Path(cmd).name.lower()
-    if cmd_basename not in _ALLOWED_MCP_COMMANDS:
-        import logging
-        logging.getLogger(__name__).warning(
-            "MCP command %r is not in the allowlist %s — proceeding but "
-            "consider adding it to _ALLOWED_MCP_COMMANDS for production safety.",
-            cmd, sorted(_ALLOWED_MCP_COMMANDS),
+    if cmd_basename not in _ALLOWED_MCP_COMMANDS and _os.environ.get("AIZEE_MCP_ALLOW_UNLISTED") != "1":
+        raise ValueError(
+            f"MCP command {cmd!r} is not in the allowlist {sorted(_ALLOWED_MCP_COMMANDS)} — "
+            "refusing to spawn. Set AIZEE_MCP_ALLOW_UNLISTED=1 to permit custom binaries."
         )
 
 
@@ -265,10 +267,16 @@ class McpClient:
         try:
             return bool(self._settings.is_mcp_enabled(self.server_name))
         except Exception:
-            # Fail-open on settings error: never block MCP because settings
-            # could not be read. The settings manager itself is fail-safe
-            # (corrupt file → defaults), so this is a defensive backstop.
-            return True
+            # Fail-closed on settings error: if settings cannot be read,
+            # block the MCP server rather than allowing it without
+            # explicit user consent. The settings manager itself is
+            # fail-safe (corrupt file → defaults), so this is a defensive
+            # backstop for unexpected errors.
+            _logger.warning(
+                "MCP settings check failed for %s — fail-closed (disabled)",
+                self.server_name, exc_info=True,
+            )
+            return False
 
     def is_enabled(self) -> bool:
         """Public check: is this MCP server enabled in dashboard settings?"""
@@ -276,11 +284,18 @@ class McpClient:
 
     def _load_config(self) -> dict[str, Any]:
         for settings_path in [self.os_root / ".claude" / "settings.json", self.os_root / "aizee_mcp" / "config.json"]:
-            if settings_path.exists():
+            try:
+                if not settings_path.exists():
+                    continue
                 data = cast(dict[str, Any], json.loads(settings_path.read_text(encoding="utf-8")))
-                mcp_servers = cast(dict[str, Any], data.get("mcpServers") or data.get("mcp_servers", {}))
-                if self.server_name in mcp_servers:
-                    return cast(dict[str, Any], mcp_servers[self.server_name])
+            except (OSError, ValueError, UnicodeDecodeError):
+                continue
+            if not isinstance(data, dict):
+                continue
+            mcp_servers = cast(dict[str, Any], data.get("mcpServers") or data.get("mcp_servers", {}))
+            if isinstance(mcp_servers, dict) and self.server_name in mcp_servers:
+                cfg = mcp_servers[self.server_name]
+                return cast(dict[str, Any], cfg) if isinstance(cfg, dict) else {}
         return {}
 
     def _spawn(self) -> subprocess.Popen[str]:
@@ -302,8 +317,41 @@ class McpClient:
         )
 
     def _build_spawn_env(self) -> dict[str, str]:
-        """Build environment for the child MCP server process."""
-        env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
+        """Build environment for the child MCP server process.
+
+        Uses a **default allowlist** of essential system + aiZee + common API
+        key vars to prevent secret leakage from the parent env. Set
+        ``AIZEE_MCP_ENV_ALLOWLIST`` to a comma-separated list of additional
+        env var names to pass through. Set ``AIZEE_MCP_ENV_PASSTHROUGH=1`` to
+        inherit the full parent environment (not recommended for production).
+        """
+        # Essential system + aiZee vars always allowed.
+        essential = {
+            "AIZEE_ROOT", "PATH", "HOME", "USERPROFILE", "SYSTEMROOT",
+            "TEMP", "TMP", "PYTHONPATH", "PYTHONIOENCODING",
+            "LANG", "LC_ALL", "LC_CTYPE",
+        }
+        # Common API key prefixes that MCP servers may need.
+        api_key_patterns = (
+            "AIZEE_", "OPENAI_", "ANTHROPIC_", "GOOGLE_", "AZURE_",
+            "AWS_", "GITHUB_", "GITLAB_", "DATABASE_", "REDIS_",
+        )
+        # Passthrough mode: inherit full parent env (dev only).
+        if os.environ.get("AIZEE_MCP_ENV_PASSTHROUGH") == "1":
+            env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
+        else:
+            # Default allowlist mode: only pass essential + AIZEE_* + common API keys.
+            allowed = set(essential)
+            # Add vars matching API key prefixes.
+            for key in os.environ:
+                if any(key.startswith(p) for p in api_key_patterns):
+                    allowed.add(key)
+            # Add user-specified additional vars.
+            allowlist_raw = os.environ.get("AIZEE_MCP_ENV_ALLOWLIST", "")
+            if allowlist_raw:
+                allowed.update(k.strip() for k in allowlist_raw.split(",") if k.strip())
+            env = {k: v for k, v in os.environ.items() if k in allowed}
+            env["AIZEE_ROOT"] = str(self.os_root)
         extra_path = _user_script_dirs()
         if extra_path:
             env["PATH"] = os.pathsep.join([*extra_path, env.get("PATH", "")])
@@ -324,15 +372,30 @@ class McpClient:
         req = json.dumps(payload)
         proc.stdin.write(req + "\n")
         proc.stdin.flush()
-        result = self._read_stdout(proc.stdout, timeout)
-        if isinstance(result, Exception):
-            raise result
-        if not result:
-            raise RuntimeError("MCP server closed stdout")
-        return cast(dict[str, Any], json.loads(result))
+        # Tolerate up to 5 non-JSON log lines on stdout (MCP-spec-violating
+        # but common); the first JSON object line wins.
+        last_error: str = "MCP server closed stdout"
+        for _ in range(5):
+            result = self._read_stdout(proc.stdout, timeout)
+            if isinstance(result, Exception):
+                raise result
+            if not result or not result.strip():
+                raise RuntimeError("MCP server closed stdout")
+            try:
+                return cast(dict[str, Any], json.loads(result))
+            except (ValueError, UnicodeDecodeError) as exc:
+                last_error = f"MCP server sent non-JSON stdout: {exc}"
+                _logger.debug("Skipping non-JSON MCP stdout line: %.100r", result)
+                continue
+        raise RuntimeError(last_error)
 
     def _read_stdout(self, stdout: Any, timeout: float) -> str | Exception:
-        """Read a line from stdout with timeout via a daemon thread."""
+        """Read a line from stdout with timeout via a daemon thread.
+
+        NOTE: on timeout the reader thread stays blocked in readline() until
+        the process is terminated (callers release → terminate → EOF wakes
+        the thread). Daemon threads never block interpreter exit.
+        """
         q: queue.Queue[str | Exception] = queue.Queue()
         def _read() -> None:
             try:
@@ -445,6 +508,7 @@ class McpClient:
         """Release the cached process for this server/root."""
         with _PROC_LOCK:
             self._release_locked()
+            _SEND_LOCKS.pop(self._key, None)
 
     async def async_call_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """Async version of call_tool using asyncio.subprocess."""
@@ -473,10 +537,19 @@ class McpClient:
 
     async def _async_spawn(self) -> asyncio.subprocess.Process | dict[str, Any]:
         """Spawn async subprocess. Returns process or error dict."""
-        cmd = self.config["command"]
+        cmd = self.config.get("command", "")
         args = self.config.get("args", [])
+        if not isinstance(args, list):
+            return {"ok": False, "error": "MCP server 'args' must be a list"}
+        try:
+            _validate_mcp_command(cmd, args)
+        except ValueError as exc:
+            return {"ok": False, "error": f"MCP command rejected: {exc}"}
         _load_secrets_once()
-        env = {"AIZEE_ROOT": str(self.os_root), **os.environ}
+        env = self._build_spawn_env()
+        resolved = shutil.which(cmd, path=env.get("PATH"))
+        if resolved:
+            cmd = resolved
         try:
             return await asyncio.create_subprocess_exec(
                 cmd, *args, stdin=asyncio.subprocess.PIPE,

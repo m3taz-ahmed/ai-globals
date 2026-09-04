@@ -13,6 +13,7 @@ attribution records without storing PII in the clear.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import threading
@@ -42,8 +43,14 @@ class CompositeIdentity:
     """Dual-principal identity pairing an agent with its instructing human.
 
     The signature is a SHA-256 over ``agent.principal_id`` +
-    ``human.principal_id`` + ``session_id`` (sorted-key JSON), so equivalent
-    identities produce identical signatures regardless of field ordering.
+    ``human.principal_id`` + ``session_id`` + ``tenant_id`` (sorted-key
+    JSON), so equivalent identities produce identical signatures
+    regardless of field ordering.
+
+    SECURITY NOTE: unsalted SHA-256 is deterministic and linkable —
+    identical inputs always yield identical signatures, so signatures
+    can be correlated across stores. Kept unchanged to avoid breaking
+    stored ids; do not use the signature as a secrecy mechanism.
     """
 
     agent: Principal
@@ -75,6 +82,7 @@ class CompositeIdentity:
                 "agent_id": self.agent.principal_id,
                 "human_id": self.human.principal_id,
                 "session_id": self.session_id,
+                "tenant_id": self.tenant_id,
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -137,7 +145,7 @@ class CompositeIdentityRegistry:
         return {
             "signature": signature,
             "action": action,
-            "details": dict(details),
+            "details": copy.deepcopy(details),
             "principals": principals,
             "session_id": identity.session_id if identity else "",
             "tenant_id": identity.tenant_id if identity else "",

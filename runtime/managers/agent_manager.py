@@ -31,14 +31,24 @@ class AgentManager:
         extra_lords: list[str] = list(lords or [])
         if persona in ("auto", "", "generalist"):
             prompt = " ".join([agent_id, *scope])
-            result = self.persona.detect_multiple(prompt)
-            personas = result["personas"]
-            extra_lords = sorted(set(extra_lords + result["lords"]))
+            try:
+                result = self.persona.detect_multiple(prompt)
+            except Exception as exc:
+                return {"ok": False, "error": f"Persona detection failed: {exc}"}
+            personas = result.get("personas") or []
+            if not isinstance(personas, list) or not personas:
+                return {"ok": False, "error": "Persona detection returned no personas"}
+            extra_lords = sorted(set(extra_lords + list(result.get("lords") or [])))
         else:
             personas = [p.strip() for p in persona.split(",") if p.strip()]
             if not personas:
                 return {"ok": False, "error": "No persona provided"}
-        agent = self.pool.register(agent_id, personas, scope, project_root, lords=extra_lords)
+        if self.pool.get(agent_id) is not None:
+            return {"ok": False, "error": f"Agent '{agent_id}' already exists"}
+        try:
+            agent = self.pool.register(agent_id, personas, scope, project_root, lords=extra_lords)
+        except ValueError as exc:
+            return {"ok": False, "error": str(exc)}
         self.health.register(agent_id)
         self.health.heartbeat(agent_id)
         return {

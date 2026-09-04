@@ -11,6 +11,25 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Parse an integer input defensively: invalid/empty → fallback, clamped to
+// [min, max], negatives rejected unless min < 0. (Raw `parseInt(v)||0` used
+// to coerce garbage into live budget/threshold zeros.)
+function clampInt(value, fallback, min, max) {
+  let n = parseInt(value, 10);
+  if (!Number.isFinite(n)) n = fallback;
+  if (n < min) n = min;
+  if (n > max) n = max;
+  return n;
+}
+
+function clampFloat(value, fallback, min, max) {
+  let n = parseFloat(value);
+  if (!Number.isFinite(n)) n = fallback;
+  if (n < min) n = min;
+  if (n > max) n = max;
+  return n;
+}
+
 // Navigation
 function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -975,22 +994,27 @@ function collectSettingsData() {
       const field = el.dataset.field;
       if (!budget[scope]) budget[scope] = {};
       let val = el.value;
-      if (['max_tokens', 'max_calls'].includes(field)) val = parseInt(val, 10) || 0;
-      else if (['max_cost_usd', 'finalization_reserve', 'token_weight_input', 'token_weight_output'].includes(field)) val = parseFloat(val) || 0;
+      if (['max_tokens', 'max_calls'].includes(field)) val = clampInt(val, 0, 0, 100000000);
+      else if (['max_cost_usd', 'finalization_reserve', 'token_weight_input', 'token_weight_output'].includes(field)) val = clampFloat(val, 0, 0, 1000000000);
       else if (field === 'fallback_model') val = val.trim() || null;
       budget[scope][field] = val;
     });
     result.budget = budget;
   } else if (section === 'guardian') {
-    const guardian = { rules: {}, kill_switch: {} };
+    // Preserve server-side rule sets: the form edits scalar fields only —
+    // sending `rules: {}` would wipe them (server deep-merges, but never
+    // rely on that; send back what we loaded).
+    const priorGuardian = (typeof settingsData !== 'undefined' && settingsData.guardian) || {};
+    const priorFirewall = (typeof settingsData !== 'undefined' && settingsData.mcp_firewall) || {};
+    const guardian = { rules: priorGuardian.rules || {}, kill_switch: {} };
     body.querySelectorAll('[data-guardian-field]').forEach(el => {
       guardian[el.dataset.guardianField] = el.value;
     });
     body.querySelectorAll('[data-killswitch]').forEach(el => {
-      guardian.kill_switch[el.dataset.killswitch] = parseInt(el.value, 10) || 0;
+      guardian.kill_switch[el.dataset.killswitch] = clampInt(el.value, 0, 0, 1000000);
     });
     result.guardian = guardian;
-    const firewall = { rules: {} };
+    const firewall = { rules: priorFirewall.rules || {} };
     body.querySelectorAll('[data-firewall-field]').forEach(el => {
       firewall[el.dataset.firewallField] = el.value;
     });
@@ -1002,7 +1026,7 @@ function collectSettingsData() {
     result.policy = policy;
     const loop = {};
     body.querySelectorAll('[data-loop-field]').forEach(el => {
-      loop[el.dataset.loopField] = parseInt(el.value, 10) || 1;
+      loop[el.dataset.loopField] = clampInt(el.value, 1, 1, 100000);
     });
     result.loop_detector = loop;
   } else if (section === 'injection_defense') {
@@ -1011,7 +1035,7 @@ function collectSettingsData() {
       inj[el.dataset.injection] = el.checked;
     });
     body.querySelectorAll('[data-injection-num]').forEach(el => {
-      inj[el.dataset.injectionNum] = parseInt(el.value, 10) || 0;
+      inj[el.dataset.injectionNum] = clampInt(el.value, 0, 0, 1000000);
     });
     result.injection_defense = inj;
   } else if (section === 'plugins') {
@@ -1032,7 +1056,7 @@ function collectSettingsData() {
     const dash = {};
     body.querySelectorAll('[data-dash-field]').forEach(el => {
       const f = el.dataset.dashField;
-      dash[f] = (f === 'bind_host') ? el.value : (parseInt(el.value, 10) || 0);
+      dash[f] = (f === 'bind_host') ? el.value.trim() : clampInt(el.value, 1, 1, 1000000);
     });
     result.dashboard = dash;
     const telemetry = {};
@@ -1040,12 +1064,12 @@ function collectSettingsData() {
       telemetry[el.dataset.telemetryBool] = el.checked;
     });
     body.querySelectorAll('[data-telemetry-num]').forEach(el => {
-      telemetry[el.dataset.telemetryNum] = parseInt(el.value, 10) || 1;
+      telemetry[el.dataset.telemetryNum] = clampInt(el.value, 1, 1, 1000000);
     });
     result.telemetry = telemetry;
     const audit = {};
     body.querySelectorAll('[data-audit-field]').forEach(el => {
-      audit[el.dataset.auditField] = parseInt(el.value, 10) || 0;
+      audit[el.dataset.auditField] = clampInt(el.value, 0, 0, 1000000);
     });
     result.audit = audit;
     const memory = {};
@@ -1105,14 +1129,24 @@ async function saveSettings() {
 async function resetSettingsSection() {
   if (!confirm('Reset this section to defaults? This cannot be undone.')) return;
   const subSections = SETTINGS_SECTION_MAP[currentSettingsSection] || [currentSettingsSection];
+  const failed = [];
   for (const sub of subSections) {
-    await fetchJson('/api/settings/reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section: sub }),
-    });
+    try {
+      const res = await fetchJson('/api/settings/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: sub }),
+      });
+      if (res && res.error) failed.push(sub + ': ' + res.error);
+    } catch (e) {
+      failed.push(sub + ': ' + (e && e.message ? e.message : e));
+    }
   }
-  showSettingsToast('Section reset to defaults.', false);
+  if (failed.length > 0) {
+    showSettingsToast('Reset partially failed: ' + failed.join('; '), true);
+  } else {
+    showSettingsToast('Section reset to defaults.', false);
+  }
   await renderSettingsSection(currentSettingsSection);
 }
 

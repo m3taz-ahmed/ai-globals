@@ -251,6 +251,8 @@ class AdmissionGate:
         R9: if deletion status changes, future promotions from affected
         lineage are blocked. ACL must be allow; deletion must be not_deleted.
         """
+        if candidate.decision not in ("promote", "block"):
+            raise ValueError(f"Invalid promotion decision: {candidate.decision!r}")
         if candidate.deletion_state == "deleted":
             return "block"
         if candidate.acl != "allow":
@@ -304,7 +306,7 @@ class AdmissionGate:
                 passed, reason = fn(ctx)
             except Exception as exc:
                 _logger.debug("admission check %s failed: %s", name, exc, exc_info=True)
-                passed, reason = False, f"check_{name}_exception:{exc}"
+                passed, reason = False, f"check_{name}_exception:{type(exc).__name__}"
             if not passed:
                 return f"check_{name}_failed:{reason}"
         return None
@@ -341,7 +343,12 @@ class AdmissionGate:
 
     @property
     def records(self) -> list[AdmissionRecord]:
-        """Admitted records only (R1: side effects blocked on reject)."""
+        """Admitted records only (R1: side effects blocked on reject).
+
+        NOTE: despite the generic name, this returns admitted-only records.
+        Use :attr:`all_records` for every decision (admitted + rejected).
+        Kept as-is for backward compatibility.
+        """
         return [r for r in self._records if r.admitted]
 
     @property

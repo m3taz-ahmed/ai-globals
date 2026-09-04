@@ -7,8 +7,8 @@ rules:
   # --- Block dangerous shell commands ---
   - kind: forbidCommandPattern
     name: block-rm-rf
-    pattern: "rm\\s+-rf\\s+/"
-    message: "rm -rf on root filesystem is forbidden"
+    pattern: "rm\\s+-[a-z]*(rf|fr)[a-z]*\\s"
+    message: "rm -rf/-fr is forbidden — use explicit file removal"
 
   - kind: forbidCommandPattern
     name: block-force-push
@@ -58,7 +58,7 @@ rules:
 
   - kind: forbidContentPattern
     name: block-subprocess-shell-true
-    pattern: "shell\\s*=\\s*True"
+    pattern: "shell\\s*=\\s*(True|1|['\"]True['\"]|['\"]1['\"])"
     message: "shell=True is forbidden — pass command lists instead"
 
   - kind: forbidContentPattern

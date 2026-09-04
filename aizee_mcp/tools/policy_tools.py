@@ -8,7 +8,7 @@ from typing import Any
 
 from aizee_mcp._compat import FastMCP
 from runtime.astryx import AstryxLinter
-from runtime.guardian import ActionRequest
+from runtime.guardian import ActionRequest, DecisionStatus
 from runtime.metrics import format_metrics
 
 from .common import _MAX_INPUT_LENGTH, is_safe_name, kernel
@@ -20,17 +20,28 @@ def register_policy_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def check_policy(action: str, args: dict[str, Any] | None = None) -> str:
         """Check if an action is allowed by policy and budget."""
-        result = kernel().act(action, **(args or {}))
+        # Strip caller-supplied approval claims: MCP callers must never
+        # self-approve through the Policy ASK gate (resolve_approval honors
+        # `approved=True`). Approvals come only from the approval workflow.
+        clean_args = dict(args or {})
+        clean_args.pop("approved", None)
+        result = kernel().act(action, **clean_args)
         return json.dumps(result, indent=2, default=str)
 
     @mcp.tool()
     def analyze_budget() -> str:
         """Analyze current token and cost consumption across all budgets and scopes."""
         k = kernel()
+        budgets: dict[str, Any] = {}
+        for key, val in k.budget.budgets.items():
+            try:
+                budgets[str(key)] = val.__dict__
+            except AttributeError:
+                budgets[str(key)] = {"repr": str(val)}
         return json.dumps(
             {
                 "usage": k.budget.usage,
-                "budgets": {key: val.__dict__ for key, val in k.budget.budgets.items()},
+                "budgets": budgets,
             },
             indent=2,
             default=str,
@@ -44,9 +55,11 @@ def register_policy_tools(mcp: FastMCP) -> None:
         req = ActionRequest(tool=tool, attributes=attributes or {})
         k = kernel()
         decision = k.guardian.authorize(req)
+        # "ok" means the guardian allows the action (explicit ALLOW), not
+        # merely "differs from the configured default" as before.
         return json.dumps(
             {
-                "ok": decision.status != k.guardian.config.default_decision,
+                "ok": decision.status == DecisionStatus.ALLOW,
                 "status": decision.status,
                 "rule": decision.rule_name,
                 "reason": decision.reason,
@@ -74,6 +87,14 @@ def register_policy_tools(mcp: FastMCP) -> None:
         """Lint Python code using the Astryx AST linter."""
         if not isinstance(code, str) or not code or len(code) > _MAX_INPUT_LENGTH:
             return json.dumps({"ok": False, "error": "Invalid code"})
+        try:
+            max_lines = max(1, min(int(max_lines), 5000))
+        except (TypeError, ValueError):
+            max_lines = 50
+        try:
+            max_params = max(1, min(int(max_params), 50))
+        except (TypeError, ValueError):
+            max_params = 7
         linter = AstryxLinter(max_lines=max_lines, max_params=max_params)
         findings = linter.lint_text(code)
         return json.dumps({"ok": True, "findings": [finding.__dict__ for finding in findings]}, indent=2)

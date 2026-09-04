@@ -665,7 +665,8 @@ class OsvDevClient:
 
     Uses urllib (stdlib) to query https://api.osv.dev/v1/query. Results
     are cached for 1 hour to avoid rate limiting. If the API is
-    unreachable, returns an empty list (fail-open for availability).
+    unreachable, raises ``SupplyChainGuardError`` (fail-closed: a network
+    failure must NOT be silently treated as "no vulnerabilities").
     """
 
     CACHE_TTL_SECONDS: int = 3600  # 1 hour
