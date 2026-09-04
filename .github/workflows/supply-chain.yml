@@ -53,7 +53,7 @@ jobs:
           output-file: sbom.spdx.json
           artifact-name: aizee-sbom
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: aizee-sbom
           path: sbom.spdx.json
@@ -76,7 +76,7 @@ jobs:
           cosign sign-blob --yes sbom.spdx.json --output-certificate sbom.pem \
             --output-signature sbom.sig
       - name: Upload signature
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: aizee-sbom-signature
           path: |
