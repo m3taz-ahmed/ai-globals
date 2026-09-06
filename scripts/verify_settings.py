@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""aiZee settings verification — confirms settings are applied even when dashboard is closed.
+"""aiZee settings verification - confirms settings are applied even when dashboard is closed.
 
 This script verifies the full settings-persistence chain:
 1. settings.json exists and is valid JSON with correct schema version.
@@ -130,7 +130,7 @@ def verify_daemon(root: Path) -> dict[str, Any]:
         result["details"] = status
         result["ok"] = status.get("running", False)
         if not result["ok"]:
-            result["error"] = "Daemon not running — settings may not sync when dashboard is closed"
+            result["error"] = "Daemon not running - settings may not sync when dashboard is closed"
     except Exception as exc:
         result["error"] = f"Cannot check daemon status: {exc}"
     return result
@@ -238,9 +238,9 @@ def main(argv: list[str] | None = None) -> int:
         print()
         print(f"  Summary: {report['summary']['passed']}/{report['summary']['total']} checks passed")
         if report["all_ok"]:
-            print("  [OK] All settings verified — dashboard can be closed safely.")
+            print("  [OK] All settings verified - dashboard can be closed safely.")
         else:
-            print("  [WARN] Some checks failed — settings may not persist when dashboard is closed.")
+            print("  [WARN] Some checks failed - settings may not persist when dashboard is closed.")
         print("=" * 60)
 
     return 0 if report["all_ok"] else 1

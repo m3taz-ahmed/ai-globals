@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TwitterPlugin for aiZee — proxies to external MCP server.
+"""TwitterPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @twitter-api-v2/mcp
 Required env vars: TWITTER_BEARER_TOKEN
@@ -28,7 +28,7 @@ class TwitterPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

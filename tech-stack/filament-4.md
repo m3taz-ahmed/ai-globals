@@ -22,5 +22,5 @@
 18. [REQ] Schema Separation Pattern: Extract Forms/Tables/Infolists to dedicated classes (PostForm::configure(), PostsTable::configure()) keeping Resource files lean. Adopt for Resources with >50 lines of schema code.
 19. [REQ] Sub-Navigation Pattern: getRecordSubNavigation() with tabbed views (View, Edit, Comments) for record-centric workflows. Context-aware navigation per record state.
 20. [REQ] Global Search Integration: getGlobalSearchEloquentQuery(), getGloballySearchableAttributes(), getGlobalSearchResultDetails() for cross-resource search. Required for admin panels with >5 resources.
-21. [REQ] Scoped Managers (Octane-safe): pp()->scoped() for stateful services (CuratorManager, GlideManager) creating fresh instances per request. Prevents state leakage in Octane/Swoole long-running processes.
+21. [REQ] Scoped Managers (Octane-safe): app()->scoped() for stateful services (CuratorManager, GlideManager) creating fresh instances per request. Prevents state leakage in Octane/Swoole long-running processes.
 22. [REQ] Path Generator Strategy: PathGenerator interface with DatePathGenerator/UserPathGenerator/DefaultPathGenerator for pluggable storage path strategies. Use for media plugins with flexible file organization.

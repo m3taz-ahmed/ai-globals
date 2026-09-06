@@ -44,7 +44,7 @@ def _load_admin_required(path: Path = DEFAULT_CONFIG_PATH) -> frozenset[str]:
         return frozenset(str(item) for item in items)
     except Exception as exc:
         _logger.error(
-            "RBAC config load failed (fail-closed): %s — all tools require admin",
+            "RBAC config load failed (fail-closed): %s - all tools require admin",
             exc, exc_info=True,
         )
         # Return a sentinel that makes check_tool_permission deny everything.

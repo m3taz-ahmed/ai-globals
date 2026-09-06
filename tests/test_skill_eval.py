@@ -1,6 +1,6 @@
-"""Tests for runtime/skill_eval.py — self-checking EVAL.md loader.
+"""Tests for runtime/skill_eval.py - self-checking EVAL.md loader.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ class TestParseEvalMd:
 
     def test_parse_no_headings(self) -> None:
         checks = parse_eval_md("1. Some check")
-        assert checks == []  # No category heading → items ignored
+        assert checks == []  # No category heading -> items ignored
 
 
 class TestLoadEvalFile:

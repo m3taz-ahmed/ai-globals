@@ -361,7 +361,7 @@ class SupplyChainGuard:
             path = match.group(1)
             # Take only the top-level crate name (before first ::).
             top = path.split("::")[0]
-            # Skip std/core/alloc — Rust prelude/stdlib crates.
+            # Skip std/core/alloc - Rust prelude/stdlib crates.
             if top in ("std", "core", "alloc", "self", "crate", "super"):
                 continue
             modules.append((top, line_no))
@@ -602,7 +602,7 @@ class TyposquatDetector:
         """Check a package name for typosquatting against known-popular packages."""
         popular = self._popular.get(ecosystem, set())
         if package in popular:
-            return []  # Exact match — legitimate
+            return []  # Exact match - legitimate
         findings: list[TyposquatFinding] = []
         for legit in popular:
             # Edit distance check
@@ -682,7 +682,7 @@ class OsvDevClient:
         """Query OSV.dev for vulnerabilities affecting a package.
 
         Returns a list of advisories. Raises ``SupplyChainGuardError`` on
-        network/parse failure (fail-closed — never silently pass vulnerable
+        network/parse failure (fail-closed - never silently pass vulnerable
         packages when OSV.dev is unreachable).
         """
         import time as _time
@@ -740,7 +740,7 @@ class OsvDevClient:
                     if "CVSS:3" in score_str:
                         sev = "HIGH"
             advisory_id = vuln.get("id", "")
-            # MAL-* advisories are confirmed malicious packages → always CRITICAL
+            # MAL-* advisories are confirmed malicious packages -> always CRITICAL
             if advisory_id.startswith("MAL-"):
                 sev = "CRITICAL"
             advisories.append(VulnerabilityAdvisory(

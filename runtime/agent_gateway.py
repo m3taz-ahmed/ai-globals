@@ -1,4 +1,4 @@
-"""Agent gateway — runtime interception of LLM/MCP requests and responses.
+"""Agent gateway - runtime interception of LLM/MCP requests and responses.
 
 Sits on the request/response path every prompt and tool call traverses.
 Applies pre-LLM guardrails (inspect outbound prompt + tool payloads) and
@@ -6,9 +6,9 @@ post-execution guardrails (inspect generated code + tool responses) before
 they reach the developer or are acted upon.
 
 Each guardrail produces one of three verdicts:
-- ALLOW  — request/response passes unchanged.
-- REDACT — sensitive content removed; request still completes.
-- BLOCK  — request/response rejected entirely.
+- ALLOW  - request/response passes unchanged.
+- REDACT - sensitive content removed; request still completes.
+- BLOCK  - request/response rejected entirely.
 
 Inspired by Fiddler's LLM/MCP gateway pattern: "a policy written in a
 document is not enforcement; controls only hold where they sit on the
@@ -103,7 +103,7 @@ class GuardrailResult:
         )
 
 
-# A guardrail is a callable: context → result.
+# A guardrail is a callable: context -> result.
 GuardrailFn = Callable[[GuardrailContext], GuardrailResult]
 
 

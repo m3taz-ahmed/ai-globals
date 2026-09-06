@@ -1,6 +1,6 @@
-"""Tests for runtime/sarif_emitter.py — SARIF 2.1.0 emission.
+"""Tests for runtime/sarif_emitter.py - SARIF 2.1.0 emission.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ class TestBuildSarif:
         assert len(run["results"]) == 1
         result = run["results"][0]
         assert result["ruleId"] == "missing-title"
-        assert result["level"] == "error"  # critical → error
+        assert result["level"] == "error"  # critical -> error
         assert result["properties"]["aizee"]["severity"] == "critical"
 
     def test_warning_severity(self) -> None:
@@ -113,7 +113,7 @@ class TestBuildSarif:
         ]
         sarif = build_sarif(findings)
         rules = sarif["runs"][0]["tool"]["driver"]["rules"]
-        assert len(rules) == 1  # Same issue type → one rule
+        assert len(rules) == 1  # Same issue type -> one rule
         assert len(sarif["runs"][0]["results"]) == 2  # Two results
 
 

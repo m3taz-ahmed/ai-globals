@@ -46,7 +46,7 @@ class ChatManager:
             fresh_context: If True, create a new isolated session.
             act_fn: Callable for action evaluation (typically kernel.act).
         """
-        # Pre-inference prompt safety gate — block before any processing.
+        # Pre-inference prompt safety gate - block before any processing.
         verdict = self.prompt_gate.evaluate(message)
         if verdict.risk is PromptRisk.BLOCKED:
             return {
@@ -65,7 +65,7 @@ class ChatManager:
         session.add("user", message)
         # Chat messages are user-initiated, so we pass approved=True to skip
         # the ASK prompt (the user already chose to send the message).
-        # The policy engine still evaluates the action — if a rule DENIES
+        # The policy engine still evaluates the action - if a rule DENIES
         # ChatMessage, it will be blocked. The guardian also evaluates
         # write/exec actions triggered by the chat, but ChatMessage itself
         # is treated as read-only (see _READ_ONLY_ACTIONS in PolicyManager).

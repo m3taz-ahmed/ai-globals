@@ -1,4 +1,4 @@
-"""Fine-grained hook lifecycle — granular request/action pipeline hooks.
+"""Fine-grained hook lifecycle - granular request/action pipeline hooks.
 
 Inspired by Fastify's lifecycle hooks (``onRequest``, ``preValidation``,
 ``preHandler``, ``onResponse``, ``onError``) which offer finer control than
@@ -61,7 +61,7 @@ class HookContext:
     stopped: bool = False
 
     def stop(self) -> None:
-        """Mark the lifecycle as stopped — no further phases run."""
+        """Mark the lifecycle as stopped - no further phases run."""
         self.stopped = True
 
     def add_result(self, key: str, value: Any) -> None:
@@ -115,7 +115,7 @@ class HookRegistry:
                 raise HookError(phase.value, str(exc)) from exc
 
     def run_lifecycle(self, action: str, attributes: dict[str, Any] | None = None) -> HookContext:
-        """Run the full normal lifecycle (pre_receive → post_response)."""
+        """Run the full normal lifecycle (pre_receive -> post_response)."""
         ctx = HookContext(action=action, attributes=dict(attributes or {}))
         for phase in _NORMAL_PHASES:
             if ctx.stopped:

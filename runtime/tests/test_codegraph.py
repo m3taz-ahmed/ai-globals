@@ -1,4 +1,4 @@
-"""Tests for runtime/codegraph.py — CodeGraph builder and reachability."""
+"""Tests for runtime/codegraph.py - CodeGraph builder and reachability."""
 
 from __future__ import annotations
 

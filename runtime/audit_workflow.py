@@ -7,10 +7,10 @@ independently, failed phases don't redo completed ones, and phase
 state is persisted for resumption.
 
 Phases (in order):
-1. ``DISCOVERY`` — fetch robots.txt, parse sitemap.xml, build URL frontier
-2. ``CRAWL`` — fetch each URL, parse HTML, extract SEO data
-3. ``MULTIPAGE`` — run cross-page checks (duplicates, chains, orphans)
-4. ``FINALIZE`` — aggregate issues, compute health score, emit report
+1. ``DISCOVERY`` - fetch robots.txt, parse sitemap.xml, build URL frontier
+2. ``CRAWL`` - fetch each URL, parse HTML, extract SEO data
+3. ``MULTIPAGE`` - run cross-page checks (duplicates, chains, orphans)
+4. ``FINALIZE`` - aggregate issues, compute health score, emit report
 
 Usage::
 

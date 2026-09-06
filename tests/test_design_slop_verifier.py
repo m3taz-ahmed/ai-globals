@@ -1,4 +1,4 @@
-"""Tests for runtime.design_slop_verifier — AI-slop design verifier."""
+"""Tests for runtime.design_slop_verifier - AI-slop design verifier."""
 
 from __future__ import annotations
 

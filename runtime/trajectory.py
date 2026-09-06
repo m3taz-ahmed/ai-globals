@@ -8,7 +8,7 @@ attempts without progress) and convergence (intent preserved + proof
 gathered).
 
 This complements ``runtime/audit.py`` (append-only log) by adding
-*run-level* state and *stall detection* — the audit log records what
+*run-level* state and *stall detection* - the audit log records what
 happened, the trajectory records whether the run is converging.
 
 Usage::
@@ -18,7 +18,7 @@ Usage::
     tracker.start_run("run-1", "add login form", boundary="auth module")
     tracker.record_step("run-1", action="write", file="auth.py", status="ok")
     if tracker.is_stalled("run-1"):
-        print("Run stalled — escalate or stop")
+        print("Run stalled - escalate or stop")
 """
 
 from __future__ import annotations

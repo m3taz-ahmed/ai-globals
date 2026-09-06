@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ChatwootPlugin for aiZee — proxies to external MCP server.
+"""ChatwootPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @chatwoot/mcp
 Required env vars: CHATWOOT_API_KEY, CHATWOOT_URL
@@ -28,7 +28,7 @@ class ChatwootPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

@@ -1,4 +1,4 @@
-"""Tests for runtime.dual_llm — dual-LLM pattern for indirect injection."""
+"""Tests for runtime.dual_llm - dual-LLM pattern for indirect injection."""
 
 from __future__ import annotations
 

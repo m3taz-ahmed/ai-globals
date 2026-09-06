@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Skill routing meta-prompt and persona detection v2 (WS-I).
 
-SKILL-W1: Routing meta-prompt — generates a structured meta-prompt that
+SKILL-W1: Routing meta-prompt - generates a structured meta-prompt that
 tells the LLM which skills to activate and how to route the request.
 
-SKILL-W2: Persona detection v2 — improved detection with confidence
+SKILL-W2: Persona detection v2 - improved detection with confidence
 scores, multi-persona support, and ambiguity detection.
 
 Inspired by LLM-based routers (RouteLLM, FrugalGPT) and the persona
@@ -154,7 +154,7 @@ class SkillRouter:
         lines.append(f"**Confidence:** {detection.confidence:.0%}")
         if detection.ambiguous:
             lines.append(
-                f"**Warning:** Detection is ambiguous — {detection.reason}. "
+                f"**Warning:** Detection is ambiguous - {detection.reason}. "
                 "Consider asking for clarification."
             )
         lines.append("")

@@ -6,7 +6,7 @@ the expected DDL (tables + indexes) for a database. The contract is hashed
 (SHA-256) so that any drift between the expected schema and the actual
 database schema can be detected and reported precisely.
 
-This module is purely additive — callers (e.g. ``MemoryStore``) use it to
+This module is purely additive - callers (e.g. ``MemoryStore``) use it to
 *warn* about drift without blocking initialization.
 """
 
@@ -237,7 +237,7 @@ def detect_schema_drift(
     actual_tables, actual_indexes = _read_db_schema(db_path)
     drifts: list[SchemaDrift] = []
 
-    # Missing / mismatched tables — use column-level comparison to avoid
+    # Missing / mismatched tables - use column-level comparison to avoid
     # false positives when ALTER TABLE ADD COLUMN changes DDL formatting.
     for tname, expected_ddl in expected.tables.items():
         if tname not in actual_tables:
@@ -250,7 +250,7 @@ def detect_schema_drift(
                     SchemaDrift("column_mismatch", tname, expected_ddl, actual_tables[tname])
                 )
 
-    # Extra tables — ignore FTS5 shadow tables (memories_fts, memories_fts_data,
+    # Extra tables - ignore FTS5 shadow tables (memories_fts, memories_fts_data,
     # memories_fts_idx, memories_fts_docsize, memories_fts_config) which SQLite
     # creates automatically alongside the virtual table and are not part of the
     # contract. Also ignore sqlite_* internal tables (already filtered in _read_db_schema).
@@ -282,7 +282,7 @@ def verify_schema_integrity(
         expected = default_memory_contract()
     actual_tables, actual_indexes = _read_db_schema(db_path)
     # FTS5 shadow tables (memories_fts*) are auto-created by SQLite and are
-    # not part of any contract — exclude them from hashing so the fast path
+    # not part of any contract - exclude them from hashing so the fast path
     # works when FTS exists (previously the hash always differed).
     hash_tables = {k: v for k, v in actual_tables.items() if not k.startswith("memories_fts")}
     actual_contract = SchemaContract(
@@ -295,7 +295,7 @@ def verify_schema_integrity(
         return (True, None)
     # SQLite reformats DDL (e.g. strips IF NOT EXISTS, normalizes whitespace),
     # so hashes may differ even when schemas are structurally identical.
-    # Fall back to structural drift detection — if no drift, consider it valid.
+    # Fall back to structural drift detection - if no drift, consider it valid.
     drifts = detect_schema_drift(db_path, expected)
     if not drifts:
         return (True, None)

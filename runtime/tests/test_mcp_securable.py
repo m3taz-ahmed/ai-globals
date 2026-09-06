@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for runtime/mcp_securable.py — governed MCP server assets."""
+"""Tests for runtime/mcp_securable.py - governed MCP server assets."""
 
 from __future__ import annotations
 

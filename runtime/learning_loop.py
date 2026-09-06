@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Learning loop: record-consolidate-rank-inject (WS-G).
 
-LEARN-01: Hook bindings — bind learning hooks to the HookLifecycle to
+LEARN-01: Hook bindings - bind learning hooks to the HookLifecycle to
 automatically record action outcomes (success/failure) without manual
 calls.
 
-LEARN-02: Record-consolidate-rank-inject — the four-stage learning loop:
+LEARN-02: Record-consolidate-rank-inject - the four-stage learning loop:
 1. **Record**: Capture action outcomes (action, result, success, timestamp).
 2. **Consolidate**: Merge duplicate/similar outcomes into patterns.
 3. **Rank**: Score patterns by success rate and frequency.
 4. **Inject**: Feed top-ranked patterns back into the prompt as context.
 
-Inspired by Reflexion (arXiv 2303.11366) — self-reflection from past
-trials — and mem0's consolidation pattern.
+Inspired by Reflexion (arXiv 2303.11366) - self-reflection from past
+trials - and mem0's consolidation pattern.
 
 Usage::
 
@@ -280,7 +280,7 @@ class LearningLoop:
             status = "reliable" if p.success_rate >= 0.8 else "unreliable"
             lines.append(
                 f"- {p.action} (gate: {p.gate}): "
-                f"{p.successes}/{p.total} success ({p.success_rate:.0%}) — {status}"
+                f"{p.successes}/{p.total} success ({p.success_rate:.0%}) - {status}"
             )
         return "\n".join(lines)
 

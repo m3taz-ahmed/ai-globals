@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate a CycloneDX SBOM for aiZee (OWASP LLM03 supply-chain coverage).
 
-Stdlib + importlib.metadata only — no external dependencies.
+Stdlib + importlib.metadata only - no external dependencies.
 
 Covers:
   * First-party packages (python folders in the repo root).

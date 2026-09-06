@@ -73,7 +73,7 @@ class TestPolicyPrecedence:
         )
         engine = self._make_engine(tmp_path, yaml)
         result = engine.can("exec")
-        # Same priority → first one wins (file order)
+        # Same priority -> first one wins (file order)
         assert result["decision"] == "allow"
         assert result["rule"] == "first-allow"
 
@@ -107,5 +107,5 @@ class TestDefaultActionImmutability:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             engine = PolicyEngine(tmp_path)
-        # default.yaml's "ask" must survive — zzz_last.yaml cannot clobber it
+        # default.yaml's "ask" must survive - zzz_last.yaml cannot clobber it
         assert engine.default_action == "ask"

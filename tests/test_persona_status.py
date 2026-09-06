@@ -1,4 +1,4 @@
-"""Tests for persona status trigger commands — /status, #حالة, etc."""
+"""Tests for persona status trigger commands - /status, #حالة, etc."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def test_status_with_trailing_spaces() -> None:
 
 
 def test_status_rejects_extra_text() -> None:
-    """Status commands must be standalone — no trailing hint text."""
+    """Status commands must be standalone - no trailing hint text."""
     assert not is_persona_status_command("/status backend")
 
 
@@ -113,7 +113,7 @@ def test_format_status_compact() -> None:
 # --- inject_persona_context with status ---
 
 def test_status_command_does_not_redetect() -> None:
-    """Sending /status does NOT re-detect — it preserves existing persona."""
+    """Sending /status does NOT re-detect - it preserves existing persona."""
     detector = PersonaDetector()
     context: dict[str, object] = {
         "message": "صمملي landing page",

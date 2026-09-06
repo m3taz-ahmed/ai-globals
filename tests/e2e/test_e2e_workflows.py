@@ -1,7 +1,7 @@
 """End-to-end tests for aiZee core workflows.
 
-Tests the full lifecycle: kernel initialization → persona detection →
-policy evaluation → workflow execution → memory ingestion → search.
+Tests the full lifecycle: kernel initialization -> persona detection ->
+policy evaluation -> workflow execution -> memory ingestion -> search.
 """
 
 from __future__ import annotations
@@ -87,7 +87,7 @@ class TestChatLifecycle:
 
 
 class TestMemoryLifecycle:
-    """E2E: Memory add → search → invalidate lifecycle."""
+    """E2E: Memory add -> search -> invalidate lifecycle."""
 
     def test_add_and_search_memory(self, kernel: Kernel) -> None:
         from memory.store import MemoryStore

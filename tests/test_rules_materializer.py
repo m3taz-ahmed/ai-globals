@@ -1,6 +1,6 @@
-"""Tests for runtime/rules_materializer.py — rule materialization to AI tool files.
+"""Tests for runtime/rules_materializer.py - rule materialization to AI tool files.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations
@@ -297,7 +297,7 @@ class TestDetectDrift:
         assert drift["claude"] == []
 
     def test_returns_stale_keys_when_file_missing_key(self, tmp_path: Path) -> None:
-        # Arrange — materialize one rule, then check drift against two
+        # Arrange - materialize one rule, then check drift against two
         rule1 = RuleEntry(key="style", content="c")
         mat = RulesMaterializer(tmp_path)
         mat.materialize([rule1], targets=[ToolTarget.CLAUDE])

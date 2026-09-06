@@ -1,4 +1,4 @@
-"""Tests for runtime.plugin_system — PluginRegistry and PluginManifest."""
+"""Tests for runtime.plugin_system - PluginRegistry and PluginManifest."""
 
 from __future__ import annotations
 

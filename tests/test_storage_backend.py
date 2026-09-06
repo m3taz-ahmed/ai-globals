@@ -1,7 +1,7 @@
-"""Tests for runtime/storage_backend.py — pluggable storage abstraction.
+"""Tests for runtime/storage_backend.py - pluggable storage abstraction.
 
 Covers: InMemoryStorage, JsonFileStorage, SqliteStorage, StorageFactory.
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations
@@ -358,7 +358,7 @@ class TestMemoryStoreAdapter:
         adapter = self._make_adapter(tmp_path)
         adapter.put("mem-2", {"kind": "note", "content": "delete me"})
         assert adapter.delete("mem-2") is True
-        # Soft delete — still retrievable but invalidated
+        # Soft delete - still retrievable but invalidated
         mem = adapter.get("mem-2")
         assert mem is not None
         assert mem.valid_to is not None

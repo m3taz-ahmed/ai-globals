@@ -295,14 +295,14 @@ class GitMemoryStore:
         """
         if not url:
             raise ValueError("Remote URL must not be empty")
-        # Reject the ext:: transport outright — it runs arbitrary commands.
+        # Reject the ext:: transport outright - it runs arbitrary commands.
         if url.startswith("ext::"):
             raise ValueError(
                 "git 'ext::' transport is forbidden (arbitrary command execution)"
             )
         # Handle SCP-style: git@host:user/repo
         if "@" in url and ":" in url and not url.startswith(("http://", "https://", "ssh://", "git://")):
-            # git@github.com:user/repo — allowed (SSH)
+            # git@github.com:user/repo - allowed (SSH)
             return
         # URL-style: scheme://host/path
         if "://" in url:
@@ -315,7 +315,7 @@ class GitMemoryStore:
                     f"allowed: {sorted(self._SAFE_REMOTE_SCHEMES)}"
                 )
             return
-        # Bare path (relative/absolute) — reject; must be a real remote URL.
+        # Bare path (relative/absolute) - reject; must be a real remote URL.
         raise ValueError(
             f"Invalid git remote URL {url!r}; expected https://, http://, "
             f"ssh://, git://, or git@host:user/repo form"

@@ -1,4 +1,4 @@
-"""Tests for config.py — root discovery and version parsing."""
+"""Tests for config.py - root discovery and version parsing."""
 
 from __future__ import annotations
 

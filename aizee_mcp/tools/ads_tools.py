@@ -78,7 +78,7 @@ def register_ads_tools(mcp: FastMCP) -> None:
         budget_daily: float = 0.0,
         target_locations: str = "[]",
     ) -> str:
-        """Create a paid campaign. WRITE/EXTERNAL — gated; returns proxy instruction (no inline API call)."""
+        """Create a paid campaign. WRITE/EXTERNAL - gated; returns proxy instruction (no inline API call)."""
         if err := validate_query(name):
             return err
         try:
@@ -150,7 +150,7 @@ def register_ads_tools(mcp: FastMCP) -> None:
         spend: float = 0.0,
         revenue: float = 0.0,
     ) -> str:
-        """Compute ROAS (return on ad spend) from spend and revenue. READ — pure computation."""
+        """Compute ROAS (return on ad spend) from spend and revenue. READ - pure computation."""
         try:
             plat = _resolve_platform(platform)
         except ValidationError as exc:

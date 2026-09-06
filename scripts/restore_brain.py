@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""aiZee brain restore — restore/merge learned data from backup folder(s).
+"""aiZee brain restore - restore/merge learned data from backup folder(s).
 
 Modes:
   --from <folder>     Full restore (overwrite) from a specific backup folder.
@@ -87,7 +87,7 @@ def _restore_item(src: Path, dst: Path) -> bool:
 def _extract_timestamp(folder_name: str) -> str:
     """Extract timestamp from backup folder name.
 
-    'aizee-backup-2026-08-17-153045' → '2026-08-17-153045'
+    'aizee-backup-2026-08-17-153045' -> '2026-08-17-153045'
     Returns empty string if no timestamp found.
     """
     prefix = "aizee-backup-"
@@ -148,8 +148,8 @@ def _find_backups_after(dest: Path, last_timestamp: str) -> list[Path]:
 def _merge_memory_sqlite(source_db: Path, target_db: Path) -> dict[str, int]:
     """Merge memories from source SQLite DB into target DB.
 
-    Strategy: for each memory in source, if ID doesn't exist in target → INSERT.
-    If ID exists and source created_at > target created_at → UPDATE.
+    Strategy: for each memory in source, if ID doesn't exist in target -> INSERT.
+    If ID exists and source created_at > target created_at -> UPDATE.
 
     Also merges relations table.
 
@@ -163,14 +163,14 @@ def _merge_memory_sqlite(source_db: Path, target_db: Path) -> dict[str, int]:
     # Ensure target DB exists with schema
     target_db.parent.mkdir(parents=True, exist_ok=True)
 
-    # Try to open source DB — skip if not a valid SQLite file
+    # Try to open source DB - skip if not a valid SQLite file
     try:
         src_conn = sqlite3.connect(str(source_db))
         src_conn.row_factory = sqlite3.Row
         # Test that it's a real SQLite DB
         src_conn.execute("SELECT 1").fetchone()
     except sqlite3.DatabaseError:
-        # Source is not a valid SQLite DB — skip merge, just copy the file
+        # Source is not a valid SQLite DB - skip merge, just copy the file
         shutil.copy2(source_db, target_db)
         return stats
 
@@ -223,7 +223,7 @@ def _merge_memory_sqlite(source_db: Path, target_db: Path) -> dict[str, int]:
                     )
                     stats["inserted"] += 1
                 else:
-                    # Compare timestamps — update if source is newer
+                    # Compare timestamps - update if source is newer
                     if row["created_at"] > existing[0]:
                         tgt.execute(
                             "UPDATE memories SET kind=?, content=?, source=?, meta=?, created_at=?, valid_from=?, valid_to=? "
@@ -270,7 +270,7 @@ def _merge_memory_dir(source_dir: Path, target_dir: Path) -> dict[str, int]:
     if source_db.exists():
         stats = _merge_memory_sqlite(source_db, target_db)
 
-    # Copy non-DB files (index.json, etc.) — overwrite with latest
+    # Copy non-DB files (index.json, etc.) - overwrite with latest
     for f in source_dir.iterdir():
         if f.is_file() and f.name != "store.db":
             shutil.copy2(f, target_dir / f.name)
@@ -299,7 +299,7 @@ def list_backups(dest: Path) -> int:
 def run_restore(backup_folder: Path, root: Path, assume_yes: bool = False) -> int:
     """Full restore (overwrite) from a specific backup folder. Returns exit code."""
     print("=" * 60)
-    print("  aiZee Brain Restore — Full restore (overwrite)")
+    print("  aiZee Brain Restore - Full restore (overwrite)")
     print("=" * 60)
     print()
     print(f"  Backup: {backup_folder}")
@@ -418,7 +418,7 @@ def run_auto_restore(root: Path, dest: Path, assume_yes: bool = False) -> int:
     - Updates checkpoint after merge.
     """
     print("=" * 60)
-    print("  aiZee Brain Auto-Restore — Smart merge from checkpoint")
+    print("  aiZee Brain Auto-Restore - Smart merge from checkpoint")
     print("=" * 60)
     print()
 
@@ -465,7 +465,7 @@ def run_auto_restore(root: Path, dest: Path, assume_yes: bool = False) -> int:
             print("  Cancelled.")
             return 1
 
-    # Process each backup (oldest → newest)
+    # Process each backup (oldest -> newest)
     total_inserted = 0
     total_updated = 0
     total_skipped = 0
@@ -487,10 +487,10 @@ def run_auto_restore(root: Path, dest: Path, assume_yes: bool = False) -> int:
             total_relations += stats["relations"]
             print(f"inserted={stats['inserted']}, updated={stats['updated']}, skipped={stats['skipped']}, relations={stats['relations']}")
         else:
-            print("    [SKIP] memory/ — not in backup")
+            print("    [SKIP] memory/ - not in backup")
 
         # 2. Overwrite state/brain/graphify-out/.env with latest backup
-        # (only from the LAST backup in the list — newest wins)
+        # (only from the LAST backup in the list - newest wins)
         if backup == new_backups[-1]:
             for dirname in OVERWRITE_DIRS:
                 src = backup / dirname
@@ -544,7 +544,7 @@ def run_auto_restore(root: Path, dest: Path, assume_yes: bool = False) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="aiZee brain restore — restore/merge learned data from backup"
+        description="aiZee brain restore - restore/merge learned data from backup"
     )
     parser.add_argument("--from", dest="backup_folder", default=None,
                         help="Backup folder to restore from (full overwrite mode)")
@@ -575,7 +575,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.auto:
         return run_auto_restore(root, dest, assume_yes=args.yes)
 
-    # Full restore mode — require --from
+    # Full restore mode - require --from
     if not args.backup_folder:
         parser.error("--from is required (or use --auto / --list / --checkpoint)")
 

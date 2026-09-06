@@ -1,4 +1,4 @@
-"""Tests for persona reset trigger commands — /reset, #انتحل, etc."""
+"""Tests for persona reset trigger commands - /reset, #انتحل, etc."""
 
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ def test_reset_clears_existing_persona_and_redetects() -> None:
 
 
 def test_reset_without_hint_redetects_on_full_text() -> None:
-    """Bare /reset still works — re-detects on the command itself."""
+    """Bare /reset still works - re-detects on the command itself."""
     detector = PersonaDetector()
     context: dict[str, object] = {
         "message": "/reset",
@@ -104,7 +104,7 @@ def test_non_reset_message_preserves_existing_persona() -> None:
         "skills": ["frontend-ui-expert"],
     }
     inject_persona_context(detector, context)
-    # Persona stays UX — not re-detected
+    # Persona stays UX - not re-detected
     assert context["persona"] == "UX"
     assert context["skills"] == ["frontend-ui-expert"]
 

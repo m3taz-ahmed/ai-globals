@@ -12,7 +12,7 @@ https://json.schemastore.org/sarif-2.1.0.json.
 Design notes:
 - Rules are keyed on issue type ID (e.g. ``missing-title``).
 - SARIF has three levels (error/warning/note); aiZee's three severities
-  map directly: critical→error, warning→warning, info→note.
+  map directly: critical->error, warning->warning, info->note.
 - File locations use repo-relative POSIX paths.
 - Findings without safe locations are anchored to a synthetic
   ``SECURITY.md`` with ``properties.synthetic_location: true``.
@@ -45,7 +45,7 @@ _SEVERITY_TO_LEVEL: dict[str, str] = {
     "info": "note",
 }
 
-# Conservative label → CVSS-like score for security-severity ranking.
+# Conservative label -> CVSS-like score for security-severity ranking.
 _SEVERITY_TO_SCORE: dict[str, float] = {
     "critical": 9.0,
     "warning": 6.0,
@@ -169,7 +169,7 @@ def build_sarif(
                 }
             result["locations"] = [location]
         elif page_url:
-            # Endpoint/target finding — use logical location
+            # Endpoint/target finding - use logical location
             result["locations"] = [
                 {
                     "logicalLocation": {

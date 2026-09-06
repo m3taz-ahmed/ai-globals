@@ -61,7 +61,7 @@ def test_kernel_run_saga(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# SagaStep.from_dict — line 30
+# SagaStep.from_dict - line 30
 # ---------------------------------------------------------------------------
 
 def test_saga_step_from_dict() -> None:
@@ -92,7 +92,7 @@ def test_saga_step_to_dict_roundtrip() -> None:
 
 
 # ---------------------------------------------------------------------------
-# _execute_step exception handling — lines 144-145
+# _execute_step exception handling - lines 144-145
 # ---------------------------------------------------------------------------
 
 def test_saga_step_exception_returns_error(saga_orc: SagaOrchestrator) -> None:
@@ -109,7 +109,7 @@ def test_saga_step_exception_returns_error(saga_orc: SagaOrchestrator) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _compensate_step no compensation — line 158
+# _compensate_step no compensation - line 158
 # ---------------------------------------------------------------------------
 
 def test_saga_compensate_no_compensation(saga_orc: SagaOrchestrator) -> None:
@@ -135,7 +135,7 @@ def test_saga_compensate_no_compensation(saga_orc: SagaOrchestrator) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _compensate_step exception — lines 164-165
+# _compensate_step exception - lines 164-165
 # ---------------------------------------------------------------------------
 
 def test_saga_compensate_exception(saga_orc: SagaOrchestrator) -> None:
@@ -164,7 +164,7 @@ def test_saga_compensate_exception(saga_orc: SagaOrchestrator) -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_saga returns None for missing — line 172
+# get_saga returns None for missing - line 172
 # ---------------------------------------------------------------------------
 
 def test_get_saga_returns_none_for_missing(saga_orc: SagaOrchestrator) -> None:
@@ -173,7 +173,7 @@ def test_get_saga_returns_none_for_missing(saga_orc: SagaOrchestrator) -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_saga returns data for existing — lines 173-182
+# get_saga returns data for existing - lines 173-182
 # ---------------------------------------------------------------------------
 
 def test_get_saga_returns_data_for_existing(saga_orc: SagaOrchestrator) -> None:

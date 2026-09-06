@@ -117,7 +117,7 @@ def test_no_ready_steps_breaks():
         ],
     )
     results = asyncio.run(orch.execute(plan))
-    # No steps can execute — both depend on each other. Deadlock is
+    # No steps can execute - both depend on each other. Deadlock is
     # reported loudly (FAILED with reason) instead of a silent {}.
     assert len(results) == 2
     assert all(r.status == StepStatus.FAILED for r in results.values())

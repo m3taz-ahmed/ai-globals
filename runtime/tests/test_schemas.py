@@ -1,4 +1,4 @@
-"""Tests for runtime/schemas.py — Pydantic validation schemas."""
+"""Tests for runtime/schemas.py - Pydantic validation schemas."""
 
 from __future__ import annotations
 

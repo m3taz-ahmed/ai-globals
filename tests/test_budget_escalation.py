@@ -1,6 +1,6 @@
-"""Tests for runtime/budget_escalation.py — multi-stage budget escalation.
+"""Tests for runtime/budget_escalation.py - multi-stage budget escalation.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

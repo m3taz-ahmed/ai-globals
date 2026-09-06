@@ -3,13 +3,13 @@
 Persists user-configurable settings to ``state/settings.json`` (separate from
 the canonical config sources: ``aizee_mcp/config.json``,
 ``runtime/policies/*.yaml``, ``state/budget.json``). This module is the
-override layer — the canonical sources remain the source of truth; settings
+override layer - the canonical sources remain the source of truth; settings
 here act as toggles/overrides applied at load time and on restart.
 
 Design goals:
 - Single file persistence (``state/settings.json``) with versioned schema.
 - Thread-safe (RWLock via ``threading.RLock``).
-- Fail-safe: missing/corrupt file → defaults, never crash.
+- Fail-safe: missing/corrupt file -> defaults, never crash.
 - No env var mutation (security: dashboard cannot alter process env).
 - No direct YAML mutation (policies are canonical; settings toggle them
   in-memory at load time via the kernel restart endpoint).
@@ -51,7 +51,7 @@ def _register_migration(from_version: int) -> Callable[[Callable[[dict[str, Any]
 
 @_register_migration(1)
 def _migrate_v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
-    """v1 → v2: First versioned migration (introduces migration framework).
+    """v1 -> v2: First versioned migration (introduces migration framework).
 
     Changes:
     - Ensures ``dashboard.trusted_proxies`` exists as a list (was missing in
@@ -67,11 +67,11 @@ def _migrate_v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
     known = set(SECTIONS) | {"version"}
     orphaned = [k for k in data if k not in known]
     for k in orphaned:
-        _logger.info("settings migration v1→v2: removing orphaned key %r", k)
+        _logger.info("settings migration v1->v2: removing orphaned key %r", k)
         data.pop(k, None)
     return data
 
-# Valid option sets — used for validation on save.
+# Valid option sets - used for validation on save.
 _VALID_DECISIONS: frozenset[str] = frozenset({"allow", "deny", "ask", "require_approval"})
 _VALID_PERIODS: frozenset[str] = frozenset({"session", "hourly", "daily", "weekly", "monthly"})
 _VALID_EXCEED: frozenset[str] = frozenset({"warn", "fallback", "block"})
@@ -385,9 +385,9 @@ def _validate_section(section: str, data: dict[str, Any]) -> None:
 class SettingsManager:
     """Manages user-facing settings persisted to ``state/settings.json``.
 
-    Thread-safe. Fail-safe: corrupt/missing file → defaults. The canonical
+    Thread-safe. Fail-safe: corrupt/missing file -> defaults. The canonical
     config sources (YAML policies, MCP config.json, budget.json) are NOT
-    modified — this is an override/toggle layer read at load time.
+    modified - this is an override/toggle layer read at load time.
     """
 
     def __init__(self, root: Path, mcp_config_path: Path | None = None) -> None:
@@ -446,7 +446,7 @@ class SettingsManager:
         with contextlib.suppress(OSError):
             self._settings_file.replace(backup)
         _logger.info(
-            "settings.json schema v%d → v%d: backed up to %s",
+            "settings.json schema v%d -> v%d: backed up to %s",
             file_version, SETTINGS_VERSION, backup.name,
         )
         # Run migrations sequentially
@@ -455,7 +455,7 @@ class SettingsManager:
             step = _MIGRATIONS.get(file_version)
             if step is None:
                 _logger.warning(
-                    "settings migration: no step for v%d→v%d, skipping",
+                    "settings migration: no step for v%d->v%d, skipping",
                     file_version, file_version + 1,
                 )
                 break
@@ -505,7 +505,7 @@ class SettingsManager:
         """Explicitly run migrations + return the migrated settings.
 
         Called by the update/install scripts after pulling new code.
-        Safe to call multiple times — no-op if already at current version.
+        Safe to call multiple times - no-op if already at current version.
         """
         with self._lock:
             self._load()
@@ -553,7 +553,7 @@ class SettingsManager:
     def defaults(self, section: str | None = None) -> dict[str, Any]:
         """Return default settings WITHOUT mutating anything (read-only).
 
-        Used by ``GET /api/settings/defaults`` — previews must never reset.
+        Used by ``GET /api/settings/defaults`` - previews must never reset.
         """
         all_defaults = default_settings(self._mcp_config_path)
         if section is None:
@@ -648,7 +648,7 @@ def apply_settings_to_kernel(kernel: Any) -> None:
     Called by ``Kernel.__init__`` (via ``_init_core_services``) and by the
     dashboard restart endpoint after a ``reload_settings_manager`` so every
     settings section takes effect immediately. Each section is applied
-    independently — a failure in one section logs a warning but does not
+    independently - a failure in one section logs a warning but does not
     block the others (fail-soft).
 
     The canonical config sources (budget.json, guardian.yaml, etc.) remain

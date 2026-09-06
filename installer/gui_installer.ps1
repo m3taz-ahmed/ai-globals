@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 # aiZee - Professional WPF GUI Installer for Windows
 #
 # Features:
@@ -316,6 +316,7 @@ Add-Type -AssemblyName System.Windows.Forms
                                 <TextBlock x:Name="SummaryLocation" Style="{StaticResource BodyText}" Text=""/>
                                 <TextBlock x:Name="SummaryComponents" Style="{StaticResource BodyText}" Text=""/>
                                 <TextBlock x:Name="SummaryVersion" Style="{StaticResource BodyText}" Text=""/>
+                                <TextBlock x:Name="SummaryEstTime" Style="{StaticResource BodyText}" Text="" Foreground="#D29922"/>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
@@ -357,16 +358,18 @@ Add-Type -AssemblyName System.Windows.Forms
                     <CheckBox x:Name="FinishLaunchDashboard" Style="{StaticResource CheckboxStyle}" Content="Launch dashboard server" IsChecked="False"/>
                     <CheckBox x:Name="FinishOpenReadme" Style="{StaticResource CheckboxStyle}" Content="Open README" IsChecked="False"/>
                     <CheckBox x:Name="FinishOpenLog" Style="{StaticResource CheckboxStyle}" Content="Open installation log" IsChecked="False"/>
+                    <CheckBox x:Name="FinishOpenGuiLog" Style="{StaticResource CheckboxStyle}" Content="Open GUI installer log (all messages)" IsChecked="False"/>
                     <CheckBox x:Name="FinishOpenEnv" Style="{StaticResource CheckboxStyle}" Content="Open .env file to fill in MCP credentials" IsChecked="False"/>
                 </StackPanel>
             </ScrollViewer>
         </Grid>
 
         <!-- Navigation bar -->
-        <Border Grid.Row="1" Background="#161B22" Padding="20,10" BorderBrush="#30363D" BorderThickness="0,1,0,0">
+        <Border x:Name="NavBar" Grid.Row="1" Background="#161B22" Padding="20,10" BorderBrush="#30363D" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -393,7 +396,8 @@ Add-Type -AssemblyName System.Windows.Forms
 
                 <Button Grid.Column="1" x:Name="BackBtn" Style="{StaticResource NavButton}" Content="Back" Margin="0,0,10,0"/>
                 <Button Grid.Column="2" x:Name="NextBtn" Style="{StaticResource PrimaryButton}" Content="Next" Margin="0,0,10,0"/>
-                <Button Grid.Column="3" x:Name="CancelBtn" Style="{StaticResource NavButton}" Content="Cancel"/>
+                <Button Grid.Column="3" x:Name="CancelBtn" Style="{StaticResource NavButton}" Content="Cancel" Margin="0,0,10,0"/>
+                <Button Grid.Column="4" x:Name="ThemeBtn" Style="{StaticResource NavButton}" Content="🌙 Dark" Margin="0,0,0,0"/>
             </Grid>
         </Border>
     </Grid>
@@ -428,7 +432,52 @@ $stepIndicators = @(
 $BackBtn = $Window.FindName("BackBtn")
 $NextBtn = $Window.FindName("NextBtn")
 $CancelBtn = $Window.FindName("CancelBtn")
+$ThemeBtn = $Window.FindName("ThemeBtn")
 $currentPage = 0
+
+# ---------------------------------------------------------------------------
+# Theme toggle logic
+# ---------------------------------------------------------------------------
+$script:isDarkTheme = $true
+
+function Switch-Theme {
+    if ($script:isDarkTheme) {
+        # Switch to Light theme
+        $Window.Background = "#FFFFFF"
+        $Window.FindName("NavBar").Background = "#F6F8FA"
+        $Window.FindName("NavBar").BorderBrush = "#D0D7DE"
+        # Update window resources for light mode
+        $Window.Resources["PageTitle"].Foreground = "#0969DA"
+        $Window.Resources["PageSubtitle"].Foreground = "#57606A"
+        $Window.Resources["BodyText"].Foreground = "#1F2328"
+        $Window.Resources["NavButton"].Background = "#F6F8FA"
+        $Window.Resources["NavButton"].Foreground = "#1F2328"
+        $Window.Resources["NavButton"].BorderBrush = "#D0D7DE"
+        $Window.Resources["LogBox"].Background = "#F6F8FA"
+        $Window.Resources["LogBox"].Foreground = "#1A7F37"
+        $Window.Resources["LogBox"].BorderBrush = "#D0D7DE"
+        $ThemeBtn.Content = "☀ Light"
+        $script:isDarkTheme = $false
+    } else {
+        # Switch back to Dark theme
+        $Window.Background = "#0D1117"
+        $Window.FindName("NavBar").Background = "#161B22"
+        $Window.FindName("NavBar").BorderBrush = "#30363D"
+        $Window.Resources["PageTitle"].Foreground = "#58A6FF"
+        $Window.Resources["PageSubtitle"].Foreground = "#8B949E"
+        $Window.Resources["BodyText"].Foreground = "#C9D1D9"
+        $Window.Resources["NavButton"].Background = "#21262D"
+        $Window.Resources["NavButton"].Foreground = "#C9D1D9"
+        $Window.Resources["NavButton"].BorderBrush = "#30363D"
+        $Window.Resources["LogBox"].Background = "#161B22"
+        $Window.Resources["LogBox"].Foreground = "#7EE787"
+        $Window.Resources["LogBox"].BorderBrush = "#30363D"
+        $ThemeBtn.Content = "🌙 Dark"
+        $script:isDarkTheme = $true
+    }
+}
+
+$ThemeBtn.Add_Click({ Switch-Theme })
 
 # License text
 $licenseText = @"
@@ -558,8 +607,18 @@ $Window.FindName("RadioCustom").Add_Click({
 $NextBtn.Add_Click({ Next-Page })
 $BackBtn.Add_Click({ Back-Page })
 $CancelBtn.Add_Click({
-    $result = [System.Windows.MessageBox]::Show("Are you sure you want to cancel the installation?", "Cancel", "YesNo", "Question")
-    if ($result -eq "Yes") { $Window.Close() }
+    if ($script:currentPage -eq 6) {
+        # During installation - ask to cancel and stop the job
+        $result = [System.Windows.MessageBox]::Show("Installation is in progress. Canceling may leave aiZee in an incomplete state. Continue?", "Cancel Installation", "YesNo", "Warning")
+        if ($result -eq "Yes") {
+            Log-Message "[CANCEL] User canceled installation."
+            if ($script:installJob) { Stop-Job $script:installJob -ErrorAction SilentlyContinue; Remove-Job $script:installJob -Force -ErrorAction SilentlyContinue }
+            $Window.Close()
+        }
+    } else {
+        $result = [System.Windows.MessageBox]::Show("Are you sure you want to cancel the installation?", "Cancel", "YesNo", "Question")
+        if ($result -eq "Yes") { $Window.Close() }
+    }
 })
 
 # ---------------------------------------------------------------------------
@@ -709,6 +768,40 @@ function Run-PreFlightChecks {
     $Window.FindName("SummaryComponents").Text = "Components selected: $compCount"
     $Window.FindName("SummaryVersion").Text = "Target version: $TargetVersion"
 
+    # Estimated time based on selected components
+    $estSeconds = 15  # base overhead
+    if ($Window.FindName("CompPip").IsChecked) { $estSeconds += 60 }      # pip install
+    if ($Window.FindName("CompGraphify").IsChecked) { $estSeconds += 30 } # graphify build
+    if ($Window.FindName("CompMCPGraphify").IsChecked) { $estSeconds += 5 }
+    if ($Window.FindName("CompMCPContext7").IsChecked) { $estSeconds += 5 }
+    if ($Window.FindName("CompMCPUpwork").IsChecked) { $estSeconds += 5 }
+    if ($Window.FindName("CompMCPFreelancer").IsChecked) { $estSeconds += 5 }
+    if ($Window.FindName("CompMCPFiverr").IsChecked) { $estSeconds += 5 }
+    if ($Window.FindName("CompMCPLinkedIn").IsChecked) { $estSeconds += 10 }
+    $agentCount = 0
+    foreach ($ac in @("CompAgentClaude","CompAgentWindsurf","CompAgentCursor","CompAgentAider","CompAgentDevin","CompAgentCopilot","CompAgentCline")) {
+        if ($Window.FindName($ac).IsChecked) { $agentCount++ }
+    }
+    $estSeconds += $agentCount * 3
+    if ($copyMode) { $estSeconds += 20 }  # file copy overhead
+    $estMin = [math]::Floor($estSeconds / 60)
+    $estSec = $estSeconds % 60
+    $estStr = if ($estMin -gt 0) { "$estMin min $estSec sec" } else { "$estSeconds sec" }
+    $Window.FindName("SummaryEstTime").Text = "Estimated time: ~$estStr (varies by system)"
+
+    # Log pre-flight results to file
+    Write-LogFile "--- Pre-flight Checks ---"
+    $checkNames = @("CheckPython","CheckNpx","CheckUvx","CheckDisk","CheckExisting","CheckRepo","CheckEnv")
+    foreach ($cn in $checkNames) {
+        $txt = $Window.FindName($cn).Text
+        if ($txt) { Write-LogFile "  $txt" }
+    }
+    Write-LogFile "  Summary: $($Window.FindName('SummaryLocation').Text)"
+    Write-LogFile "  $($Window.FindName('SummaryComponents').Text)"
+    Write-LogFile "  $($Window.FindName('SummaryVersion').Text)"
+    Write-LogFile "  Status: $($Window.FindName('PreFlightStatus').Text)"
+    Write-LogFile ""
+
     # Overall status
     $failed = ($checks["CheckPython"] -eq $false -or $checks["CheckDisk"] -eq $false -or $checks["CheckRepo"] -eq $false)
     if ($failed) {
@@ -722,11 +815,38 @@ function Run-PreFlightChecks {
     }
 }
 
+# ---------------------------------------------------------------------------
+# Install log file - all GUI log messages are mirrored here.
+# After installation completes, the install.ps1 log is also merged into this file
+# so the user has a single comprehensive log.
+# ---------------------------------------------------------------------------
+$InstallLogDir = Join-Path $Repo "state"
+if (-not (Test-Path $InstallLogDir)) { New-Item -ItemType Directory -Path $InstallLogDir -Force | Out-Null }
+$InstallLogPath = Join-Path $InstallLogDir "install-gui-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+
+function Write-LogFile {
+    param([string]$Message)
+    try {
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        Add-Content -Path $InstallLogPath -Value "[$timestamp] $Message" -Encoding UTF8 -ErrorAction SilentlyContinue
+    } catch {
+        # Silently fail - logging is best-effort, must never break installation
+    }
+}
+
+# Log the session header
+Write-LogFile "=== aiZee GUI Installer Session ==="
+Write-LogFile "Version: $TargetVersion"
+Write-LogFile "Repository: $Repo"
+Write-LogFile "Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Write-LogFile ""
+
 function Log-Message {
     param([string]$Message)
     $logBox = $Window.FindName("LogBox")
     $logBox.AppendText("$Message`n")
     $logBox.ScrollToEnd()
+    Write-LogFile $Message
     [System.Windows.Threading.Dispatcher]::CurrentDispatcher.Invoke([Action]{}, [System.Windows.Threading.DispatcherPriority]::Background)
 }
 
@@ -764,6 +884,40 @@ function Start-Installation {
     Log-Message "Root: $installRoot"
     Log-Message "Copy mode: $copyMode"
     Log-Message "Arguments: $($installArgs -join ' ')"
+
+    # Log selected/deselected enhancement modules
+    $enhModules = @(
+        @("CompExecRings", "Execution Rings"),
+        @("CompCodeGraph", "CodeGraph + Reachability"),
+        @("CompMemoryEnh", "Memory enhancements"),
+        @("CompSpecValidation", "Spec validation"),
+        @("CompSelfHealing", "Self-healing runtime"),
+        @("CompSemanticSearch", "Semantic code search")
+    )
+    Log-Message ""
+    Log-Message "Enhancement modules (built with core - no skip):"
+    foreach ($m in $enhModules) {
+        $checked = $Window.FindName($m[0]).IsChecked
+        $status = if ($checked) { "ENABLED" } else { "disabled (built anyway - core module)" }
+        Log-Message "  $($m[1]): $status"
+    }
+
+    # Log agent configs selection
+    $agentConfigs = @(
+        @("CompAgentClaude", "Claude Code"),
+        @("CompAgentWindsurf", "Windsurf"),
+        @("CompAgentCursor", "Cursor"),
+        @("CompAgentAider", "Aider"),
+        @("CompAgentDevin", "Devin"),
+        @("CompAgentCopilot", "GitHub Copilot"),
+        @("CompAgentCline", "Cline")
+    )
+    Log-Message ""
+    Log-Message "Agent configs:"
+    foreach ($a in $agentConfigs) {
+        $checked = $Window.FindName($a[0]).IsChecked
+        Log-Message "  $($a[1]): $(if ($checked) { 'will install' } else { 'will skip' })"
+    }
     Log-Message ""
 
     # --- .env setup: copy .env.example to .env if it doesn't exist ---
@@ -783,30 +937,59 @@ function Start-Installation {
     Log-Message ""
 
     # Run installation in a background job
-    $installJob = Start-Job -ScriptBlock {
+    $script:installJob = Start-Job -ScriptBlock {
         param($InstallArgs)
         & powershell @InstallArgs 2>&1
     } -ArgumentList (, $installArgs)
+    $installJob = $script:installJob
 
-    # Monitor job progress
+    # Monitor job progress - update progress based on actual output lines
     $totalSteps = 10
     $currentStep = 0
+    $outputLineCount = 0
 
+    # Collect all output for rollback detection
+    $allOutput = [System.Collections.ArrayList]@()
     while ($installJob.State -eq "Running") {
         Start-Sleep -Milliseconds 200
         $output = Receive-Job $installJob 2>&1
         foreach ($line in $output) {
             Log-Message "$line"
+            $allOutput.Add("$line") | Out-Null
+            $outputLineCount++
+            # Update progress based on actual output activity (capped at 90% until complete)
+            $currentStep = [math]::Min([math]::Floor($outputLineCount / 5), $totalSteps - 1)
+            $percent = [math]::Round(($currentStep / $totalSteps) * 90)
+            Update-Progress $percent "Installing... ($outputLineCount lines output)"
         }
-        $currentStep = [math]::Min($currentStep + 1, $totalSteps - 1)
-        $percent = [math]::Round(($currentStep / $totalSteps) * 100)
-        Update-Progress $percent "Installing... (step $currentStep / $totalSteps)"
     }
 
     # Get final output
     $finalOutput = Receive-Job $installJob 2>&1
     foreach ($line in $finalOutput) {
         Log-Message "$line"
+        $allOutput.Add("$line") | Out-Null
+    }
+
+    # Detect rollback in output
+    $rollbackDetected = $false
+    $rollbackReason = ""
+    foreach ($line in $allOutput) {
+        if ($line -match "Rolling back due to:\s*(.+)") {
+            $rollbackDetected = $true
+            $rollbackReason = $matches[1].Trim()
+            break
+        }
+        if ($line -match "Rollback:\s*(.+)") {
+            $rollbackDetected = $true
+            $rollbackReason = $matches[1].Trim()
+            break
+        }
+    }
+    if ($rollbackDetected) {
+        Log-Message ""
+        Log-Message "[ROLLBACK] Installation was rolled back: $rollbackReason"
+        Log-Message "[ROLLBACK] Some changes were undone. Check the log for details."
     }
 
     $exitCode = 0
@@ -826,16 +1009,142 @@ function Start-Installation {
         Update-Progress 100 "Installation failed!"
         $script:currentPage = 7
         Show-Page 7
-        $Window.FindName("FinishVersion").Text = "Installation FAILED - check log"
-        $Window.FindName("FinishLocation").Text = "Location: $installRoot"
-        if ($script:latestLog) {
-            $Window.FindName("FinishLog").Text = "Log: $($script:latestLog.FullName)"
+        $Window.FindName("FinishTitle").Text = "Installation Failed"
+        if ($rollbackDetected) {
+            $Window.FindName("FinishVersion").Text = "Installation FAILED - rolled back: $rollbackReason"
+        } else {
+            $Window.FindName("FinishVersion").Text = "Installation FAILED - check log for details"
         }
+        $Window.FindName("FinishLocation").Text = "Location: $installRoot"
+        $Window.FindName("FinishLog").Text = "GUI log: $InstallLogPath"
+        # On failure, auto-check "Open GUI log" so user can see what went wrong
+        $Window.FindName("FinishOpenGuiLog").IsChecked = $true
         $NextBtn.IsEnabled = $true
         return
     }
 
     Update-Progress 100 "Installation complete!"
+
+    # --- Post-install cleanup: remove deselected agent configs + shortcuts ---
+    Log-Message ""
+    Log-Message "--- Post-install cleanup ---"
+
+    # Agent configs: install.ps1 installs all - remove deselected ones
+    $agentCleanup = @(
+        @("CompAgentClaude", @("$env:USERPROFILE\.claude\CLAUDE.md", "$env:USERPROFILE\.claude\settings.json", "$env:USERPROFILE\.claude\skills", "$env:USERPROFILE\.claude\agents"), "Claude Code"),
+        @("CompAgentWindsurf", @("$env:USERPROFILE\.windsurf\skills\global-os"), "Windsurf"),
+        @("CompAgentAider", @("$env:USERPROFILE\.aider.conf.yml"), "Aider"),
+        @("CompAgentDevin", @("$env:USERPROFILE\.devin\skills\global-os"), "Devin")
+    )
+    foreach ($ac in $agentCleanup) {
+        if (-not $Window.FindName($ac[0]).IsChecked) {
+            foreach ($p in $ac[1]) {
+                $expanded = [Environment]::ExpandEnvironmentVariables($p)
+                if (Test-Path $expanded) {
+                    Remove-Item $expanded -Recurse -Force -ErrorAction SilentlyContinue
+                    Log-Message "  [SKIP] Removed $($ac[2]) config: $expanded"
+                }
+            }
+        }
+    }
+
+    # Cursor config
+    if (-not $Window.FindName("CompAgentCursor").IsChecked) {
+        $cursorDir = Join-Path $installRoot ".cursor\rules"
+        if (Test-Path $cursorDir) {
+            Log-Message "  [SKIP] Cursor rules kept in repo but not linked (deselected)"
+        }
+    }
+
+    # Copilot config
+    if (-not $Window.FindName("CompAgentCopilot").IsChecked) {
+        $copilotFile = Join-Path $installRoot ".github\copilot-instructions.md"
+        if (Test-Path $copilotFile) {
+            Log-Message "  [SKIP] Copilot instructions kept in repo but not linked (deselected)"
+        }
+    }
+
+    # Cline config
+    if (-not $Window.FindName("CompAgentCline").IsChecked) {
+        $clineFile = Join-Path $installRoot ".clinerules"
+        if (Test-Path $clineFile) {
+            Log-Message "  [SKIP] Cline rules kept in repo but not linked (deselected)"
+        }
+    }
+
+    # Dashboard - if deselected, note it
+    if (-not $Window.FindName("CompDashboard").IsChecked) {
+        Log-Message "  [SKIP] Dashboard server files present but not auto-started (deselected)"
+    }
+
+    # CLI shim - if deselected, remove it
+    if (-not $Window.FindName("CompCLIShim").IsChecked) {
+        $shimPath = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\aizee.cmd"
+        if (Test-Path $shimPath) {
+            Remove-Item $shimPath -Force -ErrorAction SilentlyContinue
+            Log-Message "  [SKIP] Removed CLI shim (deselected)"
+        }
+    }
+
+    # Env var - if deselected, remove it
+    if (-not $Window.FindName("CompEnvVar").IsChecked) {
+        $existingRoot = [Environment]::GetEnvironmentVariable("AIZEE_ROOT", "User")
+        if ($existingRoot) {
+            [Environment]::SetEnvironmentVariable("AIZEE_ROOT", $null, "User")
+            Log-Message "  [SKIP] Removed AIZEE_ROOT env var (deselected)"
+        }
+    }
+
+    # Shortcuts - if deselected, remove them
+    if (-not $Window.FindName("CompStartMenu").IsChecked) {
+        $startMenuShortcut = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\aiZee.lnk"
+        if (Test-Path $startMenuShortcut) {
+            Remove-Item $startMenuShortcut -Force -ErrorAction SilentlyContinue
+            Log-Message "  [SKIP] Removed Start Menu shortcut (deselected)"
+        }
+    }
+    if (-not $Window.FindName("CompDesktop").IsChecked) {
+        $desktopShortcut = Join-Path $env:USERPROFILE "Desktop\aiZee.lnk"
+        if (Test-Path $desktopShortcut) {
+            Remove-Item $desktopShortcut -Force -ErrorAction SilentlyContinue
+            Log-Message "  [SKIP] Removed Desktop shortcut (deselected)"
+        }
+    }
+
+    # Create shortcuts if selected (install.ps1 doesn't do this)
+    if ($Window.FindName("CompStartMenu").IsChecked) {
+        $startMenuDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
+        $shortcutPath = Join-Path $startMenuDir "aiZee.lnk"
+        try {
+            $wsh = New-Object -ComObject WScript.Shell
+            $sc = $wsh.CreateShortcut($shortcutPath)
+            $sc.TargetPath = "powershell.exe"
+            $sc.Arguments = "-ExecutionPolicy Bypass -File `"$installRoot\installer\gui_installer.ps1`""
+            $sc.WorkingDirectory = $installRoot
+            $sc.IconLocation = "shell32.dll,0"
+            $sc.Save()
+            Log-Message "  [OK] Created Start Menu shortcut: $shortcutPath"
+        } catch {
+            Log-Message "  [WARN] Failed to create Start Menu shortcut: $_"
+        }
+    }
+    if ($Window.FindName("CompDesktop").IsChecked) {
+        $desktopPath = Join-Path $env:USERPROFILE "Desktop\aiZee.lnk"
+        try {
+            $wsh = New-Object -ComObject WScript.Shell
+            $sc = $wsh.CreateShortcut($desktopPath)
+            $sc.TargetPath = "powershell.exe"
+            $sc.Arguments = "-ExecutionPolicy Bypass -File `"$installRoot\installer\gui_installer.ps1`""
+            $sc.WorkingDirectory = $installRoot
+            $sc.IconLocation = "shell32.dll,0"
+            $sc.Save()
+            Log-Message "  [OK] Created Desktop shortcut: $desktopPath"
+        } catch {
+            Log-Message "  [WARN] Failed to create Desktop shortcut: $_"
+        }
+    }
+
+    Log-Message ""
 
     # Post-install verification
     $verifyIssues = @()
@@ -858,9 +1167,43 @@ function Start-Installation {
         Log-Message "[VERIFY] All post-install checks passed"
     }
 
+    # --- Merge install.ps1 log into GUI log (single comprehensive file) ---
+    $installPs1LogPattern = Join-Path $installRoot "state\install-*.log"
+    $latestInstallLog = Get-ChildItem $installPs1LogPattern -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($latestInstallLog) {
+        Log-Message ""
+        Log-Message "--- install.ps1 log (merged) ---"
+        try {
+            $installLogContent = Get-Content $latestInstallLog.FullName -Raw -ErrorAction SilentlyContinue
+            if ($installLogContent) {
+                Add-Content -Path $InstallLogPath -Value $installLogContent -Encoding UTF8 -ErrorAction SilentlyContinue
+                Log-Message "  Merged install.ps1 log: $($latestInstallLog.Name)"
+                Log-Message "  (Full install.ps1 output appended to this GUI log file)"
+            }
+        } catch {
+            Log-Message "  [WARN] Could not merge install.ps1 log: $_"
+        }
+    }
+
     # Show finish page
     $script:currentPage = 7
     Show-Page 7
+
+    # Log finish details
+    Write-LogFile "--- Installation Complete ---"
+    Write-LogFile "  Version: $TargetVersion"
+    Write-LogFile "  Location: $installRoot"
+    Write-LogFile "  Components installed: $compCount"
+    if ($verifyIssues.Count -gt 0) {
+        Write-LogFile "  Verification issues:"
+        foreach ($issue in $verifyIssues) {
+            Write-LogFile "    WARN: $issue"
+        }
+    } else {
+        Write-LogFile "  Verification: all checks passed"
+    }
+    Write-LogFile "  GUI Log file: $InstallLogPath"
+    Write-LogFile "=== Session End ==="
 
     # Populate finish page
     $Window.FindName("FinishVersion").Text = "Version: $TargetVersion"
@@ -870,8 +1213,11 @@ function Start-Installation {
     $script:latestLog = Get-ChildItem $logFile -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     $latestLog = $script:latestLog
     if ($latestLog) {
-        $Window.FindName("FinishLog").Text = "Log: $($latestLog.FullName)"
+        $Window.FindName("FinishLog").Text = "Install log: $($latestLog.FullName)"
     }
+    # Also show the GUI log file path (includes merged install.ps1 log)
+    $script:guiLogPath = $InstallLogPath
+    $Window.FindName("FinishLog").Text += "`nGUI log (merged): $InstallLogPath"
 
     $compCount = 0
     $allChecks = @("CompPip","CompGraphify","CompDashboard","CompMCPGraphify","CompMCPContext7","CompMCPUpwork","CompMCPFreelancer","CompMCPFiverr","CompMCPLinkedIn","CompAgentClaude","CompAgentWindsurf","CompAgentCursor","CompAgentAider","CompAgentDevin","CompAgentCopilot","CompAgentCline","CompCLIShim","CompEnvVar","CompStartMenu","CompDesktop")
@@ -907,6 +1253,9 @@ function Start-Installation {
         }
         if ($Window.FindName("FinishOpenLog").IsChecked -and $script:latestLog) {
             Start-Process notepad -ArgumentList $script:latestLog.FullName
+        }
+        if ($Window.FindName("FinishOpenGuiLog").IsChecked -and $script:guiLogPath) {
+            Start-Process notepad -ArgumentList $script:guiLogPath
         }
         if ($Window.FindName("FinishOpenEnv").IsChecked) {
             $envPath = Join-Path $script:installRoot ".env"

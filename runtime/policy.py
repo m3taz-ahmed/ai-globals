@@ -55,7 +55,7 @@ def _classify_action(action_type: str) -> Action:
         return "allow"
     if at in _WRITE_ACTIONS:
         return "ask"
-    return "ask"  # unknown → conservative ask
+    return "ask"  # unknown -> conservative ask
 
 
 @dataclass
@@ -65,7 +65,7 @@ class PolicyRule:
     action: Action
     description: str = ""
     approvers: list[str] = field(default_factory=list)
-    priority: int = 0  # Higher priority wins; tie → file order (GATE-B3)
+    priority: int = 0  # Higher priority wins; tie -> file order (GATE-B3)
     # Pre-parsed condition AST (compiled once at load, not per evaluation).
     _tree: ast.Expression | None = field(default=None, repr=False, compare=False)
 
@@ -104,7 +104,7 @@ class _SafeEvaluator(ast.NodeVisitor):
     # YAML-style literals used in policy conditions. Without this mapping,
     # `flag == true` resolved BOTH sides to None when the attribute was
     # missing (None == None -> True), silently matching every action that
-    # lacked the attribute — a privilege-escalation hole for allow rules.
+    # lacked the attribute - a privilege-escalation hole for allow rules.
     _yaml_literals: ClassVar[dict[str, Any]] = {
         "true": True,
         "false": False,
@@ -120,7 +120,7 @@ class _SafeEvaluator(ast.NodeVisitor):
     #
     # ``_MISSING`` is falsy (``__bool__`` -> False) so that a bare missing
     # attribute used as a condition (e.g. ``condition: "is_admin"``) does NOT
-    # match — ``bool(_MISSING)`` is False, not True. This closes the
+    # match - ``bool(_MISSING)`` is False, not True. This closes the
     # allow-by-absence hole where a missing attribute evaluated to a truthy
     # plain ``object()``.
     class _MissingSentinel:
@@ -153,7 +153,7 @@ class _SafeEvaluator(ast.NodeVisitor):
         if isinstance(node, ast.Name):
             # Explicit action attributes win over literals; otherwise match
             # YAML literals case-insensitively (TRUE/FALSE/NULL), not just
-            # lowercase — an uppercase literal previously fell through to
+            # lowercase - an uppercase literal previously fell through to
             # _MISSING and silently changed rule semantics.
             if node.id in self.action:
                 return self.action[node.id]
@@ -173,7 +173,7 @@ class _SafeEvaluator(ast.NodeVisitor):
             try:
                 return value[key]
             except (KeyError, TypeError, IndexError):
-                # Missing key/index → _MISSING (not None) so comparisons like
+                # Missing key/index -> _MISSING (not None) so comparisons like
                 # `config["env"] != "prod"` fail-closed consistently with Name.
                 return self._MISSING
         if isinstance(node, ast.BoolOp):
@@ -184,14 +184,14 @@ class _SafeEvaluator(ast.NodeVisitor):
                 return all(self.visit(v) for v in node.values)
             if isinstance(node.op, ast.Or):
                 # any() returns True on first truthy; _MISSING is falsy so it
-                # won't falsely satisfy `or`. A bare `missing` → False (correct).
+                # won't falsely satisfy `or`. A bare `missing` -> False (correct).
                 return any(self.visit(v) for v in node.values)
             return False  # pragma: no cover
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
             operand = self.visit(node.operand)
-            # `not _MISSING` → True would be wrong (treats absence as "not X"
-            # being true). Fail-closed: missing operand → comparison must not
-            # match → return False (the rule does not apply).
+            # `not _MISSING` -> True would be wrong (treats absence as "not X"
+            # being true). Fail-closed: missing operand -> comparison must not
+            # match -> return False (the rule does not apply).
             if operand is self._MISSING:
                 return False
             return not operand
@@ -295,7 +295,7 @@ class PolicyEngine:
             else:
                 warnings.warn(
                     f"Policy file {path.name} defines default_action but is not "
-                    "default.yaml — ignored. Move default_action to default.yaml.",
+                    "default.yaml - ignored. Move default_action to default.yaml.",
                     stacklevel=2,
                 )
         for r in data.get("rules", []):
@@ -367,7 +367,7 @@ class PolicyEngine:
         else:
             # classified == "ask" (a genuine ask-type OR an unrecognized type).
             # Honor the configured default_action instead of always forcing
-            # "ask" — this fixes `default_action: allow` having no effect (B6).
+            # "ask" - this fixes `default_action: allow` having no effect (B6).
             fallback = self.default_action
         return {
             "decision": fallback,
@@ -379,7 +379,7 @@ class PolicyEngine:
 
     def can(self, action_type: str, **kwargs: Any) -> dict[str, Any]:
         # No attribute injection: a missing `command` resolves to _MISSING
-        # inside the evaluator (fail-closed) rather than "" — an empty
+        # inside the evaluator (fail-closed) rather than "" - an empty
         # string could satisfy `command == ""`-style rules for actions
         # that carry no command at all.
         return self.evaluate({"type": action_type, **kwargs})
@@ -391,7 +391,7 @@ class PolicyEngine:
 # Guardrails are functions wrapped via @input_guardrail / @output_guardrail
 # decorators. They return a GuardrailResult with tripwire_triggered. If
 # tripped, the guardrail chain halts immediately. This is an ADDITIONAL
-# policy layer on top of the existing PolicyEngine — it does not replace
+# policy layer on top of the existing PolicyEngine - it does not replace
 # PolicyManager.check() or the YAML rule engine.
 # ---------------------------------------------------------------------------
 

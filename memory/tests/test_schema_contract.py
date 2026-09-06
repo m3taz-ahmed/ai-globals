@@ -1,4 +1,4 @@
-"""Tests for memory/schema_contract.py — contract-first schema verification."""
+"""Tests for memory/schema_contract.py - contract-first schema verification."""
 
 from __future__ import annotations
 

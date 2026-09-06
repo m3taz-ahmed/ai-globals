@@ -56,7 +56,7 @@ Gartner published the first Magic Quadrant for AI Governance Platforms (June 202
 6. [REQ] **Data residency.** Flag actions that move data across residency boundaries (PDPL for Saudi, GDPR for EU). Cross-boundary = WARN + LEGAL review.
 7. [REQ] **Right to explanation.** Every high-tier action must produce a human-readable explanation from the audit trail. `audit.read_entries()` + `composite_identity.resolve()`.
 8. [REQ] **Model card.** Every model in `runtime/agent_catalog.py` has a model card: provider, tier, training cutoff, known limitations.
-9. [REQ] **Incident reporting.** `workflows/19-incident-response.md` extended with regulatory notification timelines (EU AI Act: 48h for serious incidents).
+9. [REQ] **Incident reporting.** `workflows/19-incident-response.md` extended with regulatory notification timelines (EU AI Act Article 73: 15 days for ordinary serious incidents, 2 days for widespread infringement or critical-infrastructure disruption, 10 days where a death occurred).
 10. [REQ] **Conformity assessment.** Before release, run `aizee compliance check` — maps all rules to regulatory articles and reports coverage gaps.
 11. [REQ] **Documentation as evidence.** `Memory.md`, `CHANGELOG.md`, `spec.md` serve as compliance evidence. Stale docs = compliance gap.
 12. [REQ] **Third-party AI.** Any third-party AI tool (Cursor, Claude, Copilot) used in the SDLC must be registered in `runtime/agent_catalog.py` with its risk tier.

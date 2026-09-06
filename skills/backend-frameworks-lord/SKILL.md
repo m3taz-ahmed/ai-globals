@@ -35,10 +35,11 @@ description: Architect-level command of Laravel, Filament, Nova, Django, Spring 
 19. [REQ] Testing (query `laravel-testing` tech-stack): Pest 3+ for new, PHPUnit 11+ for legacy. Two-tier FAST/FULL. Factories per model. Security test suite. Translation consistency. E2E with Playwright. Multi-DB matrix. Parallel + serial.
 20. [REQ] Security (query `laravel-security` tech-stack): ACL config-driven or filament-shield. Content filtering (HTMLPurifier + SVG sanitize). Rate limiting. Security headers. UUID primary keys. FormRequest validation. RBAC policies + gates.
 
-21. [REQ] Command Object Pattern (Invoice Ninja): Decompose complex service methods into command classes with execute() + ollback(). CommandBus runs sequence with Saga-style rollback. Better testability than monolithic services.
+21. [REQ] Command Object Pattern (Invoice Ninja): Decompose complex service methods into command classes with execute() + 
+ollback(). CommandBus runs sequence with Saga-style rollback. Better testability than monolithic services.
 22. [REQ] Contract-First Design (Prisma): Emit machine-readable JSON schema + TypeScript stubs from API contracts. Enables AI agent understanding + frontend type safety. contract.json + contract.d.ts artifacts.
 23. [REQ] Numbered Package Layering (Prisma): Prefix packages with layer numbers (1-core, 2-runtime, 3-managers) to encode dependency direction and prevent circular deps.
 24. [REQ] Fine-Grained Hook Lifecycle (Fastify): pre_receive → pre_validation → pre_handler → post_handler → post_response → on_error. More granular than middleware. Use for guardian/policy pipelines.
-25. [REQ] Scoped Managers (Filament): pp()->scoped() for request-isolated service instances. Prevents state leakage in Octane/Swoole. Flush at request boundary.
+25. [REQ] Scoped Managers (Filament): app()->scoped() for request-isolated service instances. Prevents state leakage in Octane/Swoole. Flush at request boundary.
 26. [REQ] Manifest-Driven Composition (Remix): Auto-generate umbrella package re-exports from manifest.json. Single-package distribution while maintaining modularity.
 27. [REQ] AI-Assisted Filament Workflow: Boost + Compass + FilaCheck pipeline. Boost loads context → AI generates code → FilaCheck validates. See 	ech-stack/laravel-ai-workflow.md and workflows/29-filament-ai-workflow.md.

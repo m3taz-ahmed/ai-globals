@@ -25,7 +25,7 @@ Each numbered item under a ``##`` heading is one check. The engine
 extracts them and provides a :class:`SkillEvalResult` with per-check
 pass/fail/skip status.
 
-The checks are evaluated by an LLM (or a rule-based evaluator) — this
+The checks are evaluated by an LLM (or a rule-based evaluator) - this
 module provides the infrastructure (loading, parsing, result tracking),
 not the LLM judgment itself. Callers supply an ``evaluator`` callable
 that takes a check string + the skill output and returns

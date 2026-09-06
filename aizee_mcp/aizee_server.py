@@ -29,7 +29,7 @@ from aizee_mcp.tools import (
     register_social_tools,
     register_workflow_tools,
 )
-from aizee_mcp.tools.common import kernel, reset_state  # noqa: F401 — re-exported for tests
+from aizee_mcp.tools.common import kernel, reset_state  # noqa: F401 - re-exported for tests
 
 logger = logging.getLogger(__name__)
 

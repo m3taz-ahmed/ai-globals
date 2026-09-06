@@ -1,4 +1,4 @@
-"""Tests for scripts/sync_docs.py — docs <-> reality sync."""
+"""Tests for scripts/sync_docs.py - docs <-> reality sync."""
 
 from __future__ import annotations
 
@@ -131,7 +131,7 @@ class TestSync:
 
 
 class TestBadgeSync:
-    """Badge URL/alt-text sync — must update badges but NOT historical prose."""
+    """Badge URL/alt-text sync - must update badges but NOT historical prose."""
 
     def test_updates_english_badge_urls(self) -> None:
         counts = {"runtime": 85, "skills": 72, "numbered": 36, "workflows_total": 50, "stack": 163, "tests": 3561}

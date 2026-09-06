@@ -1,7 +1,7 @@
-"""Tests for runtime/service_catalog.py — multi-index catalog.
+"""Tests for runtime/service_catalog.py - multi-index catalog.
 
 Covers: ServiceDescriptor, ServiceCatalog, build_catalog_from_directory.
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ class TestServiceDescriptor:
         assert desc.supports_tech("react") is False
 
     def test_frozen(self) -> None:
-        """ServiceDescriptor is frozen — cannot mutate."""
+        """ServiceDescriptor is frozen - cannot mutate."""
         desc = ServiceDescriptor(name="test", kind="skill")
         with pytest.raises(AttributeError):
             desc.name = "other"  # type: ignore[misc]
@@ -222,6 +222,6 @@ class TestBuildCatalogFromDirectory:
     def test_triggers_extracted_from_name(self, tmp_path: Path) -> None:
         (tmp_path / "flutter-architect.md").write_text("# Flutter", encoding="utf-8")
         catalog = build_catalog_from_directory(tmp_path)
-        # Trigger should be derived from name (hyphens → spaces)
+        # Trigger should be derived from name (hyphens -> spaces)
         descs = catalog.by_trigger("flutter architect")
         assert len(descs) == 1

@@ -62,7 +62,7 @@ class IssueDescriptor:
 
 
 # ---------------------------------------------------------------------------
-# Issue registry — the single source of truth.
+# Issue registry - the single source of truth.
 # Mirrors open-seo's AUDIT_ISSUE_TYPES with aiZee-specific additions.
 # ---------------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ _register(
     "duplicate-meta-description", IssueSeverity.WARNING,
     "Duplicate meta description",
     "Multiple pages share the same meta description, so search results show identical snippets and users cannot tell the pages apart.",
-    "Write a unique meta description per page, or remove the duplicated one entirely — search engines will generate a snippet from content.",
+    "Write a unique meta description per page, or remove the duplicated one entirely - search engines will generate a snippet from content.",
 )
 _register(
     "duplicate-content", IssueSeverity.WARNING,
@@ -202,8 +202,8 @@ _register(
 _register(
     "heading-order-skip", IssueSeverity.WARNING,
     "Heading order skip",
-    "Heading levels are skipped (e.g. H1 → H3 without an H2), which breaks the document outline and confuses screen readers and search engines.",
-    "Fix the heading hierarchy so levels increase sequentially (H1 → H2 → H3).",
+    "Heading levels are skipped (e.g. H1 -> H3 without an H2), which breaks the document outline and confuses screen readers and search engines.",
+    "Fix the heading hierarchy so levels increase sequentially (H1 -> H2 -> H3).",
 )
 _register(
     "noindex-page", IssueSeverity.WARNING,

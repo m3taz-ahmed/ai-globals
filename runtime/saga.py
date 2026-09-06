@@ -198,7 +198,7 @@ class SagaOrchestrator(BaseRepository):
         if not row:
             return None
         try:
-            completed = json.loads(row["completed"]) if "completed" in row.keys() else []  # noqa: SIM118 — sqlite3.Row has no __contains__; .keys() required
+            completed = json.loads(row["completed"]) if "completed" in row.keys() else []  # noqa: SIM118 - sqlite3.Row has no __contains__; .keys() required
         except (ValueError, TypeError):
             completed = []
         return {

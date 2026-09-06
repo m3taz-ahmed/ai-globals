@@ -1,4 +1,4 @@
-"""Tests for eval/agent_benchmark.py — agent benchmark engine."""
+"""Tests for eval/agent_benchmark.py - agent benchmark engine."""
 
 from __future__ import annotations
 

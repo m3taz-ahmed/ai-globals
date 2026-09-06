@@ -219,21 +219,21 @@ class TestEdgeCases:
         store = VectorStore(dim=3)
         store.add("a", [1.0, 0.0, 0.0])
         results = store.search([0.0, 0.0, 0.0])
-        # Zero query vector → cosine similarity = 0 → no results
+        # Zero query vector -> cosine similarity = 0 -> no results
         assert results == []
 
     def test_zero_vector_stored(self) -> None:
         store = VectorStore(dim=3)
         store.add("a", [0.0, 0.0, 0.0])
         results = store.search([1.0, 0.0, 0.0])
-        # Zero stored vector → cosine similarity = 0 → no results
+        # Zero stored vector -> cosine similarity = 0 -> no results
         assert results == []
 
     def test_orthogonal_vectors(self) -> None:
         store = VectorStore(dim=3)
         store.add("a", [1.0, 0.0, 0.0])
         results = store.search([0.0, 1.0, 0.0])
-        # Orthogonal → cosine = 0 → no results
+        # Orthogonal -> cosine = 0 -> no results
         assert results == []
 
     def test_identical_vectors(self) -> None:

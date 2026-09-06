@@ -1,4 +1,4 @@
-"""Tests for eval.reliability — reliability@k and security-adjusted scoring."""
+"""Tests for eval.reliability - reliability@k and security-adjusted scoring."""
 
 from __future__ import annotations
 

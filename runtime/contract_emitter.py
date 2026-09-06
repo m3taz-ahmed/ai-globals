@@ -1,4 +1,4 @@
-"""Contract-first artifact emitter â€" emit machine-readable JSON + type stubs.
+"""Contract-first artifact emitter -" emit machine-readable JSON + type stubs.
 
 Inspired by Prisma's contract-first design which emits ``contract.json`` +
 ``contract.d.ts`` as machine-readable artifacts (no executable codegen),
@@ -147,7 +147,7 @@ def emit_contracts(
 ) -> dict[str, ContractArtifact]:
     """Emit contracts for multiple schema classes. Optionally write to disk.
 
-    Returns a mapping of artifact name â†' ContractArtifact.
+    Returns a mapping of artifact name ->' ContractArtifact.
     If ``output_dir`` is provided, writes ``<name>.json`` and ``<name>.d.ts``
     for each artifact.
     """
@@ -188,7 +188,7 @@ def validate_contract(artifact: ContractArtifact, data: dict[str, Any]) -> list[
     """Validate a data dict against a contract artifact's JSON schema.
 
     Returns a list of error messages (empty if valid). This is a lightweight
-    structural check â€" for full JSON Schema validation use ``jsonschema``.
+    structural check -" for full JSON Schema validation use ``jsonschema``.
     """
     errors: list[str] = []
     props = artifact.json_schema.get("properties", {})

@@ -174,7 +174,7 @@ class AnalysisMixin:
     def converge_to_code(self, spec_id: str, codebase_dir: Path) -> dict[str, Any]:
         """Assess codebase against spec/plan/tasks; identify remaining work.
 
-        Inspired by spec-kit's converge command. Read-only — does NOT modify
+        Inspired by spec-kit's converge command. Read-only - does NOT modify
         any files. Returns a structured report of gaps (missing/partial)
         with suggested remediation tasks.
         """

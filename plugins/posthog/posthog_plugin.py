@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PosthogPlugin for aiZee — proxies to external MCP server.
+"""PosthogPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @posthog/mcp
 Required env vars: POSTHOG_API_KEY, POSTHOG_PROJECT_ID
@@ -28,7 +28,7 @@ class PosthogPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

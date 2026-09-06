@@ -1,4 +1,4 @@
-"""Tests for runtime/contract_emitter.py — ContractArtifact + emit/validate."""
+"""Tests for runtime/contract_emitter.py - ContractArtifact + emit/validate."""
 from __future__ import annotations
 
 from dataclasses import dataclass

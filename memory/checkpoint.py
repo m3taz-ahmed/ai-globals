@@ -8,7 +8,7 @@ of an agent run can be replayed or rolled back.
 
 Channel reducers (``append_reducer``, ``last_value_reducer``,
 ``subtract_reducer``) define how a channel's value is updated when a new
-value is written — mirroring LangGraph's ``Annotated`` reducer pattern.
+value is written - mirroring LangGraph's ``Annotated`` reducer pattern.
 """
 
 from __future__ import annotations
@@ -127,7 +127,7 @@ def create_checkpoint(
     Versions are always derived from the parent (monotonic bump per
     channel present in ``channel_values``). A caller-supplied
     ``channel_versions`` is honored only for root checkpoints (no parent),
-    where there is nothing to inherit — otherwise it is ignored so stale
+    where there is nothing to inherit - otherwise it is ignored so stale
     versions can never override the computed chain.
     """
     parent_versions = dict(parent.channel_versions) if parent else {}
@@ -209,7 +209,7 @@ class SqliteCheckpointSaver(BaseCheckpointSaver):
         # Single shared connection with check_same_thread=False requires
         # explicit serialization of access across threads. A connection pool
         # is intentionally NOT used here because checkpoint save/load is
-        # strictly serial (one writer, WAL mode, RLock-guarded) — a pool
+        # strictly serial (one writer, WAL mode, RLock-guarded) - a pool
         # would add complexity without benefit for this access pattern.
         self._lock = threading.RLock()
         self._closed = False

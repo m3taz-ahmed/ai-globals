@@ -7,7 +7,7 @@ backend by answering common operational intents directly from live kernel
 state, and by being explicit about its offline nature for anything else.
 
 Token efficiency principle (spec.md #6): intent matching is pure regex over
-kernel data — no model calls, no network, fully deterministic.
+kernel data - no model calls, no network, fully deterministic.
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ class LocalResponder:
         if _INTENT_HELP.search(message):
             return (
                 _PREFIX + "Available intents: help · status · budgets · workflows · "
-                "rules · skills · tech stack. I answer from live kernel state — "
+                "rules · skills · tech stack. I answer from live kernel state - "
                 "I am not an LLM."
             )
         # Order: longer/more-specific keywords first (budget status before status).
@@ -81,7 +81,7 @@ class LocalResponder:
             if not isinstance(workflows, list):
                 workflows = []
             sample = ", ".join(map(str, workflows[:5]))
-            more = f" … +{len(workflows) - 5} more" if len(workflows) > 5 else ""
+            more = f" ... +{len(workflows) - 5} more" if len(workflows) > 5 else ""
             return _PREFIX + f"{len(workflows)} registered workflow(s): {sample}{more}."
         if _INTENT_RULES.search(message):
             rules = ctx.get("rules")
@@ -109,7 +109,7 @@ class LocalResponder:
             names = ", ".join(sorted(map(str, stack))) or "none detected"
             return _PREFIX + f"Detected tech stack: {names}."
         return (
-            _PREFIX + "No LLM backend configured — I answer operational intents only "
+            _PREFIX + "No LLM backend configured - I answer operational intents only "
             "(try 'help'). Use Context7 MCP or your IDE assistant for code questions."
         )
 

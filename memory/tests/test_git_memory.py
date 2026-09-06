@@ -1,4 +1,4 @@
-"""Tests for memory/git_memory.py — git-backed memory store."""
+"""Tests for memory/git_memory.py - git-backed memory store."""
 
 from __future__ import annotations
 

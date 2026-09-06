@@ -1,4 +1,4 @@
-"""Tests for runtime/scoped_manager.py — ScopedManager + ScopedRegistry."""
+"""Tests for runtime/scoped_manager.py - ScopedManager + ScopedRegistry."""
 from __future__ import annotations
 
 import threading

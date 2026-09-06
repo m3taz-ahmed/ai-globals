@@ -1,4 +1,4 @@
-"""Tests for runtime.tool_output_sanitizer — indirect injection defense."""
+"""Tests for runtime.tool_output_sanitizer - indirect injection defense."""
 
 from __future__ import annotations
 

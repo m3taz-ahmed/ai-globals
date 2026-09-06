@@ -43,10 +43,10 @@ class ActionConfig:
     """Thresholds for action escalation (from agent-loop-guard).
 
     Consecutive loop hits escalate the action:
-    - hits < warn_threshold → CONTINUE
-    - warn_threshold <= hits < stop_threshold → WARN
-    - stop_threshold <= hits < escalate_threshold → STOP
-    - hits >= escalate_threshold → ESCALATE
+    - hits < warn_threshold -> CONTINUE
+    - warn_threshold <= hits < stop_threshold -> WARN
+    - stop_threshold <= hits < escalate_threshold -> STOP
+    - hits >= escalate_threshold -> ESCALATE
     """
 
     warn_threshold: int = 2
@@ -166,10 +166,10 @@ class LoopDetector:
     """Detect repeated actions within a sliding window.
 
     Supports four detection strategies (from agent-loop-guard):
-    1. Exact repeat — same hash appears >= threshold times
-    2. Fuzzy repeat — args similarity >= fuzzy_threshold (Jaccard + edit distance)
-    3. Cycle detection — repeating sequence A→B→C→A
-    4. Action escalation — consecutive hits escalate CONTINUE→WARN→STOP→ESCALATE
+    1. Exact repeat - same hash appears >= threshold times
+    2. Fuzzy repeat - args similarity >= fuzzy_threshold (Jaccard + edit distance)
+    3. Cycle detection - repeating sequence A->B->C->A
+    4. Action escalation - consecutive hits escalate CONTINUE->WARN->STOP->ESCALATE
 
     Attributes:
         window: Number of recent actions to track (default 10).
@@ -214,7 +214,7 @@ class LoopDetector:
         return sum(1 for x in self._history if x == h)
 
     def _detect_fuzzy(self, tool: str, args: dict[str, Any]) -> tuple[float, dict[str, Any]] | None:
-        """Check for fuzzy repeat — requires >=2 similar past actions.
+        """Check for fuzzy repeat - requires >=2 similar past actions.
 
         Falls back to exact-only (None) when history exceeds 200 entries
         to bound O(n) scan cost.
@@ -242,7 +242,7 @@ class LoopDetector:
         return None
 
     def _detect_cycle(self, tool: str, args: dict[str, Any]) -> bool:
-        """Check for repeating sequence (e.g., A→B→C→A→B→C→A)."""
+        """Check for repeating sequence (e.g., A->B->C->A->B->C->A)."""
         if not self.cycle_enabled:
             return False
         history_list = list(self._tool_history)
@@ -281,7 +281,7 @@ class LoopDetector:
     def is_looping(self, tool: str, args: dict[str, Any]) -> bool:
         """Check if recording this action would trigger a loop.
 
-        Does NOT record the action — call ``record`` after a successful
+        Does NOT record the action - call ``record`` after a successful
         action, or call ``check_and_record`` to do both atomically.
         """
         h = _action_hash(tool, args)

@@ -1,6 +1,6 @@
-"""Tests for runtime/output_gate.py — pre-send check + portability test.
+"""Tests for runtime/output_gate.py - pre-send check + portability test.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

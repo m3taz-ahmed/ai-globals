@@ -4,7 +4,7 @@ Inspired by Floci's ``StorageBackend<K,V>`` interface + ``StorageFactory``
 pattern. Provides a uniform interface for key-value stores with multiple
 implementations (in-memory, JSON-file, SQLite) selected by configuration.
 
-The abstraction is additive — existing ``MemoryStore`` (SQLite) is NOT
+The abstraction is additive - existing ``MemoryStore`` (SQLite) is NOT
 modified. New code can opt into the abstraction; legacy code keeps working.
 
 Usage::
@@ -14,7 +14,7 @@ Usage::
     factory = StorageFactory()
     backend = factory.create("rules", "rules.json", dict)
     backend.put("git-01", {"condition": "type == 'Read'", "action": "allow"})
-    rule = backend.get("git-01")  # → {"condition": ..., "action": ...}
+    rule = backend.get("git-01")  # -> {"condition": ..., "action": ...}
     factory.shutdown_all()
 """
 
@@ -30,7 +30,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
-# SQLite identifiers cannot be parameterized — validate strictly so a
+# SQLite identifiers cannot be parameterized - validate strictly so a
 # caller-controlled `name` can never inject SQL via the table name.
 _TABLE_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}")
 
@@ -230,7 +230,7 @@ class SqliteStorage(StorageBackend[Any, Any]):
         return self._conn
 
     def load(self) -> None:
-        """SQLite loads lazily on first access — no bulk load needed."""
+        """SQLite loads lazily on first access - no bulk load needed."""
         self._connect()
 
     def put(self, key: Any, value: Any) -> None:
@@ -310,7 +310,7 @@ class SqliteStorage(StorageBackend[Any, Any]):
         return [r[0] for r in rows]
 
     def flush(self) -> None:
-        """SQLite autocommit mode — no explicit flush needed."""
+        """SQLite autocommit mode - no explicit flush needed."""
 
     def clear(self) -> None:
         conn = self._connect()
@@ -345,9 +345,9 @@ class StorageFactory:
     """Factory that creates and tracks storage backends by configuration.
 
     Inspired by Floci's ``StorageFactory``. Centralizes backend lifecycle:
-    create → load → use → flush → shutdown.
+    create -> load -> use -> flush -> shutdown.
 
-    Backends are cached by path — repeat ``create()`` with the same path
+    Backends are cached by path - repeat ``create()`` with the same path
     returns the existing backend (prevents duplicate stores clobbering
     persisted state on shutdown, mirroring Floci issue #1921).
     """
@@ -538,11 +538,11 @@ class MemoryStoreAdapter(StorageBackend[str, Any]):
         return [m.id for m in self._store.list_all(limit=100000)]
 
     def flush(self) -> None:
-        """No-op — SQLite auto-persists on each write."""
+        """No-op - SQLite auto-persists on each write."""
         return None
 
     def load(self) -> None:
-        """No-op — SQLite loads on connection."""
+        """No-op - SQLite loads on connection."""
         return None
 
     def clear(self) -> None:

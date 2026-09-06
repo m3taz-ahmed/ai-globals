@@ -74,7 +74,7 @@ class DecayScheduler:
         """Run one decay cycle. Returns summary stats.
 
         Decay is computed from the entry's TOTAL age (``now - created_at``),
-        not since the last cycle — otherwise salience would jump back up
+        not since the last cycle - otherwise salience would jump back up
         after every cycle and eviction would never fire.
         """
         current_time = now if now is not None else time.time()

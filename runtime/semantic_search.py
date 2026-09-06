@@ -46,9 +46,9 @@ class SemanticCodeSearch:
     """
 
     _functions: list[FunctionNode] = field(default_factory=list)
-    _token_freqs: dict[str, dict[str, int]] = field(default_factory=dict)  # func_name → {token: freq}
-    _doc_freqs: dict[str, int] = field(default_factory=dict)  # token → num docs containing it
-    _sources: dict[str, str] = field(default_factory=dict)  # func_name → source snippet
+    _token_freqs: dict[str, dict[str, int]] = field(default_factory=dict)  # func_name -> {token: freq}
+    _doc_freqs: dict[str, int] = field(default_factory=dict)  # token -> num docs containing it
+    _sources: dict[str, str] = field(default_factory=dict)  # func_name -> source snippet
 
     def index_file(self, file_path: Path) -> None:
         """Index all functions in a file."""
@@ -136,9 +136,9 @@ class SemanticCodeSearch:
 #
 # Runs keyword (TF-IDF) and vector (semantic) searches in parallel, then
 # fuses the results with an alpha-weighted blend.
-#   alpha = 1.0 → pure vector search
-#   alpha = 0.0 → pure keyword search
-#   alpha = 0.5 → balanced hybrid
+#   alpha = 1.0 -> pure vector search
+#   alpha = 0.0 -> pure keyword search
+#   alpha = 0.5 -> balanced hybrid
 # ---------------------------------------------------------------------------
 
 # RRF smoothing constant (Weaviate's FusionRanked uses 60).
@@ -216,9 +216,9 @@ def hybrid_search(
 ) -> list[HybridSearchResult]:
     """Run keyword and vector searches in parallel, then fuse with alpha blend.
 
-    alpha=1.0 → pure vector search
-    alpha=0.0 → pure keyword (TF-IDF) search
-    alpha=0.5 → balanced hybrid
+    alpha=1.0 -> pure vector search
+    alpha=0.0 -> pure keyword (TF-IDF) search
+    alpha=0.5 -> balanced hybrid
     """
     over_fetch = limit * 3
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -379,7 +379,7 @@ def fuse_relative_score(
 
 
 def _build_func_lookup(keyword_results: list[SearchResult]) -> dict[str, SearchResult]:
-    """Build a name → SearchResult map from keyword results + indexed funcs."""
+    """Build a name -> SearchResult map from keyword results + indexed funcs."""
     lookup = {r.function.name: r for r in keyword_results}
     ks = _get_keyword_search()
     for func in ks._functions:

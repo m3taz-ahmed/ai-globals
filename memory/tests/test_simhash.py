@@ -1,4 +1,4 @@
-"""Tests for memory/simhash.py — near-duplicate detection."""
+"""Tests for memory/simhash.py - near-duplicate detection."""
 
 from __future__ import annotations
 
@@ -82,7 +82,7 @@ class TestSimHashIndex:
         idx_loose = SimHashIndex(threshold=20)
         idx_strict.add("1", "apple banana cherry fruit")
         idx_loose.add("1", "apple banana cherry fruit")
-        # Similar text — loose threshold catches it, strict doesn't
+        # Similar text - loose threshold catches it, strict doesn't
         similar = "apple banana cherry apple"
         assert idx_loose.is_duplicate("2", similar) is True
         assert idx_strict.is_duplicate("2", similar) is False

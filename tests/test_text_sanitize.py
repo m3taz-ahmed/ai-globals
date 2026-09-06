@@ -1,6 +1,6 @@
-"""Tests for runtime/text_sanitize.py — invisible codepoint sanitization.
+"""Tests for runtime/text_sanitize.py - invisible codepoint sanitization.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

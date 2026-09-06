@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""aiZee update script — pull latest from GitHub and re-run post-install hooks.
+"""aiZee update script - pull latest from GitHub and re-run post-install hooks.
 
 Usage:
     python scripts/update.py              # interactive
@@ -7,7 +7,7 @@ Usage:
 
 What it does:
   1. Check if this is a git repo (has .git/).
-  2. git fetch origin → compare local vs remote.
+  2. git fetch origin -> compare local vs remote.
   3. If behind: git pull (preserves local learned data via .gitignore).
   4. Re-run post-install: pip install -e ., MCP config sync, CLI shim refresh.
   5. Print summary of updated files.
@@ -106,14 +106,14 @@ def _has_local_changes(root: Path) -> bool:
     rc, out, _ = _run(["git", "status", "--porcelain"], cwd=root, check=False)
     if rc != 0:
         return False
-    # Filter out untracked files (?? prefix) — those don't conflict with pull
+    # Filter out untracked files (?? prefix) - those don't conflict with pull
     return any(not line.startswith("??") for line in out.strip().splitlines())
 
 
 def _stash_local_changes(root: Path) -> dict[str, Any]:
     """Stash local changes before pull so the update writes over them.
 
-    The stashed changes are NOT restored after pull — the new remote version
+    The stashed changes are NOT restored after pull - the new remote version
     becomes the working tree. Users can recover stashed changes manually with
     `git stash pop` if needed.
 
@@ -274,7 +274,7 @@ def _post_install_hooks(root: Path) -> list[str]:
 def run_update(root: Path, assume_yes: bool = False) -> int:
     """Main update flow. Returns exit code."""
     print("=" * 60)
-    print("  aiZee Update — Pull latest from GitHub")
+    print("  aiZee Update - Pull latest from GitHub")
     print("=" * 60)
     print()
 
@@ -346,12 +346,12 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
     else:
         print("  No files changed.")
 
-    # Step 6b: Self-re-execution — if update.py itself changed, re-launch
+    # Step 6b: Self-re-execution - if update.py itself changed, re-launch
     # the NEW version so post-install hooks + verification use the latest code.
     # This solves the bootstrapping problem: the old script can't run new logic.
     self_script = Path(__file__).resolve()
     if any(f.replace("\\", "/").endswith("scripts/update.py") for f in changed):
-        print("\n  [SELF-UPDATE] update.py changed — re-launching new version...")
+        print("\n  [SELF-UPDATE] update.py changed - re-launching new version...")
         rc = subprocess.call(
             [sys.executable, str(self_script), "--post-install-only", "--root", str(root)],
             cwd=root,
@@ -377,7 +377,7 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
         print("    [WARN] .aizee-version file missing")
         verify_ok = False
 
-    # 8b: MCP config check — count servers in config.json
+    # 8b: MCP config check - count servers in config.json
     config_file = root / "aizee_mcp" / "config.json"
     if config_file.exists():
         try:
@@ -395,7 +395,7 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
         print("    [WARN] aizee_mcp/config.json missing")
         verify_ok = False
 
-    # 8c: Core import check — can we import the kernel?
+    # 8c: Core import check - can we import the kernel?
     rc, _, err = _run(
         [sys.executable, "-c", "from runtime.kernel import Kernel; print('OK')"],
         cwd=root, check=False,
@@ -414,7 +414,7 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
     if rc == 0:
         print("    ruff fatal check: OK")
     else:
-        # Non-fatal — just warn
+        # Non-fatal - just warn
         print("    [WARN] ruff check had issues (non-blocking)")
 
     # Step 9: Summary
@@ -422,7 +422,7 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
     if verify_ok:
         print("  [DONE] aiZee updated + verified successfully.")
     else:
-        print("  [DONE] aiZee updated (with warnings — check output above).")
+        print("  [DONE] aiZee updated (with warnings - check output above).")
     print("  Learned data (memory/state/brain/.env) preserved.")
     print("=" * 60)
 
@@ -437,7 +437,7 @@ def _run_post_install_only(root: Path) -> int:
     re-launches the NEW script with ``--post-install-only``.
     """
     print("=" * 60)
-    print("  aiZee Update — Post-install (self-re-launched)")
+    print("  aiZee Update - Post-install (self-re-launched)")
     print("=" * 60)
 
     # Step 7: Post-install hooks
@@ -503,7 +503,7 @@ def _run_post_install_only(root: Path) -> int:
     if verify_ok:
         print("  [DONE] aiZee updated + verified successfully.")
     else:
-        print("  [DONE] aiZee updated (with warnings — check output above).")
+        print("  [DONE] aiZee updated (with warnings - check output above).")
     print("  Learned data (memory/state/brain/.env) preserved.")
     print("=" * 60)
 
@@ -511,7 +511,7 @@ def _run_post_install_only(root: Path) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="aiZee update — pull latest from GitHub")
+    parser = argparse.ArgumentParser(description="aiZee update - pull latest from GitHub")
     parser.add_argument("--yes", "-y", action="store_true", help="Skip confirmation")
     parser.add_argument("--root", default=None, help="aiZee root directory (default: auto-detect)")
     parser.add_argument(

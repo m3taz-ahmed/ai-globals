@@ -26,7 +26,7 @@ class TestStepType:
         assert isinstance(StepType.REQ, Enum)
 
     def test_step_type_string_comparison(self) -> None:
-        # Assert — str enum compares directly to string value
+        # Assert - str enum compares directly to string value
         assert StepType.REQ == "REQ"
         assert StepType.CMD == "CMD"
 
@@ -124,7 +124,7 @@ class TestExceedAction:
 
 class TestEnumCrossModule:
     def test_all_enums_are_str_subclass(self) -> None:
-        # Assert — all enums inherit from str for JSON serialization
+        # Assert - all enums inherit from str for JSON serialization
         assert all(isinstance(m.value, str) for m in StepType)
         assert all(isinstance(m.value, str) for m in SagaStatus)
         assert all(isinstance(m.value, str) for m in Decision)

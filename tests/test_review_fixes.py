@@ -26,17 +26,17 @@ class TestMissingSentinelFalsy:
 
     def test_bare_missing_attribute_does_not_match(self) -> None:
         # A condition that is just a missing attribute name must NOT match.
-        # Previously ``bool(object())`` was True → allow-by-absence.
+        # Previously ``bool(object())`` was True -> allow-by-absence.
         ev = _SafeEvaluator({})
         assert ev.evaluate("is_admin") is False
 
     def test_missing_in_and_does_not_match(self) -> None:
-        # ``missing and true`` → False (missing is falsy).
+        # ``missing and true`` -> False (missing is falsy).
         ev = _SafeEvaluator({})
         assert ev.evaluate("is_admin and true") is False
 
     def test_missing_in_or_does_not_prevent_match_if_other_truthy(self) -> None:
-        # ``missing or true`` → True (or should still work with a truthy
+        # ``missing or true`` -> True (or should still work with a truthy
         # literal even if one operand is missing).
         ev = _SafeEvaluator({})
         assert ev.evaluate("is_admin or true") is True
@@ -57,7 +57,7 @@ class TestSubscriptMissingKey:
     """C3: missing subscript key must fail-closed."""
 
     def test_missing_key_in_neq_does_not_match(self) -> None:
-        # ``config["env"] != "prod"`` with no config → must NOT match.
+        # ``config["env"] != "prod"`` with no config -> must NOT match.
         ev = _SafeEvaluator({})
         assert ev.evaluate('config["env"] != "prod"') is False
 

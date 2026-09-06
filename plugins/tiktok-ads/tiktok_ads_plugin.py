@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TiktokAdsPlugin for aiZee — proxies to external MCP server.
+"""TiktokAdsPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @tiktok/ads-mcp
 Required env vars: TIKTOK_ACCESS_TOKEN, TIKTOK_ADVERTISER_ID
@@ -28,7 +28,7 @@ class TiktokAdsPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

@@ -1,4 +1,4 @@
-"""Tests for eval/stages.py — 3-Stage Evaluation Gate."""
+"""Tests for eval/stages.py - 3-Stage Evaluation Gate."""
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
-"""Tests for runtime/error_classifier.py — error classification.
+"""Tests for runtime/error_classifier.py - error classification.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

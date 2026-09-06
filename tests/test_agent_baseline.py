@@ -1,4 +1,4 @@
-"""Tests for runtime.agent_baseline — behavioral anomaly detection."""
+"""Tests for runtime.agent_baseline - behavioral anomaly detection."""
 
 from __future__ import annotations
 

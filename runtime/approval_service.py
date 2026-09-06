@@ -81,7 +81,7 @@ def _validate_webhook_url(url: str) -> bool:
             return False
         return True
     except ValueError:
-        pass  # Not an IP literal — proceed to DNS resolution.
+        pass  # Not an IP literal - proceed to DNS resolution.
     # Resolve hostname to IP addresses; reject if any resolution fails or is private.
     try:
         infos = socket.getaddrinfo(hostname, None)
@@ -169,7 +169,7 @@ class ConsoleChannel(NotificationChannel):
 
     def send(self, request: ApprovalRequest) -> bool:
         print(
-            f"[APPROVAL REQUIRED] {request.action} — {request.reason} "
+            f"[APPROVAL REQUIRED] {request.action} - {request.reason} "
             f"(id={request.id[:8]})"
         )
         return True

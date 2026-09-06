@@ -167,7 +167,7 @@ def register_email_tools(mcp: FastMCP) -> None:
         sender: str = "",
         provider: str = "brevo",
     ) -> str:
-        """Send a transactional email. WRITE/EXTERNAL — gated by guardian; requires human approval before the ESP call executes. Returns a JSON instruction object (proxy) describing the send."""
+        """Send a transactional email. WRITE/EXTERNAL - gated by guardian; requires human approval before the ESP call executes. Returns a JSON instruction object (proxy) describing the send."""
         try:
             to = _clean_header(to, "to", 254)
             subject = _clean_header(subject, "subject")
@@ -210,7 +210,7 @@ def register_email_tools(mcp: FastMCP) -> None:
         steps: str = "[]",
         provider: str = "brevo",
     ) -> str:
-        """Define a drip/email sequence (list of timed steps). Returns the structured sequence plan. WRITE/EXTERNAL — gated."""
+        """Define a drip/email sequence (list of timed steps). Returns the structured sequence plan. WRITE/EXTERNAL - gated."""
         if err := validate_query(name):
             return err
         try:
@@ -269,7 +269,7 @@ def register_email_tools(mcp: FastMCP) -> None:
         provider: str = "brevo",
         since_days: int = 7,
     ) -> str:
-        """Fetch engagement events (opens/clicks/bounces) from an ESP. READ/EXTERNAL — proxy instruction only, no inline network call."""
+        """Fetch engagement events (opens/clicks/bounces) from an ESP. READ/EXTERNAL - proxy instruction only, no inline network call."""
         try:
             backend = _resolve_backend(provider)
         except ValidationError as exc:
@@ -324,7 +324,7 @@ def register_email_tools(mcp: FastMCP) -> None:
         template: str = "",
         provider: str = "brevo",
     ) -> str:
-        """Assemble a campaign from a template + list. WRITE/EXTERNAL — gated; returns proxy instruction."""
+        """Assemble a campaign from a template + list. WRITE/EXTERNAL - gated; returns proxy instruction."""
         if err := validate_query(name):
             return err
         try:
@@ -356,7 +356,7 @@ def register_email_tools(mcp: FastMCP) -> None:
         double_opt_in: bool = True,
         provider: str = "brevo",
     ) -> str:
-        """Subscribe an email to a list (GDPR/CAN-SPAM aware). WRITE/EXTERNAL — gated; returns proxy instruction. double_opt_in enforces consent."""
+        """Subscribe an email to a list (GDPR/CAN-SPAM aware). WRITE/EXTERNAL - gated; returns proxy instruction. double_opt_in enforces consent."""
         try:
             email = _clean_header(email, "email", 254)
             list_id = _clean_header(list_id, "list_id", 128)
@@ -389,7 +389,7 @@ def register_email_tools(mcp: FastMCP) -> None:
         email: str,
         provider: str = "brevo",
     ) -> str:
-        """Unsubscribe an email from a list (honors unsubscribe requests). WRITE/EXTERNAL — gated; returns proxy instruction."""
+        """Unsubscribe an email from a list (honors unsubscribe requests). WRITE/EXTERNAL - gated; returns proxy instruction."""
         try:
             email = _clean_header(email, "email", 254)
             list_id = _clean_header(list_id, "list_id", 128)
@@ -418,7 +418,7 @@ def register_email_tools(mcp: FastMCP) -> None:
     def drip_create_sequence(
         name: str,
     ) -> str:
-        """Create a drip sequence via runtime.drip_engine. WRITE — returns sequence metadata."""
+        """Create a drip sequence via runtime.drip_engine. WRITE - returns sequence metadata."""
         if err := validate_query(name):
             return err
         try:
@@ -445,7 +445,7 @@ def register_email_tools(mcp: FastMCP) -> None:
             context: JSON object with runtime context for condition evaluation.
             steps: JSON array of {trigger, action, delay_hours,
                 entered_hours_ago, fired} defining the sequence inline
-                (the tool is stateless — sequences do not persist across calls).
+                (the tool is stateless - sequences do not persist across calls).
         """
         if err := validate_query(sequence_name):
             return err

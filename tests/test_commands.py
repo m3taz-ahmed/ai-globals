@@ -1,4 +1,4 @@
-"""Tests for runtime/commands.py — Command object pattern + CommandBus."""
+"""Tests for runtime/commands.py - Command object pattern + CommandBus."""
 from __future__ import annotations
 
 import pytest

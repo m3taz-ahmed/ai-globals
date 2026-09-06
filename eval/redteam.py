@@ -183,7 +183,7 @@ class RedTeamRunner:
             status = FindingStatus.BLOCKED
             severity = FindingSeverity.NONE
         else:
-            # Attack was NOT blocked — vulnerability!
+            # Attack was NOT blocked - vulnerability!
             status = FindingStatus.PASSED
             severity = FindingSeverity.ERROR
 

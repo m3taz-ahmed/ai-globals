@@ -2,7 +2,7 @@
 
 Inspired by Databricks Unity Catalog: each MCP server is a securable
 asset. Access is governed by explicit GRANT policies per principal +
-permission. No implicit access — a principal must hold a matching grant.
+permission. No implicit access - a principal must hold a matching grant.
 
 Usage::
 
@@ -61,7 +61,7 @@ class McpSecurableRegistry:
 
     Grants are keyed by ``(server_id, principal, permission)`` so a
     duplicate grant is idempotent. ``ADMIN`` implies ``USE`` (an admin can
-    always use the server) — unlike the earlier documented behavior, which
+    always use the server) - unlike the earlier documented behavior, which
     was a footgun (admins locked out of use).
     """
 
@@ -150,7 +150,7 @@ class McpSecurableRegistry:
     ) -> bool:
         """Complete gate: server exists + tool allowlisted + principal may USE.
 
-        Callers must use this (not ``is_tool_allowed`` alone) — the allowlist
+        Callers must use this (not ``is_tool_allowed`` alone) - the allowlist
         without the grant check is only half the gate.
         """
         if not self.is_tool_allowed(server_id, tool_name):

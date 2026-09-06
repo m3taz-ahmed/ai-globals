@@ -122,7 +122,7 @@ class TestMigrationGaps:
         # Set version to 0 but remove migration 0 to create a gap
         original_migrations = dict(_MIGRATIONS)
         _MIGRATIONS.clear()
-        # Only register migration 1, not 0 â€” creates a gap at version 0
+        # Only register migration 1, not 0 - creates a gap at version 0
         if 1 in original_migrations:
             _MIGRATIONS[1] = original_migrations[1]
         try:

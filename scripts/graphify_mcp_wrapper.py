@@ -1,5 +1,5 @@
 """
-Graphify MCP Wrapper — Dynamic Workspace Detection
+Graphify MCP Wrapper - Dynamic Workspace Detection
 ====================================================
 This wrapper intercepts the MCP 'initialize' JSON-RPC message on stdin,
 extracts the workspace path, changes the working directory to it,
@@ -41,7 +41,7 @@ def _uri_to_path(uri: str) -> str | None:
     if not uri.startswith("file:///"):
         return None
     path = urllib.parse.unquote(urllib.parse.urlparse(uri).path)
-    # Windows: /C:/foo → C:/foo
+    # Windows: /C:/foo -> C:/foo
     if len(path) > 2 and path[0] == "/" and path[2] == ":":
         path = path[1:]
     return path
@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
     _install_intercept_pipe()
 
-    # Now start graphify — it will read from the intercepted fd 0
+    # Now start graphify - it will read from the intercepted fd 0
     # which already has the initialize message queued up
     from graphify.serve import serve
     serve()

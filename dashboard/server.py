@@ -60,7 +60,7 @@ def _env_first(*names: str, default: str = "") -> str:
 
 
 def _env_int(*names: str, default: int, minimum: int = 1, maximum: int = 1_000_000_000) -> int:
-    """Parse an int env var defensively: garbage → default (never crash import)."""
+    """Parse an int env var defensively: garbage -> default (never crash import)."""
     try:
         value = int(_env_first(*names, default=str(default)))
     except (ValueError, TypeError):
@@ -69,7 +69,7 @@ def _env_int(*names: str, default: int, minimum: int = 1, maximum: int = 1_000_0
 
 
 def _env_float(*names: str, default: float, minimum: float = 0.001) -> float:
-    """Parse a float env var defensively: garbage → default."""
+    """Parse a float env var defensively: garbage -> default."""
     try:
         value = float(_env_first(*names, default=str(default)))
     except (ValueError, TypeError):
@@ -127,7 +127,7 @@ def _settings_instance() -> SettingsManager:
     """Return the shared, process-wide SettingsManager for the OS root.
 
     Uses ``get_settings_manager`` so the dashboard, kernel, McpClient, and
-    PluginManager all share one instance — a toggle + restart is immediately
+    PluginManager all share one instance - a toggle + restart is immediately
     visible to every MCP gate.
     """
     root = config.discover_root()
@@ -138,12 +138,12 @@ def _sync_ide_mcp_configs(root: Path, mcp_settings: dict[str, Any]) -> None:
     """Sync MCP server toggles to ALL IDE MCP config files.
 
     When a user disables an MCP server in the dashboard, we update every IDE
-    config source so the server is not loaded on next restart — regardless of
+    config source so the server is not loaded on next restart - regardless of
     which IDE (Devin, Claude Code, Windsurf, Cursor) is used.
 
     Supported config files:
-    - ``.devin/mcp_config.local.json`` — Devin overlay (uses ``"disabled": true``)
-    - ``.claude/settings.json`` — Claude Code (remove disabled server entries)
+    - ``.devin/mcp_config.local.json`` - Devin overlay (uses ``"disabled": true``)
+    - ``.claude/settings.json`` - Claude Code (remove disabled server entries)
 
     Re-enabling a server restores it in Claude Code (from the canonical
     ``aizee_mcp/config.json``) and removes the disabled flag in Devin.
@@ -190,7 +190,7 @@ def _sync_devin_mcp_local(root: Path, mcp_settings: dict[str, Any]) -> None:
 
 
 def _sync_claude_mcp_settings(root: Path, mcp_settings: dict[str, Any]) -> None:
-    """Update .claude/settings.json — remove disabled servers, restore enabled.
+    """Update .claude/settings.json - remove disabled servers, restore enabled.
 
     Claude Code has no ``disabled`` flag; the only way to prevent loading is
     to remove the server entry entirely. To restore a re-enabled server, we
@@ -301,7 +301,7 @@ def _client_ip(handler: DashboardHandler) -> str:
     Per RFC 7239, X-Forwarded-For is "client, proxy1, proxy2". The left-most
     element is the most easily spoofed (client-controlled), so for a chain of
     trusted proxies we iterate from the RIGHT and return the first address
-    that is NOT a trusted proxy — that is the real client as reported by the
+    that is NOT a trusted proxy - that is the real client as reported by the
     closest trusted proxy. If all entries are trusted proxies, fall back to
     the left-most entry (single-proxy case).
     """
@@ -311,7 +311,7 @@ def _client_ip(handler: DashboardHandler) -> str:
         parts = [p.strip() for p in raw.split(",") if p.strip()]
         if parts:
             # L4: scan from the right (closest trusted proxy) and return the
-            # first non-trusted address — this is the real client. The
+            # first non-trusted address - this is the real client. The
             # left-most entry is client-controlled and easily spoofed.
             for candidate in reversed(parts):
                 try:
@@ -320,7 +320,7 @@ def _client_ip(handler: DashboardHandler) -> str:
                     continue
                 if candidate not in _TRUSTED_PROXIES:
                     return candidate
-            # All entries were trusted proxies (unusual) — use left-most.
+            # All entries were trusted proxies (unusual) - use left-most.
             try:
                 ipaddress.ip_address(parts[0])
                 return parts[0]
@@ -334,7 +334,7 @@ def _dashboard_token(root: Path) -> str | None:
 
     Authentication is OPT-IN: set ``AIZEE_DASHBOARD_TOKEN`` (or legacy
     ``AGENT_OS_DASHBOARD_TOKEN``) to require Bearer auth on every API call.
-    By default the dashboard runs unauthenticated — a deliberate choice for
+    By default the dashboard runs unauthenticated - a deliberate choice for
     local use, which stays safe because the server binds to 127.0.0.1,
     GETs are read-only/dry-run, and state-changing POSTs still enforce the
     CSRF custom header that cross-origin pages cannot set.
@@ -361,7 +361,7 @@ def _write_dashboard_token_file(root: Path, token: str) -> Path:
     """Persist an auto-generated dashboard token to ``state/dashboard.token`` (B9).
 
     The file is created atomically with 0o600 permissions (no world-readable
-    window between write and chmod). The token is never printed to stdout —
+    window between write and chmod). The token is never printed to stdout -
     only the file path is logged.
     """
     token_file = root / "state" / "dashboard.token"
@@ -469,7 +469,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         # The UI ships without asset hashing; heuristic browser caching would
         # serve a STALE index.html after upgrades (breaking it against newer
-        # CSP/routes). Local files are cheap — always revalidate.
+        # CSP/routes). Local files are cheap - always revalidate.
         self.send_header("Cache-Control", "no-cache")
 
     def _send(
@@ -503,7 +503,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._send(204, b"", cors=True)
 
     # Static UI assets are served without authentication: they contain no
-    # secrets, and the token prompt lives inside app.js — requiring auth to
+    # secrets, and the token prompt lives inside app.js - requiring auth to
     # fetch the page that asks for the token is a chicken-and-egg deadlock.
     # Everything under /api/* (and any other path) stays token-protected.
     # /api/health is public so K8s probes pass even when AIZEE_DASHBOARD_TOKEN is set
@@ -620,7 +620,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         try:
             content_length = int(self.headers.get("Content-Length", 0))
         except (ValueError, TypeError):
-            # SEC-05: garbage Content-Length header → 400, not traceback
+            # SEC-05: garbage Content-Length header -> 400, not traceback
             self._send(400, b"Invalid Content-Length header")
             return None
         if content_length <= 0:
@@ -1085,7 +1085,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Referrer-Policy", "no-referrer")
         # Same origin policy as the REST API: reflect only an allowlisted
         # request Origin (incl. the configured AIZEE_DASHBOARD_ORIGIN), with
-        # Vary + credentials handling — not the raw _ALLOWED_ORIGINS set.
+        # Vary + credentials handling - not the raw _ALLOWED_ORIGINS set.
         origin = self._origin()
         if origin:
             self.send_header("Access-Control-Allow-Origin", origin)
@@ -1130,7 +1130,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 
 def _shutdown(_signum: int, _frame: Any) -> None:  # pragma: no cover
-    """Graceful shutdown — flush storage and close DB connections."""
+    """Graceful shutdown - flush storage and close DB connections."""
     try:
         from runtime.storage_backend import StorageFactory
         StorageFactory().shutdown_all()
@@ -1154,7 +1154,7 @@ def _is_loopback_host(host: str) -> bool:
     h = host.strip().lower()
     if h in ("localhost", "::1"):
         return True
-    # 127.0.0.0/8 — any 127.x.x.x is loopback
+    # 127.0.0.0/8 - any 127.x.x.x is loopback
     parts = h.split(".")
     if len(parts) == 4 and parts[0] == "127":
         return all(p.isdigit() and 0 <= int(p) <= 255 for p in parts[1:])
@@ -1184,7 +1184,7 @@ if __name__ == "__main__":
             Path(os.environ.get("AIZEE_ROOT", ".")), token
         )
         logger.info(
-            "NETWORK-EXPOSED MODE: no AIZEE_DASHBOARD_TOKEN set — generated a "
+            "NETWORK-EXPOSED MODE: no AIZEE_DASHBOARD_TOKEN set - generated a "
             "random token and stored it at %s. Pass it as "
             "`Authorization: Bearer <token>`. Set the env var for a stable "
             "token across restarts.",
@@ -1234,6 +1234,6 @@ if __name__ == "__main__":
         print("Open-access mode: APIs are unauthenticated (localhost only). "
               "Set AIZEE_DASHBOARD_TOKEN to require a Bearer token.")
     elif not _is_loopback_host(host):
-        print("WARNING: NETWORK-EXPOSED MODE — dashboard is accessible on the "
+        print("WARNING: NETWORK-EXPOSED MODE - dashboard is accessible on the "
               f"network at {host}:{port}. Ensure TLS is terminated at ingress.")
     server.serve_forever()

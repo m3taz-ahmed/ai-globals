@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Real evaluation pipeline for aiZee (EVAL-W1 + EVAL-W2 + EVAL-W3).
 
-EVAL-W1: Real pipeline — runs actual kernel.act() calls, not vibe checks.
-EVAL-W2: Executable assertions — each test case carries executable Python
+EVAL-W1: Real pipeline - runs actual kernel.act() calls, not vibe checks.
+EVAL-W2: Executable assertions - each test case carries executable Python
     assertions (not regex/LLM grading) that check the kernel response.
-EVAL-W3: Anchored rubric — rubric dimensions are anchored to specific
+EVAL-W3: Anchored rubric - rubric dimensions are anchored to specific
     evidence in the response (citations), not free-form LLM judgment.
 
 Inspired by promptfoo's assertion handlers (src/assertions/index.ts) and
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 class AssertionKind(str, Enum):
     """Types of executable assertions (EVAL-W2).
 
-    Each assertion is a deterministic, executable check — no LLM grading.
+    Each assertion is a deterministic, executable check - no LLM grading.
     Inspired by promptfoo's assertion handlers but Python-native.
     """
 
@@ -152,7 +152,7 @@ class AnchoredDimension:
 
     Unlike free-form LLM grading, each dimension is anchored to a set of
     assertions that must ALL pass for the dimension to score 5. Partial
-    pass → proportional score. This makes grading deterministic and
+    pass -> proportional score. This makes grading deterministic and
     auditable.
 
     Attributes:

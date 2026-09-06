@@ -178,7 +178,7 @@ def _check_recaps(text: str) -> list[OutputIssue]:
                     severity="warning",
                     line=i,
                     text=line.strip(),
-                    suggestion="Delete the recap — the reader was just there.",
+                    suggestion="Delete the recap - the reader was just there.",
                 ))
                 break
     return issues
@@ -307,9 +307,9 @@ def auto_fix(text: str) -> tuple[str, list[OutputIssue]]:
 
     lines = text.splitlines()
     # Find and strip banned opener prefix from the first non-empty line.
-    # Only removes the opener phrase, not the entire line — the rest of
+    # Only removes the opener phrase, not the entire line - the rest of
     # the line may contain the actual answer. Strips chained openers
-    # (e.g. "Great question! Let me think..." → "think...").
+    # (e.g. "Great question! Let me think..." -> "think...").
     fixed_lines: list[str] = []
     skipped_opener = False
     for i, line in enumerate(lines):

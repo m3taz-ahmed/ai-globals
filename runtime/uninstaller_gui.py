@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""aiZee uninstaller — tkinter GUI with selective keep/backup.
+"""aiZee uninstaller - tkinter GUI with selective keep/backup.
 
 Launch:
     python runtime/uninstaller_gui.py
@@ -254,7 +254,7 @@ class UninstallerGUI:
         ]
 
         if not self.categories:
-            messagebox.showinfo("aiZee", "Nothing to uninstall — no aiZee files found.")
+            messagebox.showinfo("aiZee", "Nothing to uninstall - no aiZee files found.")
             self.win.destroy()
             return
 

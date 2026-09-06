@@ -1,4 +1,4 @@
-"""Tests for eval.prompt_injection_suite — defense effectiveness measurement."""
+"""Tests for eval.prompt_injection_suite - defense effectiveness measurement."""
 
 from __future__ import annotations
 

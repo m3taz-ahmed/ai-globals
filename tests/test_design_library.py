@@ -1,4 +1,4 @@
-"""Tests for runtime.design_library — brand design system catalog and mixing."""
+"""Tests for runtime.design_library - brand design system catalog and mixing."""
 
 from __future__ import annotations
 
@@ -124,6 +124,6 @@ def test_default_mapping(tmp_path: Path) -> None:
     lib = DesignLibrary(library_dir=tmp_path)
     result = lib.mix(["acme", "beta"])
     assert result is not None
-    # colors → first brand, typography → second brand
+    # colors -> first brand, typography -> second brand
     assert result.section_mapping.get("colors") == "acme"
     assert result.section_mapping.get("typography") == "beta"

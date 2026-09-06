@@ -51,7 +51,7 @@ class TestPolicyEvaluation:
         e = _engine(_write_default(tmp_path))
         result = e.can("deploy")
         assert result["decision"] == "ask"
-        # "deploy" is classified as a write action → "ask" via smart fallback.
+        # "deploy" is classified as a write action -> "ask" via smart fallback.
         assert result["rule"] in ("default", "default-classified")
         assert result["requires_approval"] is True
 
@@ -259,7 +259,7 @@ class TestSafeEvaluatorNodes:
         assert self._eval("'x' not in ['a', 'b']") is True
 
     def test_unsupported_compare_op_returns_false(self):
-        """Cover line 85: op = None → return False (e.g., FloorDiv is not in _allowed_ops)."""
+        """Cover line 85: op = None -> return False (e.g., FloorDiv is not in _allowed_ops)."""
         import ast
         ev = _SafeEvaluator({})
         # Construct a Compare node with FloorDiv (unsupported as comparison op)
@@ -279,8 +279,8 @@ class TestSafeEvaluatorNodes:
         e = _engine(_write_default(tmp_path))
         e.rules[0].condition = "__import__('os').system('echo pwned')"
         result = e.can("Read")
-        # Safe evaluator returns False (no code execution) → falls through to
-        # smart fallback which classifies "Read" as a read-only action → "allow".
+        # Safe evaluator returns False (no code execution) -> falls through to
+        # smart fallback which classifies "Read" as a read-only action -> "allow".
         assert result["decision"] == "allow"
 
 

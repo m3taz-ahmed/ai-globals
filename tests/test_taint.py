@@ -1,4 +1,4 @@
-"""Tests for runtime.taint — taint label system (from LLMFirewall)."""
+"""Tests for runtime.taint - taint label system (from LLMFirewall)."""
 
 from __future__ import annotations
 

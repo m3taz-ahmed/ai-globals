@@ -3,7 +3,7 @@
 
 Inspired by Decapod's ``decapod eval --stdin``: every incoming prompt is
 scanned for instruction-injection and unsafe patterns *before* any action
-is taken. This is a deterministic, model-free safety layer — no LLM calls.
+is taken. This is a deterministic, model-free safety layer - no LLM calls.
 
 The gate inlines detection patterns for prompt injection, data exfiltration,
 privilege escalation, and destructive commands, and adds prompt-specific
@@ -130,7 +130,7 @@ class _Patterns:
 class PromptGate:
     """Deterministic pre-inference prompt safety scanner.
 
-    No LLM calls — pure regex + scoring. Runs in microseconds.
+    No LLM calls - pure regex + scoring. Runs in microseconds.
     """
 
     BLOCK_THRESHOLD: ClassVar[int] = 30
@@ -198,7 +198,7 @@ class PromptBlockedError(AizeeError):
 # Pattern 8: Assertion-Based Prompt Validation (from promptfoo)
 # ===========================================================================
 # Provides assertion functions, guardrails, adaptive rewriting, and a prompt
-# test suite with ELO ranking — all model-free by default (LLM calls are
+# test suite with ELO ranking - all model-free by default (LLM calls are
 # injectable via ``model_fn`` parameters but never required).
 
 
@@ -535,7 +535,7 @@ class PromptTestSuite:
         for i, a in enumerate(candidates):
             for b in candidates[i + 1 :]:
                 if scores[a] == scores[b]:
-                    continue  # draw — no rating change
+                    continue  # draw - no rating change
                 winner, loser = (a, b) if scores[a] > scores[b] else (b, a)
                 expected_win = 1 / (1 + 10 ** ((ratings[loser] - ratings[winner]) / 400))
                 delta = k * (1 - expected_win)

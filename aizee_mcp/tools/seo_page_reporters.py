@@ -3,7 +3,7 @@
 Ported from open-seo (every-app/open-seo)
 ``src/server/lib/audit/issues/page-reporters.ts``.
 Each reporter is a pure function over a single crawled page's parsed
-data — no DOM, no fetching. The engine works over any crawl source
+data - no DOM, no fetching. The engine works over any crawl source
 that can produce a :class:`PageData` record.
 
 Cross-page checks (duplicates, broken links, orphans, redirect chains)
@@ -62,7 +62,7 @@ class PageData:
 
 
 def _has_heading_level_skip(heading_order: list[int]) -> bool:
-    """Return True if heading levels skip (e.g. H1 → H3 without H2)."""
+    """Return True if heading levels skip (e.g. H1 -> H3 without H2)."""
     return any(heading_order[i] > heading_order[i - 1] + 1 for i in range(1, len(heading_order)))
 
 
@@ -86,7 +86,7 @@ def run_page_reporters(page: PageData) -> list[dict[str, Any]]:
         report("blocked-page", {"statusCode": page.status_code})
         return issues
     if page.fetch_class == "error":
-        # A fetch failure is not a healthy page — emit an explicit issue
+        # A fetch failure is not a healthy page - emit an explicit issue
         # instead of returning zero issues (indistinguishable from clean).
         report("server-error", {"statusCode": page.status_code})
         return issues
@@ -160,7 +160,7 @@ def run_page_reporters(page: PageData) -> list[dict[str, Any]]:
     if page.images_missing_dims > 0:
         report("images-missing-dims", {"count": page.images_missing_dims})
 
-    # Open Graph (basic presence — detailed checks live in _audit_page_issues)
+    # Open Graph (basic presence - detailed checks live in _audit_page_issues)
     if not page.og_title:
         report("og-title-missing")
     if not page.og_description:

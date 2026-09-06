@@ -25,7 +25,7 @@ Usage::
     tracker.label("user_msg", TaintLabel.USER_UNTRUSTED)
     tracker.label("rag_chunk", TaintLabel.RAG_UNTRUSTED)
 
-    # Check if user_msg can flow into system_prompt — should be denied
+    # Check if user_msg can flow into system_prompt - should be denied
     if not tracker.can_flow("user_msg", "system_prompt"):
         raise TaintError("USER_UNTRUSTED cannot flow into SYSTEM_TRUSTED")
 
@@ -73,11 +73,11 @@ class TaintLabel(IntEnum):
     may flow to a context with label M iff ``L <= M``.
     """
 
-    SYSTEM_TRUSTED = 0   # System prompt, guardrails — highest trust
-    TOOL_OUTPUT = 1      # Output from MCP tools — semi-trusted
-    RAG_UNTRUSTED = 2    # Retrieved chunks — untrusted (injection risk)
-    USER_UNTRUSTED = 3   # User input — untrusted (prompt injection)
-    SECRET = 4           # Secrets/PII — must never leak
+    SYSTEM_TRUSTED = 0   # System prompt, guardrails - highest trust
+    TOOL_OUTPUT = 1      # Output from MCP tools - semi-trusted
+    RAG_UNTRUSTED = 2    # Retrieved chunks - untrusted (injection risk)
+    USER_UNTRUSTED = 3   # User input - untrusted (prompt injection)
+    SECRET = 4           # Secrets/PII - must never leak
 
 
 class TaintError(AizeeError):
@@ -197,7 +197,7 @@ class TaintTracker:
         """Sanitize a value, downgrading its taint label.
 
         Returns True if sanitization succeeded, False if not allowed or
-        the value is a SECRET (secrets cannot be sanitized — they must
+        the value is a SECRET (secrets cannot be sanitized - they must
         be redacted, not downgraded).
         """
         if not self._allow_sanitization:
@@ -224,7 +224,7 @@ class TaintTracker:
             return self._entries.pop(key, None) is not None
 
     def merge(self, keys: list[str], result_key: str) -> TaintLabel:
-        """Merge multiple values — the result gets the highest (most sensitive) label.
+        """Merge multiple values - the result gets the highest (most sensitive) label.
 
         This models the lattice join: combining a SYSTEM_TRUSTED value with
         a USER_UNTRUSTED value produces a USER_UNTRUSTED result.
@@ -374,7 +374,7 @@ def _register_taint_guardrail() -> None:
     except Exception as exc:
         # Never break import if policy module not yet ready, but surface the
         # failure so operators know the taint guardrail is inactive.
-        _logger.warning("Taint guardrail registration failed — taint flow checks inactive: %s", exc)
+        _logger.warning("Taint guardrail registration failed - taint flow checks inactive: %s", exc)
 
 
 # Auto-register on import so Kernel/Guardian picks it up without explicit wiring

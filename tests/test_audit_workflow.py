@@ -1,8 +1,8 @@
-"""Tests for runtime/audit_workflow.py — phased durable audit workflow.
+"""Tests for runtime/audit_workflow.py - phased durable audit workflow.
 
 Covers: phased durable audit, checkpointing, workflow state machine
 transitions, error/edge cases. AAA pattern, one behavior per test.
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

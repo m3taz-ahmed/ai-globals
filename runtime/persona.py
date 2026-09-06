@@ -21,7 +21,7 @@ def _load_persona_data() -> dict[str, Any]:
 
 # -- Persona Reset Triggers --------------------------------------------------
 # Short commands (English + Arabic) that force persona re-detection mid-chat.
-# Matched as standalone commands — must be the whole message or start with
+# Matched as standalone commands - must be the whole message or start with
 # the trigger followed by optional extra text (e.g., "/reset to backend").
 RESET_TRIGGERS: set[str] = {
     # English slash commands
@@ -66,7 +66,7 @@ def is_persona_reset_command(text: str) -> bool:
 
 # -- Persona Status Triggers -------------------------------------------------
 # Short commands that request a formatted display of the currently active
-# personas, their skills, and lord skills — without re-detecting.
+# personas, their skills, and lord skills - without re-detecting.
 STATUS_TRIGGERS: set[str] = {
     # English slash commands
     "/status",
@@ -101,7 +101,7 @@ def is_persona_status_command(text: str) -> bool:
 
     Matches standalone commands only (no extra text) like ``/status``,
     ``#حالة``, ``/whoami``. Unlike reset commands, status commands must
-    be the entire message — no trailing hint text.
+    be the entire message - no trailing hint text.
     """
     if not text or not text.strip():
         return False
@@ -173,7 +173,7 @@ def format_persona_status(
             desc = _load_skill_description(sk, skills_dir)
             if desc:
                 # Truncate description to ~80 chars for compactness
-                short_desc = desc[:80] + ("…" if len(desc) > 80 else "")
+                short_desc = desc[:80] + ("..." if len(desc) > 80 else "")
                 lines.append(f"   • {sk}: {short_desc}")
             else:
                 lines.append(f"   • {sk}")
@@ -184,7 +184,7 @@ def format_persona_status(
         for lord in lords:
             desc = _load_skill_description(lord, skills_dir)
             if desc:
-                short_desc = desc[:80] + ("…" if len(desc) > 80 else "")
+                short_desc = desc[:80] + ("..." if len(desc) > 80 else "")
                 lines.append(f"   • {lord}: {short_desc}")
             else:
                 lines.append(f"   • {lord}")
@@ -211,7 +211,7 @@ def inject_persona_context(
     **Reset triggers:** If the extracted text is a persona reset command
     (e.g., ``/reset``, ``#انتحل``), any existing persona fields are cleared
     and re-detection runs against the full text (including any hint after
-    the command, e.g., ``/reset to backend`` → re-detect with "backend").
+    the command, e.g., ``/reset to backend`` -> re-detect with "backend").
     """
     text: Any = fallback_text
     for key in text_keys:

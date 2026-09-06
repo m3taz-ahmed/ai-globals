@@ -161,7 +161,7 @@ class _SpecDriftHelper:
         """Get the hash-tracked manifest for a spec's files.
 
         Loads the persisted baseline written by ``_save`` when present, so
-        drift detection compares against the last save — not against the
+        drift detection compares against the last save - not against the
         current file contents (which would always report "unmodified").
         Falls back to recording current hashes (and persisting them) when
         no baseline exists yet.
@@ -197,7 +197,7 @@ class _SpecDriftHelper:
         return manifest.is_modified(path.name, path.read_text(encoding="utf-8"))
 
     def detect_drift(self, spec_id: str) -> dict[str, Any]:
-        """WS-E W4: Drift v2 — detect and report spec drift.
+        """WS-E W4: Drift v2 - detect and report spec drift.
 
         Compares the current spec state against its manifest to identify:
         - Files modified since last manifest recording
@@ -272,7 +272,7 @@ class _SpecDriftHelper:
     def list_specs_paginated(
         self, page: int = 1, page_size: int = 20
     ) -> dict[str, Any]:
-        """WS-E W5: Scale paths — paginated spec listing for large repos.
+        """WS-E W5: Scale paths - paginated spec listing for large repos.
 
         Returns a paginated result with items, total, page, and has_more.
         """
@@ -364,8 +364,8 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
     """Engine for managing spec-driven development.
 
     Composed of:
-    - :class:`~runtime.spec.scaffold.ScaffoldingMixin` — template artifacts
-    - :class:`~runtime.spec.analysis.AnalysisMixin` — analyze/converge
+    - :class:`~runtime.spec.scaffold.ScaffoldingMixin` - template artifacts
+    - :class:`~runtime.spec.analysis.AnalysisMixin` - analyze/converge
     """
 
     def __init__(self, specs_dir: Path) -> None:
@@ -594,7 +594,7 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
     def apply_deltas(self, spec_id: str) -> int:
         """Apply all deltas to the spec's requirements and clear them.
 
-        WS-E W6: Delta hardening — validates deltas before applying.
+        WS-E W6: Delta hardening - validates deltas before applying.
         Returns the number of deltas applied.
         """
         spec = self.load_spec(spec_id)
@@ -638,13 +638,13 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
         return self._drift.is_file_modified(spec_id, file_type)
 
     def detect_drift(self, spec_id: str) -> dict[str, Any]:
-        """WS-E W4: Drift v2 — detect and report spec drift."""
+        """WS-E W4: Drift v2 - detect and report spec drift."""
         return self._drift.detect_drift(spec_id)
 
     def list_specs_paginated(
         self, page: int = 1, page_size: int = 20
     ) -> dict[str, Any]:
-        """WS-E W5: Scale paths — paginated spec listing for large repos."""
+        """WS-E W5: Scale paths - paginated spec listing for large repos."""
         return self._drift.list_specs_paginated(page, page_size)
 
     def _write_markdown(self, spec: Spec) -> None:

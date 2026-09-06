@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""aiZee uninstaller — interactive removal with selective keep/backup.
+"""aiZee uninstaller - interactive removal with selective keep/backup.
 
 Categories:
   - Package: pip uninstall aizee + CLI shim + PATH entry
@@ -329,7 +329,7 @@ def remove_mcp_config_entries(root: Path) -> list[str]:
 
 def _display_menu(categories: list[UninstallCategory]) -> None:
     """Display the interactive uninstall menu."""
-    table = Table(title="aiZee Uninstaller — Interactive Mode", show_lines=True)
+    table = Table(title="aiZee Uninstaller - Interactive Mode", show_lines=True)
     table.add_column("#", style="dim", width=4)
     table.add_column("Category", style="cyan")
     table.add_column("Action", style="bold")
@@ -381,7 +381,7 @@ def interactive_uninstall(root: Path, assume_yes: bool = False) -> int:
     categories = [c for c in categories if c.exists() or c.key in ("package", "cli_shim", "symlinks")]
 
     if not categories:
-        console.print("[yellow]Nothing to uninstall — no aiZee files found.[/yellow]")
+        console.print("[yellow]Nothing to uninstall - no aiZee files found.[/yellow]")
         return 0
 
     if assume_yes:

@@ -57,8 +57,8 @@ _TERMINAL_OPPORTUNITY: frozenset[OpportunityStage] = frozenset({OpportunityStage
 _TERMINAL_TASK: frozenset[TaskStage] = frozenset({TaskStage.DONE, TaskStage.CANCELLED})
 
 # NOTE (transition asymmetry, intentional): Opportunity requires stepwise
-# progression (NEW→QUALIFIED→PROPOSAL→WON, no skips), while Task allows a
-# TODO→DONE fast-track for trivial tasks. Kept for backward compatibility.
+# progression (NEW->QUALIFIED->PROPOSAL->WON, no skips), while Task allows a
+# TODO->DONE fast-track for trivial tasks. Kept for backward compatibility.
 
 
 @dataclass

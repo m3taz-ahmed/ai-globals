@@ -1,4 +1,4 @@
-"""Tests for runtime/self_healing.py — self-healing runtime."""
+"""Tests for runtime/self_healing.py - self-healing runtime."""
 
 from __future__ import annotations
 

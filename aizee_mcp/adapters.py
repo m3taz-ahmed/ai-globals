@@ -400,7 +400,7 @@ class RemoteA2AAdapter(AgentAdapter):
         self._ssl_context: ssl.SSLContext | None = None
         if not self._verify_ssl:
             logger.warning(
-                "RemoteA2AAdapter SSL verification is DISABLED for %s — "
+                "RemoteA2AAdapter SSL verification is DISABLED for %s - "
                 "use only in trusted dev environments",
                 self._endpoint,
             )
@@ -414,7 +414,7 @@ class RemoteA2AAdapter(AgentAdapter):
         When ``verify_ssl=False`` an explicitly unverified context is
         returned; passing ``context=None`` to ``urlopen`` would instead use
         the default *verified* context, silently ignoring the flag. The
-        context is memoized — ``ssl.create_default_context()`` loads the
+        context is memoized - ``ssl.create_default_context()`` loads the
         system CA store, which is too expensive to repeat per poll tick.
         """
         if self._ssl_context is None:
@@ -530,7 +530,7 @@ class AdapterRegistry:
         adapter = self.get(backend)
         session = await adapter.launch(task, profile)
         session = await adapter.poll(session)
-        # Strip internal handles (_proc/_pid) — never leak process objects.
+        # Strip internal handles (_proc/_pid) - never leak process objects.
         artifacts = {k: v for k, v in session.artifacts.items() if not k.startswith("_")}
         if "_pid" in session.artifacts:
             artifacts["pid"] = session.artifacts["_pid"]

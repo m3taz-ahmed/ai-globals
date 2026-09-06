@@ -33,7 +33,7 @@ def test_kernel_chat_message(tmp_path: Path) -> None:
 def test_history_empty_when_log_missing(tmp_path: Path) -> None:
     """Cover line 45: history returns empty list when log file doesn't exist."""
     session = ChatSession(tmp_path, "new-session")
-    # Don't add any messages — log_path won't exist
+    # Don't add any messages - log_path won't exist
     assert session.history() == []
 
 

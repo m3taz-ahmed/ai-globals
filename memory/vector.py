@@ -177,7 +177,7 @@ class VectorMemory:
             allowlist = np.array(present, dtype=np.uint64)
         scores, ids_arr = self.index.search(vector, k=k, allowlist=allowlist)
         results = []
-        # Turbovec may return fewer than k results (e.g., empty index → shape (1,0))
+        # Turbovec may return fewer than k results (e.g., empty index -> shape (1,0))
         n_results = ids_arr.shape[1] if ids_arr.ndim >= 2 else 0
         for i in range(min(k, n_results)):
             u64 = str(int(ids_arr[0, i]))
@@ -215,7 +215,7 @@ class VectorMemory:
 
 
 # ---------------------------------------------------------------------------
-# VectorStore — standalone in-memory vector store with hybrid-search support
+# VectorStore - standalone in-memory vector store with hybrid-search support
 # (Pattern from Weaviate/Qdrant: brute-force below threshold, indexed above,
 #  filter-during-traversal for metadata constraints.)
 # ---------------------------------------------------------------------------

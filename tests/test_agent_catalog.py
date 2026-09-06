@@ -1,8 +1,8 @@
-"""Tests for runtime/agent_catalog.py — allowlist of agents/flows/models.
+"""Tests for runtime/agent_catalog.py - allowlist of agents/flows/models.
 
 Covers: enums, dataclasses, AgentCatalog CRUD, permission checks,
 filtering, thread safety, clear. AAA pattern, one behavior per test.
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

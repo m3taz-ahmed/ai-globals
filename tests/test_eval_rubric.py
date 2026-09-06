@@ -1,6 +1,6 @@
-"""Tests for eval/rubric.py — eval rubric and release gate.
+"""Tests for eval/rubric.py - eval rubric and release gate.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Tests for aizee_mcp/tools/memory_tools.py — memory-related MCP tools."""
+"""Tests for aizee_mcp/tools/memory_tools.py - memory-related MCP tools."""
 
 from __future__ import annotations
 

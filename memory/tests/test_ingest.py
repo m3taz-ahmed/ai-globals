@@ -224,7 +224,7 @@ class TestCollectAgents:
 
 
 # ---------------------------------------------------------------------------
-# ingest_all — full flow
+# ingest_all - full flow
 # ---------------------------------------------------------------------------
 
 class TestIngestAll:
@@ -242,7 +242,7 @@ class TestIngestAll:
         rules_dir = _mkdir(tmp_path, "rules")
         (rules_dir / "core.md").write_text("# Core\nSome rules.")
         ids1 = ing.ingest_all()
-        ids2 = ing.ingest_all()  # second run — same content
+        ids2 = ing.ingest_all()  # second run - same content
         assert len(ids1) == 1
         assert len(ids2) == 0  # nothing changed, nothing re-ingested
 
@@ -296,15 +296,15 @@ class TestIngestAll:
 
 
 # ---------------------------------------------------------------------------
-# _collect_dir — non-file entry (line 104: directory inside glob result)
+# _collect_dir - non-file entry (line 104: directory inside glob result)
 # ---------------------------------------------------------------------------
 
 class TestCollectDirNonFileSkip:
     def test_non_file_glob_entry_is_skipped(self, tmp_path: Path):
-        """Line 104: `if not p.is_file(): continue` — cover by having a dir inside."""
+        """Line 104: `if not p.is_file(): continue` - cover by having a dir inside."""
         ing = _ingestor(tmp_path)
         rules_dir = _mkdir(tmp_path, "rules")
-        # A subdirectory inside rules/ — non-recursive mode means glob yields it but it's not a file
+        # A subdirectory inside rules/ - non-recursive mode means glob yields it but it's not a file
         _mkdir(tmp_path, "rules", "subdir")
         (rules_dir / "valid.md").write_text("# Rule\nContent.")
         to_add, _, __ = ing._collect_dir("rules", "semantic", False, {})
@@ -316,7 +316,7 @@ class TestCollectDirNonFileSkip:
         """Line 104: a directory matching *.md glob is skipped by is_file() check."""
         ing = _ingestor(tmp_path)
         rules_dir = _mkdir(tmp_path, "rules")
-        # Create a directory whose name ends in .md — glob("*.md") yields it
+        # Create a directory whose name ends in .md - glob("*.md") yields it
         # but is_file() returns False, hitting the continue on line 104.
         _mkdir(tmp_path, "rules", "not_a_file.md")
         (rules_dir / "valid.md").write_text("# Rule\nContent.")
@@ -343,12 +343,12 @@ class TestTmpHelper:
 
 
 # ---------------------------------------------------------------------------
-# _collect_agents — malformed AGENTS.md (line 126)
+# _collect_agents - malformed AGENTS.md (line 126)
 # ---------------------------------------------------------------------------
 
 class TestCollectAgentsMalformed:
     def test_malformed_agents_md_is_skipped(self, tmp_path: Path):
-        """Line 126: AGENTS.md fails validation → return [], {}, set()."""
+        """Line 126: AGENTS.md fails validation -> return [], {}, set()."""
         ing = _ingestor(tmp_path)
         # Create an AGENTS.md that looks like an AI file but is missing [OBJ]
         (tmp_path / "AGENTS.md").write_text("[FILE] agents\n[RULES]\n1. [REQ] Rule.")

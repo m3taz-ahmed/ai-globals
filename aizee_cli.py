@@ -185,7 +185,7 @@ def cmd_memory(args: argparse.Namespace) -> int:
                             changed = True
                             snapshots[d] = current
                     if changed:
-                        console.print("[yellow]Change detected — re-ingesting...[/yellow]")
+                        console.print("[yellow]Change detected - re-ingesting...[/yellow]")
                         ingestor2 = Ingestor(store, os_root)
                         new_ids = ingestor2.ingest_all()
                         console.print(f"[green]Re-ingested {len(new_ids)} memories[/green]")
@@ -355,7 +355,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
     elif args.subcommand == "verify":
         result = logger.verify_chain()
         if result["valid"]:
-            console.print(f"[green]Chain valid — {result['entries_checked']} entries checked[/green]")
+            console.print(f"[green]Chain valid - {result['entries_checked']} entries checked[/green]")
         else:
             console.print(f"[red]Chain BROKEN at entry {result['broken_at']}[/red]")
         return 0 if result["valid"] else 1
@@ -441,7 +441,7 @@ def cmd_stack(args: argparse.Namespace) -> int:
 
 
 def cmd_linkedin(args: argparse.Namespace) -> int:
-    """LinkedIn CLI — proxy to octopus-linkedin MCP server."""
+    """LinkedIn CLI - proxy to octopus-linkedin MCP server."""
     from runtime.mcp_client import McpClient
 
     client = McpClient("linkedin", _root(args))
@@ -767,9 +767,9 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
     """Interactive uninstaller with selective keep/backup.
 
     Modes:
-      aizee uninstall          → console interactive (default)
-      aizee uninstall --gui    → tkinter GUI
-      aizee uninstall --yes    → non-interactive (defaults: delete OS, keep learned)
+      aizee uninstall          -> console interactive (default)
+      aizee uninstall --gui    -> tkinter GUI
+      aizee uninstall --yes    -> non-interactive (defaults: delete OS, keep learned)
     """
     root = _root(args)
     if not root.exists():
@@ -785,14 +785,14 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
 
 
 def cmd_daemon(args: argparse.Namespace) -> int:
-    """Background daemon — ensures settings persist when dashboard is closed.
+    """Background daemon - ensures settings persist when dashboard is closed.
 
     Subcommands:
-      aizee daemon start [--foreground]  → start daemon (background by default)
-      aizee daemon stop                  → stop running daemon
-      aizee daemon status                → print daemon status
-      aizee daemon enable-autostart      → enable auto-start on boot
-      aizee daemon disable-autostart     → disable auto-start on boot
+      aizee daemon start [--foreground]  -> start daemon (background by default)
+      aizee daemon stop                  -> stop running daemon
+      aizee daemon status                -> print daemon status
+      aizee daemon enable-autostart      -> enable auto-start on boot
+      aizee daemon disable-autostart     -> disable auto-start on boot
     """
     root = _root(args)
     from runtime.daemon import AizeeDaemon
@@ -839,10 +839,10 @@ def cmd_test(args: argparse.Namespace) -> int:
     """Run pytest with configurable speed tiers.
 
     Tiers:
-      aizee test           → fast (default): skip slow/mcp/dashboard/vector, no coverage, ~12s
-      aizee test --full    → full: all tests + coverage, ~35s
-      aizee test --verbose → verbose output
-      aizee test --xdist   → parallel execution (faster on Linux/macOS, slower on Windows)
+      aizee test           -> fast (default): skip slow/mcp/dashboard/vector, no coverage, ~12s
+      aizee test --full    -> full: all tests + coverage, ~35s
+      aizee test --verbose -> verbose output
+      aizee test --xdist   -> parallel execution (faster on Linux/macOS, slower on Windows)
     """
     if args.full:
         pytest_args = [

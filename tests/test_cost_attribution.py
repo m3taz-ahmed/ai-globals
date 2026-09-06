@@ -1,8 +1,8 @@
-"""Tests for runtime/cost_attribution.py — per-agent cost + anomaly detection.
+"""Tests for runtime/cost_attribution.py - per-agent cost + anomaly detection.
 
 Covers: enums, dataclasses, record/aggregate, spike + budget breach
 detection, set_budget, thread safety, clear.
-AAA pattern, one behavior per test. FAST tier — no MCP, no kernel.
+AAA pattern, one behavior per test. FAST tier - no MCP, no kernel.
 """
 
 from __future__ import annotations

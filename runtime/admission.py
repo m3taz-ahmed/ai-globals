@@ -3,15 +3,15 @@
 
 Implements Hazem Ali's representation/authority/memory principal: do not
 evaluate AI correctness from output text alone. Evaluate the full chain
-from bytes → promoted context → runtime state → admitted output.
+from bytes -> promoted context -> runtime state -> admitted output.
 
 The admission gate runs BEFORE any side effect. Termination does not imply
-correctness, safety, or completeness — admission is the final
+correctness, safety, or completeness - admission is the final
 consequence-aware check that decides whether generated output can be used
 downstream.
 
 This module provides:
-- Identity keys: ``K_repr``, ``K_promote``, ``K_runtime``, ``K_out`` —
+- Identity keys: ``K_repr``, ``K_promote``, ``K_runtime``, ``K_out`` -
   implementation-agnostic formulas that force evidence discipline by
   separating representation, promotion, runtime, and outcome identities.
 - ``PromotionRecord``: evidence of a retrieval candidate's promotion decision.
@@ -34,7 +34,7 @@ from typing import Any, Literal
 
 _logger = logging.getLogger(__name__)
 
-# Invariants (Hazem R1-R15, adapted — see rules/architecture-review.md):
+# Invariants (Hazem R1-R15, adapted - see rules/architecture-review.md):
 #   R1: no high-consequence action without an admitted output record.
 #   R2: every admitted output links to one final context hash.
 #   R3: every final context hash links to one promotion decision set.
@@ -211,13 +211,13 @@ CheckFn = Callable[[dict[str, Any]], tuple[bool, str]]
 
 
 class AdmissionGate:
-    """Output admission gate — enforces consequence-tier checks before any
+    """Output admission gate - enforces consequence-tier checks before any
     side effect.
 
     The gate is independent from model generation (data plane). It runs
     AFTER the model produces output but BEFORE the output is published or
     used to trigger side effects. Termination (stop_reason) does not imply
-    correctness — admission is the final consequence-aware check.
+    correctness - admission is the final consequence-aware check.
 
     Side effects are blocked on reject (R1). A rejected request must
     explain itself to an operator with a machine-readable reason code (R8).
@@ -300,7 +300,7 @@ class AdmissionGate:
         return self._run_custom_checks(ctx)
 
     def _run_custom_checks(self, ctx: dict[str, Any]) -> str | None:
-        """Run custom checks — first failure rejects."""
+        """Run custom checks - first failure rejects."""
         for name, fn in self._checks:
             try:
                 passed, reason = fn(ctx)

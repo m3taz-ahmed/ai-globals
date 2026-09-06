@@ -1,20 +1,20 @@
-"""Rules materializer — emit aiZee rules to every AI coding tool's native format.
+"""Rules materializer - emit aiZee rules to every AI coding tool's native format.
 
 aiZee holds a single source of truth (``rules/``, ``global-roles.md``,
 ``global-workflow.md``, ``AGENTS.md``). This module materializes that source
 into each tool's preferred file format so the same governance applies
 regardless of which IDE/agent a developer uses:
 
-- Claude Code      → ``CLAUDE.md`` + ``.claude/rules/*.md``
-- Cursor           → ``.cursor/rules/*.mdc`` (with frontmatter)
-- Cline            → ``.clinerules/*.md``
-- Windsurf         → ``.windsurfrules``
-- GitHub Copilot   → ``.github/copilot-instructions.md``
-- Aider            → ``CONVENTIONS.md``
-- Devin            → ``.devin/rules/*.md``
+- Claude Code      -> ``CLAUDE.md`` + ``.claude/rules/*.md``
+- Cursor           -> ``.cursor/rules/*.mdc`` (with frontmatter)
+- Cline            -> ``.clinerules/*.md``
+- Windsurf         -> ``.windsurfrules``
+- GitHub Copilot   -> ``.github/copilot-instructions.md``
+- Aider            -> ``CONVENTIONS.md``
+- Devin            -> ``.devin/rules/*.md``
 
-Scope precedence (highest → lowest): org → project → namespace → repo →
-team → user. Higher scopes override lower ones; conflicts resolved by
+Scope precedence (highest -> lowest): org -> project -> namespace -> repo ->
+team -> user. Higher scopes override lower ones; conflicts resolved by
 last-writer-wins within the same scope.
 
 Inspired by Elastra's centralized rules + materialization pattern.
@@ -52,7 +52,7 @@ class ToolTarget(str, Enum):
 
 
 class ScopeLevel(str, Enum):
-    """Rule scope precedence levels (highest → lowest)."""
+    """Rule scope precedence levels (highest -> lowest)."""
 
     ORG = "org"
     PROJECT = "project"
@@ -121,7 +121,7 @@ class RulesMaterializer:
     each tool's native format. Idempotent: re-running overwrites stale files.
     """
 
-    # Tool → (relative file path, format)
+    # Tool -> (relative file path, format)
     _TARGET_FILES: ClassVar[dict[ToolTarget, str]] = {
         ToolTarget.CLAUDE: "CLAUDE.md",
         ToolTarget.CURSOR: ".cursor/rules/aizee.mdc",
@@ -147,7 +147,7 @@ class RulesMaterializer:
         Returns a list ordered by key for deterministic output.
         """
         by_key: dict[str, RuleEntry] = {}
-        # Process lowest → highest so higher overwrites lower.
+        # Process lowest -> highest so higher overwrites lower.
         for level in sorted(ScopeLevel, key=lambda s: s.precedence):
             for entry in rule_sets.get(level, []):
                 existing = by_key.get(entry.key)
@@ -159,7 +159,7 @@ class RulesMaterializer:
 
     def _emit_claude(self, rules: list[RuleEntry]) -> str:
         """Claude Code: single CLAUDE.md block."""
-        lines = ["# aiZee Governance — Claude Code", ""]
+        lines = ["# aiZee Governance - Claude Code", ""]
         for r in rules:
             lines.append(f"## {r.key}")
             lines.append("")
@@ -184,14 +184,14 @@ class RulesMaterializer:
             front += "  - \"**/*\"\n"
         front += "alwaysApply: true\n"
         front += "---\n\n"
-        body = "# aiZee Governance — Cursor\n\n"
+        body = "# aiZee Governance - Cursor\n\n"
         for r in rules:
             body += f"## {r.key}\n\n{r.content.strip()}\n\n"
         return front + body
 
     def _emit_cline(self, rules: list[RuleEntry]) -> str:
         """Cline: plain markdown concatenated."""
-        lines = ["# aiZee Governance — Cline", ""]
+        lines = ["# aiZee Governance - Cline", ""]
         for r in rules:
             lines.append(f"## {r.key}")
             lines.append("")
@@ -201,7 +201,7 @@ class RulesMaterializer:
 
     def _emit_windsurf(self, rules: list[RuleEntry]) -> str:
         """Windsurf: single .windsurfrules file."""
-        lines = ["# aiZee Governance — Windsurf", ""]
+        lines = ["# aiZee Governance - Windsurf", ""]
         for r in rules:
             lines.append(f"## {r.key}")
             lines.append("")
@@ -211,7 +211,7 @@ class RulesMaterializer:
 
     def _emit_copilot(self, rules: list[RuleEntry]) -> str:
         """GitHub Copilot: copilot-instructions.md."""
-        lines = ["# aiZee Governance — GitHub Copilot", ""]
+        lines = ["# aiZee Governance - GitHub Copilot", ""]
         for r in rules:
             lines.append(f"## {r.key}")
             lines.append("")
@@ -221,7 +221,7 @@ class RulesMaterializer:
 
     def _emit_aider(self, rules: list[RuleEntry]) -> str:
         """Aider: CONVENTIONS.md (read via --read)."""
-        lines = ["# aiZee Governance — Aider Conventions", ""]
+        lines = ["# aiZee Governance - Aider Conventions", ""]
         for r in rules:
             lines.append(f"## {r.key}")
             lines.append("")
@@ -231,7 +231,7 @@ class RulesMaterializer:
 
     def _emit_devin(self, rules: list[RuleEntry]) -> str:
         """Devin: .devin/rules/*.md."""
-        lines = ["# aiZee Governance — Devin", ""]
+        lines = ["# aiZee Governance - Devin", ""]
         for r in rules:
             lines.append(f"## {r.key}")
             lines.append("")
@@ -322,7 +322,7 @@ class RulesMaterializer:
     ) -> dict[str, list[str]]:
         """Detect drift between source rules and emitted files.
 
-        Returns a dict mapping target → list of rule keys missing from
+        Returns a dict mapping target -> list of rule keys missing from
         the emitted file. Empty lists mean no drift.
         """
         resolved = self.resolve(rule_sets)

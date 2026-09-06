@@ -61,7 +61,7 @@ class ConsolidationEngine:
         a second call found the first call's dry-run entries).
         """
         report = ConsolidationReport(operation="dedupe", dry_run=dry_run)
-        seen: dict[str, str] = {}  # simhash → first entry_id
+        seen: dict[str, str] = {}  # simhash -> first entry_id
         for entry in entries:
             entry_id = str(entry.get("id", ""))
             content = entry.get("content", "")

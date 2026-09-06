@@ -1,4 +1,4 @@
-"""Tests for memory/consolidation.py — consolidation primitives."""
+"""Tests for memory/consolidation.py - consolidation primitives."""
 
 from __future__ import annotations
 

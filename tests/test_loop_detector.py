@@ -1,4 +1,4 @@
-"""Tests for runtime.loop_detector — fuzzy + cycle + escalation (from agent-loop-guard)."""
+"""Tests for runtime.loop_detector - fuzzy + cycle + escalation (from agent-loop-guard)."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ def test_fuzzy_disabled() -> None:
 
 def test_cycle_detection() -> None:
     det = LoopDetector(window=20, threshold=100, fuzzy_enabled=False, cycle_min_repeats=3)
-    # A→B→C→A→B→C→A pattern
+    # A->B->C->A->B->C->A pattern
     for tool, args in [("A", {"x": 1}), ("B", {"x": 2}), ("C", {"x": 3})] * 3:
         det.check_and_record(tool, args)
     # The last A should trigger cycle detection
@@ -53,13 +53,13 @@ def test_action_escalation() -> None:
         window=20, threshold=2, fuzzy_enabled=False, cycle_enabled=False,
         action_config=ActionConfig(warn_threshold=2, stop_threshold=4, escalate_threshold=6),
     )
-    # First hit → consecutive_hits=1 → CONTINUE
+    # First hit -> consecutive_hits=1 -> CONTINUE
     det.check_and_record("exec", {"cmd": "ls"})
     hit1 = det.check_and_record("exec", {"cmd": "ls"})
     assert hit1 is not None
     assert hit1.action is LoopAction.CONTINUE
 
-    # Second hit → consecutive_hits=2 → WARN
+    # Second hit -> consecutive_hits=2 -> WARN
     hit2 = det.check_and_record("exec", {"cmd": "ls"})
     assert hit2 is not None
     assert hit2.action is LoopAction.WARN
@@ -69,7 +69,7 @@ def test_action_escalation() -> None:
     det.check_and_record("exec", {"cmd": "ls"})  # record (no hit)
     for _ in range(4):
         det.check_and_record("exec", {"cmd": "ls"})  # hits 1-4
-    hit_stop = det.check_and_record("exec", {"cmd": "ls"})  # hit 5 → consecutive=5 → STOP
+    hit_stop = det.check_and_record("exec", {"cmd": "ls"})  # hit 5 -> consecutive=5 -> STOP
     assert hit_stop is not None
     assert hit_stop.action is LoopAction.STOP
 

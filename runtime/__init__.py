@@ -1,7 +1,7 @@
 """aiZee runtime kernel.
 
 NOTE: This module re-exports ~100 symbols for convenient access. Not all are
-wired into the production kernel pipeline — some are internal/experimental
+wired into the production kernel pipeline - some are internal/experimental
 modules used only by their own tests or by cross-references between themselves.
 The production-wired modules are: kernel, managers/*, policy, budget, audit,
 guardian, probity, persona, loop_detector, saga, workflow, repository, crypto,
@@ -329,7 +329,7 @@ __all__ = [
     "scoped_factory",
 ]
 
-# Freelance + Marketing/E-marketing runtime modules (Phase 1) — re-exported.
+# Freelance + Marketing/E-marketing runtime modules (Phase 1) - re-exported.
 __all__ += [
     "attribution_model",
     "billing_ledger",

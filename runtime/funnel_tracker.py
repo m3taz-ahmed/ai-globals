@@ -46,7 +46,7 @@ class Funnel:
         Only the contiguous reachable prefix is incremented: a touchpoint
         carries its own ``reached`` set (or a single ``step_index`` for
         backward compat). Advancing to step N requires passing through all
-        earlier steps — steps are only counted when the full prefix path
+        earlier steps - steps are only counted when the full prefix path
         is present. Each user (``user_id``/``user``/``id`` when present)
         is counted once per step (dedupe via seen-user set).
 

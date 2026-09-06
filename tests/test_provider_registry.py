@@ -1,6 +1,6 @@
-"""Tests for runtime/provider_registry.py — LLM provider registry.
+"""Tests for runtime/provider_registry.py - LLM provider registry.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

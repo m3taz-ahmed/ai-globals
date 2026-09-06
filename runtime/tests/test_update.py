@@ -1,4 +1,4 @@
-"""Tests for scripts/update.py — git pull + post-install hooks.
+"""Tests for scripts/update.py - git pull + post-install hooks.
 
 Tests use a temporary git repo to simulate the update flow.
 """
@@ -70,7 +70,7 @@ class TestUpdateScript:
         """run_update on a repo with no remote returns appropriate code."""
         _make_git_repo(tmp_path)
         mod = _load_script(SCRIPTS / "update.py")
-        # No remote configured → _check_remote will fail → returns 1
+        # No remote configured -> _check_remote will fail -> returns 1
         rc = mod.run_update(tmp_path, assume_yes=True)
         # Either 0 (no remote, treated as up-to-date) or 1 (fetch error)
         assert rc in (0, 1)

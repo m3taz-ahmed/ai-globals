@@ -793,7 +793,7 @@ class TestSsrfEdgeCases:
 
     def test_is_private_ip_public_domain(self):
         """Public domains should not be flagged as private (no DNS rebinding false positive)."""
-        # example.com resolves to public IP — should return False
+        # example.com resolves to public IP - should return False
         assert _is_private_ip("example.com") is False
 
 

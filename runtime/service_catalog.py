@@ -4,7 +4,7 @@ Inspired by Floci's ``ServiceDescriptor`` record + ``ServiceCatalog``
 multi-index lookup pattern. Provides fast lookup of skills, workflows,
 and tech-stack entries by multiple keys (name, persona, trigger, stack).
 
-The catalog is additive — existing ``SkillResolver`` is NOT modified.
+The catalog is additive - existing ``SkillResolver`` is NOT modified.
 New code can use the catalog for batch discovery; legacy code keeps working.
 
 Usage::
@@ -16,8 +16,8 @@ Usage::
                           personas=["MOBILE", "UX"], triggers=["flutter", "dart"],
                           tech_stack=["flutter"]),
     ])
-    matches = catalog.by_persona("MOBILE")  # → [ServiceDescriptor(...)]
-    match = catalog.match_trigger("build a flutter app")  # → Optional[...]
+    matches = catalog.by_persona("MOBILE")  # -> [ServiceDescriptor(...)]
+    match = catalog.match_trigger("build a flutter app")  # -> Optional[...]
 """
 
 from __future__ import annotations
@@ -65,12 +65,12 @@ class ServiceCatalog:
     construction time for O(1) lookups by different keys.
 
     Indexes:
-    - by_name: exact name → descriptor
-    - by_kind: kind → list of descriptors
-    - by_persona: persona → list of descriptors
-    - by_trigger: trigger keyword → list of descriptors
-    - by_tech_stack: tech-stack → list of descriptors
-    - by_lord: lord skill → list of descriptors
+    - by_name: exact name -> descriptor
+    - by_kind: kind -> list of descriptors
+    - by_persona: persona -> list of descriptors
+    - by_trigger: trigger keyword -> list of descriptors
+    - by_tech_stack: tech-stack -> list of descriptors
+    - by_lord: lord skill -> list of descriptors
     """
 
     def __init__(self, descriptors: list[ServiceDescriptor]) -> None:
@@ -86,7 +86,7 @@ class ServiceCatalog:
 
     def _build_indexes(self) -> None:
         for desc in self._all:
-            # by_name (last one wins if duplicate — matches Floci behavior)
+            # by_name (last one wins if duplicate - matches Floci behavior)
             self._by_name[desc.name] = desc
 
             # by_kind
@@ -216,7 +216,7 @@ def build_catalog_from_directory(
     Extracts triggers from frontmatter if present (heuristic: keywords
     in description or filename).
 
-    This is a convenience builder — for full metadata (personas, tech_stack),
+    This is a convenience builder - for full metadata (personas, tech_stack),
     construct ServiceDescriptor instances explicitly.
     """
     skills_path = skills_dir if isinstance(skills_dir, Path) else Path(skills_dir)

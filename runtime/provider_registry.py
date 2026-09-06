@@ -1,4 +1,4 @@
-"""LLM provider registry — single source of truth for provider metadata.
+"""LLM provider registry - single source of truth for provider metadata.
 
 Ported from open-notebook (lfnovo/open-notebook)
 ``open_notebook/ai/provider_registry.py``.
@@ -76,7 +76,7 @@ _ALL_MODALITIES: tuple[str, ...] = (
 
 
 # ---------------------------------------------------------------------------
-# Provider registry — the single source of truth.
+# Provider registry - the single source of truth.
 # Cost rates are approximate as of 2026-08; update when prices change.
 # ---------------------------------------------------------------------------
 
@@ -172,7 +172,7 @@ _PROVIDER_SPECS: tuple[ProviderSpec, ...] = (
 )
 
 
-# Build a name → spec dict for fast lookup.
+# Build a name -> spec dict for fast lookup.
 _PROVIDERS: dict[str, ProviderSpec] = {spec.name: spec for spec in _PROVIDER_SPECS}
 
 

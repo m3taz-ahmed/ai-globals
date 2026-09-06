@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LLM-as-detector — optional semantic prompt-injection detection (Stage 2).
+"""LLM-as-detector - optional semantic prompt-injection detection (Stage 2).
 
 The deterministic :class:`InjectionDetector` (Stage 1) catches known
 patterns in microseconds. But novel attacks, multilingual evasion, and
@@ -193,7 +193,7 @@ def _heuristic_classify(text: str, stage1: InjectionVerdict) -> tuple[DetectionL
 class PromptInjectionDetector:
     """Two-stage prompt-injection detector: deterministic + optional semantic.
 
-    Stage 1 (always runs): :class:`InjectionDetector` — regex patterns for
+    Stage 1 (always runs): :class:`InjectionDetector` - regex patterns for
     all 13 techniques. Microsecond latency, model-free.
 
     Stage 2 (optional): An injected ``model_fn`` that performs semantic
@@ -203,7 +203,7 @@ class PromptInjectionDetector:
     """
 
     # Only call model_fn for texts where Stage 1 is uncertain or suspicious
-    # (not for clearly-clean or clearly-injection texts — saves latency/cost)
+    # (not for clearly-clean or clearly-injection texts - saves latency/cost)
     ALWAYS_USE_MODEL: ClassVar[bool] = False
     MAX_TEXT_LENGTH: ClassVar[int] = 50_000
 
@@ -251,7 +251,7 @@ class PromptInjectionDetector:
         if should_use_model and self._model_fn is not None:
             return self._semantic_classify(bounded, stage1_verdict)
 
-        # No model — use heuristic
+        # No model - use heuristic
         level, confidence, reason = _heuristic_classify(bounded, stage1_verdict)
         return SemanticDetectionResult(
             text=text,
@@ -296,7 +296,7 @@ class PromptInjectionDetector:
             confidence = 0.9
             reason = f"model classified as BENIGN: {raw_output[:100]}"
         else:
-            # Unknown output — treat as uncertain
+            # Unknown output - treat as uncertain
             level = DetectionLevel.UNCERTAIN
             confidence = 0.5
             reason = f"model returned unknown output: {raw_output[:100]}"

@@ -63,7 +63,7 @@ def _version_tuple(v: str) -> tuple[int, int, int]:
 # ---------------------------------------------------------------------------
 
 def _migrate_4_21_to_4_22(root: Path) -> None:
-    """4.21.0 → 4.22.0: Add freelance MCP plugins + context7 + dashboard graph endpoints."""
+    """4.21.0 -> 4.22.0: Add freelance MCP plugins + context7 + dashboard graph endpoints."""
     # 1. Ensure plugins.yaml has the new plugins.
     plugins_yaml = root / "plugins.yaml"
     if plugins_yaml.exists():
@@ -104,7 +104,7 @@ def _migrate_4_21_to_4_22(root: Path) -> None:
 
 
 def _migrate_4_22_to_4_22_1(root: Path) -> None:
-    """4.22.0 → 4.22.1: Audit refactor — new modules, encryption, migrations framework.
+    """4.22.0 -> 4.22.1: Audit refactor - new modules, encryption, migrations framework.
 
     This migration handles the in-version update from the initial 4.22.0
     release to the audited 4.22.1 patch:
@@ -160,13 +160,13 @@ def _migrate_4_22_to_4_22_1(root: Path) -> None:
         d = root / module_dir
         if not d.exists():
             print(
-                f"  WARN: {module_dir}/ not found — the installer should have copied it.",
+                f"  WARN: {module_dir}/ not found - the installer should have copied it.",
                 file=sys.stderr,
             )
 
 
 def _migrate_4_22_to_4_23(root: Path) -> None:
-    """4.22.0 → 4.23.0: Run schema migrations on memory database + verify encryption compatibility."""
+    """4.22.0 -> 4.23.0: Run schema migrations on memory database + verify encryption compatibility."""
     # 1. Run SQLite schema migrations on brain/memory.db
     brain_dir = root / "brain"
     if brain_dir.exists():
@@ -181,7 +181,7 @@ def _migrate_4_22_to_4_23(root: Path) -> None:
             except Exception as exc:
                 print(f"  WARN: Schema migration skipped: {exc}", file=sys.stderr)
 
-    # 2. Verify encryption compatibility — if AIOS_ENCRYPTION_KEY is set,
+    # 2. Verify encryption compatibility - if AIOS_ENCRYPTION_KEY is set,
     # ensure budget.json can be decrypted (backward compat check).
     budget_file = root / "state" / "budget.json"
     if budget_file.exists():
@@ -259,7 +259,7 @@ def run_migrations(root: Path, dry_run: bool = False) -> int:
 
     print(f"Migrating from {current} to {target} ({len(chain)} step(s))")
     for from_v, to_v, fn in chain:
-        print(f"  [{from_v} → {to_v}] {fn.__name__}")
+        print(f"  [{from_v} -> {to_v}] {fn.__name__}")
         if not dry_run:
             try:
                 fn(root)
@@ -269,7 +269,7 @@ def run_migrations(root: Path, dry_run: bool = False) -> int:
 
     if not dry_run:
         (root / ".aizee-version").write_text(target, encoding="utf-8")
-    print(f"Migration{' (dry-run)' if dry_run else ''} complete: {current} → {target}")
+    print(f"Migration{' (dry-run)' if dry_run else ''} complete: {current} -> {target}")
     return 3 if dry_run else 1
 
 
@@ -281,9 +281,9 @@ def check_migrations(root: Path) -> int:
         print(f"Up-to-date: {current}")
         return 0
     chain = _build_chain(current, target)
-    print(f"Pending: {current} → {target} ({len(chain)} migration(s))")
+    print(f"Pending: {current} -> {target} ({len(chain)} migration(s))")
     for from_v, to_v, fn in chain:
-        print(f"  [{from_v} → {to_v}] {fn.__name__}")
+        print(f"  [{from_v} -> {to_v}] {fn.__name__}")
     return 3
 
 

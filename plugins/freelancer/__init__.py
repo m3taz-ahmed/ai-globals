@@ -1,4 +1,4 @@
-"""Freelancer.com MCP plugin — proxies tools to the external Freelancer MCP server."""
+"""Freelancer.com MCP plugin - proxies tools to the external Freelancer MCP server."""
 
 from .freelancer_plugin import FreelancerPlugin as Plugin
 

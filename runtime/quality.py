@@ -2,13 +2,13 @@
 """Misc quality utilities for aiZee (WS-J).
 
 WS-J items implemented in this module:
-- W1: Budget providers — pluggable cost provider interface
-- W3: Assertions — test assertion helpers
-- W5: Output schemas — standardized output envelope
-- W6: Bounder — output bounding/limiting
-- W7: Witness — execution witness tracking
-- W8: Lazy imports — lazy import helper for heavy dependencies
-- W9: Reflexion — self-reflection helper for learning from failures
+- W1: Budget providers - pluggable cost provider interface
+- W3: Assertions - test assertion helpers
+- W5: Output schemas - standardized output envelope
+- W6: Bounder - output bounding/limiting
+- W7: Witness - execution witness tracking
+- W8: Lazy imports - lazy import helper for heavy dependencies
+- W9: Reflexion - self-reflection helper for learning from failures
 
 Items W2 (mypy tests) and W4 (adapter hygiene) are addressed via
 existing code quality (mypy already passes on all test files, and
@@ -28,7 +28,7 @@ T = TypeVar("T")
 
 
 # ---------------------------------------------------------------------------
-# WS-J W1: Budget providers — pluggable cost provider interface
+# WS-J W1: Budget providers - pluggable cost provider interface
 # ---------------------------------------------------------------------------
 
 
@@ -64,7 +64,7 @@ class FixedRateCostProvider(CostProvider):
 
 
 # ---------------------------------------------------------------------------
-# WS-J W5: Output schemas — standardized output envelope
+# WS-J W5: Output schemas - standardized output envelope
 # ---------------------------------------------------------------------------
 
 
@@ -105,7 +105,7 @@ class OutputEnvelope:
 
 
 # ---------------------------------------------------------------------------
-# WS-J W6: Bounder — output bounding/limiting
+# WS-J W6: Bounder - output bounding/limiting
 # ---------------------------------------------------------------------------
 
 
@@ -154,13 +154,13 @@ class Bounder:
 
 
 # ---------------------------------------------------------------------------
-# WS-J W7: Witness — execution witness tracking
+# WS-J W7: Witness - execution witness tracking
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class Witness:
-    """WS-J W7: Execution witness — tracks what happened during an operation.
+    """WS-J W7: Execution witness - tracks what happened during an operation.
 
     A witness is an immutable record of an operation's execution, including
     inputs, outputs, timing, and any gate decisions. Used for audit trails
@@ -217,7 +217,7 @@ class WitnessRecorder:
 
 
 # ---------------------------------------------------------------------------
-# WS-J W8: Lazy imports — lazy import helper
+# WS-J W8: Lazy imports - lazy import helper
 # ---------------------------------------------------------------------------
 
 
@@ -266,7 +266,7 @@ class LazyImport(Generic[T]):
 
 
 # ---------------------------------------------------------------------------
-# WS-J W9: Reflexion — self-reflection helper
+# WS-J W9: Reflexion - self-reflection helper
 # ---------------------------------------------------------------------------
 
 
@@ -274,7 +274,7 @@ class LazyImport(Generic[T]):
 class ReflexionEntry:
     """WS-J W9: A single self-reflection entry.
 
-    Inspired by Reflexion (arXiv 2303.11366) — agents that reflect on
+    Inspired by Reflexion (arXiv 2303.11366) - agents that reflect on
     past failures to improve future performance.
     """
 

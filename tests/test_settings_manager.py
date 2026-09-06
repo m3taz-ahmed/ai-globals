@@ -1,8 +1,8 @@
-"""Tests for runtime/settings.py — user-facing settings manager.
+"""Tests for runtime/settings.py - user-facing settings manager.
 
 Covers: defaults, load/save, validation, section updates, MCP toggles,
 reset, fail-safe on corrupt file.
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations
@@ -254,14 +254,14 @@ class TestGetSection:
 
 class TestMigration:
     def test_fresh_install_no_migration(self, tmp_root: Path) -> None:
-        """No settings.json → no migration, defaults used."""
+        """No settings.json -> no migration, defaults used."""
         sm = SettingsManager(tmp_root, tmp_root / "aizee_mcp" / "config.json")
         all_settings = sm.get_all()
         assert all_settings["version"] == 2  # SETTINGS_VERSION
         assert not (tmp_root / "state" / "settings.json").exists()
 
     def test_v1_file_triggers_migration(self, tmp_root: Path) -> None:
-        """v1 file → migrated to v2, backup created."""
+        """v1 file -> migrated to v2, backup created."""
         settings_file = tmp_root / "state" / "settings.json"
         settings_file.write_text(
             json.dumps({"version": 1, "policy": {"default_action": "deny"}}),
@@ -279,7 +279,7 @@ class TestMigration:
         assert saved["version"] == 2
 
     def test_v1_orphaned_keys_removed(self, tmp_root: Path) -> None:
-        """v1 file with orphaned keys → migration removes them."""
+        """v1 file with orphaned keys -> migration removes them."""
         settings_file = tmp_root / "state" / "settings.json"
         settings_file.write_text(
             json.dumps({
@@ -297,7 +297,7 @@ class TestMigration:
         assert "policy" in all_settings  # valid section preserved
 
     def test_v2_file_no_migration(self, tmp_root: Path) -> None:
-        """v2 file (current) → no migration, no backup."""
+        """v2 file (current) -> no migration, no backup."""
         settings_file = tmp_root / "state" / "settings.json"
         settings_file.write_text(
             json.dumps({"version": 2, "policy": {"default_action": "deny"}}),
@@ -310,7 +310,7 @@ class TestMigration:
         assert not (tmp_root / "state" / "settings.json.v2.bak").exists()
 
     def test_missing_version_treated_as_v1(self, tmp_root: Path) -> None:
-        """File without version field → treated as v1, migrated."""
+        """File without version field -> treated as v1, migrated."""
         settings_file = tmp_root / "state" / "settings.json"
         settings_file.write_text(
             json.dumps({"policy": {"default_action": "allow"}}),
@@ -360,7 +360,7 @@ class TestMigration:
         assert all_settings["budget"]["session"]["max_tokens"] == 100_000
 
     def test_migration_adds_missing_trusted_proxies(self, tmp_root: Path) -> None:
-        """v1→v2 migration ensures dashboard.trusted_proxies exists."""
+        """v1->v2 migration ensures dashboard.trusted_proxies exists."""
         settings_file = tmp_root / "state" / "settings.json"
         settings_file.write_text(
             json.dumps({"version": 1, "policy": {"default_action": "allow"}}),
@@ -372,7 +372,7 @@ class TestMigration:
         assert isinstance(all_settings["dashboard"]["trusted_proxies"], list)
 
     def test_corrupt_file_quarantined_not_migrated(self, tmp_root: Path) -> None:
-        """Corrupt file → quarantined, defaults used, no migration."""
+        """Corrupt file -> quarantined, defaults used, no migration."""
         settings_file = tmp_root / "state" / "settings.json"
         settings_file.write_text("{not valid json", encoding="utf-8")
         sm = SettingsManager(tmp_root, tmp_root / "aizee_mcp" / "config.json")

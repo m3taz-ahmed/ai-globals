@@ -64,7 +64,7 @@ def _instantiate_error(
         return error_class(message)  # type: ignore[call-arg]
 
 
-# Pattern → (ErrorClass, message_template) mappings.
+# Pattern -> (ErrorClass, message_template) mappings.
 # Checked in order; first match wins. Specific quota/budget patterns come
 # first so they win over generic validation matches.
 _CLASSIFICATION_RULES: list[tuple[re.Pattern[str], ErrorClass, str]] = [

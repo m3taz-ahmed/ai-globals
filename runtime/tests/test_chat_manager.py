@@ -1,4 +1,4 @@
-"""Tests for runtime/managers/chat_manager.py — ChatManager lifecycle."""
+"""Tests for runtime/managers/chat_manager.py - ChatManager lifecycle."""
 
 from __future__ import annotations
 

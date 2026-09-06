@@ -90,7 +90,7 @@ def test_require_command():
 
 
 # ---------------------------------------------------------------------------
-# RequireCommand — line 67 (non-command event returns None)
+# RequireCommand - line 67 (non-command event returns None)
 # ---------------------------------------------------------------------------
 
 def test_require_command_non_command_event():
@@ -100,7 +100,7 @@ def test_require_command_non_command_event():
 
 
 # ---------------------------------------------------------------------------
-# RequireCommand — line 70 (command doesn't match 'after' pattern)
+# RequireCommand - line 70 (command doesn't match 'after' pattern)
 # ---------------------------------------------------------------------------
 
 def test_require_command_after_not_matched():
@@ -116,7 +116,7 @@ def test_require_command_non_string_command():
 
 
 # ---------------------------------------------------------------------------
-# ForbidContentPattern — line 88 (non-write event returns None)
+# ForbidContentPattern - line 88 (non-write event returns None)
 # ---------------------------------------------------------------------------
 
 def test_forbid_content_non_write_event():
@@ -126,7 +126,7 @@ def test_forbid_content_non_write_event():
 
 
 # ---------------------------------------------------------------------------
-# ForbidContentPattern — line 92 (content doesn't match returns None)
+# ForbidContentPattern - line 92 (content doesn't match returns None)
 # ---------------------------------------------------------------------------
 
 def test_forbid_content_no_match():
@@ -136,7 +136,7 @@ def test_forbid_content_no_match():
 
 
 # ---------------------------------------------------------------------------
-# EnforceFilenameCasing — line 105 (non-write/edit event returns None)
+# EnforceFilenameCasing - line 105 (non-write/edit event returns None)
 # ---------------------------------------------------------------------------
 
 def test_enforce_casing_non_write_edit_event():
@@ -146,7 +146,7 @@ def test_enforce_casing_non_write_edit_event():
 
 
 # ---------------------------------------------------------------------------
-# EnforceFilenameCasing — line 108 (non-string path returns None)
+# EnforceFilenameCasing - line 108 (non-string path returns None)
 # ---------------------------------------------------------------------------
 
 def test_enforce_casing_non_string_path():
@@ -156,7 +156,7 @@ def test_enforce_casing_non_string_path():
 
 
 # ---------------------------------------------------------------------------
-# EnforceFilenameCasing — lines 112-114 (camelCase style)
+# EnforceFilenameCasing - lines 112-114 (camelCase style)
 # ---------------------------------------------------------------------------
 
 def test_enforce_casing_camelcase_violation():
@@ -184,7 +184,7 @@ def test_enforce_casing_edit_event():
 
 
 # ---------------------------------------------------------------------------
-# EnforceTdd — lines 123-124, 127-136
+# EnforceTdd - lines 123-124, 127-136
 # ---------------------------------------------------------------------------
 
 def test_enforce_tdd_non_write_edit_event():
@@ -228,7 +228,7 @@ def test_enforce_tdd_edit_event():
 
 
 # ---------------------------------------------------------------------------
-# build_rule — lines 153-155 (enforceTdd kind and unknown kind)
+# build_rule - lines 153-155 (enforceTdd kind and unknown kind)
 # ---------------------------------------------------------------------------
 
 def test_build_rule_enforce_tdd():
@@ -280,7 +280,7 @@ def test_guardrails_with_guardrail_config():
 
 
 # ---------------------------------------------------------------------------
-# ForbidCommandPattern — non-command event and non-matching
+# ForbidCommandPattern - non-command event and non-matching
 # ---------------------------------------------------------------------------
 
 def test_forbid_command_non_command_event():

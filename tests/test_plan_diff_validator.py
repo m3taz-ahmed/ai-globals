@@ -1,6 +1,6 @@
-"""Tests for runtime/plan_diff_validator.py — plan and diff validation.
+"""Tests for runtime/plan_diff_validator.py - plan and diff validation.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations
@@ -146,7 +146,7 @@ class TestExtractPlanFiles:
 
 class TestValidatePlan:
     def test_forbidden_path_produces_error(self, tmp_path: Path) -> None:
-        # Arrange — secrets/ is a forbidden pattern; path has "/" so it's extracted
+        # Arrange - secrets/ is a forbidden pattern; path has "/" so it's extracted
         plan = "```\nsecrets/api_keys.py\nsrc/main.py\n```"
         v = PlanDiffValidator(tmp_path)
         # Act
@@ -296,7 +296,7 @@ class TestCheckUndeclaredImports:
         )
 
     def test_no_warn_for_declared_dependency(self, tmp_path: Path) -> None:
-        # Arrange — requirements.txt format is parsed line-by-line
+        # Arrange - requirements.txt format is parsed line-by-line
         (tmp_path / "requirements.txt").write_text(
             "requests>=2.0\n", encoding="utf-8"
         )
@@ -355,7 +355,7 @@ class TestConnectedComponents:
 
 class TestCheckUnrelatedRefactor:
     def test_warn_when_multiple_components(self, tmp_path: Path) -> None:
-        # Arrange — 3+ files across 2 top-level dirs
+        # Arrange - 3+ files across 2 top-level dirs
         diff = (
             "+++ b/src/a.py\n"
             "+++ b/src/b.py\n"
@@ -368,7 +368,7 @@ class TestCheckUnrelatedRefactor:
         assert any(f.rule == "unrelated_refactor" for f in result.warnings)
 
     def test_no_warn_when_single_component(self, tmp_path: Path) -> None:
-        # Arrange — all files under same top-level dir
+        # Arrange - all files under same top-level dir
         diff = "+++ b/src/a.py\n+++ b/src/b.py\n+++ b/src/c.py\n"
         v = PlanDiffValidator(tmp_path)
         # Act

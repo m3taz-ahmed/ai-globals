@@ -1,4 +1,4 @@
-"""Plan + diff validator — enforceable, machine-checkable rules for plans and diffs.
+"""Plan + diff validator - enforceable, machine-checkable rules for plans and diffs.
 
 Validates an agent's proposed plan (pre-edit) and git diff patch (post-edit)
 to ensure compliance before code is modified or merged:
@@ -9,7 +9,7 @@ to ensure compliance before code is modified or merged:
   path violations, test gaps, and file counts.
 - **Dependency guard**: warn when a diff adds imports of external packages
   not declared in ``pyproject.toml`` / ``requirements.txt`` / ``package.json``
-  / ``composer.json`` — a common AI-agent failure mode.
+  / ``composer.json`` - a common AI-agent failure mode.
 - **Unrelated refactor detection**: identify whether modifications span
   disjoint, unconnected modules in the import graph (connected-components
   analysis).

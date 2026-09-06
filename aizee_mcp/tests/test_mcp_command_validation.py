@@ -1,7 +1,7 @@
 """Tests for ``runtime.mcp_client._validate_mcp_command``.
 
 Verifies that shell metacharacters, unlisted binaries, and absolute paths
-to non-standard locations are rejected — preventing command injection via
+to non-standard locations are rejected - preventing command injection via
 MCP server configurations.
 """
 

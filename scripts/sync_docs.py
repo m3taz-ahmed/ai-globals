@@ -89,11 +89,11 @@ def count_tests(root: Path) -> int | None:
             if m:
                 total += int(m.group(1))
         if total == 0:
-            print("WARNING: count_tests collected 0 tests — badge sync skipped", file=sys.stderr)
+            print("WARNING: count_tests collected 0 tests - badge sync skipped", file=sys.stderr)
             return None
         return total
     except Exception as exc:
-        print(f"WARNING: count_tests failed ({exc}) — badge sync skipped", file=sys.stderr)
+        print(f"WARNING: count_tests failed ({exc}) - badge sync skipped", file=sys.stderr)
         return None
 
 
@@ -120,7 +120,7 @@ def _sanitize_cell(value: str, max_len: int) -> str:
     value = re.sub(r"\s+", " ", value).strip()
     value = value.replace("|", "/")
     if len(value) > max_len:
-        value = value[: max_len - 1].rstrip() + "…"
+        value = value[: max_len - 1].rstrip() + "..."
     return value
 
 
@@ -169,11 +169,11 @@ _COUNT_SUBS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\b\d+ version-locked stack references\b"), "{stack} version-locked stack references"),
 ]
 
-# Badge patterns for README.md / README-AR.md — kept in sync via sync_docs --check.
+# Badge patterns for README.md / README-AR.md - kept in sync via sync_docs --check.
 # IMPORTANT: alt-text patterns are anchored to `alt="..."` to avoid matching
 # historical prose (e.g. "3 سير عمل جديد" in What's New sections must NOT change).
 _BADGE_SUBS: list[tuple[re.Pattern[str], str]] = [
-    # --- Tests badge URLs (percent-encoded, safe — no prose uses this form) ---
+    # --- Tests badge URLs (percent-encoded, safe - no prose uses this form) ---
     (re.compile(r"Tests-(\d+)%20passed"), "Tests-{tests}%20passed"),
     (re.compile(r"%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-(\d+)%20"), "%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-{tests}%20"),
     # --- Tests alt text (anchored to alt=" to avoid prose) ---
@@ -203,7 +203,7 @@ def _substitute_counts(text: str, counts: dict[str, int | None]) -> str:
             return t.format(**safe_counts)
 
         text = pattern.sub(_repl, text)
-    # Sync badge counts (README files) — only badge URLs and alt="..." attributes,
+    # Sync badge counts (README files) - only badge URLs and alt="..." attributes,
     # never historical prose. Skip a badge pattern if its required key is missing
     # (e.g. tests=None when pytest collection failed).
     for pattern, template in _BADGE_SUBS:

@@ -207,7 +207,7 @@ def rebuild_colors():
         # Rename mismatched types
         if pt in COLOR_RENAMES:
             new_name = COLOR_RENAMES[pt]
-            print(f"  [colors] RENAME: {pt} → {new_name}")
+            print(f"  [colors] RENAME: {pt} -> {new_name}")
             row["Product Type"] = new_name
             pt = new_name
         color_map[pt] = row
@@ -376,7 +376,7 @@ def rebuild_ui_reasoning():
             continue
         if cat in UI_RENAMES:
             new_name = UI_RENAMES[cat]
-            print(f"  [ui-reason] RENAME: {cat} → {new_name}")
+            print(f"  [ui-reason] RENAME: {cat} -> {new_name}")
             row["UI_Category"] = new_name
             cat = new_name
         ui_map[cat] = row

@@ -1,4 +1,4 @@
-"""Numbered package layering — enforce dependency direction via numeric prefixes.
+"""Numbered package layering - enforce dependency direction via numeric prefixes.
 
 Inspired by Prisma's numbered package prefixes (``1-framework``, ``2-sql``,
 ``3-targets``) which encode dependency direction and prevent circular deps.
@@ -64,7 +64,7 @@ class LayerViolation:
 
 @dataclass
 class LayerManifest:
-    """Manifest of package → layer assignments."""
+    """Manifest of package -> layer assignments."""
 
     layers: dict[str, Layer] = field(default_factory=lambda: dict(DEFAULT_LAYERS))
 
@@ -72,7 +72,7 @@ class LayerManifest:
         """Return the layer for a package, or None if unregistered."""
         if package in self.layers:
             return self.layers[package]
-        # Try parent package (e.g. "runtime/managers" → "runtime")
+        # Try parent package (e.g. "runtime/managers" -> "runtime")
         parts = package.split("/")
         for i in range(len(parts), 0, -1):
             candidate = "/".join(parts[:i])
@@ -161,7 +161,7 @@ def _package_for_path(path: Path) -> str:
                 if "." not in nxt:
                     return f"{key}/{nxt}"
             return key
-    # Check if the file stem itself is a known package (e.g. config.py → "config")
+    # Check if the file stem itself is a known package (e.g. config.py -> "config")
     stem = path.stem
     if stem in DEFAULT_LAYERS:
         return stem

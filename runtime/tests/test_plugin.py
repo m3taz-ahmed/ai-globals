@@ -188,7 +188,7 @@ def test_plugin_guard_wrap_blocks() -> None:
 
 
 # ---------------------------------------------------------------------------
-# PluginManager — _load_config / _load_plugin_module / _discover_plugins
+# PluginManager - _load_config / _load_plugin_module / _discover_plugins
 # ---------------------------------------------------------------------------
 
 

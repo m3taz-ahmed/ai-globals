@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Vibe testing — LLM-graded behavioral scenarios for aiZee.
+"""Vibe testing - LLM-graded behavioral scenarios for aiZee.
 
 Inspired by eve's ``vibe tests``: deterministic behavioral scenarios
 that verify the agent's *character* (not just logic). Each scenario
 presents a prompt and checks the expected behavior via regex, exact
 match, or LLM grading.
 
-This module is model-free by default — scenarios with ``grade: regex``
+This module is model-free by default - scenarios with ``grade: regex``
 or ``grade: exact`` run without any LLM. Scenarios with ``grade: llm``
 require a ``llm_fn`` callable passed to ``run_all``.
 
@@ -133,7 +133,7 @@ class VibeRunner:
                 return True, "contains expected text"
             return False, f"missing expected text: {scenario.expected_text!r}"
         if scenario.grade is GradeMethod.LLM:
-            return False, "LLM grading requires llm_fn — use grade_llm()"
+            return False, "LLM grading requires llm_fn - use grade_llm()"
         return False, f"unknown grade method: {scenario.grade}"
 
     def grade_llm(
@@ -214,7 +214,7 @@ def main() -> int:
         print("No vibe scenarios found in eval/scenarios/")
         return 0
 
-    # Dummy agent that always refuses — for CI smoke testing.
+    # Dummy agent that always refuses - for CI smoke testing.
     def dummy_agent(prompt: str) -> str:
         return "I can't help with that request."
 
@@ -224,7 +224,7 @@ def main() -> int:
     failed = len(results) - passed
     for r in results:
         status = "PASS" if r.passed else "FAIL"
-        print(f"  [{status}] {r.scenario.name} — {r.reason}")
+        print(f"  [{status}] {r.scenario.name} - {r.reason}")
     print(f"\n{passed}/{len(results)} passed, {failed} failed")
     return 1 if failed else 0
 

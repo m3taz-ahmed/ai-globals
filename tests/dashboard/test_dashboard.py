@@ -301,7 +301,7 @@ def test_dashboard_client_ip_trusted_proxy():
     try:
         handler = MagicMock()
         handler.client_address = ("127.0.0.1", 12345)
-        # Per RFC 7239, X-Forwarded-For is "client, proxy1, proxy2" — first is client
+        # Per RFC 7239, X-Forwarded-For is "client, proxy1, proxy2" - first is client
         handler.headers.get.return_value = "203.0.113.5, 127.0.0.1"
         ip = dash_server._client_ip(handler)
         assert ip == "203.0.113.5"
@@ -357,7 +357,7 @@ def test_dashboard_token_from_env(monkeypatch):
 
 
 def test_dashboard_token_allow_no_token_flag_is_obsolete(monkeypatch):
-    """The legacy ALLOW_NO_TOKEN flags are ignored — open access is the default."""
+    """The legacy ALLOW_NO_TOKEN flags are ignored - open access is the default."""
     tmp = Path(tempfile.mkdtemp(prefix="aizee_dash_tokn_"))
     monkeypatch.delenv("AIZEE_DASHBOARD_TOKEN", raising=False)
     monkeypatch.delenv("AGENT_OS_DASHBOARD_TOKEN", raising=False)
@@ -1345,7 +1345,7 @@ def test_dashboard_main_block():
         time.sleep(2.0)
         rc = proc.poll()
         if rc is not None:  # pragma: no cover
-            # Process exited â€” capture stderr for debugging
+            # Process exited - capture stderr for debugging
             stderr = proc.stderr.read() if proc.stderr else ""
             # On Windows, signal.SIGTERM handler may cause issues
             # but the __main__ block should still execute
@@ -1602,7 +1602,7 @@ def test_dashboard_sse_broken_pipe():
 
 
 # ---------------------------------------------------------------------------
-# __main__ block â€” in-process (lines 485-491)
+# __main__ block - in-process (lines 485-491)
 # ---------------------------------------------------------------------------
 
 def test_dashboard_main_block_in_process(monkeypatch):
@@ -1797,7 +1797,7 @@ class TestLoopbackInvariant:
         monkeypatch.delenv("AIZEE_DASHBOARD_TOKEN", raising=False)
         host = "127.0.0.1"
         token = _dashboard_token(tmp_path)
-        # Should not raise — loopback is safe without token
+        # Should not raise - loopback is safe without token
         assert _is_loopback_host(host) is True
         assert token is None
         # The refusal condition must be False

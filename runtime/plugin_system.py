@@ -1,16 +1,16 @@
-"""Plugin System — bundles skills, agents, commands, hooks, and MCP servers.
+"""Plugin System - bundles skills, agents, commands, hooks, and MCP servers.
 
 Inspired by Claude Code's plugin architecture. A plugin is a self-contained
 package that groups related capabilities:
 
-- **Skills** — SKILL.md instruction packs loaded progressively
-- **Agents** — subagent definitions for specialized tasks
-- **Commands** — slash commands (e.g., /design, /taste, /qa)
-- **Hooks** — lifecycle hooks (UserPromptSubmit, PreToolUse, PostToolUse, Stop)
-- **MCP Servers** — external tool integrations via Model Context Protocol
+- **Skills** - SKILL.md instruction packs loaded progressively
+- **Agents** - subagent definitions for specialized tasks
+- **Commands** - slash commands (e.g., /design, /taste, /qa)
+- **Hooks** - lifecycle hooks (UserPromptSubmit, PreToolUse, PostToolUse, Stop)
+- **MCP Servers** - external tool integrations via Model Context Protocol
 
 The registry discovers plugins from a ``plugins/`` directory, validates their
-manifest, and loads them on demand. Plugins are isolated — a broken plugin
+manifest, and loads them on demand. Plugins are isolated - a broken plugin
 never crashes the kernel.
 """
 
@@ -75,7 +75,7 @@ class PluginManifest:
     skills: list[str] = field(default_factory=list)
     agents: list[str] = field(default_factory=list)
     commands: list[str] = field(default_factory=list)
-    hooks: dict[str, str] = field(default_factory=dict)  # phase → script path
+    hooks: dict[str, str] = field(default_factory=dict)  # phase -> script path
     mcp_servers: list[str] = field(default_factory=list)
     dependencies: list[str] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
@@ -153,7 +153,7 @@ class PluginRegistry:
 
     Plugins live in ``<root>/plugins/<plugin-name>/plugin.json``. The registry
     scans the directory, parses manifests, and tracks lifecycle status. Plugins
-    are loaded lazily — only when their skills/commands are first invoked.
+    are loaded lazily - only when their skills/commands are first invoked.
     """
 
     MANIFEST_NAME: ClassVar[str] = "plugin.json"
@@ -168,8 +168,8 @@ class PluginRegistry:
         """
         self._plugins: dict[str, Plugin] = {}
         self._plugins_dir = plugins_dir
-        self._keyword_index: dict[str, list[str]] = {}  # keyword → plugin names
-        self._persona_index: dict[str, list[str]] = {}  # persona → plugin names
+        self._keyword_index: dict[str, list[str]] = {}  # keyword -> plugin names
+        self._persona_index: dict[str, list[str]] = {}  # persona -> plugin names
 
     def discover(self, plugins_dir: Path | None = None) -> int:
         """Scan the plugins directory and register all valid plugins.
@@ -195,7 +195,7 @@ class PluginRegistry:
                 self._index_plugin(plugin)
                 count += 1
             except (json.JSONDecodeError, PluginError, OSError, ValueError):
-                # Skip broken plugins — one bad manifest must not kill
+                # Skip broken plugins - one bad manifest must not kill
                 # discover() (previously an invalid `type` ValueError did).
                 continue
 
@@ -293,7 +293,7 @@ class PluginRegistry:
         Executes the hook via ``subprocess.run`` with a 30-second timeout,
         confined to the plugin directory (``../../`` escapes rejected, only
         ``.py`` scripts), with stdout capped at 64KB. Hook failures are
-        logged but never crash the OS — a broken plugin is isolated.
+        logged but never crash the OS - a broken plugin is isolated.
         """
         plugin = self._plugins.get(plugin_name)
         if plugin is None or not plugin.is_active:

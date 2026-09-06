@@ -271,7 +271,7 @@ class TestRealPipeline:
         assert len(result.by_tag("security")) == 1
 
     def test_error_handling(self, tmp_path: Path) -> None:
-        """Pipeline must not crash on kernel errors — it records them."""
+        """Pipeline must not crash on kernel errors - it records them."""
         k = _kernel(tmp_path)
         case = EvalCase(
             id="error-case",
@@ -279,6 +279,6 @@ class TestRealPipeline:
             assertions=[Assertion(kind=AssertionKind.OK_TRUE)],
         )
         result = EvalPipeline(k).run_case(case)
-        # Should not crash — either passed or has error recorded
+        # Should not crash - either passed or has error recorded
         assert isinstance(result, CaseResult)
         assert result.case.id == "error-case"

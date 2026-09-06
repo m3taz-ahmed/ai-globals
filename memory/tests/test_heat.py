@@ -1,4 +1,4 @@
-"""Tests for memory/heat.py — heat-based prioritization."""
+"""Tests for memory/heat.py - heat-based prioritization."""
 
 from __future__ import annotations
 

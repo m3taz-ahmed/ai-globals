@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""KhamsatPlugin for aiZee — proxies to external MCP server.
+"""KhamsatPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @khamsat/mcp
 Required env vars: KHAMSAT_API_TOKEN
@@ -30,7 +30,7 @@ class KhamsatPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

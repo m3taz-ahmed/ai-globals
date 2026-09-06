@@ -1,6 +1,6 @@
-"""Tests for runtime/agent_gateway.py — runtime guardrail interception.
+"""Tests for runtime/agent_gateway.py - runtime guardrail interception.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Tests for runtime/mobile_patterns.py — Mobile app pattern auditing.
+"""Tests for runtime/mobile_patterns.py - Mobile app pattern auditing.
 
 Tests cover all 18 pattern checks for both Flutter and React Native
 platforms, plus audit_summary and edge cases.
@@ -347,13 +347,13 @@ class TestFlutterPatterns:
         assert result.severity == PatternSeverity.CRITICAL
 
     def test_backend_isolation_rn_pass(self, rn_project: Path) -> None:
-        """RN: backend SDK in services/ only — should pass."""
+        """RN: backend SDK in services/ only - should pass."""
         auditor = MobilePatternAuditor(MobileAuditConfig(MobilePlatform.REACT_NATIVE, rn_project))
         result = auditor._check_backend_isolation()
         assert result.passed is True
 
     def test_backend_isolation_rn_fail(self, tmp_path: Path) -> None:
-        """RN: @supabase in components/ — should fail."""
+        """RN: @supabase in components/ - should fail."""
         comp = tmp_path / "src" / "features" / "auth" / "components"
         comp.mkdir(parents=True)
         (comp / "LoginButton.ts").write_text(

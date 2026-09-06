@@ -147,7 +147,7 @@ class TestFuseRRF:
         vec = [("a", 0.9), ("c", 0.8)]
         results = fuse_rrf(kw, vec, 0.5, 10)
         names = [r.function.name for r in results]
-        assert "a" in names  # appears in both → higher RRF score
+        assert "a" in names  # appears in both -> higher RRF score
 
     def test_limit_applied(self) -> None:
         kw = [_make_result(f"f{i}", 1.0) for i in range(10)]
@@ -177,7 +177,7 @@ class TestFuseRelativeScore:
         vec = [("a", 1.0), ("b", 0.0)]
         results = fuse_relative_score(kw, vec, 0.5, 10)
         assert len(results) >= 1
-        # "a" has both keyword and vector score = 1.0 → highest hybrid
+        # "a" has both keyword and vector score = 1.0 -> highest hybrid
         top = results[0]
         assert top.function.name == "a"
         assert top.hybrid_score == pytest.approx(1.0)
@@ -291,6 +291,6 @@ class TestHybridSearch:
         set_hybrid_backends(keyword_search=mock_search, vector_store=mock_store)
 
         hybrid_search("test", query_vector=[0.1], alpha=0.5, limit=5)
-        # Verify over-fetch: limit=5 → over_fetch=15
+        # Verify over-fetch: limit=5 -> over_fetch=15
         mock_search.search.assert_called_once_with("test", limit=15)
         mock_store.search.assert_called_once()

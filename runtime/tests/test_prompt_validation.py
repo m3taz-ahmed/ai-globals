@@ -2,7 +2,7 @@
 
 Covers assertion functions, guardrails, adaptive rewriting, the prompt test
 suite with ELO ranking.
-No LLM APIs are called — all model functions are mocked.
+No LLM APIs are called - all model functions are mocked.
 """
 
 from __future__ import annotations

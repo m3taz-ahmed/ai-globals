@@ -1,4 +1,4 @@
-"""Tests for runtime/layers.py — LayerManifest + layer checking."""
+"""Tests for runtime/layers.py - LayerManifest + layer checking."""
 from __future__ import annotations
 
 from pathlib import Path

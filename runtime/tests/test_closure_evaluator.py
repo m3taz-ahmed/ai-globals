@@ -200,5 +200,5 @@ def test_guardian_evaluator_resolve_default_by_name_unknown_returns_none():
 
 def test_guardian_evaluator_resolve_default_by_type_returns_none():
     evaluator = GuardianClosureEvaluator()
-    # Justification: see above — miss sentinel is _MISSING, not None.
+    # Justification: see above - miss sentinel is _MISSING, not None.
     assert evaluator.resolve_default_by_type(str) is _MISSING

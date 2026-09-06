@@ -1,4 +1,4 @@
-"""Tests for runtime/agentic_security.py — OWASP Agentic Top 10 scanner."""
+"""Tests for runtime/agentic_security.py - OWASP Agentic Top 10 scanner."""
 
 from __future__ import annotations
 

@@ -4,10 +4,10 @@
 This module is a backward-compatible facade. The implementation lives in
 the :mod:`runtime.spec` package:
 
-- :mod:`runtime.spec.models` — phases, specs, deltas, manifests
-- :mod:`runtime.spec.engine` — CRUD, phase gates, deltas (``SpecEngine``)
-- :mod:`runtime.spec.scaffold` — template scaffolding + checklist validation
-- :mod:`runtime.spec.analysis` — analyze/converge read-only reports
+- :mod:`runtime.spec.models` - phases, specs, deltas, manifests
+- :mod:`runtime.spec.engine` - CRUD, phase gates, deltas (``SpecEngine``)
+- :mod:`runtime.spec.scaffold` - template scaffolding + checklist validation
+- :mod:`runtime.spec.analysis` - analyze/converge read-only reports
 
 Implements a structured 4-phase development process:
 1. **Specify** - Define what to build (user stories, requirements)

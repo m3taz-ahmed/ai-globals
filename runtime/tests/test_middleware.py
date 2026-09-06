@@ -1,4 +1,4 @@
-﻿"""Tests for the flat middleware pipeline.
+"""Tests for the flat middleware pipeline.
 
 Covers Pattern 4 (tRPC-style flat middleware array + recursive execution)
 from ``runtime/middleware.py``.

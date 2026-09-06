@@ -2,7 +2,7 @@
 """Static security scanner for aiZee skills (inspired by SkillSpector).
 
 Scans skill files (SKILL.md, *.md, *.py) for vulnerability patterns
-using fast static analysis (regex + AST). No LLM required — this is
+using fast static analysis (regex + AST). No LLM required - this is
 the Stage 1 fast scan. An optional Stage 2 LLM semantic analysis can
 be layered on top by callers.
 

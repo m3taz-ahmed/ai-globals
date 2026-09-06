@@ -27,7 +27,7 @@ _logger = logging.getLogger(__name__)
 
 _SENSITIVE_KEYS = re.compile(r"(token|key|secret|password|credential|auth|api[_-]?key)", re.IGNORECASE)
 # Content redaction (values, not keys): only assignment-like secrets
-# (`password=...`, `token: ...`) or known token prefixes — never bare
+# (`password=...`, `token: ...`) or known token prefixes - never bare
 # substrings (which redacted innocent words like "monkey" via "key").
 _SECRET_VALUE_RE = re.compile(
     r"(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|bearer|credential|token)s?\s*[:=]\s*\S+"
@@ -107,10 +107,10 @@ def _get_audit_key() -> bytes:
         key_file.write_bytes(generated)
         _restrict_file_permissions(key_file)
         _logger.warning(
-            "SECURITY: No AIZEE_AUDIT_KEY set — auto-generated audit HMAC key "
+            "SECURITY: No AIZEE_AUDIT_KEY set - auto-generated audit HMAC key "
             "stored at %s. For production, set AIZEE_AUDIT_KEY env var or "
             "AIZEE_AUDIT_KEY_FILE to a path outside the OS root. "
-            "Back up this file — loss means the audit chain cannot be verified.",
+            "Back up this file - loss means the audit chain cannot be verified.",
             key_file,
         )
         _audit_key_cache = generated
@@ -177,14 +177,14 @@ class AuditLogger:
 
         EU AI Act Article 19(2) requires retaining logs for at least 6 months
         post-deployment. This method purges only files OLDER than the retention
-        period — never the active log or files within retention.
+        period - never the active log or files within retention.
 
         Set ``AIZEE_AUDIT_RETENTION_DAYS=0`` to disable automatic purge
         (logs retained indefinitely until manually managed).
         Called on every ``log()`` call (cheap: stat-only, no read).
         """
         if self._retention_days <= 0:
-            return  # Purge disabled — retain indefinitely
+            return  # Purge disabled - retain indefinitely
         try:
             cutoff = datetime.now(timezone.utc).timestamp() - (self._retention_days * 86400)
             for i in range(1, self._MAX_ROTATED + 10):
@@ -233,7 +233,7 @@ class AuditLogger:
 
         - If the key name matches a sensitive pattern, the entire value is redacted.
         - String values are redacted only on assignment-like secrets or known
-          token prefixes (never bare substrings — "monkey" stays intact).
+          token prefixes (never bare substrings - "monkey" stays intact).
         - Recursively processes dicts and lists.
         """
         # Key-based redaction: if the key name looks sensitive, redact entire value
@@ -287,7 +287,7 @@ class AuditLogger:
                     if lines:
                         # If we read from the very start, lines[0] is complete.
                         # Otherwise lines[0] is a partial line (mid-record) and
-                        # we must use lines[1:] — but the LAST line is always
+                        # we must use lines[1:] - but the LAST line is always
                         # complete because the file ends with it.
                         last_line = lines[-1]
                         break
@@ -308,7 +308,7 @@ class AuditLogger:
         try:
             entry = json.loads(last_line)
             h = str(entry.get("hash", _GENESIS_HASH))
-            # Caller holds _cache_lock — assign directly (never re-acquire;
+            # Caller holds _cache_lock - assign directly (never re-acquire;
             # threading.Lock is not re-entrant and would deadlock).
             self._cached_last_hash = h
             return h
@@ -334,7 +334,7 @@ class AuditLogger:
         permission error, etc.), the error is raised. Dropped writes increment
         ``self.dropped`` (visible via ``stats()``) so audit loss is never silent.
         Set ``AIZEE_AUDIT_STRICT=0`` to enable fail-open mode (log but do not
-        raise — useful for dev/observability-only deployments).
+        raise - useful for dev/observability-only deployments).
         """
         with self._lock:
             try:
@@ -359,7 +359,7 @@ class AuditLogger:
             except OSError as exc:
                 self.dropped += 1
                 _logger.error(
-                    "Audit log write failed (fail-open, dropped=%d): %s — event_type=%s",
+                    "Audit log write failed (fail-open, dropped=%d): %s - event_type=%s",
                     self.dropped, exc, event_type,
                 )
                 if os.environ.get("AIZEE_AUDIT_STRICT", "1") == "1":
@@ -494,7 +494,7 @@ class AuditLogger:
         Args:
             event_type: Filter by event type (e.g., 'policy', 'budget').
             limit: Maximum number of entries to return (most recent first).
-            since: ISO timestamp â€” only entries after this time are returned.
+            since: ISO timestamp - only entries after this time are returned.
         """
         if not self.log_file.exists():
             return []

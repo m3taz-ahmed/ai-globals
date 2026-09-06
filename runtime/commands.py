@@ -1,4 +1,4 @@
-"""Command object pattern — decompose complex service workflows into discrete, testable commands.
+"""Command object pattern - decompose complex service workflows into discrete, testable commands.
 
 Inspired by Invoice Ninja's `new MarkPaid()` / `new ApplyNumber()` pattern where each
 operation delegates to a dedicated command class, providing better testability and

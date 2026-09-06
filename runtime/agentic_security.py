@@ -4,16 +4,16 @@
 Scans agent configurations, MCP server definitions, skills, and policy
 rules against the OWASP Agentic Top 10 (2026) controls:
 
-1.  A01 — Prompt Injection
-2.  A02 — Sensitive Information Disclosure
-3.  A03 — Supply Chain Vulnerabilities
-4.  A04 — Excessive Agency / Over-privileged Agents
-5.  A05 — Insecure Output Handling
-6.  A06 — Tool / Function Misuse
-7.  A07 — Untrusted Content Consumption
-8.  A08 — Memory / Context Poisoning
-9.  A09 — Rogue Agent / Identity Misuse
-10. A10 — Lack of Human Oversight
+1.  A01 - Prompt Injection
+2.  A02 - Sensitive Information Disclosure
+3.  A03 - Supply Chain Vulnerabilities
+4.  A04 - Excessive Agency / Over-privileged Agents
+5.  A05 - Insecure Output Handling
+6.  A06 - Tool / Function Misuse
+7.  A07 - Untrusted Content Consumption
+8.  A08 - Memory / Context Poisoning
+9.  A09 - Rogue Agent / Identity Misuse
+10. A10 - Lack of Human Oversight
 
 Each control produces a finding with severity (critical/high/medium/low/info)
 and a remediation suggestion.
@@ -170,7 +170,7 @@ class AgenticSecurityScanner:
 
     def _scan_line(self, line: str, file_path: str | None, line_num: int) -> None:
         """Scan a single line for all pattern categories."""
-        # A01 — Prompt Injection
+        # A01 - Prompt Injection
         for pattern in _PROMPT_INJECTION_PATTERNS:
             if pattern.search(line):
                 self._add(
@@ -182,7 +182,7 @@ class AgenticSecurityScanner:
                 )
                 break
 
-        # A02 — Sensitive Information Disclosure
+        # A02 - Sensitive Information Disclosure
         for pattern in _SENSITIVE_DATA_PATTERNS:
             if pattern.search(line):
                 self._add(
@@ -194,7 +194,7 @@ class AgenticSecurityScanner:
                 )
                 break
 
-        # A04 — Excessive Agency
+        # A04 - Excessive Agency
         for pattern in _EXCESSIVE_AGENCY_PATTERNS:
             if pattern.search(line):
                 self._add(
@@ -206,7 +206,7 @@ class AgenticSecurityScanner:
                 )
                 break
 
-        # A05 — Insecure Output Handling
+        # A05 - Insecure Output Handling
         for pattern in _INSECURE_OUTPUT_PATTERNS:
             if pattern.search(line):
                 self._add(
@@ -269,7 +269,7 @@ class AgenticSecurityScanner:
                 control_id="A10",
                 control_name="Lack of Human Oversight",
                 severity="high",
-                description="Policy has no 'deny' rules — no hard guardrails exist",
+                description="Policy has no 'deny' rules - no hard guardrails exist",
                 file_path=str(policy_file),
                 remediation="Add deny rules for destructive and unauthorized actions.",
             ))
@@ -278,7 +278,7 @@ class AgenticSecurityScanner:
                 control_id="A10",
                 control_name="Lack of Human Oversight",
                 severity="medium",
-                description="Policy has no 'ask' rules — no human approval checkpoints",
+                description="Policy has no 'ask' rules - no human approval checkpoints",
                 file_path=str(policy_file),
                 remediation="Add ask rules for write, deploy, and bash operations.",
             ))
@@ -316,7 +316,7 @@ class AgenticSecurityScanner:
             config.get("args", [])
             config.get("command", "")
             full_text = json.dumps(config)
-            # A02 — Check for inline secrets
+            # A02 - Check for inline secrets
             for pattern in _SENSITIVE_DATA_PATTERNS:
                 if pattern.search(full_text):
                     findings.append(SecurityFinding(
@@ -328,7 +328,7 @@ class AgenticSecurityScanner:
                         remediation="Move secrets to .env file. Use mcp_env_wrapper.py.",
                     ))
                     break
-            # A06 — Check for dangerous commands
+            # A06 - Check for dangerous commands
             if "curl" in full_text or "wget" in full_text:
                 findings.append(SecurityFinding(
                     control_id="A06",

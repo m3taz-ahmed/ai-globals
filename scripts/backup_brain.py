@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""aiZee brain backup — save learned data to a timestamped folder.
+"""aiZee brain backup - save learned data to a timestamped folder.
 
 Backs up:
   - memory/       (episodic, semantic, factual, procedural memories)
   - state/        (runtime state, budgets, audit logs, dashboard token)
   - brain/        (agent brain state, learned patterns)
-  - graphify-out/ (knowledge graph — expensive to regenerate)
+  - graphify-out/ (knowledge graph - expensive to regenerate)
   - .env          (MCP credentials: LinkedIn, Upwork, Freelancer, Fiverr)
 
 Output: <dest>/aizee-backup-<YYYY-MM-DD>-<HHMMSS>/
@@ -84,7 +84,7 @@ def verify_backup(backup_folder: Path) -> int:
     expected items exist in the backup folder.
     """
     print("=" * 60)
-    print("  aiZee Brain Backup — Verify integrity")
+    print("  aiZee Brain Backup - Verify integrity")
     print("=" * 60)
     print()
     print(f"  Backup: {backup_folder}")
@@ -143,7 +143,7 @@ def verify_backup(backup_folder: Path) -> int:
     print()
     print("=" * 60)
     if issues == 0:
-        print(f"  [PASS] Verification OK — {checked} items checked, no issues")
+        print(f"  [PASS] Verification OK - {checked} items checked, no issues")
     else:
         print(f"  [FAIL] {issues} issue(s) found, {checked} items checked")
     print("=" * 60)
@@ -154,7 +154,7 @@ def verify_backup(backup_folder: Path) -> int:
 def run_backup(root: Path, dest: Path) -> int:
     """Main backup flow. Returns exit code."""
     print("=" * 60)
-    print("  aiZee Brain Backup — Save learned data")
+    print("  aiZee Brain Backup - Save learned data")
     print("=" * 60)
     print()
     print(f"  Source: {root}")
@@ -192,7 +192,7 @@ def run_backup(root: Path, dest: Path) -> int:
     for dirname in LEARNED_DIRS:
         src = root / dirname
         if not src.exists():
-            print(f"  [SKIP] {dirname}/ — not found")
+            print(f"  [SKIP] {dirname}/ - not found")
             continue
 
         size = _dir_size(src)
@@ -210,7 +210,7 @@ def run_backup(root: Path, dest: Path) -> int:
     for filename in LEARNED_FILES:
         src = root / filename
         if not src.exists():
-            print(f"  [SKIP] {filename} — not found")
+            print(f"  [SKIP] {filename} - not found")
             continue
 
         size = src.stat().st_size
@@ -242,7 +242,7 @@ def run_backup(root: Path, dest: Path) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="aiZee brain backup — save learned data")
+    parser = argparse.ArgumentParser(description="aiZee brain backup - save learned data")
     parser.add_argument("--root", default=None, help="aiZee root directory (default: auto-detect)")
     parser.add_argument("--dest", default=None, help="Backup destination folder (default: <root>/backups/)")
     parser.add_argument(

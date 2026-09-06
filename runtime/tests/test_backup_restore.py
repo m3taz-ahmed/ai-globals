@@ -5,7 +5,7 @@ Tests cover:
   - Backup skips missing items gracefully
   - Restore overwrites existing data
   - Restore --list shows available backups
-  - Round-trip: backup → restore preserves data
+  - Round-trip: backup -> restore preserves data
 """
 
 from __future__ import annotations
@@ -222,7 +222,7 @@ class TestRestoreBrain:
 
 
 class TestBackupRestoreRoundTrip:
-    """End-to-end: backup → wipe → restore → verify."""
+    """End-to-end: backup -> wipe -> restore -> verify."""
 
     def test_roundtrip_preserves_all_data(self, tmp_path: Path) -> None:
         """Backup then restore preserves all learned data."""
@@ -325,11 +325,11 @@ class TestCheckpoint:
 
         restore_mod = _load_script(SCRIPTS / "restore_brain.py")
 
-        # No checkpoint → all backups
+        # No checkpoint -> all backups
         all_backups = restore_mod._find_backups_after(dest, "")
         assert len(all_backups) == 3
 
-        # Checkpoint at 2026-08-15 → only 2026-08-20
+        # Checkpoint at 2026-08-15 -> only 2026-08-20
         new_backups = restore_mod._find_backups_after(dest, "2026-08-15-200000")
         assert len(new_backups) == 1
         assert "2026-08-20-300000" in new_backups[0].name
@@ -432,7 +432,7 @@ class TestAutoMerge:
         rc = restore_mod.run_auto_restore(root, dest, assume_yes=True)
         assert rc == 0
 
-        # Second auto-merge — should find nothing new
+        # Second auto-merge - should find nothing new
         rc = restore_mod.run_auto_restore(root, dest, assume_yes=True)
         assert rc == 0  # Returns 0 with "already up to date" message
 

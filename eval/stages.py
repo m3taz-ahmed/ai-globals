@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""3-Stage Evaluation Gate — progressive verification (from ouroboros).
+"""3-Stage Evaluation Gate - progressive verification (from ouroboros).
 
 Three-stage verification:
-1. Mechanical (free) — Automated checks (lint, types, tests)
-2. Semantic — Human-in-the-loop review
-3. Consensus — Multi-model cross-verification
+1. Mechanical (free) - Automated checks (lint, types, tests)
+2. Semantic - Human-in-the-loop review
+3. Consensus - Multi-model cross-verification
 
 Usage::
 
@@ -46,7 +46,7 @@ class StageResult:
 class EvaluationGate:
     """3-Stage Evaluation Gate (from ouroboros).
 
-    Progressive verification: Mechanical → Semantic → Consensus.
+    Progressive verification: Mechanical -> Semantic -> Consensus.
     Each stage must pass before the next is evaluated.
     """
 

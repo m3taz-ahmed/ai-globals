@@ -64,7 +64,7 @@ class TestMemIdToUint64:
 
 
 # ---------------------------------------------------------------------------
-# Helpers — build mocked VectorMemory
+# Helpers - build mocked VectorMemory
 # ---------------------------------------------------------------------------
 
 def _make_index_mock() -> MagicMock:
@@ -158,7 +158,7 @@ class TestEmbedder:
 
 
 # ---------------------------------------------------------------------------
-# VectorMemory — is_available
+# VectorMemory - is_available
 # ---------------------------------------------------------------------------
 
 class TestVectorMemoryAvailability:
@@ -181,7 +181,7 @@ class TestVectorMemoryAvailability:
 
 
 # ---------------------------------------------------------------------------
-# VectorMemory — add / add_batch
+# VectorMemory - add / add_batch
 # ---------------------------------------------------------------------------
 
 class TestVectorMemoryAdd:
@@ -241,7 +241,7 @@ class TestVectorMemoryAdd:
 
 
 # ---------------------------------------------------------------------------
-# VectorMemory — search
+# VectorMemory - search
 # ---------------------------------------------------------------------------
 
 class TestVectorMemorySearch:
@@ -333,7 +333,7 @@ class TestVectorMemorySearch:
             shutil.rmtree(tmp, ignore_errors=True)
 
     def test_search_with_ids_not_in_map_returns_empty(self):
-        """Line 146: ids provided but none present in id_map → return []."""
+        """Line 146: ids provided but none present in id_map -> return []."""
         tmp = _tmp()
         try:
             vm = _mock_vm(tmp)
@@ -346,7 +346,7 @@ class TestVectorMemorySearch:
 
 
 # ---------------------------------------------------------------------------
-# VectorMemory — remove / remove_batch
+# VectorMemory - remove / remove_batch
 # ---------------------------------------------------------------------------
 
 class TestVectorMemoryRemove:
@@ -409,7 +409,7 @@ class TestVectorMemoryRemove:
 
 
 # ---------------------------------------------------------------------------
-# VectorMemory — persistence (save_map / load_or_create)
+# VectorMemory - persistence (save_map / load_or_create)
 # ---------------------------------------------------------------------------
 
 class TestVectorMemoryPersistence:

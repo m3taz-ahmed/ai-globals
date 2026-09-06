@@ -4,7 +4,7 @@ Verifies that toggling an MCP server OFF in dashboard settings:
 - blocks tool calls (no process spawn) and returns a disabled error, and
 - hides the server's tools from PluginManager.get_tools().
 
-FAST tier — no real subprocess, no model loading.
+FAST tier - no real subprocess, no model loading.
 """
 
 from __future__ import annotations
@@ -152,7 +152,7 @@ class TestSettingsCache:
         """McpClient without an injected manager resolves the shared one."""
         shared = get_settings_manager(tmp_root, tmp_root / "aizee_mcp" / "config.json")
         _disable(shared, "youtube")
-        # No settings_manager passed — must still pick up the disabled state.
+        # No settings_manager passed - must still pick up the disabled state.
         client = McpClient("youtube", tmp_root)
         assert client.is_enabled() is False
         assert client.call_tool("list_videos", {})["ok"] is False
@@ -190,7 +190,7 @@ class TestPluginHide:
         mgr._guards = {}
 
         tools = mgr.get_tools()
-        # youtube disabled → its tool hidden; twitter still present.
+        # youtube disabled -> its tool hidden; twitter still present.
         assert len(tools) == 1
 
     def test_enabled_plugin_tools_visible(self, tmp_root: Path) -> None:

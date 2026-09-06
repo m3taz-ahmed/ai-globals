@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Tool-output sanitizer — prevents indirect prompt injection via tool results.
+"""Tool-output sanitizer - prevents indirect prompt injection via tool results.
 
 When an AI agent calls a tool (MCP server, web fetch, file read, shell
 command), the output re-enters the LLM's context window. If that output
 contains injected instructions (e.g., a malicious web page the agent
-fetched, a poisoned file it read), the agent may follow them — this is
+fetched, a poisoned file it read), the agent may follow them - this is
 **indirect prompt injection**, the dominant attack vector in 2024-2026.
 
 This module sits between tool execution and context re-entry:
 
-    tool.execute() → raw_output → ToolOutputSanitizer.sanitize() → safe_output → context
+    tool.execute() -> raw_output -> ToolOutputSanitizer.sanitize() -> safe_output -> context
 
 The sanitizer:
 1.  Runs the output through :class:`InjectionDetector` (all 13 techniques).
@@ -148,7 +148,7 @@ class ToolOutputSanitizer:
                 reason="clean",
             )
 
-        # Injection detected — apply defensive injection
+        # Injection detected - apply defensive injection
         defense = self._injector.inject(bounded, verdict)
         return ToolSanitizeResult(
             tool_name=tool_name,

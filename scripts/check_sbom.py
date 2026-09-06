@@ -61,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
 
     banned = _load_deny_list(args.deny_list)
     if not banned:
-        print("No deny list configured — nothing to block.")
+        print("No deny list configured - nothing to block.")
         return 0
 
     sbom_text = args.sbom.read_text(encoding="utf-8")

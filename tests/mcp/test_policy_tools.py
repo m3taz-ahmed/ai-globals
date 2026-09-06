@@ -1,4 +1,4 @@
-"""Tests for aizee_mcp/tools/policy_tools.py — policy, budget, guardian, metrics."""
+"""Tests for aizee_mcp/tools/policy_tools.py - policy, budget, guardian, metrics."""
 
 from __future__ import annotations
 

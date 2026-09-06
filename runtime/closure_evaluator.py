@@ -61,7 +61,7 @@ class ClosureEvaluator:
     parameters by name, type, default, or evaluation identifier.
 
     WARNING: ``evaluate`` invokes the given callable with resolved args.
-    Only pass trusted closures — arbitrary callables execute with the
+    Only pass trusted closures - arbitrary callables execute with the
     caller's privileges (code-execution risk if closures come from
     untrusted input).
 
@@ -100,7 +100,7 @@ class ClosureEvaluator:
     ) -> list[Any]:
         """Resolve all parameters of a closure to concrete values.
 
-        VAR_KEYWORD (``**kwargs``) parameters are skipped — keyword args
+        VAR_KEYWORD (``**kwargs``) parameters are skipped - keyword args
         are passed via ``evaluate``'s ``named_injections`` and handled
         by the caller if needed. VAR_POSITIONAL (``*args``) resolves to
         nothing (empty), so the closure receives no positional args.

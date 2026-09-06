@@ -1,4 +1,4 @@
-"""Tests for runtime/approval_cache.py — session-scoped approval caching."""
+"""Tests for runtime/approval_cache.py - session-scoped approval caching."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ class TestApprovalCacheKeying:
         assert not cache.is_approved({"type": "bash", "command": "rm"})
 
     def test_missing_fields_are_distinct(self) -> None:
-        # A missing field is not the same as an explicit None — prevents
+        # A missing field is not the same as an explicit None - prevents
         # shape-shifting replays against the fingerprint.
         cache = ApprovalCache()
         cache.approve({"type": "bash"})

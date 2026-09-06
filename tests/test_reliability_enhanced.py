@@ -1,4 +1,4 @@
-"""Tests for eval.reliability enhancements — Wilson, Pass^3, priority ladder, weighted scoring."""
+"""Tests for eval.reliability enhancements - Wilson, Pass^3, priority ladder, weighted scoring."""
 
 from __future__ import annotations
 
@@ -52,12 +52,12 @@ def test_wilson_ci_bounds_in_unit_interval() -> None:
 # -- k_needed_estimate --------------------------------------------------------
 
 def test_k_needed_unreachable_returns_none() -> None:
-    # p_hat = 0.5, target = 0.8 → unreachable
+    # p_hat = 0.5, target = 0.8 -> unreachable
     assert k_needed_estimate(5, 10, r=0.8, k_planned=10) is None
 
 
 def test_k_needed_reachable() -> None:
-    # p_hat = 0.9, target = 0.8 → should find a value
+    # p_hat = 0.9, target = 0.8 -> should find a value
     result = k_needed_estimate(9, 10, r=0.8, k_planned=10)
     assert result is not None
     assert result > 10
@@ -104,7 +104,7 @@ def test_pass_cubed_requires_three() -> None:
 # -- compute_task_score -------------------------------------------------------
 
 def test_task_score_safety_veto() -> None:
-    # safety=0 → entire score is 0 regardless of completion
+    # safety=0 -> entire score is 0 regardless of completion
     scores = DimensionScores(completion=1.0, robustness=1.0, safety=0.0)
     assert compute_task_score(scores) == 0.0
 
@@ -115,7 +115,7 @@ def test_task_score_full_pass() -> None:
 
 
 def test_task_score_weighted() -> None:
-    # base = 0.8*0.8 + 0.2*0.6 = 0.76, safety=1.0 → 0.76
+    # base = 0.8*0.8 + 0.2*0.6 = 0.76, safety=1.0 -> 0.76
     scores = DimensionScores(completion=0.8, robustness=0.6, safety=1.0)
     assert compute_task_score(scores) == 0.76
 
@@ -147,21 +147,21 @@ def test_priority_ladder_critical_event() -> None:
 
 
 def test_priority_ladder_refuted() -> None:
-    # 3/10 pass → Wilson upper bound will be below 0.8
+    # 3/10 pass -> Wilson upper bound will be below 0.8
     result = priority_ladder(n=10, c=3, target=0.8)
     assert result.verdict is Verdict.KILL
     assert "RELIABILITY_REFUTED" in result.reason_codes
 
 
 def test_priority_ladder_confirmed() -> None:
-    # 30/30 pass → Wilson lower bound will be above 0.8
+    # 30/30 pass -> Wilson lower bound will be above 0.8
     result = priority_ladder(n=30, c=30, target=0.8)
     assert result.verdict is Verdict.PASS
     assert result.reason_codes == []
 
 
 def test_priority_ladder_straddles() -> None:
-    # 8/10 pass → Wilson CI likely straddles 0.8
+    # 8/10 pass -> Wilson CI likely straddles 0.8
     result = priority_ladder(n=10, c=8, target=0.8)
     # Could be PASS or INSUFFICIENT depending on Wilson bounds
     assert result.verdict in (Verdict.PASS, Verdict.INSUFFICIENT)

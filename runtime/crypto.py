@@ -30,9 +30,9 @@ def _get_fernet() -> Fernet | None:
     """Return a Fernet instance. Auto-generates a key if none is set (secure-by-default).
 
     Key resolution order:
-    1. ``AIOS_ENCRYPTION_KEY`` env var (production — key never touches disk).
+    1. ``AIOS_ENCRYPTION_KEY`` env var (production - key never touches disk).
     2. ``AIOS_ENCRYPTION_KEY_FILE`` env var (path outside OS root, e.g. ``/etc/aizee/enc.key``).
-    3. Auto-generated key in ``state/.encryption_key`` (dev only — warns loudly).
+    3. Auto-generated key in ``state/.encryption_key`` (dev only - warns loudly).
 
     Set AIOS_ENCRYPTION_KEY=plaintext to explicitly disable encryption.
     """
@@ -80,9 +80,9 @@ def _get_fernet() -> Fernet | None:
     try:
         fd = os.open(str(key_file), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError:
-        # Lost the race — read the winner's key instead of overwriting.
+        # Lost the race - read the winner's key instead of overwriting.
         # (Nested raise: the empty-key error is a new failure, not a
-        # transformation of FileExistsError — noqa B904 is intentional.)
+        # transformation of FileExistsError - noqa B904 is intentional.)
         try:
             stored = key_file.read_bytes().strip()
         except OSError as exc:
@@ -119,10 +119,10 @@ def _get_fernet() -> Fernet | None:
         with contextlib.suppress(OSError):
             key_file.chmod(0o600)
     logging.getLogger(__name__).warning(
-        "SECURITY: No AIOS_ENCRYPTION_KEY set — auto-generated key stored at %s "
+        "SECURITY: No AIOS_ENCRYPTION_KEY set - auto-generated key stored at %s "
         "INSIDE the OS root. For production, set AIOS_ENCRYPTION_KEY env var or "
         "AIOS_ENCRYPTION_KEY_FILE to a path outside the OS root. "
-        "Back up this file — loss means encrypted state is unrecoverable.",
+        "Back up this file - loss means encrypted state is unrecoverable.",
         key_file,
     )
     return Fernet(generated)

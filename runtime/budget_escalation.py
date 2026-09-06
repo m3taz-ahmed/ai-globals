@@ -11,7 +11,7 @@ remainder for the root/orchestrator agent's final report.
 
 This module is designed to be called by ``BudgetWindowManager`` or
 ``BudgetManager`` when they detect budget utilization crossing
-thresholds. It does not itself track spend — it computes directives
+thresholds. It does not itself track spend - it computes directives
 given the current spend and limit.
 """
 
@@ -25,15 +25,15 @@ from typing import Any
 class EscalationStage(str, Enum):
     """Escalation stages as budget utilization increases."""
 
-    NOTICE = "notice"    # First band crossed — begin planning wind-down
-    URGENT = "urgent"    # Second band — prioritize wrapping up
-    CRITICAL = "critical"  # Third band — stop immediately
+    NOTICE = "notice"    # First band crossed - begin planning wind-down
+    URGENT = "urgent"    # Second band - prioritize wrapping up
+    CRITICAL = "critical"  # Third band - stop immediately
 
 
 # Default utilization bands for each stage.
 # Root agent bands (slightly earlier to allow wind-down time).
 DEFAULT_ROOT_BANDS: tuple[float, float, float] = (0.70, 0.85, 0.95)
-# Subagent bands (slightly later — subagents finish current task).
+# Subagent bands (slightly later - subagents finish current task).
 DEFAULT_SUBAGENT_BANDS: tuple[float, float, float] = (0.75, 0.80, 0.85)
 
 # Default reserve fraction for subagents (stop at 90% of total budget).
@@ -41,7 +41,7 @@ DEFAULT_SUBAGENT_RESERVE: float = 0.90
 
 
 # Directives injected into the agent's context at each stage.
-# Root agent directives — wind down the entire operation.
+# Root agent directives - wind down the entire operation.
 _ROOT_DIRECTIVES: dict[EscalationStage, str] = {
     EscalationStage.NOTICE: (
         "As the root agent, begin planning your wind-down: avoid starting "
@@ -55,12 +55,12 @@ _ROOT_DIRECTIVES: dict[EscalationStage, str] = {
     ),
     EscalationStage.CRITICAL: (
         "As the root agent, STOP all other work and finish immediately: "
-        "secure your findings and produce your final output now — anything "
+        "secure your findings and produce your final output now - anything "
         "left unfinished when the limit is hit is discarded."
     ),
 }
 
-# Subagent directives — wind down the current subtask.
+# Subagent directives - wind down the current subtask.
 _SUBAGENT_DIRECTIVES: dict[EscalationStage, str] = {
     EscalationStage.NOTICE: (
         "As a sub-agent, begin planning your wind-down: avoid starting "

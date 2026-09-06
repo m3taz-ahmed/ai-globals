@@ -65,7 +65,7 @@ def _make_mock_session(tools=None, call_result=None):
 
 
 # ---------------------------------------------------------------------------
-# register_server — unsafe command (line 64)
+# register_server - unsafe command (line 64)
 # ---------------------------------------------------------------------------
 
 

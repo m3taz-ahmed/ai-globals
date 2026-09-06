@@ -1,4 +1,4 @@
-"""Tests for runtime/hook_lifecycle.py — HookRegistry + HookPhase."""
+"""Tests for runtime/hook_lifecycle.py - HookRegistry + HookPhase."""
 from __future__ import annotations
 
 import pytest

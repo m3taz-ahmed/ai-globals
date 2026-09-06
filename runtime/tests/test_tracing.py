@@ -1,4 +1,4 @@
-"""Tests for runtime/tracing.py — distributed tracing primitives."""
+"""Tests for runtime/tracing.py - distributed tracing primitives."""
 
 from __future__ import annotations
 

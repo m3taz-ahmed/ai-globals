@@ -238,7 +238,7 @@ class TestConvergeToCode:
         assert "converged" in report
 
     def test_converge_empty_codebase_all_missing(self, populated_spec: str, engine: SpecEngine, tmp_path: Path) -> None:
-        """Empty codebase → all requirements flagged as missing."""
+        """Empty codebase -> all requirements flagged as missing."""
         codebase = tmp_path / "empty"
         codebase.mkdir()
         report = engine.converge_to_code(populated_spec, codebase)
@@ -278,7 +278,7 @@ class TestConvergeToCode:
             encoding="utf-8",
         )
         report = engine.converge_to_code("auth", codebase)
-        # "authenticate" and "password" should match → requirement not flagged as missing
+        # "authenticate" and "password" should match -> requirement not flagged as missing
         missing_for_auth = [
             f for f in report["findings"] if "auth" in f.get("source_ref", "").lower() or "REQ" in f.get("source_ref", "")
         ]

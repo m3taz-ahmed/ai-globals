@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Temporal Knowledge Graph — point-in-time truth tracking (from OpenMemory).
+"""Temporal Knowledge Graph - point-in-time truth tracking (from OpenMemory).
 
 Stores facts with validity windows (valid_from / valid_to). When a
 fact changes, the previous version's valid_to is closed and a new

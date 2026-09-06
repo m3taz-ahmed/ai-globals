@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""LinkedIn plugin for aiZee — proxies to octopus-linkedin MCP server.
+"""LinkedIn plugin for aiZee - proxies to octopus-linkedin MCP server.
 
 Requires an authenticated LinkedIn session. Run ``octopus-linkedin authorize``
 once to cache an access token (valid ~60 days). The token is stored locally in
 ``site-packages/token.json`` and is **never** committed to the repository.
 
-Governed workflow: draft → review → approve → publish → analyze.
+Governed workflow: draft -> review -> approve -> publish -> analyze.
 Direct publish tools are available but the draft workflow is preferred.
 """
 
@@ -24,7 +24,7 @@ class LinkedInPlugin(AIOSPlugin):
     """Bridge AIOS kernel to the external octopus-linkedin MCP server.
 
     Implements the governed content workflow:
-        draft → review → approve → publish → comment → analyze
+        draft -> review -> approve -> publish -> comment -> analyze
 
     All drafting/approval is local-only. ``publish_draft`` is the single gate
     that sends content to LinkedIn, and it refuses to publish unapproved drafts.
@@ -79,7 +79,7 @@ class LinkedInPlugin(AIOSPlugin):
         return self._proxy("delete_post", {"post_urn": post_urn})
 
     # ------------------------------------------------------------------
-    # Draft workflow (governed: draft → approve → publish)
+    # Draft workflow (governed: draft -> approve -> publish)
     # ------------------------------------------------------------------
 
     def linkedin_create_draft(self, text: str, kind: str = "text") -> str:
@@ -102,7 +102,7 @@ class LinkedInPlugin(AIOSPlugin):
         return self._proxy("update_draft", {"draft_id": draft_id, "text": text})
 
     def linkedin_approve_draft(self, draft_id: str, note: str = "") -> str:
-        """Approve a draft — the review gate before publishing."""
+        """Approve a draft - the review gate before publishing."""
         args: dict[str, Any] = {"draft_id": draft_id}
         if note:
             args["note"] = note

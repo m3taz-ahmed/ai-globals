@@ -1,4 +1,4 @@
-"""Tests for runtime/audit.py — audit logging with redaction and hash chaining."""
+"""Tests for runtime/audit.py - audit logging with redaction and hash chaining."""
 
 from __future__ import annotations
 
@@ -451,7 +451,7 @@ class TestHashChaining:
 
 
 # ---------------------------------------------------------------------------
-# _last_hash — line 59 (empty file returns genesis)
+# _last_hash - line 59 (empty file returns genesis)
 # ---------------------------------------------------------------------------
 
 class TestLastHashEdgeCases:
@@ -489,7 +489,7 @@ class TestLastHashEdgeCases:
 
 
 # ---------------------------------------------------------------------------
-# verify_chain — line 103 (skip blank lines)
+# verify_chain - line 103 (skip blank lines)
 # ---------------------------------------------------------------------------
 
 class TestVerifyChainEdgeCases:

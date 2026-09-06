@@ -43,7 +43,7 @@ def test_failure_summary() -> None:
     tracker.record_step(rid, "a", StepStatus.OK)
     tracker.record_step(rid, "b", StepStatus.FAILED, failure_category=FailureCategory.INVALID_INVOCATION)
     tracker.record_step(rid, "c", StepStatus.FAILED, failure_category=FailureCategory.INVENTION)
-    tracker.record_step(rid, "d", StepStatus.FAILED)  # No category → INCONCLUSIVE
+    tracker.record_step(rid, "d", StepStatus.FAILED)  # No category -> INCONCLUSIVE
     summary = tracker.failure_summary(rid)
     assert summary["invalid_invocation"] == 1
     assert summary["invention"] == 1

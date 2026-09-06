@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AutomatischPlugin for aiZee — proxies to external MCP server.
+"""AutomatischPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @automatisch/mcp
 Required env vars: AUTOMATISCH_API_KEY, AUTOMATISCH_URL
@@ -28,7 +28,7 @@ class AutomatischPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

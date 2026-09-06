@@ -1,4 +1,4 @@
-"""Tests for runtime/daemon.py — background settings-sync daemon."""
+"""Tests for runtime/daemon.py - background settings-sync daemon."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ class TestDaemonStatus:
         assert status["root"] == str(daemon_root)
 
     def test_status_with_stale_pid(self, daemon_root: Path) -> None:
-        """Stale PID file (process not alive) → running=False."""
+        """Stale PID file (process not alive) -> running=False."""
         (daemon_root / "state" / "daemon.pid").write_text("999999", encoding="utf-8")
         status = AizeeDaemon.status(daemon_root)
         assert status["running"] is False
@@ -154,10 +154,10 @@ class TestDaemonCheckAndSync:
 
     def test_detects_settings_change(self, daemon_root: Path) -> None:
         daemon = AizeeDaemon(daemon_root)
-        # First check — should detect (mtime is 0 initially)
+        # First check - should detect (mtime is 0 initially)
         synced = daemon._check_and_sync()
         assert synced is True
-        # Second check — no change
+        # Second check - no change
         synced = daemon._check_and_sync()
         assert synced is False
         # Modify settings
@@ -166,6 +166,6 @@ class TestDaemonCheckAndSync:
         settings = json.loads(settings_path.read_text(encoding="utf-8"))
         settings["mcp_servers"]["aizee"]["enabled"] = False
         settings_path.write_text(json.dumps(settings), encoding="utf-8")
-        # Third check — should detect change
+        # Third check - should detect change
         synced = daemon._check_and_sync()
         assert synced is True

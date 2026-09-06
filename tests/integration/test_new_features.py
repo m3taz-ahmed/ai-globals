@@ -14,7 +14,7 @@ from runtime.preloop import FeedbackLoop, Outcome
 from runtime.probity import Guardrails, GuardrailViolationError
 from runtime.sovereign import AgentCapabilities, Capability
 
-# TEST-10: integration tests — excluded from FAST tier.
+# TEST-10: integration tests - excluded from FAST tier.
 pytestmark = pytest.mark.integration
 
 

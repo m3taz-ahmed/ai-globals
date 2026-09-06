@@ -1,4 +1,4 @@
-"""Tests for memory/checkpoint.py — checkpoint-based durable state."""
+"""Tests for memory/checkpoint.py - checkpoint-based durable state."""
 
 from __future__ import annotations
 

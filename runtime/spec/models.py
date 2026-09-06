@@ -94,7 +94,7 @@ class Task:
     status: str = "pending"  # pending, in_progress, done, blocked
     depends_on: list[str] = field(default_factory=list)
     estimate_hours: float = 0.0
-    # WS-E W1: Task verification — evidence required before "done"
+    # WS-E W1: Task verification - evidence required before "done"
     verification_evidence: str = ""  # command output, test result, or URL
     verified: bool = False  # set True when evidence is reviewed
 

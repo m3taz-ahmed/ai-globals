@@ -109,7 +109,7 @@ def test_migrate_future_version_jumps_directly(tmp_path: Path):
     _write_pyproject(tmp_path, "5.0.0")
     _write_version_file(tmp_path, "4.22.0")
     code, _output = _run_migrate(tmp_path)
-    # No chain exists from 4.22 → 5.0, so it jumps and writes version
+    # No chain exists from 4.22 -> 5.0, so it jumps and writes version
     assert code in (0, 1)
     assert (tmp_path / ".aizee-version").read_text(encoding="utf-8").strip() == "5.0.0"
 
@@ -129,17 +129,17 @@ def test_migrate_build_chain_finds_path():
     """Test that the migration chain builder finds ordered migrations."""
     mod = _load_migrate_module()
 
-    # 4.21 → 4.22 should find one migration
+    # 4.21 -> 4.22 should find one migration
     chain = mod._build_chain("4.21.0", "4.22.0")
     assert len(chain) == 1
     assert chain[0][0] == "4.21.0"
     assert chain[0][1] == "4.22.0"
 
-    # 4.22 → 4.23 should find two migrations (4.22→4.22.1→4.23)
+    # 4.22 -> 4.23 should find two migrations (4.22->4.22.1->4.23)
     chain = mod._build_chain("4.22.0", "4.23.0")
     assert len(chain) == 2
 
-    # 4.21 → 4.23 should find three migrations
+    # 4.21 -> 4.23 should find three migrations
     chain = mod._build_chain("4.21.0", "4.23.0")
     assert len(chain) == 3
 
@@ -152,7 +152,7 @@ def test_migrate_build_chain_no_path():
 
 
 def test_migrate_4_21_to_4_22_removes_disabled_flag(tmp_path: Path):
-    """Test that the 4.21→4.22 migration removes disabled flags from MCP config."""
+    """Test that the 4.21->4.22 migration removes disabled flags from MCP config."""
     mod = _load_migrate_module()
     import json
 
@@ -174,7 +174,7 @@ def test_migrate_4_21_to_4_22_removes_disabled_flag(tmp_path: Path):
 
 
 def test_migrate_4_22_to_4_23_is_noop(tmp_path: Path):
-    """Test that the 4.22→4.23 migration is a no-op (placeholder)."""
+    """Test that the 4.22->4.23 migration is a no-op (placeholder)."""
     mod = _load_migrate_module()
     mod._migrate_4_22_to_4_23(tmp_path)
 
@@ -248,7 +248,7 @@ def test_version_tuple_invalid():
 
 
 # ---------------------------------------------------------------------------
-# _migrate_4_21_to_4_22 — plugins.yaml and config.json (lines 70-87, 102-103)
+# _migrate_4_21_to_4_22 - plugins.yaml and config.json (lines 70-87, 102-103)
 # ---------------------------------------------------------------------------
 
 def test_migrate_4_21_to_4_22_with_plugins_yaml(tmp_path: Path):
@@ -512,7 +512,7 @@ def test_main_block_executes(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# _migrate_4_22_to_4_22_1 — schema migration success (line 126)
+# _migrate_4_22_to_4_22_1 - schema migration success (line 126)
 # ---------------------------------------------------------------------------
 
 def test_migrate_4_22_to_4_22_1_schema_success(tmp_path: Path):
@@ -528,7 +528,7 @@ def test_migrate_4_22_to_4_22_1_schema_success(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# _migrate_4_22_to_4_22_1 — encryption paths (lines 137-149)
+# _migrate_4_22_to_4_22_1 - encryption paths (lines 137-149)
 # ---------------------------------------------------------------------------
 
 def test_migrate_4_22_to_4_22_1_encrypted_no_key(tmp_path: Path, monkeypatch):
@@ -566,7 +566,7 @@ def test_migrate_4_22_to_4_22_1_encrypted_exception(tmp_path: Path, monkeypatch)
 
 
 # ---------------------------------------------------------------------------
-# _migrate_4_22_to_4_23 — schema migration success (line 180)
+# _migrate_4_22_to_4_23 - schema migration success (line 180)
 # ---------------------------------------------------------------------------
 
 def test_migrate_4_22_to_4_23_schema_success(tmp_path: Path):
@@ -582,7 +582,7 @@ def test_migrate_4_22_to_4_23_schema_success(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# _migrate_4_22_to_4_23 — encryption paths (lines 192-204)
+# _migrate_4_22_to_4_23 - encryption paths (lines 192-204)
 # ---------------------------------------------------------------------------
 
 def test_migrate_4_22_to_4_23_encrypted_no_key(tmp_path: Path, monkeypatch):
@@ -620,7 +620,7 @@ def test_migrate_4_22_to_4_23_encrypted_exception(tmp_path: Path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# run_migrations — already at target (lines 249-250)
+# run_migrations - already at target (lines 249-250)
 # ---------------------------------------------------------------------------
 
 def test_run_migrations_already_at_target(tmp_path: Path):
@@ -633,7 +633,7 @@ def test_run_migrations_already_at_target(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# run_migrations — migration failure (lines 266-268)
+# run_migrations - migration failure (lines 266-268)
 # ---------------------------------------------------------------------------
 
 def test_run_migrations_migration_fails(tmp_path: Path):
@@ -651,7 +651,7 @@ def test_run_migrations_migration_fails(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# main() — direct call (lines 291-304)
+# main() - direct call (lines 291-304)
 # ---------------------------------------------------------------------------
 
 def test_main_direct_call_check(tmp_path: Path, monkeypatch):
@@ -693,11 +693,11 @@ def test_main_direct_call_run(tmp_path: Path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# __main__ block — in-process (line 308)
+# __main__ block - in-process (line 308)
 # ---------------------------------------------------------------------------
 
 def test_main_block_in_process(tmp_path: Path, monkeypatch):
-    """Line 308: __main__ block calls sys.exit(main()) — exercised in-process."""
+    """Line 308: __main__ block calls sys.exit(main()) - exercised in-process."""
     _write_pyproject(tmp_path, "4.22.0")
     _write_version_file(tmp_path, "4.22.0")
     monkeypatch.setattr(sys, "argv", ["migrate.py", "--root", str(tmp_path), "--check"])

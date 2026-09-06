@@ -1,4 +1,4 @@
-"""Tests for spec_engine enhancements — Delta Specs + Hash-Tracked Manifests."""
+"""Tests for spec_engine enhancements - Delta Specs + Hash-Tracked Manifests."""
 
 from __future__ import annotations
 

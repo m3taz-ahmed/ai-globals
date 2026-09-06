@@ -28,7 +28,7 @@ def canonical_to_cursor_mdc(agents: str, description: str, globs: list[str], ext
     return f"---\ndescription: {description}\nglobs: {globs_s}\nalwaysApply: true\n---\n\n{extra}{body}\n"
 
 def canonical_to_claude(agents: str) -> str:
-    return f"# aiZee — Claude Code Native\n\n{agents}\n"
+    return f"# aiZee - Claude Code Native\n\n{agents}\n"
 
 def canonical_to_clinerules(agents: str) -> str:
     body = agents.strip()

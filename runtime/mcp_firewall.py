@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MCP Firewall — per-tool-call access control for the aiZee MCP server.
+"""MCP Firewall - per-tool-call access control for the aiZee MCP server.
 
 Inspired by Preloop's ``ToolAccessRule`` model: every MCP tool call is
 evaluated against a priority-ordered rule set before execution. Rules
@@ -7,12 +7,12 @@ support ``allow`` / ``deny`` / ``require_approval`` actions with optional
 condition expressions evaluated against the call arguments.
 
 Condition expressions use a restricted Python subset (comparisons, boolean
-operators, attribute/index access, literals) evaluated via ``_safe_eval`` —
+operators, attribute/index access, literals) evaluated via ``_safe_eval`` -
 never ``eval()``. This keeps the firewall deterministic and injection-safe.
 
 Rule sources (first match wins, highest priority first):
-1. ``runtime/policies/mcp_firewall.yaml`` — OS-level defaults
-2. Project-local ``.aizee/mcp_firewall.yaml`` — overrides
+1. ``runtime/policies/mcp_firewall.yaml`` - OS-level defaults
+2. Project-local ``.aizee/mcp_firewall.yaml`` - overrides
 3. Programmatic rules added via ``McpFirewall.add_rule``
 
 Usage::
@@ -147,7 +147,7 @@ def _safe_eval(expr: str, env: dict[str, Any]) -> bool:
     try:
         tree = ast.parse(expr, mode="eval")
     except SyntaxError as exc:
-        logger.warning("firewall condition syntax error: %s — %s", expr, exc)
+        logger.warning("firewall condition syntax error: %s - %s", expr, exc)
         return False
     if tree.body is None:
         return False
@@ -160,7 +160,7 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
     if isinstance(node, ast.Name):
         return env.get(node.id)
     if isinstance(node, ast.Attribute):
-        # Block dunder traversal (__class__, __dict__, ...) — info-leak /
+        # Block dunder traversal (__class__, __dict__, ...) - info-leak /
         # sandbox-escape surface even without call support.
         if node.attr.startswith("__") and node.attr.endswith("__"):
             raise ValueError(f"blocked dunder attribute {node.attr!r}")
@@ -181,7 +181,7 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
         left = _eval_node(node.left, env)
         right = _eval_node(node.right, env)
         # Missing attribute in a membership test is simply False (a tool
-        # without `command` is not running `rm -rf`) — not an error.
+        # without `command` is not running `rm -rf`) - not an error.
         # Either side may be the missing (None) one.
         if isinstance(node.op, ast.In):
             return False if left is None or right is None else left in right
@@ -200,8 +200,8 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
             if fn is None:
                 raise ValueError(f"unsupported compare {type(op_node).__name__}")
             right = _eval_node(right_node, env)
-            # Missing attribute in a membership test: `in` → False,
-            # `not in` → True (same rule as BinOp above). Either side
+            # Missing attribute in a membership test: `in` -> False,
+            # `not in` -> True (same rule as BinOp above). Either side
             # may be the missing (None) one.
             if isinstance(op_node, ast.In) and (left is None or right is None):
                 return False
@@ -297,7 +297,7 @@ class McpFirewall:
     def check(self, tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
         """Kernel-compatible check returning an action dict.
 
-        Maps ``allow``→allow, ``deny``→deny, ``require_approval``→ask so the
+        Maps ``allow``->allow, ``deny``->deny, ``require_approval``->ask so the
         existing policy/guardian pipeline can consume the verdict uniformly.
         """
         verdict = self.evaluate(tool_name, args)
@@ -354,7 +354,7 @@ class McpFirewall:
                     )
                 )
             except (KeyError, ValueError) as exc:
-                logger.warning("skipping malformed firewall rule: %s — %s", entry, exc)
+                logger.warning("skipping malformed firewall rule: %s - %s", entry, exc)
         return cls(rules=rules, default_action=default)
 
     def to_policy_denied(self, verdict: FirewallVerdict) -> PolicyDeniedError:

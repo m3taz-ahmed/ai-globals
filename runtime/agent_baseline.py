@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Agent behavioral baseline — runtime detection of anomalous agent actions.
+"""Agent behavioral baseline - runtime detection of anomalous agent actions.
 
 Prompt injection itself is invisible (it happens in model context), but
 the **actions** it produces are observable. This module builds a behavioral
-baseline for each agent — what tools it normally calls, what data it
-accesses, what network endpoints it reaches — and flags deviations.
+baseline for each agent - what tools it normally calls, what data it
+accesses, what network endpoints it reaches - and flags deviations.
 
 This is the "runtime detection" layer from the Sysdig 2026 guide:
 injections produce actions, and actions touch the system.
 
 Architecture::
 
-    agent_action → AgentBaseline.observe(action)
-                 → updates baseline (learning phase)
+    agent_action -> AgentBaseline.observe(action)
+                 -> updates baseline (learning phase)
                  OR checks against baseline (detection phase)
-                 → if anomalous: AnomalyAlert
+                 -> if anomalous: AnomalyAlert
 
 Usage::
 

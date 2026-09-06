@@ -12,7 +12,7 @@ def test_audit_log_fail_open_on_write_error(tmp_path: Path) -> None:
     logger = AuditLogger(tmp_path)
     # Mock the file open to raise OSError
     with patch("builtins.open", side_effect=OSError("disk full")):
-        # Should NOT raise — fail-open
+        # Should NOT raise - fail-open
         logger.log("test_event", {"key": "value"})
 
 

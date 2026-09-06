@@ -48,7 +48,7 @@ def build_global_config(root: Path) -> dict[str, Any]:
     config_path = root / "aizee_mcp" / "config.json"
 
     if not config_path.exists():
-        print(f"[mcp-global-sync] WARN: {config_path} not found — using empty config", file=sys.stderr)
+        print(f"[mcp-global-sync] WARN: {config_path} not found - using empty config", file=sys.stderr)
         return {"mcpServers": {}}
 
     try:
@@ -107,7 +107,7 @@ def main() -> int:
     # Back up existing config if it has content
     if target.exists() and target.stat().st_size > 0:
         backup = target.with_suffix(".json.bak")
-        # Windows: rename fails if destination exists — replace stale backup.
+        # Windows: rename fails if destination exists - replace stale backup.
         if backup.exists():
             backup.unlink(missing_ok=True)
         # Read existing to check if it points to a different root
@@ -115,7 +115,7 @@ def main() -> int:
             existing = json.loads(target.read_text(encoding="utf-8"))
             existing_str = json.dumps(existing)
             if str(root) not in existing_str:
-                print("[mcp-global-sync] Existing config points to different root — replacing")
+                print("[mcp-global-sync] Existing config points to different root - replacing")
                 target.unlink()
             else:
                 target.rename(backup)
@@ -125,7 +125,7 @@ def main() -> int:
 
     target.write_text(json.dumps(config, indent=2), encoding="utf-8")
     print(f"[mcp-global-sync] Written global MCP config ({len(config['mcpServers'])} servers)")
-    print("[mcp-global-sync] All paths are absolute — works from any workspace.")
+    print("[mcp-global-sync] All paths are absolute - works from any workspace.")
 
     # Verify what we wrote survives on disk (catches external reset / race).
     try:
@@ -133,7 +133,7 @@ def main() -> int:
         seen = len(written.get("mcpServers", {}))
         if seen != len(config["mcpServers"]):
             print(
-                f"[mcp-global-sync] WARN: verification mismatch — wrote "
+                f"[mcp-global-sync] WARN: verification mismatch - wrote "
                 f"{len(config['mcpServers'])} but read back {seen}. "
                 "Another process may have reset the file. Re-run: aizee mcp sync",
                 file=sys.stderr,

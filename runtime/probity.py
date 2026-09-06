@@ -14,7 +14,7 @@ from typing import Any, Final
 
 from runtime.schemas import AizeeError, ErrorSeverity
 
-# Action type aliases — normalize diverse action labels to canonical probity
+# Action type aliases - normalize diverse action labels to canonical probity
 # types so that rules matching "command"/"write"/"edit" also catch "Bash",
 # "Shell", "Apply", "Patch", etc. (fixes GATE-02: "Bash" bypassed Probity).
 ACTION_TYPE_ALIASES: Final[dict[str, str]] = {
@@ -34,7 +34,7 @@ ACTION_TYPE_ALIASES: Final[dict[str, str]] = {
 def normalize_action_type(raw: str) -> str:
     """Normalize an action type to a canonical probity type.
 
-    Maps case-insensitive aliases (e.g. "Bash" → "exec", "Apply" → "write")
+    Maps case-insensitive aliases (e.g. "Bash" -> "exec", "Apply" -> "write")
     so that probity rules match regardless of the caller's naming convention.
     """
     t = raw.strip().lower()

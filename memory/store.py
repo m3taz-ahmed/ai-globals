@@ -20,7 +20,7 @@ from typing import Any, ClassVar
 
 import config
 from runtime.repository import (
-    BaseRepository,  # LAYERING NOTE: memory→runtime cross-layer dep; tracked for refactor
+    BaseRepository,  # LAYERING NOTE: memory->runtime cross-layer dep; tracked for refactor
 )
 
 from .hybrid import HybridSearcher
@@ -38,7 +38,7 @@ _IDENTITY_KEYS: frozenset[str] = frozenset({
 })
 
 # ---------------------------------------------------------------------------
-# Integrity (OWASP ASI06 — Memory Poisoning defense)
+# Integrity (OWASP ASI06 - Memory Poisoning defense)
 # ---------------------------------------------------------------------------
 # Every memory entry is signed with HMAC-SHA256 over a canonical representation
 # of its core content. The signing key is derived from the AIZEE_INTEGRITY_KEY
@@ -107,7 +107,7 @@ def _extract_facts(content: str) -> list[str]:
     """WS-F W3: Extract simple facts from content.
 
     Extracts sentences that look like factual statements (contain a verb
-    and a subject). This is a lightweight heuristic — not a full NLP
+    and a subject). This is a lightweight heuristic - not a full NLP
     pipeline. Returns a list of fact strings.
     """
     # Split into sentences
@@ -557,9 +557,9 @@ class MemoryStore(BaseRepository):
         """Resolve the HMAC key for memory signing.
 
         Key resolution order:
-        1. ``AIZEE_INTEGRITY_KEY`` env var (production — key never touches disk).
+        1. ``AIZEE_INTEGRITY_KEY`` env var (production - key never touches disk).
         2. ``AIZEE_INTEGRITY_KEY_FILE`` env var (path outside OS root).
-        3. ``state/integrity.key`` under the root (dev fallback — warns loudly).
+        3. ``state/integrity.key`` under the root (dev fallback - warns loudly).
         """
         env_key = os.environ.get(_INTEGRITY_KEY_ENV)
         if env_key:
@@ -587,7 +587,7 @@ class MemoryStore(BaseRepository):
         with contextlib.suppress(OSError):
             os.chmod(key_path, 0o600)
         logger.warning(
-            "SECURITY: AIZEE_INTEGRITY_KEY not set — auto-generated key at %s "
+            "SECURITY: AIZEE_INTEGRITY_KEY not set - auto-generated key at %s "
             "INSIDE the OS root. For production, set AIZEE_INTEGRITY_KEY env var "
             "or AIZEE_INTEGRITY_KEY_FILE to a path outside the OS root.",
             key_path,
@@ -602,7 +602,7 @@ class MemoryStore(BaseRepository):
                     "ALTER TABLE memories ADD COLUMN integrity_sig TEXT"
                 )
         except sqlite3.OperationalError:
-            # Column already exists — safe to ignore (SQLite ALTER has no IF NOT EXISTS).
+            # Column already exists - safe to ignore (SQLite ALTER has no IF NOT EXISTS).
             pass
 
     def _migrate_decay_table(self) -> None:
@@ -655,7 +655,7 @@ class MemoryStore(BaseRepository):
         stripped of identity keys to prevent tenant-scoping attacks (from mem0).
 
         WS-F W1: Uses deterministic IDs (content hash) instead of random UUIDs.
-        WS-F W2: Deduplicates — if a memory with the same content already
+        WS-F W2: Deduplicates - if a memory with the same content already
             exists, returns the existing one instead of creating a duplicate.
         """
         mem_id = _deterministic_id(content, kind, source, user_id, agent_id, session_id)

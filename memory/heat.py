@@ -27,7 +27,7 @@ RECENCY_TAU_HOURS = 24.0  # recency decay time constant
 
 
 def _to_float(value: Any) -> float:
-    """Coerce a possibly-string number to float; unparseable → 0.0."""
+    """Coerce a possibly-string number to float; unparseable -> 0.0."""
     if isinstance(value, bool):
         return float(value)
     if isinstance(value, (int, float)):
@@ -67,7 +67,7 @@ class HeatScorer:
     """Compute heat scores for memory prioritization.
 
     Higher heat = more important/relevant memory. Ranking is a descending
-    sort (not a heap — the docstring previously claimed max-heap).
+    sort (not a heap - the docstring previously claimed max-heap).
     """
 
     alpha: float = HEAT_ALPHA
@@ -103,7 +103,7 @@ class HeatScorer:
         return min(max(raw, 0.0), 1.0)
 
     def _time_decay(self, past: float, now: float) -> float:
-        """Exponential time decay: recent = 1.0, old → 0.0."""
+        """Exponential time decay: recent = 1.0, old -> 0.0."""
         hours_ago = max((now - past) / 3600.0, 0.0)
         return math.exp(-hours_ago / self.tau_hours)
 

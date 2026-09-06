@@ -1,4 +1,4 @@
-"""Factory functions for tests — eliminates hardcoded dates/UUIDs/tokens.
+"""Factory functions for tests - eliminates hardcoded dates/UUIDs/tokens.
 
 Pure functions, no classes.  Import and call wherever a test needs a
 random UUID, token, timestamp, date string, memory ID, or budget dict.

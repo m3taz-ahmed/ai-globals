@@ -38,7 +38,7 @@ def compute_simhash(text: str) -> str:
     """Compute a 64-bit SimHash for the given text.
 
     Tokenless input (empty / punctuation-only / single chars) has no
-    signal — returns "" (empty fingerprint) instead of the all-zero hash,
+    signal - returns "" (empty fingerprint) instead of the all-zero hash,
     so short texts do not all collide as "duplicates".
     """
     tokens = _canonical_tokens(text)
@@ -81,7 +81,7 @@ class SimHashIndex:
     """
 
     threshold: int = 3
-    _entries: dict[str, str] = field(default_factory=dict)  # id → simhash
+    _entries: dict[str, str] = field(default_factory=dict)  # id -> simhash
 
     def add(self, entry_id: str, text: str) -> str:
         """Add an entry and return its SimHash."""

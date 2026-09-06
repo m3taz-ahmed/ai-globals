@@ -1,4 +1,4 @@
-"""AI-Slop Verifier — detects generic, templated "AI slop" in design output.
+"""AI-Slop Verifier - detects generic, templated "AI slop" in design output.
 
 Inspired by claude-design-mode's design-verifier subagent. Reviews screenshots
 and HTML against a 7-category checklist to catch the cookie-cutter patterns
@@ -83,7 +83,7 @@ class SlopVerdict:
     def summary(self) -> str:
         """Human-readable summary."""
         if self.passed:
-            return "✅ Pass — no significant AI slop detected"
+            return "✅ Pass - no significant AI slop detected"
         lines = [f"❌ Slop detected (score {self.score}/100):"]
         for f in self.findings:
             lines.append(f"  [{f.severity.value}] {f.category.value}: {f.evidence}")
@@ -277,7 +277,7 @@ class DesignSlopVerifier:
             font_clean = font.strip().lower()
             if font_clean in self._OVERUSED_FONTS or font_clean in ("sans", "mono"):
                 label = f"'{font_clean}' is an overused AI-default font" if font_clean in self._OVERUSED_FONTS else (
-                    f"'font-{font_clean}' Tailwind default stack (often Inter/ui-monospace) — pick a distinctive pairing"
+                    f"'font-{font_clean}' Tailwind default stack (often Inter/ui-monospace) - pick a distinctive pairing"
                 )
                 results.append(SlopFinding(
                     category=SlopCategory.OVERUSED_FONTS,

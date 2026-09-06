@@ -1,10 +1,10 @@
-﻿"""Middleware pipeline for aiZee runtime.
+"""Middleware pipeline for aiZee runtime.
 
 Implements Pattern 4 (from tRPC): Flat middleware array + recursive
 ``callRecursive`` execution. Middlewares are stored as a flat list and
 executed via a single recursive function where each middleware calls
 ``next()`` to recurse to the next index. Errors are caught at each level
-and wrapped into ``MiddlewareResult(ok=False, error)`` — the chain never
+and wrapped into ``MiddlewareResult(ok=False, error)`` - the chain never
 raises.
 """
 

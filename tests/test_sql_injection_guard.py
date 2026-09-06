@@ -1,6 +1,6 @@
-"""Tests for runtime/sql_injection_guard.py — SQL injection prevention.
+"""Tests for runtime/sql_injection_guard.py - SQL injection prevention.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

@@ -71,10 +71,10 @@ class TestSemanticCodeSearchIndexFile:
         py_file.write_text("def broken(:\n    pass\n", encoding="utf-8")
         search = SemanticCodeSearch()
 
-        # Act — should not raise
+        # Act - should not raise
         search.index_file(py_file)
 
-        # Assert — no functions indexed from invalid syntax
+        # Assert - no functions indexed from invalid syntax
         assert len(search._functions) == 0
 
 

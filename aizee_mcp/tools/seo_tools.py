@@ -31,7 +31,7 @@ _USER_AGENT = "aizee-seo-bot/1.0 (+https://github.com/aizee)"
 _TIMEOUT = 15  # seconds
 # B8: Lowered from 2000 to 500 to prevent OOM when accumulating per-page
 # results in memory. Each page result includes parsed HTML metadata, issues,
-# and link lists — at 2000 pages this could consume hundreds of MB.
+# and link lists - at 2000 pages this could consume hundreds of MB.
 _MAX_PAGES = 500
 _MAX_CONTENT_LENGTH = 2_000_000  # 2MB HTML limit (Googlebot's limit)
 # B8: Abort the site crawl if the process RSS exceeds this threshold (512MB)
@@ -125,7 +125,7 @@ def _is_private_ip(host: str) -> bool:
     # Strip brackets from IPv6 addresses if present
     if host.startswith("[") and host.endswith("]"):
         host = host[1:-1]
-    # Strip port for IPv4 (e.g. "127.0.0.1:8080" → "127.0.0.1")
+    # Strip port for IPv4 (e.g. "127.0.0.1:8080" -> "127.0.0.1")
     # For IPv6, urlparse.hostname() already strips brackets and port
     if host.count(":") == 1:  # IPv4:port
         host = host.split(":")[0]
@@ -139,7 +139,7 @@ def _is_private_ip(host: str) -> bool:
             return True
         return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast
     except ValueError:
-        # Not an IP address (it's a domain) — check DNS resolution for rebinding
+        # Not an IP address (it's a domain) - check DNS resolution for rebinding
         return _resolves_to_private_ip(host)
 
 
@@ -160,7 +160,7 @@ def _resolves_to_private_ip(host: str) -> bool:
             except ValueError:
                 continue
     except (socket.gaierror, OSError):
-        # DNS resolution failed — fail closed: refuse the fetch rather than
+        # DNS resolution failed - fail closed: refuse the fetch rather than
         # letting it proceed to an unvalidated (possibly rebound) target.
         return True
     return False
@@ -174,7 +174,7 @@ class _SsrfSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
     ):
         # Resolve relative redirect URLs against the original request URL
         absolute_url = urllib.parse.urljoin(req.full_url, newurl)
-        # Validate redirect target — block redirects to private/internal IPs.
+        # Validate redirect target - block redirects to private/internal IPs.
         # Must RAISE (not return None): urllib only aborts the redirect on
         # exception; a None return is version-dependent and unreliable.
         if _validate_url(absolute_url) is not None:
@@ -197,7 +197,7 @@ def _validate_url(url: str) -> str | None:
         return json.dumps({"ok": False, "error": "URL must use http or https"})
     if not parsed.netloc:
         return json.dumps({"ok": False, "error": "URL must have a domain"})
-    # Reject credentialed URLs (user:pass@host) — credentials leak into logs.
+    # Reject credentialed URLs (user:pass@host) - credentials leak into logs.
     if parsed.username or parsed.password:
         return json.dumps({"ok": False, "error": "URLs with embedded credentials are not allowed"})
     # SSRF protection: block private/loopback/link-local IP ranges
@@ -253,7 +253,7 @@ def _fetch(url: str) -> tuple[int | None, str, dict[str, str]]:
         return None, "", {}
     except http.client.HTTPException:
         # IncompleteRead/BadStatusLine/RemoteDisconnected are not OSError
-        # subclasses — a malformed response must not crash the tool.
+        # subclasses - a malformed response must not crash the tool.
         return None, "", {}
 
 
@@ -381,7 +381,7 @@ class _SeoHtmlParser(html.parser.HTMLParser):
                     self.h3s.append(text)
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        # Self-closing tag — process but don't push to stack
+        # Self-closing tag - process but don't push to stack
         attr_dict = {k: (v or "") for k, v in attrs}
         if tag == "meta":
             self._handle_meta_tag(attr_dict)
@@ -389,7 +389,7 @@ class _SeoHtmlParser(html.parser.HTMLParser):
             self._handle_link_tag(attr_dict)
         elif tag == "img":
             self._handle_img_tag(attr_dict)
-        # Don't push to stack — self-closing tags have no content
+        # Don't push to stack - self-closing tags have no content
 
 
 def _parse_html(body: str) -> _SeoHtmlParser:
@@ -629,7 +629,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
         while queue and len(visited) < max_pages:
             if _time.monotonic() > deadline:
                 break
-            # B8: Memory guard — abort crawl if process RSS exceeds threshold.
+            # B8: Memory guard - abort crawl if process RSS exceeds threshold.
             try:
                 import psutil
 
@@ -645,7 +645,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
                         "partial_results": page_results[:50],
                     }, indent=2)
             except ImportError:
-                pass  # psutil not available — skip memory check gracefully.
+                pass  # psutil not available - skip memory check gracefully.
             current = queue.popleft()
             normalized = _normalize_url(current)
             if normalized in visited:
@@ -736,7 +736,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
             value = audit.get("numericValue")
             if value is not None:
                 if metric_key in ("lcp", "fcp"):
-                    value = round(value / 1000, 2)  # ms → s
+                    value = round(value / 1000, 2)  # ms -> s
                 elif metric_key == "ttfb":
                     value = int(round(value, 0))  # ms as int
                 else:
@@ -752,7 +752,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
             inp_value = int(round(percentile, 0))
         metrics["inp"] = {"value": inp_value, "status": _cwv_status("inp", inp_value)}
 
-        # all() over zero measured metrics is True — require at least one.
+        # all() over zero measured metrics is True - require at least one.
         measured = [m for m in metrics.values() if m["value"] is not None]
         overall_good = bool(measured) and all(m["status"] == "GOOD" for m in measured)
         result: dict[str, Any] = {
@@ -920,7 +920,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
         if err:
             return err
         days = max(1, min(days, 90))
-        # GSC API requires OAuth2 — return instructions if no credentials
+        # GSC API requires OAuth2 - return instructions if no credentials
         result: dict[str, Any] = {
             "ok": False,
             "error": "GSC API requires OAuth2 credentials",
@@ -1023,7 +1023,7 @@ def _classify_schema(item: Any) -> dict[str, Any]:
                     return {"type": "@graph", "status": "EMPTY", "count": 0}
                 return {"type": "@graph", "status": "CONTAINER", "count": len(graph)}
             elif isinstance(graph, dict):
-                # @graph as single object — classify the inner item
+                # @graph as single object - classify the inner item
                 return _classify_schema(graph)
         schema_type = item.get("@type", "")
         if isinstance(schema_type, list):

@@ -12,7 +12,7 @@ from runtime.budget import ALLOWED_EXCEED, ALLOWED_PERIODS, Budget, BudgetManage
 from runtime.schemas import BudgetSchema
 
 # ---------------------------------------------------------------------------
-# Budget.__post_init__ — normalization
+# Budget.__post_init__ - normalization
 # ---------------------------------------------------------------------------
 
 class TestBudgetNormalization:
@@ -36,7 +36,7 @@ class TestBudgetNormalization:
 
 
 # ---------------------------------------------------------------------------
-# BudgetManager — defaults and persistence
+# BudgetManager - defaults and persistence
 # ---------------------------------------------------------------------------
 
 class TestBudgetManagerDefaults:
@@ -77,7 +77,7 @@ class TestBudgetManagerDefaults:
     def test_invalid_json_falls_back_to_defaults(self, tmp_path: Path):
         state = tmp_path / "state"
         state.mkdir()
-        # Unencrypted but invalid JSON — decrypt_file returns it as-is, json.loads fails.
+        # Unencrypted but invalid JSON - decrypt_file returns it as-is, json.loads fails.
         (state / "budget.json").write_text("{not valid json")
         bm = BudgetManager(tmp_path)
         assert "global" in bm.budgets
@@ -85,7 +85,7 @@ class TestBudgetManagerDefaults:
 
 
 # ---------------------------------------------------------------------------
-# BudgetManager.check — token / cost / calls limits
+# BudgetManager.check - token / cost / calls limits
 # ---------------------------------------------------------------------------
 
 class TestBudgetCheck:
@@ -154,7 +154,7 @@ class TestBudgetCheck:
 
 
 # ---------------------------------------------------------------------------
-# BudgetManager — period key + reset
+# BudgetManager - period key + reset
 # ---------------------------------------------------------------------------
 
 class TestBudgetPeriodReset:
@@ -162,7 +162,7 @@ class TestBudgetPeriodReset:
         bm = BudgetManager(tmp_path)
         bm.set_budget("s", Budget(max_tokens=1000, period="session"))
         bm.check("s", tokens=10)
-        # Same process → no reset; usage should accumulate
+        # Same process -> no reset; usage should accumulate
         bm.check("s", tokens=10)
         assert bm.usage["s"]["tokens"] == 20
 
@@ -227,7 +227,7 @@ class TestBudgetPeriodReset:
 
 
 # ---------------------------------------------------------------------------
-# BudgetManager — thread safety smoke test
+# BudgetManager - thread safety smoke test
 # ---------------------------------------------------------------------------
 
 class TestBudgetThreadSafety:
@@ -287,7 +287,7 @@ class TestBudgetThreadSafety:
 
 
 # ---------------------------------------------------------------------------
-# BudgetManager — save() error path (lines 74-76)
+# BudgetManager - save() error path (lines 74-76)
 # ---------------------------------------------------------------------------
 
 class TestBudgetSaveErrorPath:
@@ -308,7 +308,7 @@ class TestBudgetSaveErrorPath:
 
 
 # ---------------------------------------------------------------------------
-# Budget — rollout and token-weight fields
+# Budget - rollout and token-weight fields
 # ---------------------------------------------------------------------------
 
 class TestBudgetNewFields:
@@ -359,7 +359,7 @@ class TestBudgetCheckRollout:
 
 
 # ---------------------------------------------------------------------------
-# BudgetManager.check — rollout, token weighting
+# BudgetManager.check - rollout, token weighting
 # ---------------------------------------------------------------------------
 
 class TestBudgetCheckRolloutAndWeights:
@@ -415,7 +415,7 @@ class TestBudgetCheckRolloutAndWeights:
 
 
 # ---------------------------------------------------------------------------
-# save() — line 73 (early return when not dirty)
+# save() - line 73 (early return when not dirty)
 # ---------------------------------------------------------------------------
 
 class TestBudgetSaveNotDirty:
@@ -431,7 +431,7 @@ class TestBudgetSaveNotDirty:
 
 
 # ---------------------------------------------------------------------------
-# _period_key — line 101 (session_id provided)
+# _period_key - line 101 (session_id provided)
 # ---------------------------------------------------------------------------
 
 class TestBudgetPeriodKeySessionId:

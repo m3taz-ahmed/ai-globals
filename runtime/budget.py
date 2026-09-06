@@ -80,7 +80,7 @@ def _period_seconds(period: str) -> float:
     """Return the duration in seconds for a window period.
 
     Unknown periods (including "session", which has no fixed wall-clock
-    length) raise instead of silently returning a daily window — a wrong
+    length) raise instead of silently returning a daily window - a wrong
     window length silently under/over-enforces budgets.
     """
     if period == "hourly":
@@ -305,7 +305,7 @@ class BudgetWindowManager:
     def maybe_refresh_policies(self, stale_threshold: float = 300.0) -> bool:
         """Track whether the policy-refresh interval has elapsed.
 
-        This is currently a *staleness tracker* only — it does NOT reload any
+        This is currently a *staleness tracker* only - it does NOT reload any
         policies yet (no policy source is wired into ``BudgetWindowManager``).
         It returns ``True`` when the stale threshold has elapsed so callers
         can perform their own reload, and updates the last-refresh timestamp.
@@ -705,7 +705,7 @@ class BudgetManager:
         ``effective_max_*`` (i.e., ``max * (1 - reserve)``), leaving the
         reserved fraction free for the agent's final response/summary.
 
-        This enables graceful degradation — agents can check before
+        This enables graceful degradation - agents can check before
         starting a costly operation and return partial results instead
         of being cut off mid-task.
         """

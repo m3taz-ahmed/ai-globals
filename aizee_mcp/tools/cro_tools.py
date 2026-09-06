@@ -3,7 +3,7 @@
 
 Implements pure-computation experiment significance (two-proportion z-test),
 flag configuration, and audit checklists. External observability tools
-(heatmap / session replay / surveys) return JSON proxy instructions — no
+(heatmap / session replay / surveys) return JSON proxy instructions - no
 network libraries imported. Experiment analysis delegates to
 ``runtime.experiment_tracker`` and flag evaluation to ``runtime.feature_flags``.
 """
@@ -79,7 +79,7 @@ def register_cro_tools(mcp: FastMCP) -> None:
         url: str = "",
         areas: str = '["copy","design","speed","form","trust"]',
     ) -> str:
-        """Return a CRO audit checklist for the given areas (proxy — no live fetch).
+        """Return a CRO audit checklist for the given areas (proxy - no live fetch).
 
         ``url`` labels the checklist; use seo_audit_page for a live fetch.
         """
@@ -157,7 +157,7 @@ def register_cro_tools(mcp: FastMCP) -> None:
         rollout_percent: int = 0,
         description: str = "",
     ) -> str:
-        """Create a feature flag config via runtime.feature_flags. WRITE — gated."""
+        """Create a feature flag config via runtime.feature_flags. WRITE - gated."""
         if err := validate_query(name):
             return err
         try:
@@ -255,7 +255,7 @@ def register_cro_tools(mcp: FastMCP) -> None:
     def cro_replay(
         session_id: str = "",
     ) -> str:
-        """Fetch a session replay (proxy instruction). READ/EXTERNAL — privacy-gated."""
+        """Fetch a session replay (proxy instruction). READ/EXTERNAL - privacy-gated."""
         return _json({
             "ok": True,
             "instruction": {
@@ -272,7 +272,7 @@ def register_cro_tools(mcp: FastMCP) -> None:
         kind: str = "multiple_choice",
         options: str = "[]",
     ) -> str:
-        """Create a survey (proxy). WRITE/EXTERNAL — gated; returns survey definition."""
+        """Create a survey (proxy). WRITE/EXTERNAL - gated; returns survey definition."""
         if err := validate_query(question):
             return err
         if kind not in ("multiple_choice", "open_text", "rating"):

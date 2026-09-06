@@ -181,7 +181,7 @@ def register_social_tools(mcp: FastMCP) -> None:
         content: str,
         scheduled_at: str = "",
     ) -> str:
-        """Schedule a post for later. WRITE/EXTERNAL — gated; returns proxy instruction (normalized content + schedule)."""
+        """Schedule a post for later. WRITE/EXTERNAL - gated; returns proxy instruction (normalized content + schedule)."""
         if err := validate_query(content):
             return err
         if scheduled_at:
@@ -212,7 +212,7 @@ def register_social_tools(mcp: FastMCP) -> None:
         network: str,
         content: str,
     ) -> str:
-        """Publish a post immediately. WRITE/EXTERNAL — gated; returns proxy instruction only (no inline network call)."""
+        """Publish a post immediately. WRITE/EXTERNAL - gated; returns proxy instruction only (no inline network call)."""
         if err := validate_query(content):
             return err
         try:
@@ -265,7 +265,7 @@ def register_social_tools(mcp: FastMCP) -> None:
         metric: str = "engagement",
         days: int = 30,
     ) -> str:
-        """Fetch analytics (engagement/followers/impressions). READ/EXTERNAL — proxy instruction only."""
+        """Fetch analytics (engagement/followers/impressions). READ/EXTERNAL - proxy instruction only."""
         try:
             provider = _resolve_provider(network)
         except ValidationError as exc:
@@ -291,7 +291,7 @@ def register_social_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def social_accounts() -> str:
-        """List connected social accounts (from configured providers). READ — returns configured networks."""
+        """List connected social accounts (from configured providers). READ - returns configured networks."""
         return _ok(
             accounts=[
                 {"network": n.value, "configured": False, "oauth_env": f"AIZEE_{n.value.upper()}_OAUTH"}
@@ -308,7 +308,7 @@ def register_social_tools(mcp: FastMCP) -> None:
         """Record a human approval decision for a pending social instruction.
 
         WARNING: the returned object is a recorded decision, NOT an
-        authorization — executors must still pass the action through the
+        authorization - executors must still pass the action through the
         kernel gates (guardian/policy). Treating this object as a green
         light without re-checking would be a self-approval bypass.
         """
@@ -323,7 +323,7 @@ def register_social_tools(mcp: FastMCP) -> None:
             "instruction_id": instruction_id,
             "approved": approved,
             "decision": "approved" if approved else "rejected",
-            "note": "Decision recorded only. Execution proceeds only if approved AND kernel guardian/policy allow — re-check via check_policy.",
+            "note": "Decision recorded only. Execution proceeds only if approved AND kernel guardian/policy allow - re-check via check_policy.",
         })
 
     @mcp.tool()

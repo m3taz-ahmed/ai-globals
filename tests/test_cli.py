@@ -360,7 +360,7 @@ class TestCliProject:
 
 
 # ---------------------------------------------------------------------------
-# no command → help
+# no command -> help
 # ---------------------------------------------------------------------------
 
 class TestCliNoCommand:
@@ -370,7 +370,7 @@ class TestCliNoCommand:
 
 
 # ---------------------------------------------------------------------------
-# check — blocked action (line 67)
+# check - blocked action (line 67)
 # ---------------------------------------------------------------------------
 
 class TestCliCheckBlocked:
@@ -989,7 +989,7 @@ class TestCliSkill:
 
 
 # ---------------------------------------------------------------------------
-# doctor — version check, encryption, deps, vector, mcp config
+# doctor - version check, encryption, deps, vector, mcp config
 # (lines 432-433, 442-445, 448-449, 456-457, 464-465, 472, 479-481)
 # ---------------------------------------------------------------------------
 
@@ -1272,7 +1272,7 @@ class TestCliSkillSearchWithMatch:
 
 
 # ---------------------------------------------------------------------------
-# doctor — pip import failure (line 457)
+# doctor - pip import failure (line 457)
 # ---------------------------------------------------------------------------
 
 class TestCliDoctorPipFailure:
@@ -1295,7 +1295,7 @@ class TestCliDoctorPipFailure:
 
 
 # ---------------------------------------------------------------------------
-# doctor — vector index exception (lines 464-465)
+# doctor - vector index exception (lines 464-465)
 # ---------------------------------------------------------------------------
 
 class TestCliDoctorVectorException:
@@ -1311,7 +1311,7 @@ class TestCliDoctorVectorException:
 
 
 # ---------------------------------------------------------------------------
-# doctor — non-Windows os.name path (line 472)
+# doctor - non-Windows os.name path (line 472)
 # ---------------------------------------------------------------------------
 
 class TestCliDoctorNonWindows:
@@ -1331,7 +1331,7 @@ class TestCliDoctorNonWindows:
 
 
 # ---------------------------------------------------------------------------
-# doctor — global mcp config not found (line 479) and exception (lines 480-481)
+# doctor - global mcp config not found (line 479) and exception (lines 480-481)
 # ---------------------------------------------------------------------------
 
 class TestCliDoctorGlobalMcp:
@@ -1385,7 +1385,7 @@ class TestCliTestXdist:
 
 
 # ---------------------------------------------------------------------------
-# __main__ block — in-process (line 710)
+# __main__ block - in-process (line 710)
 # ---------------------------------------------------------------------------
 
 class TestCliMainBlockInProcess:

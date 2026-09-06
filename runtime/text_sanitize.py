@@ -2,7 +2,7 @@
 
 Ported from book-to-skill (virgiliojr94/book-to-skill) ``sanitize.py``.
 Strips zero-width characters, bidi formatting controls (Trojan Source
-CVE-2021-42574), invisible letters, and the Unicode tag block — all
+CVE-2021-42574), invisible letters, and the Unicode tag block - all
 used to hide prompt-injection payloads in documents that an AI agent
 might ingest.
 
@@ -31,8 +31,8 @@ _ZERO_WIDTH_CODEPOINTS: frozenset[int] = frozenset({
     0x200D,  # ZERO WIDTH JOINER
     0x2060,  # WORD JOINER
     0xFEFF,  # ZERO WIDTH NO-BREAK SPACE / BOM outside position 0
-    0x00AD,  # SOFT HYPHEN — invisible except at a line break
-    0x034F,  # COMBINING GRAPHEME JOINER — no rendering effect
+    0x00AD,  # SOFT HYPHEN - invisible except at a line break
+    0x034F,  # COMBINING GRAPHEME JOINER - no rendering effect
     0x180E,  # MONGOLIAN VOWEL SEPARATOR
     0x2061,  # FUNCTION APPLICATION
     0x2062,  # INVISIBLE TIMES
@@ -40,7 +40,7 @@ _ZERO_WIDTH_CODEPOINTS: frozenset[int] = frozenset({
     0x2064,  # INVISIBLE PLUS
 })
 
-# 2. Bidirectional formatting controls — the Trojan Source class
+# 2. Bidirectional formatting controls - the Trojan Source class
 #    (CVE-2021-42574). These change the order a human SEES while the
 #    model reads the logical order. Legitimate RTL text (Arabic, Hebrew)
 #    is unaffected: the Unicode Bidi Algorithm derives direction from the
@@ -90,7 +90,7 @@ def is_invisible_codepoint(codepoint: int) -> bool:
     Exposed so callers (e.g. a generated-skill scanner) can flag exactly
     what extraction strips. When the sanitizer set and this predicate
     drift, the scanner lets a character through that the sanitizer then
-    warns about — or worse, neither layer covers it.
+    warns about - or worse, neither layer covers it.
     """
     return (
         codepoint in _INVISIBLE_CODEPOINTS
@@ -103,7 +103,7 @@ def sanitize_text(text: str) -> tuple[str, int]:
 
     Returns a tuple of ``(clean_text, removed_count)``. The clean text
     preserves all visible characters including legitimate RTL prose
-    (Arabic, Hebrew) — only explicit bidi embeddings/overrides/isolates
+    (Arabic, Hebrew) - only explicit bidi embeddings/overrides/isolates
     and zero-width/invisible formatting are stripped.
 
     Raises ``TypeError`` for non-string input (never silently coerces).

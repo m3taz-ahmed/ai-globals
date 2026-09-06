@@ -24,6 +24,6 @@
 
 21. [REQ] Page-Based Custom UI: Extend Filament\Pages\Page (not Resource) for non-CRUD interfaces (kanban boards, dashboards, calendars). Register via plugin or panel ->pages().
 22. [REQ] Enum Trait Pattern: IsKanbanStatus trait adding statuses() method to enums for domain-specific behavior (board columns, status transitions). Use for any enum-driven UI component.
-23. [REQ] Minimal Plugin Pattern: Plugin with empty egister()/oot() as marker only, functionality in Page classes. Use when feature is page-centric, not resource-centric.
+23. [REQ] Minimal Plugin Pattern: Plugin with empty register()/boot() as marker only, functionality in Page classes. Use when feature is page-centric, not resource-centric.
 24. [REQ] View Customization Hooks: Override $view, $headerView, $recordView, $statusView per page for granular Blade template customization. Use for white-label or per-tenant UI variations.
 25. [REQ] Asset Publishing via Install Command: hasInstallCommand() with publishAssets() for CSS/JS delivery. FilamentAsset::register() with loadedOnRequest() for lazy-loaded JS. AlpineComponent + Js + Css asset types.

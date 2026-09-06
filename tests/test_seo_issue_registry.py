@@ -1,6 +1,6 @@
-"""Tests for runtime/seo_issue_registry.py — typed SEO audit issue registry.
+"""Tests for runtime/seo_issue_registry.py - typed SEO audit issue registry.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

@@ -67,7 +67,7 @@ class PolicyManager:
                     if isinstance(loaded, list):
                         rules.extend(loaded)
                     else:
-                        _logger.error("Guardian config %s: 'rules' is not a list — ignored", path)
+                        _logger.error("Guardian config %s: 'rules' is not a list - ignored", path)
                 except Exception as exc:
                     # Fail closed: a corrupted guardian config must never
                     # silently allow actions. Deny everything until fixed.
@@ -80,7 +80,7 @@ class PolicyManager:
         # only project_root was read, so in multi-project setups the rich OS
         # probity rules were silently dropped, leaving a gap behind Guardian.
         # Collect rules from ALL roots (OS + project) before constructing one
-        # Guardrails — a premature ``return`` inside the loop dropped project
+        # Guardrails - a premature ``return`` inside the loop dropped project
         # rules whenever an OS-level probity.yaml existed first.
         import yaml
 
@@ -97,9 +97,9 @@ class PolicyManager:
                     if isinstance(loaded, list):
                         rules.extend(loaded)
                     else:
-                        _logger.error("Probity config %s: 'rules' is not a list — ignored", path)
+                        _logger.error("Probity config %s: 'rules' is not a list - ignored", path)
                 except Exception as exc:
-                    _logger.error("Probity config %s unreadable — those rules skipped: %s", path, exc)
+                    _logger.error("Probity config %s unreadable - those rules skipped: %s", path, exc)
         return Guardrails({"rules": rules}) if rules else Guardrails()
 
     # Read-only actions skip the guardian gate. Derived from the canonical
@@ -193,8 +193,8 @@ class PolicyManager:
         # action to skip the Policy ASK gate) is mitigated because the
         # Guardian and Probity gates run *before* this point and will deny
         # destructive/forbidden commands regardless of `approved` (see the B1
-        # alias-aware Guardian fix). A stricter option — rejecting caller
-        # claims and trusting only `approval_cache` — is intentionally NOT
+        # alias-aware Guardian fix). A stricter option - rejecting caller
+        # claims and trusting only `approval_cache` - is intentionally NOT
         # applied because it would break the ChatMessage read-only path and
         # existing approval flows; revisit if Guardian/Probity coverage gaps
         # are found.
@@ -205,9 +205,9 @@ class PolicyManager:
             action_data["approved"] = True
             return True
         # F1/I3: When an ApprovalService is wired, create a persistent
-        # request so the approval lifecycle (notify → poll → resolve) can
+        # request so the approval lifecycle (notify -> poll -> resolve) can
         # proceed asynchronously. This is an enhancement layered on top of
-        # the cache — the cache still handles replay suppression.
+        # the cache - the cache still handles replay suppression.
         if self.approval_service is not None:
             action_type = str(action_data.get("type", "unknown"))
             req = self.approval_service.create_request(

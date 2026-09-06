@@ -54,7 +54,7 @@ class TestProbityStructuredDenial:
     def test_no_raw_traceback(self, tmp_path: Path) -> None:
         """The kernel must not raise GuardrailViolationError."""
         k = _kernel(tmp_path)
-        # This should NOT raise — it should return a deny dict
+        # This should NOT raise - it should return a deny dict
         result = k.act("exec", command="rm -rf /")
         assert isinstance(result, dict)
 

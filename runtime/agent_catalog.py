@@ -82,7 +82,7 @@ class CatalogModel:
     provider: str
     tier: ModelTier
     max_tokens: int = 200000
-    training_cutoff: str = ""  # e.g. "2026-07" — required for model card
+    training_cutoff: str = ""  # e.g. "2026-07" - required for model card
     known_limitations: list[str] = field(default_factory=list)  # e.g. ["no vision", "limited Arabic"]
 
 

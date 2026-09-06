@@ -1,4 +1,4 @@
-"""Tests for runtime/supply_chain_guard.py — undeclared import detection."""
+"""Tests for runtime/supply_chain_guard.py - undeclared import detection."""
 
 from __future__ import annotations
 

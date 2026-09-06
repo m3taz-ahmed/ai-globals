@@ -1,8 +1,8 @@
-"""Root conftest.py — shared pytest fixtures and auto-marking for the entire aiZee test suite.
+"""Root conftest.py - shared pytest fixtures and auto-marking for the entire aiZee test suite.
 
 This file lives at the repository root and is automatically discovered by
 pytest for **all** test directories (tests/, runtime/tests/, memory/tests/,
-eval/tests/, …).  The per-directory conftest.py duplicates have been removed
+eval/tests/, ...).  The per-directory conftest.py duplicates have been removed
 in favour of this single source of truth (P3.3 / I12-Q4).
 """
 
@@ -89,7 +89,7 @@ def store(tmp_root: Path) -> MemoryStore:
 
 
 # ---------------------------------------------------------------------------
-# Global cleanup — close leaked SQLite connections after each test
+# Global cleanup - close leaked SQLite connections after each test
 # ---------------------------------------------------------------------------
 
 

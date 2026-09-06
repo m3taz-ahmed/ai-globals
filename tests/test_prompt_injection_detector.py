@@ -1,4 +1,4 @@
-"""Tests for runtime.prompt_injection_detector — two-stage semantic detector."""
+"""Tests for runtime.prompt_injection_detector - two-stage semantic detector."""
 
 from __future__ import annotations
 

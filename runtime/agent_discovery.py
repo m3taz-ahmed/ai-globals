@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Agent discovery — detect local AI agent configurations.
+"""Agent discovery - detect local AI agent configurations.
 
 Inspired by Preloop's ``preloop agents discover``: scans common
 locations for AI coding assistant configs (Claude Code, Cursor, Cline,
-Windsurf, Aider, Devin) and reports their status. This is read-only —
+Windsurf, Aider, Devin) and reports their status. This is read-only -
 it does not modify any configs.
 
 Usage::
@@ -109,7 +109,7 @@ class AgentDiscovery:
             is_active=True,
         )
         if path.is_dir():
-            # Rules directory — count files.
+            # Rules directory - count files.
             try:
                 count = sum(1 for _ in path.iterdir() if _.is_file())
             except OSError:
@@ -141,7 +141,7 @@ class AgentDiscovery:
             if isinstance(model, str):
                 agent.model = model
             return agent
-        # Plain text (AGENTS.md, .windsurfrules) — just mark active.
+        # Plain text (AGENTS.md, .windsurfrules) - just mark active.
         return agent
 
     def report(self) -> str:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""KlaviyoPlugin for aiZee — proxies to external MCP server.
+"""KlaviyoPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @klaviyo/mcp
 Required env vars: KLAVIYO_API_KEY
@@ -28,7 +28,7 @@ class KlaviyoPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

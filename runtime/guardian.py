@@ -29,7 +29,7 @@ from runtime.schemas import AizeeError, ErrorSeverity, PolicyDeniedError
 
 _logger = logging.getLogger(__name__)
 
-# B7: ReDoS protection — compiled regex cache and limits.
+# B7: ReDoS protection - compiled regex cache and limits.
 _COMPILED_REGEX_CACHE: dict[str, re.Pattern[str]] = {}
 _MAX_REGEX_CACHE_SIZE = 1024  # Evict oldest entries beyond this (memory-DoS guard).
 _MAX_REGEX_PATTERN_LEN = 200  # Reject overly complex patterns.
@@ -89,7 +89,7 @@ def _safe_regex_search(pattern: str, text: str) -> bool:
             alarm_fn(0)
             _signal.signal(sigalrm, old_handler)
     else:
-        # Windows: no signal.alarm — run without timeout.
+        # Windows: no signal.alarm - run without timeout.
         try:
             return bool(compiled.search(text))
         except Exception as exc:
@@ -131,7 +131,7 @@ class KillSwitchError(AizeeError):
         self.rule_type = rule_type
         super().__init__(
             "KILL_SWITCH",
-            f"Kill-switch triggered: {rule_type} — {message}",
+            f"Kill-switch triggered: {rule_type} - {message}",
             ErrorSeverity.CRITICAL,
             context or {"rule_type": rule_type},
         )
@@ -193,9 +193,9 @@ def _glob_match(pattern: str, path: str) -> bool:
 class GuardConfig:
     """Configuration for the guardian.
 
-    NOTE: ``default_decision=ALLOW`` is intentional — the Guardian is one
-    layer in a defense-in-depth pipeline (Probity → Guardian → Policy →
-    LoopDetector → Budget → Audit). The Policy gate (default=``ask``) is
+    NOTE: ``default_decision=ALLOW`` is intentional - the Guardian is one
+    layer in a defense-in-depth pipeline (Probity -> Guardian -> Policy ->
+    LoopDetector -> Budget -> Audit). The Policy gate (default=``ask``) is
     the primary enforcement layer. For a stricter posture, construct with
     ``default_decision=DecisionStatus.DENY`` in production deployments.
     """
@@ -299,7 +299,7 @@ class Guardian:
     """
 
     # Permission dependencies: permission -> list of required prerequisites.
-    # Empty by default — projects declare their own domain-specific
+    # Empty by default - projects declare their own domain-specific
     # dependencies via guardian.yaml or the permission_dependencies param.
     DEFAULT_PERMISSION_DEPENDENCIES: ClassVar[dict[str, list[str]]] = {}
 
@@ -378,7 +378,7 @@ class Guardian:
                 if matched:
                     decision = rule.get("decision", self.config.default_decision.value)
                     # DecisionStatus() can raise ValueError on an invalid
-                    # string — keep it inside the try so on_evaluation_error
+                    # string - keep it inside the try so on_evaluation_error
                     # applies instead of propagating out of _match_rule.
                     return Decision(DecisionStatus(decision), name, rule.get("description", ""))
             except Exception as exc:

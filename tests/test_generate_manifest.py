@@ -1,4 +1,4 @@
-"""Tests for scripts/generate_manifest.py — manifest parsing + generation."""
+"""Tests for scripts/generate_manifest.py - manifest parsing + generation."""
 from __future__ import annotations
 
 import importlib.util
@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-# scripts/ is not a package — load by file path
+# scripts/ is not a package - load by file path
 _spec = importlib.util.spec_from_file_location(
     "generate_manifest",
     Path(__file__).resolve().parent.parent / "scripts" / "generate_manifest.py",

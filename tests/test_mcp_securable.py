@@ -1,8 +1,8 @@
-"""Tests for runtime/mcp_securable.py — MCP server securables + RBAC grants.
+"""Tests for runtime/mcp_securable.py - MCP server securables + RBAC grants.
 
 Covers: enums, dataclasses, registry CRUD, grant/revoke, permission
 checks, tool gating, filtering, thread safety, clear.
-AAA pattern, one behavior per test. FAST tier — no MCP, no kernel.
+AAA pattern, one behavior per test. FAST tier - no MCP, no kernel.
 """
 
 from __future__ import annotations

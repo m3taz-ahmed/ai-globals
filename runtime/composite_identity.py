@@ -47,7 +47,7 @@ class CompositeIdentity:
     JSON), so equivalent identities produce identical signatures
     regardless of field ordering.
 
-    SECURITY NOTE: unsalted SHA-256 is deterministic and linkable —
+    SECURITY NOTE: unsalted SHA-256 is deterministic and linkable -
     identical inputs always yield identical signatures, so signatures
     can be correlated across stores. Kept unchanged to avoid breaking
     stored ids; do not use the signature as a secrecy mechanism.

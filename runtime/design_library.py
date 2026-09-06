@@ -1,4 +1,4 @@
-"""Design Library — 56 brand design systems loaded on demand.
+"""Design Library - 56 brand design systems loaded on demand.
 
 Inspired by zeta92/design-library-plugin. Provides a catalog of real-world
 brand design systems (Stripe, Linear, Vercel, Figma, etc.) that can be loaded
@@ -7,10 +7,10 @@ tokens (colors, typography, spacing, radii, shadows, grid) and design
 principles.
 
 The library supports:
-- **Single brand** — load one brand's full design system
-- **Simple mix** — combine 2-3 brands (colors from A, typography from B)
-- **Granular mix** — mix specific sections (A:colors + B:typography)
-- **Auto-detect** — scan project and suggest best-fit brands
+- **Single brand** - load one brand's full design system
+- **Simple mix** - combine 2-3 brands (colors from A, typography from B)
+- **Granular mix** - mix specific sections (A:colors + B:typography)
+- **Auto-detect** - scan project and suggest best-fit brands
 """
 
 from __future__ import annotations
@@ -77,7 +77,7 @@ class FusionResult:
     """Result of mixing multiple brand design systems."""
 
     brands: list[str]
-    section_mapping: dict[str, str]  # section → brand name
+    section_mapping: dict[str, str]  # section -> brand name
     content: str
     rationale: str
 
@@ -107,7 +107,7 @@ class DesignLibrary:
         "chronark", "leerob", "steven-tey", "shadcn-personal",
     ]
 
-    # Project type → recommended brands mapping
+    # Project type -> recommended brands mapping
     PROJECT_SUGGESTIONS: ClassVar[dict[ProjectType, list[str]]] = {
         ProjectType.LANDING_PAGE: ["linear", "vercel", "framer", "dub"],
         ProjectType.SAAS_APP: ["stripe", "linear", "supabase", "clerk"],
@@ -144,7 +144,7 @@ class DesignLibrary:
         """Load a single brand's design system.
 
         Args:
-            brand: Brand name (case-insensitive, e.g., "Stripe" → "stripe").
+            brand: Brand name (case-insensitive, e.g., "Stripe" -> "stripe").
 
         Returns:
             BrandDesignSystem or None if not found.
@@ -181,7 +181,7 @@ class DesignLibrary:
 
         Args:
             brands: List of 2-3 brand names to mix.
-            section_mapping: Optional explicit section→brand mapping.
+            section_mapping: Optional explicit section->brand mapping.
                 If None, uses defaults (colors/components/elevation from first,
                 typography/layout from second).
 
@@ -201,7 +201,7 @@ class DesignLibrary:
         sections_content: list[str] = []
         mapping_str: dict[str, str] = {}
         for section, brand_name in section_mapping.items():
-            # Fail-closed: unknown brand in mapping → abort mix (return None).
+            # Fail-closed: unknown brand in mapping -> abort mix (return None).
             system = next((s for s in loaded if s.name == brand_name.lower()), None)
             if system is None:
                 return None
@@ -280,7 +280,7 @@ class DesignLibrary:
         return max(scores, key=lambda k: scores[k])
 
     def _default_mapping(self, brands: list[str]) -> dict[DesignSection, str]:
-        """Default section→brand mapping for simple mixes."""
+        """Default section->brand mapping for simple mixes."""
         first = brands[0] if brands else ""
         second = brands[1] if len(brands) > 1 else first
         return {
@@ -295,7 +295,7 @@ class DesignLibrary:
         """Build a human-readable rationale for the fusion."""
         lines = [f"Fusion: {' + '.join(brands)}"]
         for section, brand in sorted(mapping.items()):
-            lines.append(f"  {section} → {brand}")
+            lines.append(f"  {section} -> {brand}")
         lines.append(f"Rationale: This combination pairs {'visual identity from ' + brands[0] if brands else ''}"
                      f" with {'structural rhythm from ' + brands[1] if len(brands) > 1 else 'cohesive design'}.")
         return "\n".join(lines)

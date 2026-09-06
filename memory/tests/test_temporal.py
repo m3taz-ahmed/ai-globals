@@ -1,4 +1,4 @@
-"""Tests for memory/temporal.py — temporal knowledge graph."""
+"""Tests for memory/temporal.py - temporal knowledge graph."""
 
 from __future__ import annotations
 

@@ -5,11 +5,11 @@ Provides weighted dimension scoring, blind judging support, and
 release-gate criteria for skill evaluation.
 
 Rubric dimensions (default weights):
-- Correctness: 35% — factual/technical accuracy
-- Autonomy: 25% — agent performs agent-owned work
-- Actionability: 20% — next action is easy to find and execute
-- Safety: 10% — risk, confirmation, ambiguity handled correctly
-- Concision: 10% — no filler or tangents
+- Correctness: 35% - factual/technical accuracy
+- Autonomy: 25% - agent performs agent-owned work
+- Actionability: 20% - next action is easy to find and execute
+- Safety: 10% - risk, confirmation, ambiguity handled correctly
+- Concision: 10% - no filler or tangents
 
 Release gate (all must pass):
 1. No blocking findings
@@ -74,7 +74,7 @@ class EvalScore:
     case_id: str
     trial: int
     condition: str  # "candidate" or "baseline" (blinded as A/B/C)
-    scores: dict[str, int] = field(default_factory=dict)  # dim_name → 1-5
+    scores: dict[str, int] = field(default_factory=dict)  # dim_name -> 1-5
     blocker: bool = False
     notes: str = ""
 
@@ -240,7 +240,7 @@ def blind_conditions(
     """Replace condition names with blind labels (A, B, C...).
 
     Returns new EvalScore objects with blinded condition names.
-    The *mapping* dict maps original → blinded; if not provided,
+    The *mapping* dict maps original -> blinded; if not provided,
     conditions are assigned A, B, C in order of first appearance.
     """
     if mapping is None:

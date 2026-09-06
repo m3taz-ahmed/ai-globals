@@ -112,7 +112,7 @@ def test_default_action_config():
 
 
 # ---------------------------------------------------------------------------
-# _PredicateEvaluator._resolve -€” line 98 (non-dict traversal returns None)
+# _PredicateEvaluator._resolve -" line 98 (non-dict traversal returns None)
 # ---------------------------------------------------------------------------
 
 def test_resolve_returns_none_for_non_dict_traversal():
@@ -126,13 +126,13 @@ def test_resolve_returns_none_for_non_dict_traversal():
             }
         ]
     )
-    # 'resource' is a string, not a dict -€” _resolve should return None
+    # 'resource' is a string, not a dict -" _resolve should return None
     d = g.authorize(ActionRequest(tool="x", attributes={"resource": "not-a-dict"}))
     assert d.status == DecisionStatus.ALLOW  # no match because None != "prod"
 
 
 # ---------------------------------------------------------------------------
-# evaluate_predicate -€” line 106 (key is None returns False)
+# evaluate_predicate -" line 106 (key is None returns False)
 # ---------------------------------------------------------------------------
 
 def test_predicate_with_none_key_returns_false():
@@ -151,7 +151,7 @@ def test_predicate_with_none_key_returns_false():
 
 
 # ---------------------------------------------------------------------------
-# evaluate_predicate -€” line 110 (unsupported operator raises ValueError)
+# evaluate_predicate -" line 110 (unsupported operator raises ValueError)
 # ---------------------------------------------------------------------------
 
 def test_unsupported_operator_raises_value_error():
@@ -164,7 +164,7 @@ def test_unsupported_operator_raises_value_error():
 
 
 # ---------------------------------------------------------------------------
-# from_yaml -€” lines 129-130
+# from_yaml -" lines 129-130
 # ---------------------------------------------------------------------------
 
 def test_from_yaml(tmp_path):
@@ -191,7 +191,7 @@ def test_from_yaml_empty_file(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# from_json -€” lines 134-135
+# from_json -" lines 134-135
 # ---------------------------------------------------------------------------
 
 def test_from_json(tmp_path):
@@ -210,7 +210,7 @@ def test_from_json(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Tool mismatch continues to next rule -€” line 143
+# Tool mismatch continues to next rule -" line 143
 # ---------------------------------------------------------------------------
 
 def test_tool_mismatch_continues_to_next_rule():
@@ -241,7 +241,7 @@ def test_alias_aware_tool_matching_b1():
 
 
 # ---------------------------------------------------------------------------
-# Single predicate rule -€” line 152
+# Single predicate rule -" line 152
 # ---------------------------------------------------------------------------
 
 def test_single_predicate_rule():
@@ -264,7 +264,7 @@ def test_single_predicate_rule():
 
 
 # ---------------------------------------------------------------------------
-# Rule with no predicate/all/any -€” line 154 (matched=True)
+# Rule with no predicate/all/any -" line 154 (matched=True)
 # ---------------------------------------------------------------------------
 
 def test_rule_with_no_matcher_always_matches():
@@ -276,7 +276,7 @@ def test_rule_with_no_matcher_always_matches():
 
 
 # ---------------------------------------------------------------------------
-# Evaluation error handling -€” lines 155-160
+# Evaluation error handling -" lines 155-160
 # ---------------------------------------------------------------------------
 
 def test_evaluation_error_denies():
@@ -316,7 +316,7 @@ def test_evaluation_error_allow_continues():
 
 
 # ---------------------------------------------------------------------------
-# Async invoke decorator -€” lines 202-210, 213
+# Async invoke decorator -" lines 202-210, 213
 # ---------------------------------------------------------------------------
 
 def test_invoke_decorator_async():
@@ -366,7 +366,7 @@ def test_invoke_decorator_async_require_approval_allowed():
 
 
 # ---------------------------------------------------------------------------
-# ainvoke -€” line 221
+# ainvoke -" line 221
 # ---------------------------------------------------------------------------
 
 def test_ainvoke_decorator():
@@ -397,7 +397,7 @@ def test_ainvoke_decorator_async():
 
 
 # ---------------------------------------------------------------------------
-# check() raises PermissionError on deny -€” line 177
+# check() raises PermissionError on deny -" line 177
 # ---------------------------------------------------------------------------
 
 def test_check_raises_permission_error_on_deny():
@@ -480,7 +480,7 @@ def test_validate_permission_dependencies_no_deps():
 
 
 def test_validate_permission_dependencies_default_empty():
-    """Default dependency map is empty — no foreign domain rules shipped."""
+    """Default dependency map is empty - no foreign domain rules shipped."""
     g = Guardian([])
     assert Guardian.DEFAULT_PERMISSION_DEPENDENCIES == {}
     is_valid, missing = g.validate_permission_dependencies(['any_permission'])

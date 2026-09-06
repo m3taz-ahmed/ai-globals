@@ -19,6 +19,7 @@ personas:
   - DATA
   - ARCH
   - DEV
+  - MLOPS
 tech_stack: []
 lord: true
 ---

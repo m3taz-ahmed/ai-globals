@@ -1,4 +1,4 @@
-"""Tests for runtime.supply_chain_guard — typosquat + OSV.dev (from AgentGuard)."""
+"""Tests for runtime.supply_chain_guard - typosquat + OSV.dev (from AgentGuard)."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def test_typosquat_close_match_detected() -> None:
 
 def test_typosquat_homoglyph_detected() -> None:
     det = TyposquatDetector(threshold=2)
-    # "nurnpy" — rn looks like m, edit distance 2 from "numpy"
+    # "nurnpy" - rn looks like m, edit distance 2 from "numpy"
     findings = det.check("nurnpy", DependencyEcosystem.PYTHON)
     # Should be detected via edit_distance (distance=2)
     assert len(findings) > 0
@@ -55,7 +55,7 @@ def test_typosquat_node_ecosystem() -> None:
     det = TyposquatDetector(threshold=2)
     findings = det.check("reqeusts", DependencyEcosystem.NODE)
     # "requests" is not in the default Node popular list, so no match
-    # Let's test with "reack" → "react"
+    # Let's test with "reack" -> "react"
     findings = det.check("reack", DependencyEcosystem.NODE)
     assert len(findings) > 0
     assert findings[0].suspected_of == "react"

@@ -105,7 +105,7 @@ class TestFactExtraction:
 
         m = store.add("episodic", "Hello world")
         meta = json.loads(m.meta)
-        # Short content with no verbs → no facts
+        # Short content with no verbs -> no facts
         assert "extracted_facts" not in meta or len(meta["extracted_facts"]) == 0
 
 
@@ -217,7 +217,7 @@ class TestSearchHardening:
         store = _store(tmp_path)
         for i in range(10):
             store.add("semantic", f"memory item {i}")
-        # Request more than 100 — should be capped
+        # Request more than 100 - should be capped
         results = store.search_safe("memory", limit=200)
         assert len(results) <= 100
 

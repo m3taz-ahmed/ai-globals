@@ -51,7 +51,7 @@ class BoundedOutput:
         }
 
 
-# Default bounds — conservative for chat-agent context windows.
+# Default bounds - conservative for chat-agent context windows.
 DEFAULT_BOUNDS = OutputBounds(max_lines=200, max_bytes=8000)
 
 # Larger bounds for audit/research tools that produce structured output.

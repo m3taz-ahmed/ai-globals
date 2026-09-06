@@ -1,6 +1,6 @@
-"""Tests for runtime/tool_output_bounder.py — tool output bounding.
+"""Tests for runtime/tool_output_bounder.py - tool output bounding.
 
-FAST tier — no MCP, no kernel, no model loading.
+FAST tier - no MCP, no kernel, no model loading.
 """
 
 from __future__ import annotations

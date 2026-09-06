@@ -195,7 +195,7 @@ class TestFromYaml:
             yaml.dump({
                 "rules": [
                     {"name": "ok", "tool": "x", "action": "allow"},
-                    {"tool": "missing-name"},  # malformed — skipped
+                    {"tool": "missing-name"},  # malformed - skipped
                     {"name": "bad-action", "tool": "y", "action": "explode"},  # bad enum
                 ],
             }),

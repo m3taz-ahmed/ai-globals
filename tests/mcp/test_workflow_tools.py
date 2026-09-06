@@ -1,4 +1,4 @@
-"""Tests for aizee_mcp/tools/workflow_tools.py — workflow, rules, and MCP plan tools."""
+"""Tests for aizee_mcp/tools/workflow_tools.py - workflow, rules, and MCP plan tools."""
 
 from __future__ import annotations
 

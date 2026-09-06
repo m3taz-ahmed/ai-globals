@@ -102,9 +102,9 @@ class AIOSPlugin(ABC):
     expose MCP tools and resources.
 
     Two-phase lifecycle (inspired by Filament's Plugin interface):
-    1. ``register()`` — called during registration phase (before any plugin boots).
+    1. ``register()`` - called during registration phase (before any plugin boots).
        Register resources, pages, widgets, livewire components here.
-    2. ``boot()`` — called after ALL plugins are registered.
+    2. ``boot()`` - called after ALL plugins are registered.
        Add authorization gates, configure global defaults, register assets here.
 
     Legacy single-phase ``on_load()`` is still supported: if a plugin does not
@@ -185,14 +185,14 @@ class PluginGuard:
         if patterns:
             # Explicit resource grant overrides default denial for matching paths.
             return any(fnmatch.fnmatch(resource, pat) for pat in patterns)
-        # No resource patterns for this action — fall back to action-level check.
+        # No resource patterns for this action - fall back to action-level check.
         return self.is_allowed(action)
 
     def wrap(self, fn: Callable[..., Any], plugin_name: str) -> Callable[..., Any]:
         @functools.wraps(fn)
         def guarded(*args: Any, **kwargs: Any) -> Any:
             # Inspect every string-typed argument (not just kwargs["action"]
-            # / args[0]) — other signatures previously bypassed the guard.
+            # / args[0]) - other signatures previously bypassed the guard.
             candidates: list[str] = [str(a) for a in args if isinstance(a, str)]
             for key in ("action", "tool", "command", "operation"):
                 value = kwargs.get(key)
@@ -226,7 +226,7 @@ class PluginManager:
             try:
                 data = yaml.safe_load(self.config_path.read_text(encoding="utf-8")) or {}
             except (OSError, yaml.YAMLError, UnicodeDecodeError):
-                _logger.warning("plugins.yaml unreadable — no plugins enabled")
+                _logger.warning("plugins.yaml unreadable - no plugins enabled")
                 return {"plugins": {}}
             return data if isinstance(data, dict) else {}
         return {}
@@ -254,7 +254,7 @@ class PluginManager:
 
         NOTE: the scan is heuristic defense-in-depth (denylists are
         bypassable by determined code). Every ``.py`` file in the plugin
-        package is scanned — previously only ``__init__.py`` was, so
+        package is scanned - previously only ``__init__.py`` was, so
         submodules bypassed the sandbox entirely.
         """
         if not name or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", name) or ".." in name:
@@ -299,7 +299,7 @@ class PluginManager:
         """Return enabled plugin classes from the plugins directory.
 
         If ``plugins.yaml`` exists (even with an empty ``plugins:`` map),
-        only listed+enabled plugins load (explicit mode — an existing file
+        only listed+enabled plugins load (explicit mode - an existing file
         with nothing enabled loads nothing, so disable-all is possible).
         Auto-discovery of every subdirectory happens only when the file is
         missing entirely.
@@ -371,7 +371,7 @@ class PluginManager:
         """Aggregate all sandboxed tools exposed by loaded plugins.
 
         Plugins whose name maps to an MCP server toggled OFF in the dashboard
-        settings are skipped — their tools neither load nor appear, matching
+        settings are skipped - their tools neither load nor appear, matching
         the ``mcp_servers.<name>.enabled`` override. Plugin names that are not
         present in the settings (unknown servers) default to enabled.
         """

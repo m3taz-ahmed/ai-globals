@@ -4,7 +4,7 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.10.1-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.10.1">
+    <img src="https://img.shields.io/badge/Version-5.11.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.11.0">
     <img src="https://img.shields.io/badge/Tests-3865%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3865 passed">
     <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
@@ -87,12 +87,12 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 109 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 110 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
 ├── aizee_mcp/                # MCP server (84 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 110 persona + lord skills
-├── workflows/               # 54 trigger-based execution protocols
+├── skills/                  # 119 persona + lord skills
+├── workflows/               # 60 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -106,7 +106,7 @@ aizee status    # Current persona, skills, budget
 ## The Six Pillars
 
 ### 1. Persona + Skill Composition
-29 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, `MARKETING`, `GROWTH`, `BRAND`, `EMAIL`, `SOCIAL`, `CRO`, `SALES`, etc.) with 38 lord-level domain skills. Auto-detected per task — no manual selection needed.
+29 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, `MARKETING`, `GROWTH`, `BRAND`, `EMAIL`, `SOCIAL`, `CRO`, `SALES`, etc.) with 46 lord-level domain skills. Auto-detected per task — no manual selection needed.
 
 ```bash
 aizee persona detect --multi "build a secure docker API with postgres"
@@ -149,7 +149,7 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 
 ---
 
-## What's New in v5.10.1
+## What's New in v5.11.0
 
 ### Security Hardening + Architecture Cleanup + Docs Sync
 - **SSRF protection (A2A adapters):** IPv4 + IPv6 private/reserved IP blocking, DNS resolution re-check, redirect confinement for both `launch()` and `poll()`.
@@ -161,7 +161,7 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 - **Performance:** telemetry `summary()` tail-read with `deque(maxlen=...)`, metrics `_quantile` accepts pre-sorted values, learning loop batch persist + `flush()`.
 - **Coverage:** `fail_under` raised from 80% → 95% across `pyproject.toml`, CLI, eval harness, and all CI workflows.
 - **Tests:** new `aizee_mcp/tests/` package with MCP command injection tests; 3865 tests total.
-- **Docs:** counts synced (109 modules / 110 skills / 54 workflows / 197 tech-stack / 3865 tests), stale 80% references fixed, garbled tree characters fixed.
+- **Docs:** counts synced (110 modules / 119 skills / 60 workflows / 238 tech-stack / 3869 tests), stale 80% references fixed, garbled tree characters fixed.
 
 ## What's New in v5.10.0
 

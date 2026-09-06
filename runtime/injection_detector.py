@@ -24,7 +24,7 @@ Additionally provides:
 - Per-technique scoring with a unified ``InjectionVerdict``
 
 The detector is deterministic and model-free by default. An optional
-``model_fn`` can be injected for semantic (Stage 2) analysis — see
+``model_fn`` can be injected for semantic (Stage 2) analysis - see
 :mod:`runtime.prompt_injection_detector`.
 
 Usage::
@@ -113,7 +113,7 @@ class InjectionVerdict:
 
     @property
     def is_injection(self) -> bool:
-        # BLOCK requires threshold AND at least one MEDIUM+ signal —
+        # BLOCK requires threshold AND at least one MEDIUM+ signal -
         # two LOWs alone (6+6=12) stay SUSPICIOUS, not BLOCK.
         if self.total_score < InjectionDetector.BLOCK_THRESHOLD:
             return False
@@ -190,7 +190,7 @@ class InjectionDetectorError(AizeeError):
 
 
 # ---------------------------------------------------------------------------
-# Pattern database — 13 techniques
+# Pattern database - 13 techniques
 # ---------------------------------------------------------------------------
 
 
@@ -288,7 +288,7 @@ def _build_patterns() -> list[_Pattern]:
         r"let'?s\s+roleplay|write\s+a\s+story\s+where\s+(?:an?\s+)?(?:ai|assistant)\s+(?:helps|can)",
         "Roleplay jailbreak: fictional framing")
 
-    # 4. Multi-turn manipulation markers (M1-M3) — single-turn detectable markers
+    # 4. Multi-turn manipulation markers (M1-M3) - single-turn detectable markers
     add("M1", InjectionTechnique.MULTI_TURN_MANIPULATION, InjectionSeverity.MEDIUM,
         r"(?:actually|wait|sorry,\s+i\s+meant|let\s+me\s+clarify|on\s+second\s+thought).{0,40}"
         r"(?:ignore|disregard|override|bypass|forget)", "Multi-turn: clarification-into-override")
@@ -299,7 +299,7 @@ def _build_patterns() -> list[_Pattern]:
         r"as\s+we\s+(?:discussed|agreed|established)\s+(?:earlier|before),?\s+you\s+(?:can|should|must)",
         "Multi-turn: fake prior agreement")
 
-    # 5. Encoding / obfuscation (E1-E4) — markers that encoding is being used
+    # 5. Encoding / obfuscation (E1-E4) - markers that encoding is being used
     add("E1", InjectionTechnique.ENCODING_OBFUSCATION, InjectionSeverity.HIGH,
         r"(?:decode|execute|run|eval)\s+(?:this\s+)?(?:base64|b64|hex|rot13|binary|morse)[:\s]",
         "Encoding obfuscation: decode instruction")
@@ -310,7 +310,7 @@ def _build_patterns() -> list[_Pattern]:
     add("E4", InjectionTechnique.ENCODING_OBFUSCATION, InjectionSeverity.LOW,
         r"(?:rot13|caesar\s+cipher|atbash)", "Encoding obfuscation: cipher reference")
 
-    # 6. Typoglycemia (T1-T2) — scrambled dangerous words
+    # 6. Typoglycemia (T1-T2) - scrambled dangerous words
     # We detect scrambled variants of "ignore", "instructions", "system", "override"
     add("T1", InjectionTechnique.TYPOGLYCEMIA, InjectionSeverity.MEDIUM,
         r"\bignroe\b|\bignoer\b|\bign0re\b|\bignor3\b|\bijnore\b|\bigno3\b",
@@ -406,7 +406,7 @@ def _build_patterns() -> list[_Pattern]:
         r"(?:ignore|disregard|follow|execute|respond)",
         "Memory poisoning: persistent behavioral override")
 
-    # --- Multilingual patterns (AR1-AR4) — Arabic + common cross-lingual ---
+    # --- Multilingual patterns (AR1-AR4) - Arabic + common cross-lingual ---
     add("AR1", InjectionTechnique.DIRECT_OVERRIDE, InjectionSeverity.CRITICAL,
         r"تجاهل\s+(?:جميع\s+|كل\s+|الـ)?(?:التعليمات|الأوامر|القواعد|السابقة|أعلاه)",
         "Arabic: ignore previous instructions")
@@ -486,7 +486,7 @@ def _normalize_unicode(text: str) -> str:
 
 
 class InjectionDetector:
-    """Comprehensive prompt-injection detector — all 13 techniques.
+    """Comprehensive prompt-injection detector - all 13 techniques.
 
     Deterministic, model-free. Runs in microseconds.
     """

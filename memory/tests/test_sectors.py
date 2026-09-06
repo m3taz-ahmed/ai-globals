@@ -1,4 +1,4 @@
-"""Tests for memory/sectors.py — cognitive sector classification."""
+"""Tests for memory/sectors.py - cognitive sector classification."""
 
 from __future__ import annotations
 

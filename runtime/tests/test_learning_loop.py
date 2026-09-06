@@ -137,7 +137,7 @@ class TestInject:
         loop = LearningLoop()
         loop.record("exec", {"ok": True}, success=True, gate="probity")
         context = loop.inject()
-        # Only 1 outcome — should be filtered out (min 2)
+        # Only 1 outcome - should be filtered out (min 2)
         assert context == ""
 
     def test_inject_top_k_limit(self) -> None:
@@ -188,7 +188,7 @@ class TestPersistence:
     def test_no_persist_without_path(self) -> None:
         loop = LearningLoop()
         loop.record("exec", {"ok": True}, success=True, gate="probity")
-        # Should not crash — just in-memory
+        # Should not crash - just in-memory
         assert loop.outcome_count == 1
 
     def test_clear_persists(self, tmp_path: Path) -> None:
@@ -196,6 +196,6 @@ class TestPersistence:
         loop = LearningLoop(persist_path=path)
         loop.record("exec", {"ok": True}, success=True, gate="probity")
         loop.clear()
-        # Reload — should be empty
+        # Reload - should be empty
         loop2 = LearningLoop(persist_path=path)
         assert loop2.outcome_count == 0

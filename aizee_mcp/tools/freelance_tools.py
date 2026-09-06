@@ -112,7 +112,7 @@ def register_freelance_tools(mcp: FastMCP) -> None:
         currency: str = "USD",
         due_in_days: int = 14,
     ) -> str:
-        """Create a draft invoice via runtime.billing_ledger. WRITE — returns validated invoice object (guardian reviewable)."""
+        """Create a draft invoice via runtime.billing_ledger. WRITE - returns validated invoice object (guardian reviewable)."""
         if err := validate_query(client_id):
             return err
         if re.search(r"[^\w.-]", client_id) or len(client_id) > 64:
@@ -281,7 +281,7 @@ def register_freelance_tools(mcp: FastMCP) -> None:
         platform: str,
         query: str = "",
     ) -> str:
-        """Fetch/scan an Arabic freelance platform (Mostaql/Khamsat/Bayt). READ/EXTERNAL — proxy instruction only."""
+        """Fetch/scan an Arabic freelance platform (Mostaql/Khamsat/Bayt). READ/EXTERNAL - proxy instruction only."""
         key = (platform or "").lower()
         if key not in _ARABIC_PLATFORMS:
             return _err(f"unknown Arabic platform '{platform}'", allowed=list(_ARABIC_PLATFORMS))

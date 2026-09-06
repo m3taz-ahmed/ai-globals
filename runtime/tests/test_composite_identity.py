@@ -1,4 +1,4 @@
-"""Tests for runtime/composite_identity.py — dual-principal attribution."""
+"""Tests for runtime/composite_identity.py - dual-principal attribution."""
 
 from __future__ import annotations
 

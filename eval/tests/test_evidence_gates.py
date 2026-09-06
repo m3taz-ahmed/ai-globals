@@ -1,4 +1,4 @@
-"""Tests for eval/harness.py — Evidence-Based Gates (5-gate verification)."""
+"""Tests for eval/harness.py - Evidence-Based Gates (5-gate verification)."""
 
 from __future__ import annotations
 

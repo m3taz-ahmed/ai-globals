@@ -1,7 +1,7 @@
-"""Tests for runtime/admission.py — output admission gate + identity keys.
+"""Tests for runtime/admission.py - output admission gate + identity keys.
 
 Implements Hazem Ali's representation/authority/memory principal: evaluate
-the full chain from bytes → promoted context → runtime state → admitted
+the full chain from bytes -> promoted context -> runtime state -> admitted
 output. Side effects are blocked on reject (R1).
 """
 
@@ -84,7 +84,7 @@ class TestAdmissionGate:
         )
         assert rec.decision == "reject"
         assert rec.reason_code == "policy_verdict_deny"
-        # R1: side effects blocked — record not appended to admitted records
+        # R1: side effects blocked - record not appended to admitted records
         assert rec not in gate.records
 
     def test_reject_on_invalid_schema(self) -> None:
@@ -151,7 +151,7 @@ class TestAdmissionGate:
         gate = AdmissionGate()
         gate.admit("r1", "ch", "rk", "eos", True, 0.9, "allow")
         gate.admit("r2", "ch", "rk", "eos", False, 0.9, "allow")
-        # 1 admitted, 1 rejected → reject_rate = 0.5
+        # 1 admitted, 1 rejected -> reject_rate = 0.5
         assert gate.reject_rate() == 0.5
 
     def test_reject_rate_by_reason(self) -> None:

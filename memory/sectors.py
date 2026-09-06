@@ -71,7 +71,7 @@ _SECTOR_CONFIGS: dict[Sector, SectorConfig] = {
         patterns=[
             re.compile(r"\b(how\s+to|step\s+by\s+step|instructions)\b", re.I),
             # Sequence markers only count at a sentence start or after a
-            # colon/semicolon — bare "then"/"next" mid-sentence FP'd badly.
+            # colon/semicolon - bare "then"/"next" mid-sentence FP'd badly.
             re.compile(r"(?:^|[.!?;:\n]\s*)(first|then|finally|next)\b[:,.]?\s+\w", re.I),
             re.compile(r"\b(deploy|install|configure|setup|run)\b", re.I),
         ],

@@ -162,7 +162,7 @@ _RN_PATTERNS: set[MobilePattern] = {
     MobilePattern.CI_CD_PIPELINE,
 }
 
-# Native/KMP platforms get their own sets — never the Flutter+RN union.
+# Native/KMP platforms get their own sets - never the Flutter+RN union.
 # Flutter-only (router_refresh, freezed_failure, usecase, type_safe_routing
 # Flutter branch) and RN-only (ordered_logout, query_cache_buster) are excluded.
 _KMP_PATTERNS: set[MobilePattern] = {
@@ -680,7 +680,7 @@ class MobilePatternAuditor:
         return PatternResult(
             MobilePattern.I18N_WITH_RTL, ok, PatternSeverity.WARNING if not ok else PatternSeverity.INFO,
             "i18n setup detected" if ok
-            else "Missing i18n (flutter_localizations/slang or i18next) — never hardcode user-facing strings",
+            else "Missing i18n (flutter_localizations/slang or i18next) - never hardcode user-facing strings",
             hint,
         )
 
@@ -711,7 +711,7 @@ class MobilePatternAuditor:
         return PatternResult(
             MobilePattern.AI_INSTRUCTION_FILES, ok, PatternSeverity.INFO,
             "AI instruction files found" if ok
-            else "No AI instruction files (AGENTS.md, .cursorrules) — recommended for AI-assisted dev",
+            else "No AI instruction files (AGENTS.md, .cursorrules) - recommended for AI-assisted dev",
             "AGENTS.md",
         )
 

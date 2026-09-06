@@ -4,7 +4,7 @@
 Inspired by Omnigent's ``context.py``: when a conversation exceeds a
 token budget, messages are trimmed in three tiers:
 
-- **Level 1 (preserved):** System prompt, plan, and profile — never trimmed.
+- **Level 1 (preserved):** System prompt, plan, and profile - never trimmed.
 - **Level 2 (compressed):** Middle messages are heuristically compressed
   (summarized to a single line each, or dropped if redundant).
 - **Level 3 (intact):** The most recent N messages are kept verbatim.
@@ -12,7 +12,7 @@ token budget, messages are trimmed in three tiers:
 Atomic message groups (assistant + tool_result pairs) are never split,
 preventing LLM API validation errors.
 
-This is a pure-data module — no LLM calls. Semantic compression via an
+This is a pure-data module - no LLM calls. Semantic compression via an
 LLM is a separate concern (call ``compress_with_llm`` from outside).
 
 Usage::
@@ -21,7 +21,7 @@ Usage::
     cm = ContextManager(max_tokens=8000, recent_window=6)
     trimmed = cm.trim(messages)
     # NOTE: output can still exceed max_tokens when a single atomic
-    # group (or system messages) alone is oversized — atomic groups
+    # group (or system messages) alone is oversized - atomic groups
     # are never split, so the budget is best-effort in that case.
 """
 
@@ -161,14 +161,14 @@ class ContextManager:
         if not middle:
             return []
         if budget <= 0:
-            # No budget — keep only a single summary message.
+            # No budget - keep only a single summary message.
             return [self._summarize_all(middle)]
         compressed: list[Message] = []
         current_tokens = 0
         for msg in middle:
             target = max(1, int(msg.tokens * self.compression_ratio))
             if current_tokens + target > budget and compressed:
-                # Stop adding — remaining messages get summarized into the last one.
+                # Stop adding - remaining messages get summarized into the last one.
                 old_tokens = compressed[-1].tokens
                 compressed[-1] = self._merge(compressed[-1], msg)
                 current_tokens += compressed[-1].tokens - old_tokens
@@ -188,9 +188,9 @@ class ContextManager:
         if len(sentences) <= 2:
             # Truncate to target chars.
             keep = content[: target_tokens * 4]
-            return Message(role=msg.role, content=keep + "…", tokens=target_tokens, group_id=msg.group_id, metadata=dict(msg.metadata))
+            return Message(role=msg.role, content=keep + "...", tokens=target_tokens, group_id=msg.group_id, metadata=dict(msg.metadata))
         first, last = sentences[0], sentences[-1]
-        merged = f"{first} […] {last}"
+        merged = f"{first} [...] {last}"
         return Message(role=msg.role, content=merged, tokens=_estimate_tokens(merged), group_id=msg.group_id, metadata=dict(msg.metadata))
 
     def _summarize_all(self, messages: list[Message]) -> Message:

@@ -1,4 +1,4 @@
-"""Tests for runtime/repository.py — base SQLite repository."""
+"""Tests for runtime/repository.py - base SQLite repository."""
 
 from __future__ import annotations
 

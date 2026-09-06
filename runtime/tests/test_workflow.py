@@ -59,7 +59,7 @@ def test_workflow_not_found(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Persona detection in run() — lines 85-90
+# Persona detection in run() - lines 85-90
 # ---------------------------------------------------------------------------
 
 def test_workflow_run_detects_personas_from_message(tmp_path: Path) -> None:
@@ -116,7 +116,7 @@ def test_workflow_run_skips_persona_detection_when_empty_prompt(tmp_path: Path) 
 
 
 # ---------------------------------------------------------------------------
-# _parse_mcp returns parsed tuple — line 134
+# _parse_mcp returns parsed tuple - line 134
 # ---------------------------------------------------------------------------
 
 def test_parse_mcp_returns_parsed_command(tmp_path: Path) -> None:
@@ -129,7 +129,7 @@ def test_parse_mcp_returns_parsed_command(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# PROHIBIT step type — lines 155-156
+# PROHIBIT step type - lines 155-156
 # ---------------------------------------------------------------------------
 
 def test_workflow_prohibit_step(tmp_path: Path) -> None:
@@ -142,7 +142,7 @@ def test_workflow_prohibit_step(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Bash command exception — lines 173-175
+# Bash command exception - lines 173-175
 # ---------------------------------------------------------------------------
 
 def test_workflow_bash_command_exception(tmp_path: Path) -> None:
@@ -160,7 +160,7 @@ def test_workflow_bash_command_exception(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Bash command denied — line 170 (decision path)
+# Bash command denied - line 170 (decision path)
 # ---------------------------------------------------------------------------
 
 def test_workflow_bash_command_denied(tmp_path: Path) -> None:
@@ -176,7 +176,7 @@ def test_workflow_bash_command_denied(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# PowerShell (pwsh:) prefix — cross-platform shell support
+# PowerShell (pwsh:) prefix - cross-platform shell support
 # ---------------------------------------------------------------------------
 
 def test_workflow_pwsh_command_success(tmp_path: Path) -> None:
@@ -219,7 +219,7 @@ def test_workflow_pwsh_command_exception(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# MCP command: not configured — line 185
+# MCP command: not configured - line 185
 # ---------------------------------------------------------------------------
 
 def test_workflow_mcp_not_configured(tmp_path: Path) -> None:
@@ -231,7 +231,7 @@ def test_workflow_mcp_not_configured(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# MCP command: call_tool success — lines 182-184, 188-194
+# MCP command: call_tool success - lines 182-184, 188-194
 # ---------------------------------------------------------------------------
 
 def test_workflow_mcp_call_success(tmp_path: Path) -> None:
@@ -248,7 +248,7 @@ def test_workflow_mcp_call_success(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# MCP command: call_tool failure — line 192
+# MCP command: call_tool failure - line 192
 # ---------------------------------------------------------------------------
 
 def test_workflow_mcp_call_failed(tmp_path: Path) -> None:
@@ -264,7 +264,7 @@ def test_workflow_mcp_call_failed(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# MCP command: call_tool exception — lines 195-197
+# MCP command: call_tool exception - lines 195-197
 # ---------------------------------------------------------------------------
 
 def test_workflow_mcp_call_exception(tmp_path: Path) -> None:
@@ -281,7 +281,7 @@ def test_workflow_mcp_call_exception(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# CMD with no recognized prefix — line 199 (NOOP)
+# CMD with no recognized prefix - line 199 (NOOP)
 # ---------------------------------------------------------------------------
 
 def test_workflow_cmd_noop(tmp_path: Path) -> None:
@@ -293,7 +293,7 @@ def test_workflow_cmd_noop(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_run returns None for missing run — line 207
+# get_run returns None for missing run - line 207
 # ---------------------------------------------------------------------------
 
 def test_get_run_returns_none_for_missing(tmp_path: Path) -> None:
@@ -302,7 +302,7 @@ def test_get_run_returns_none_for_missing(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_run returns data for existing run — lines 208-215
+# get_run returns data for existing run - lines 208-215
 # ---------------------------------------------------------------------------
 
 def test_get_run_returns_data_for_existing(tmp_path: Path) -> None:
@@ -348,7 +348,7 @@ def test_workflow_load_falls_back_to_stem(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# REQ step returns OK — line 159
+# REQ step returns OK - line 159
 # ---------------------------------------------------------------------------
 
 def test_workflow_req_step_returns_ok(tmp_path: Path) -> None:
@@ -360,7 +360,7 @@ def test_workflow_req_step_returns_ok(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# get returns None for missing workflow — line 74
+# get returns None for missing workflow - line 74
 # ---------------------------------------------------------------------------
 
 def test_get_returns_none_for_missing(tmp_path: Path) -> None:

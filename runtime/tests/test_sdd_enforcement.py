@@ -36,7 +36,7 @@ class TestTaskVerification:
         spec = eng.load_spec("s1")
         assert spec.tasks[0].status == "done"
         assert not spec.tasks[0].verified
-        # Cannot advance — task not verified
+        # Cannot advance - task not verified
         with pytest.raises(ValueError, match="not verified"):
             eng.advance("s1")
 
@@ -50,7 +50,7 @@ class TestTaskVerification:
         eng.add_task("s1", "Task 1")
         eng.advance("s1")
         # Verify with evidence
-        eng.verify_task("s1", "TASK-001", "pytest tests/test_x.py — 5 passed")
+        eng.verify_task("s1", "TASK-001", "pytest tests/test_x.py - 5 passed")
         spec = eng.load_spec("s1")
         assert spec.tasks[0].verified
         assert spec.tasks[0].status == "done"

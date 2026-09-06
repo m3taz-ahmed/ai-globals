@@ -1,10 +1,10 @@
-"""Tests for dashboard settings → runtime override wiring.
+"""Tests for dashboard settings -> runtime override wiring.
 
 Verifies that apply_settings_to_kernel() actually applies each settings
 section onto the live kernel components (budget, guardian, mcp_firewall,
 policy, loop_detector, injection_defense, persona, audit, telemetry).
 
-FAST tier — no MCP, no model loading, no network.
+FAST tier - no MCP, no model loading, no network.
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ class TestBudgetOverride:
         sm = get_settings_manager(tmp_root, tmp_root / "aizee_mcp" / "config.json")
         sm.update_section("budget", {"global": {"max_tokens": 0}})
         kernel = _make_kernel(tmp_root)
-        # 0 should be skipped — the BudgetManager default (1_000_000) stays.
+        # 0 should be skipped - the BudgetManager default (1_000_000) stays.
         assert kernel.budget.budgets["global"].max_tokens != 0
 
     def test_budget_on_exceed_applied(self, tmp_root: Path) -> None:

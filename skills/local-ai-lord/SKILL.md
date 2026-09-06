@@ -18,6 +18,7 @@ personas:
   - SEC
   - DEVOPS
   - ARCH
+  - MLOPS
 tech_stack: []
 lord: true
 ---

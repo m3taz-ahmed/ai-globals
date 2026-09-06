@@ -46,7 +46,7 @@ class TestAgentDiscovery:
         (tmp_path / "AGENTS.md").write_text("x", encoding="utf-8")
         d = AgentDiscovery(home=tmp_path, project_root=tmp_path)
         agents = d.discover()
-        # Same file found from both home and project_root — deduped.
+        # Same file found from both home and project_root - deduped.
         assert len([a for a in agents if a.kind == "generic"]) == 1
 
     def test_report_empty(self, tmp_path: Path):

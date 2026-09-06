@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""aiZee runtime kernel — facade delegating to manager submodules."""
+"""aiZee runtime kernel - facade delegating to manager submodules."""
 
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ class ActionSchema(BaseModel):
     """Validated action envelope for Kernel.act().
 
     The `type`, `tokens`, and `cost` fields are strictly typed. Extra fields
-    are intentionally allowed because action parameters are dynamic — e.g.
+    are intentionally allowed because action parameters are dynamic - e.g.
     `command` for bash, `file_path` for write, `content` for edit. These
     extra fields are forwarded to the policy engine's YAML rule conditions
     via ``**action_data``. Forbidding extras would require a schema per
@@ -92,7 +92,7 @@ def _init_core_services(kernel: Kernel) -> None:
     # the dashboard, McpClient, and PluginManager share one source of truth.
     kernel.settings_manager = get_settings_manager(kernel.root)
     # Ensure taint guardrail is registered (import triggers auto-registration).
-    # A broken import silently disables taint tracking — log a warning so the
+    # A broken import silently disables taint tracking - log a warning so the
     # operator knows defenses are degraded instead of running blind.
     try:
         import runtime.taint as _taint  # noqa: F401
@@ -100,14 +100,14 @@ def _init_core_services(kernel: Kernel) -> None:
 
         kernel.taint_tracker = get_default_tracker()  # type: ignore[attr-defined]
     except Exception as exc:
-        _logger.warning("Taint tracker module failed to load — taint tracking disabled: %s", exc)
+        _logger.warning("Taint tracker module failed to load - taint tracking disabled: %s", exc)
     # Ensure the prompt-injection input guardrail is registered (import
     # triggers auto-registration into the default GuardrailRegistry).
     try:
         import runtime.guardrails.prompt_injection  # noqa: F401
     except Exception as exc:
         _logger.warning(
-            "Prompt-injection guardrail module failed to load — input guardrail disabled: %s",
+            "Prompt-injection guardrail module failed to load - input guardrail disabled: %s",
             exc,
         )
 
@@ -131,7 +131,7 @@ def _init_core_services(kernel: Kernel) -> None:
         kernel.baseline_registry = BaselineRegistry()  # type: ignore[attr-defined]
     except Exception as exc:
         _logger.warning(
-            "Injection defense stack failed to load — injection detection disabled: %s",
+            "Injection defense stack failed to load - injection detection disabled: %s",
             exc,
         )
 
@@ -154,7 +154,7 @@ def _init_core_services(kernel: Kernel) -> None:
         )
         kernel.plugin_registry.discover()  # type: ignore[attr-defined]
     except Exception as exc:
-        _logger.warning("Design tooling stack failed to load — design checks disabled: %s", exc)
+        _logger.warning("Design tooling stack failed to load - design checks disabled: %s", exc)
 
     # Initialize freelance + marketing/emarkeitng runtime modules (lazy).
     # These are stateless helpers (functions/small classes); import the
@@ -417,9 +417,9 @@ class Kernel:
         # (budget.json, guardian.yaml, etc.). Must run after managers +
         # compat attributes so kernel.guardian/policy/etc. are set.
         apply_settings_to_kernel(self)
-        # Plugin manager — lazily initialized to avoid loading plugins on kernel creation
+        # Plugin manager - lazily initialized to avoid loading plugins on kernel creation
         self._plugins: PluginManager | None = None
-        # Optional memory store wired via KernelBuilder.with_memory() — not created by default.
+        # Optional memory store wired via KernelBuilder.with_memory() - not created by default.
         # Annotation is safe under `from __future__ import annotations` + TYPE_CHECKING import.
         self._memory: MemoryStore | None = None
         # Pattern 4: Flat middleware array (tRPC-style callRecursive)
@@ -499,7 +499,7 @@ class Kernel:
         session_id: str | None,
         fresh_context: bool,
     ) -> dict[str, Any]:
-        """Existing direct action evaluation path (guardian → policy → budget)."""
+        """Existing direct action evaluation path (guardian -> policy -> budget)."""
         try:
             action_data = ActionSchema(type=action_type, **kwargs).model_dump()
         except ValidationError as e:
@@ -544,7 +544,7 @@ class Kernel:
     # --- Middleware & Pipeline Registration ---
 
     def use_middleware(self, mw: Middleware) -> None:
-        """Register a global middleware (Pattern 4 — tRPC-style).
+        """Register a global middleware (Pattern 4 - tRPC-style).
 
         Once at least one middleware is registered, ``act()`` dispatches
         through the flat middleware array instead of the direct path.

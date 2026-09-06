@@ -1,4 +1,4 @@
-"""Tests for memory/decay_scheduler.py — memory decay scheduling."""
+"""Tests for memory/decay_scheduler.py - memory decay scheduling."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ class TestDecayScheduler:
         scheduler = DecayScheduler(interval_seconds=0.3)
         base = 1000.0
         scheduler._last_run = base
-        # Pass `now` explicitly — deterministic, no sleep needed
+        # Pass `now` explicitly - deterministic, no sleep needed
         assert scheduler.should_run(now=base + 0.5) is True
 
     def test_should_not_run_before_interval(self) -> None:

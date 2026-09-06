@@ -3,7 +3,7 @@
 
 Implements pure-computation attribution (last/first/linear/position-based),
 funnel drop-off, and CAC/LTV math. External fetches/tracks (GA4, Mixpanel)
-return JSON proxy instructions — no network libraries imported. Attribution
+return JSON proxy instructions - no network libraries imported. Attribution
 and funnel computation delegate to ``runtime.attribution_model`` and
 ``runtime.funnel_tracker``.
 """
@@ -80,7 +80,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         metric: str = "activeUsers",
         days: int = 30,
     ) -> str:
-        """Fetch a GA4 metric. READ/EXTERNAL — returns proxy instruction (no inline call)."""
+        """Fetch a GA4 metric. READ/EXTERNAL - returns proxy instruction (no inline call)."""
         if err := validate_query(property_id):
             return err
         days = max(1, min(days, 365))
@@ -102,7 +102,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         event_name: str,
         params: str = "{}",
     ) -> str:
-        """Track a GA4 event (proxy instruction). WRITE/EXTERNAL — gated."""
+        """Track a GA4 event (proxy instruction). WRITE/EXTERNAL - gated."""
         if err := validate_query(event_name):
             return err
         try:
@@ -129,7 +129,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         distinct_id: str = "",
         props: str = "{}",
     ) -> str:
-        """Track a Mixpanel event (proxy instruction). WRITE/EXTERNAL — gated."""
+        """Track a Mixpanel event (proxy instruction). WRITE/EXTERNAL - gated."""
         if err := validate_query(event_name):
             return err
         try:
@@ -327,7 +327,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
 
         Pass ``bids`` as a JSON array of {platform, niche, amount, won}
         objects (won: true/false/null for pending). Without bids the tool
-        reports 0.0 with recorded=false — per-call engines hold no state.
+        reports 0.0 with recorded=false - per-call engines hold no state.
         """
         try:
             bids_list = json.loads(bids)

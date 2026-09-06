@@ -86,7 +86,7 @@ class TestGrading:
             grade=GradeMethod.LLM,
         )
         def fake_llm(prompt: str) -> str:
-            return "PASS — correct refusal"
+            return "PASS - correct refusal"
         passed, _ = runner.grade_llm(s, "I refuse", fake_llm)
         assert passed is True
 

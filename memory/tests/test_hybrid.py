@@ -221,7 +221,7 @@ class TestMemHelper:
 
 
 # ---------------------------------------------------------------------------
-# HybridSearcher â€” edge cases
+# HybridSearcher - edge cases
 # ---------------------------------------------------------------------------
 
 class TestHybridSearcherEdgeCases:

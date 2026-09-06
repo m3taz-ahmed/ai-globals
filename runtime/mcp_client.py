@@ -50,7 +50,7 @@ _ENV_ALLOWLIST: frozenset[str] = frozenset({
     "FREELANCER_OAUTH_TOKEN", "FREELANCER_ACCOUNTS",
     "LINKEDIN_ACCESS_TOKEN", "LINKEDIN_MCP_TOKEN_PATH",
     "GRAPHIFY_WRAPPER_LOG",
-    # Plugins (marketing/freelance — 27 new)
+    # Plugins (marketing/freelance - 27 new)
     "AUTOMATISCH_API_KEY", "AUTOMATISCH_URL",
     "BREVO_API_KEY",
     "CHATWOOT_API_KEY", "CHATWOOT_URL",
@@ -83,7 +83,7 @@ _ENV_ALLOWLIST: frozenset[str] = frozenset({
 def _load_secrets_once() -> None:
     """Load ``.env`` from the OS root into ``os.environ`` (once per process).
 
-    Only known environment variable names (allowlist) are accepted — unknown
+    Only known environment variable names (allowlist) are accepted - unknown
     keys are silently skipped to prevent injection of unexpected env vars.
     """
     global _SECRETS_LOADED
@@ -121,7 +121,7 @@ def _user_script_dirs() -> list[str]:
     systems without a writable global site-packages), its console-script
     entry points land in a per-user Scripts/bin directory that is frequently
     missing from ``PATH``. We discover those directories via ``sysconfig``
-    so MCP servers shipped as Python entry points resolve portably — no
+    so MCP servers shipped as Python entry points resolve portably - no
     hardcoded per-machine paths in ``config.json``.
     """
     scheme = "nt_user" if os.name == "nt" else "posix_user"
@@ -175,7 +175,7 @@ _ALLOWED_MCP_COMMANDS = frozenset({
 def _get_settings_manager(os_root: Path) -> Any:
     """Return the shared ``SettingsManager`` for ``os_root`` (lazy import).
 
-    Imported lazily to avoid a runtime→settings import at module load and to
+    Imported lazily to avoid a runtime->settings import at module load and to
     dodge any import-cycle risk. Returns an object exposing
     ``is_mcp_enabled(name) -> bool``.
     """
@@ -190,7 +190,7 @@ def _disabled_result(server_name: str) -> dict[str, Any]:
         "ok": False,
         "error": (
             f"MCP server '{server_name}' is disabled in dashboard settings "
-            "(toggle it back on in the Settings → MCP Servers panel)"
+            "(toggle it back on in the Settings -> MCP Servers panel)"
         ),
         "disabled": True,
     }
@@ -201,7 +201,7 @@ def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
 
     Rejects:
     - Shell metacharacters in command or args (injection prevention).
-    - Commands whose basename is not in the allowlist — unless
+    - Commands whose basename is not in the allowlist - unless
       ``AIZEE_MCP_ALLOW_UNLISTED=1`` is set (fail-closed by default;
       previously warn-only, which executed unlisted binaries).
     - Absolute paths to non-standard locations (must resolve via PATH or be in allowlist).
@@ -223,7 +223,7 @@ def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
     cmd_basename = Path(cmd).name.lower()
     if cmd_basename not in _ALLOWED_MCP_COMMANDS and _os.environ.get("AIZEE_MCP_ALLOW_UNLISTED") != "1":
         raise ValueError(
-            f"MCP command {cmd!r} is not in the allowlist {sorted(_ALLOWED_MCP_COMMANDS)} — "
+            f"MCP command {cmd!r} is not in the allowlist {sorted(_ALLOWED_MCP_COMMANDS)} - "
             "refusing to spawn. Set AIZEE_MCP_ALLOW_UNLISTED=1 to permit custom binaries."
         )
 
@@ -243,7 +243,7 @@ class McpClient:
     Enable-gate: before spawning or calling a server, the shared settings
     manager's ``is_mcp_enabled`` is consulted. A server toggled OFF in the
     dashboard settings is never spawned and its tool calls return a disabled
-    error — it neither loads nor appears.
+    error - it neither loads nor appears.
     """
 
     def __init__(
@@ -270,10 +270,10 @@ class McpClient:
             # Fail-closed on settings error: if settings cannot be read,
             # block the MCP server rather than allowing it without
             # explicit user consent. The settings manager itself is
-            # fail-safe (corrupt file → defaults), so this is a defensive
+            # fail-safe (corrupt file -> defaults), so this is a defensive
             # backstop for unexpected errors.
             _logger.warning(
-                "MCP settings check failed for %s — fail-closed (disabled)",
+                "MCP settings check failed for %s - fail-closed (disabled)",
                 self.server_name, exc_info=True,
             )
             return False
@@ -303,7 +303,7 @@ class McpClient:
             raise RuntimeError(f"MCP server '{self.server_name}' not configured")
         cmd = self.config["command"]
         args = self.config.get("args", [])
-        # B2: Validate command — reject shell metacharacters and require absolute
+        # B2: Validate command - reject shell metacharacters and require absolute
         # path or resolvable binary. Prevents config.json command injection.
         _validate_mcp_command(cmd, args)
         _load_secrets_once()
@@ -393,7 +393,7 @@ class McpClient:
         """Read a line from stdout with timeout via a daemon thread.
 
         NOTE: on timeout the reader thread stays blocked in readline() until
-        the process is terminated (callers release → terminate → EOF wakes
+        the process is terminated (callers release -> terminate -> EOF wakes
         the thread). Daemon threads never block interpreter exit.
         """
         q: queue.Queue[str | Exception] = queue.Queue()
@@ -466,7 +466,7 @@ class McpClient:
         except RuntimeError:
             loop = None
         if loop is not None:
-            # Already in an async context — can't use asyncio.run
+            # Already in an async context - can't use asyncio.run
             # Fall back to the original sync implementation
             return self._call_tool_sync(tool_name, arguments)
         return asyncio.run(self.async_call_tool(tool_name, arguments))

@@ -1,4 +1,4 @@
-"""Tests for aizee_mcp/tools/context_tools.py — context discovery MCP tools."""
+"""Tests for aizee_mcp/tools/context_tools.py - context discovery MCP tools."""
 
 from __future__ import annotations
 

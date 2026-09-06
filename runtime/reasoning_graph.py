@@ -4,12 +4,12 @@
 Inspired by Omnigent's ``reasoning_graph.py``: a directed graph where
 nodes represent capabilities/states and edges represent reasoning steps.
 When a finding is confirmed, downstream edges activate, letting the
-agent follow multi-step escalation paths (e.g. policy_violation →
-escalate → remediate → verify).
+agent follow multi-step escalation paths (e.g. policy_violation ->
+escalate -> remediate -> verify).
 
 For aiZee, this models governance chains: a policy violation can trigger
 escalation, which triggers remediation, which triggers verification.
-The graph is deterministic and side-effect-free — it computes which
+The graph is deterministic and side-effect-free - it computes which
 paths are active; the caller decides what to do with them.
 
 Usage::

@@ -1,4 +1,4 @@
-"""Tests for aizee_mcp/rbac.py — RBAC permission checks and fail-closed behavior."""
+"""Tests for aizee_mcp/rbac.py - RBAC permission checks and fail-closed behavior."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ NON_ADMIN_TOOL = "get_status"
 
 
 # ---------------------------------------------------------------------------
-# check_tool_permission — role combinations
+# check_tool_permission - role combinations
 # ---------------------------------------------------------------------------
 
 
@@ -68,7 +68,7 @@ def test_non_admin_tool_allowed_for_admin() -> None:
 
 
 # ---------------------------------------------------------------------------
-# _load_admin_required — missing / corrupted / valid config
+# _load_admin_required - missing / corrupted / valid config
 # ---------------------------------------------------------------------------
 
 

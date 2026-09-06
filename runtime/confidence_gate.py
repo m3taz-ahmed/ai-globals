@@ -22,7 +22,7 @@ Usage::
     gate.add_evidence(Evidence("test_result", True, 0.3, "all tests passed"))
     verdict = gate.evaluate()
     if not verdict.confident:
-        print(f"Low confidence: {verdict.score} — {verdict.reason}")
+        print(f"Low confidence: {verdict.score} - {verdict.reason}")
 """
 
 from __future__ import annotations
@@ -133,7 +133,7 @@ class ConfidenceGate:
                 score=0.0,
                 confident=False,
                 level=ConfidenceLevel.CRITICAL,
-                reason="No evidence provided — fail-closed",
+                reason="No evidence provided - fail-closed",
                 evidence=(),
             )
         # Normalize weights in case they don't sum to 1.0

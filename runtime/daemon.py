@@ -1,9 +1,9 @@
-"""aiZee background daemon — ensures settings persist when dashboard is closed.
+"""aiZee background daemon - ensures settings persist when dashboard is closed.
 
 The daemon is a lightweight background process that:
 1. Watches ``state/settings.json`` for changes (polling, cross-platform).
 2. Syncs MCP server toggles to ALL IDE config files (Devin, Claude, Cursor)
-   so disabled servers are not loaded on next IDE restart — even if the
+   so disabled servers are not loaded on next IDE restart - even if the
    dashboard was never opened in this session.
 3. Writes a heartbeat to ``state/daemon.health`` every N seconds so the
    Tauri tray icon and CLI can detect liveness.
@@ -12,7 +12,7 @@ The daemon is a lightweight background process that:
    macOS LaunchAgent) so the daemon launches on boot.
 
 Design:
-- Zero external dependencies (stdlib only) — runs in any Python 3.10+.
+- Zero external dependencies (stdlib only) - runs in any Python 3.10+.
 - Single-instance via PID file + lock.
 - Graceful shutdown via SIGTERM/SIGINT (and CTRL_BREAK_EVENT on Windows).
 - Fail-safe: if settings.json is corrupt, logs a warning and keeps running
@@ -115,7 +115,7 @@ class AizeeDaemon:
         self._started_at = time.time()
         _logger.info("aiZee daemon started (PID %d, root=%s)", os.getpid(), self.root)
 
-        # Initial sync — ensure IDE configs match settings.json right now
+        # Initial sync - ensure IDE configs match settings.json right now
         self._sync_ide_configs()
 
         # Start worker threads
@@ -232,12 +232,12 @@ class AizeeDaemon:
             return False
         content_hash = hashlib.sha256(content).hexdigest()
         if content_hash == self._last_settings_hash:
-            # mtime changed but content identical — skip
+            # mtime changed but content identical - skip
             self._last_settings_mtime = mtime
             return False
         self._last_settings_mtime = mtime
         self._last_settings_hash = content_hash
-        _logger.info("settings.json changed — syncing IDE configs")
+        _logger.info("settings.json changed - syncing IDE configs")
         self._sync_ide_configs()
         return True
 
@@ -263,7 +263,7 @@ class AizeeDaemon:
         sync_count += self._sync_devin_local(mcp_servers)
         # 2. Claude Code: .claude/settings.json (remove/add entries)
         sync_count += self._sync_claude_settings(mcp_servers)
-        # 3. Cursor: .cursor/mcp.json (if exists — remove disabled servers)
+        # 3. Cursor: .cursor/mcp.json (if exists - remove disabled servers)
         sync_count += self._sync_cursor_mcp(mcp_servers)
         # 4. Global Devin config: %APPDATA%/devin/mcp_config.json
         sync_count += self._sync_global_devin(mcp_servers)
@@ -314,7 +314,7 @@ class AizeeDaemon:
         return 1 if changed else 0
 
     def _sync_claude_settings(self, mcp_settings: dict[str, Any]) -> int:
-        """Update .claude/settings.json — remove disabled, restore enabled."""
+        """Update .claude/settings.json - remove disabled, restore enabled."""
         claude_path = self.root / ".claude" / "settings.json"
         if not claude_path.exists():
             return 0
@@ -358,7 +358,7 @@ class AizeeDaemon:
         return 1 if changed else 0
 
     def _sync_cursor_mcp(self, mcp_settings: dict[str, Any]) -> int:
-        """Update .cursor/mcp.json if it exists — remove disabled servers."""
+        """Update .cursor/mcp.json if it exists - remove disabled servers."""
         cursor_path = self.root / ".cursor" / "mcp.json"
         if not cursor_path.exists():
             return 0
@@ -499,7 +499,7 @@ class AizeeDaemon:
             self._pid_file.unlink(missing_ok=True)
 
     def _cleanup(self) -> None:
-        """Cleanup on shutdown — remove PID file."""
+        """Cleanup on shutdown - remove PID file."""
         self._cleanup_pid_file()
 
     # --- Signal handling ---
@@ -507,12 +507,12 @@ class AizeeDaemon:
     def _setup_signal_handlers(self) -> None:
         """Setup graceful shutdown signal handlers."""
         def handler(signum: int, frame: Any) -> None:
-            _logger.info("received signal %d — shutting down", signum)
+            _logger.info("received signal %d - shutting down", signum)
             self._stop_event.set()
 
         signal.signal(signal.SIGINT, handler)
         signal.signal(signal.SIGTERM, handler)
-        # SIGHUP doesn't exist on Windows — guard with getattr for mypy.
+        # SIGHUP doesn't exist on Windows - guard with getattr for mypy.
         sighup = getattr(signal, "SIGHUP", None)
         if sighup is not None:
             signal.signal(sighup, handler)

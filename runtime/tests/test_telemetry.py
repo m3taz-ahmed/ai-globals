@@ -69,7 +69,7 @@ def test_system_metrics_success_path() -> None:
 
 
 # ---------------------------------------------------------------------------
-# query() — line 59 (log file doesn't exist returns empty list)
+# query() - line 59 (log file doesn't exist returns empty list)
 # ---------------------------------------------------------------------------
 
 def test_query_returns_empty_when_no_log(tmp_path: Path) -> None:
@@ -82,7 +82,7 @@ def test_query_returns_empty_when_no_log(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# query() — line 64 (skip blank lines)
+# query() - line 64 (skip blank lines)
 # ---------------------------------------------------------------------------
 
 def test_query_skips_blank_lines(tmp_path: Path) -> None:
@@ -98,7 +98,7 @@ def test_query_skips_blank_lines(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# query() — lines 67-68 (skip invalid JSON)
+# query() - lines 67-68 (skip invalid JSON)
 # ---------------------------------------------------------------------------
 
 def test_query_skips_invalid_json(tmp_path: Path) -> None:
@@ -114,7 +114,7 @@ def test_query_skips_invalid_json(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# query() — line 70 (skip when event_type doesn't match)
+# query() - line 70 (skip when event_type doesn't match)
 # ---------------------------------------------------------------------------
 
 def test_query_filters_by_event_type(tmp_path: Path) -> None:
@@ -129,7 +129,7 @@ def test_query_filters_by_event_type(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# summary() — line 87 (skip blank lines)
+# summary() - line 87 (skip blank lines)
 # ---------------------------------------------------------------------------
 
 def test_summary_skips_blank_lines(tmp_path: Path) -> None:
@@ -144,7 +144,7 @@ def test_summary_skips_blank_lines(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# summary() — lines 90-91 (skip invalid JSON)
+# summary() - lines 90-91 (skip invalid JSON)
 # ---------------------------------------------------------------------------
 
 def test_summary_skips_invalid_json(tmp_path: Path) -> None:
@@ -159,7 +159,7 @@ def test_summary_skips_invalid_json(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# summary() — no log file returns empty stats
+# summary() - no log file returns empty stats
 # ---------------------------------------------------------------------------
 
 def test_summary_no_log_file(tmp_path: Path) -> None:
@@ -173,7 +173,7 @@ def test_summary_no_log_file(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# system_metrics() — lines 111-112 (exception path when psutil fails)
+# system_metrics() - lines 111-112 (exception path when psutil fails)
 # ---------------------------------------------------------------------------
 
 def test_system_metrics_exception_returns_zeros() -> None:

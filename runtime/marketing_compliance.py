@@ -61,7 +61,7 @@ def check_compliance(
             _add("GDPR requires an unsubscribe / opt-out for this channel")
 
     if channel == "email" and is_gdpr and not has_optin:
-        # Same root cause as the two opt-in violations above — dedupe keeps one.
+        # Same root cause as the two opt-in violations above - dedupe keeps one.
         _add("CAN-SPAM/GDPR: no consent for commercial email")
 
     # Social is user-generated distribution: even when GDPR does not apply,

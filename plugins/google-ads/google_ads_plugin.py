@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GoogleAdsPlugin for aiZee — proxies to external MCP server.
+"""GoogleAdsPlugin for aiZee - proxies to external MCP server.
 
 External MCP server: npx -y @google-ads/mcp
 Required env vars: GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET
@@ -28,7 +28,7 @@ class GoogleAdsPlugin(AIOSPlugin):
         if missing:
             import logging
             logging.getLogger(__name__).warning(
-                "%s plugin loaded without %s — tool calls will fail until set",
+                "%s plugin loaded without %s - tool calls will fail until set",
                 self.__class__.__name__, ", ".join(missing),
             )
 

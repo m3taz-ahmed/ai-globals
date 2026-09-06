@@ -1,4 +1,4 @@
-"""Tests for runtime/spec_engine.py — spec-driven development engine."""
+"""Tests for runtime/spec_engine.py - spec-driven development engine."""
 
 from __future__ import annotations
 

@@ -42,7 +42,7 @@ def _optional_register(module_name: str, attr_name: str) -> Any:
     """Import one register callable; return None (with warning) on failure.
 
     A single broken tool module must not crash the whole ``aizee_mcp.tools``
-    package — the server's per-module fault isolation only runs if this
+    package - the server's per-module fault isolation only runs if this
     import succeeds first.
     """
     try:
