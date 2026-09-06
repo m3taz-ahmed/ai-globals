@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -135,6 +136,62 @@ class TestAuditLogging:
         logger = AuditLogger(tmp_path)
         logger.log("test", {"command": "ls"})
         assert state_dir.exists()
+
+    def test_purge_expired_rotations(self, tmp_path: Path) -> None:
+        """Expired rotated logs (>retention) are purged on log() call."""
+        logger = AuditLogger(tmp_path)
+        # Create an old rotated log (210 days ago = beyond 183-day default retention)
+        old_log = tmp_path / "state" / "audit.log.1"
+        old_log.parent.mkdir(parents=True, exist_ok=True)
+        old_log.write_text('{"ts":"old","type":"test","details":{}}\n')
+        # Set mtime to 210 days ago (beyond 183-day retention)
+        import os
+        old_time = datetime.now(timezone.utc).timestamp() - (210 * 86400)
+        os.utime(old_log, (old_time, old_time))
+        # Trigger purge via log()
+        logger.log("test", {"trigger": "purge"})
+        assert not old_log.exists(), "Expired log should be purged"
+
+    def test_retention_keeps_recent_rotations(self, tmp_path: Path) -> None:
+        """Recent rotated logs (within retention) are NOT purged."""
+        logger = AuditLogger(tmp_path)
+        recent_log = tmp_path / "state" / "audit.log.1"
+        recent_log.parent.mkdir(parents=True, exist_ok=True)
+        recent_log.write_text('{"ts":"recent","type":"test","details":{}}\n')
+        # Set mtime to 30 days ago (within 183-day retention)
+        import os
+        recent_time = datetime.now(timezone.utc).timestamp() - (30 * 86400)
+        os.utime(recent_log, (recent_time, recent_time))
+        logger.log("test", {"trigger": "keep"})
+        assert recent_log.exists(), "Recent log should NOT be purged"
+
+    def test_retention_disabled_via_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """AIZEE_AUDIT_RETENTION_DAYS=0 disables purge entirely."""
+        monkeypatch.setenv("AIZEE_AUDIT_RETENTION_DAYS", "0")
+        logger = AuditLogger(tmp_path)
+        assert logger._retention_days == 0
+        old_log = tmp_path / "state" / "audit.log.1"
+        old_log.parent.mkdir(parents=True, exist_ok=True)
+        old_log.write_text('{"ts":"old","type":"test","details":{}}\n')
+        import os
+        old_time = datetime.now(timezone.utc).timestamp() - (365 * 86400)  # 1 year ago
+        os.utime(old_log, (old_time, old_time))
+        logger.log("test", {"trigger": "no-purge"})
+        assert old_log.exists(), "With retention=0, no log should be purged"
+
+    def test_retention_custom_via_env(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """AIZEE_AUDIT_RETENTION_DAYS=30 purges logs older than 30 days."""
+        monkeypatch.setenv("AIZEE_AUDIT_RETENTION_DAYS", "30")
+        logger = AuditLogger(tmp_path)
+        assert logger._retention_days == 30
+        old_log = tmp_path / "state" / "audit.log.1"
+        old_log.parent.mkdir(parents=True, exist_ok=True)
+        old_log.write_text('{"ts":"old","type":"test","details":{}}\n')
+        import os
+        old_time = datetime.now(timezone.utc).timestamp() - (60 * 86400)  # 60 days ago
+        os.utime(old_log, (old_time, old_time))
+        logger.log("test", {"trigger": "purge-30"})
+        assert not old_log.exists(), "With retention=30, 60-day-old log should be purged"
 
 
 @pytest.mark.slow

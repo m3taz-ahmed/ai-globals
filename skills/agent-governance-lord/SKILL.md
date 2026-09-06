@@ -49,6 +49,14 @@ AI agents can write, push, and deploy without human review at each step. Access 
 18. [PROHIBIT] Bypassing the gateway for "trusted" agents. All agents pass through.
 19. [PROHIBIT] Allowing an agent to call an ungoverned MCP server.
 20. [PROHIBIT] Executing a destructive action without composite identity attribution + human approval.
+21. [REQ] **SARC enforcement sites.** Implement 4 enforcement sites: Pre-Action Gate (block injection/PII/policy violations before LLM call), Action-Time Monitor (rate/cost/budget enforcement, circuit breakers), Post-Action Auditor (log, evaluate, score for reliability@k), Escalation Router (human approval, kill-switch, incident creation).
+22. [REQ] **Agent SRE Governance v1.0.** Implement SLOs, error budgets, circuit breakers, chaos engineering, trace replay, Ed25519 artifact signing, SBOMs, and OpenTelemetry for all agent deployments. Reference: Microsoft Agent Governance Toolkit.
+23. [REQ] **Microsoft Agent Hooks.** Support framework-neutral governance contracts — "deny means deny" enforceable across LangChain, CrewAI, OpenAI Agents SDK, etc.
+24. [REQ] **MCP 2026-07-28 stateless governance.** Update gateway for stateless MCP protocol. No session state assumptions. Per-request protocolVersion validation. Header-based routing (Mcp-Method, Mcp-Name).
+25. [REQ] **Per-PR spend limits.** Implement per-PR spend caps (soft block) and org-level ACU visibility. Devin enterprise pattern.
+26. [REQ] **Enterprise MCP server allowlist.** Maintain allowlist of approved MCP servers. Block ungoverned servers. Enterprise plugin governance (required/optional/forbidden plugins).
+27. [REQ] **5-layer control plane.** Gateway Layer (auth, rate limiting, cost tracking) → Policy Layer (4-level hierarchy, fail-closed) → Observability Layer (tamper-evident audit) → Governance Layer (approvals, kill-switch, RBAC) → Integration Layer (A2A, MCP, REST, webhooks).
+28. [PROHIBIT] Deploying agents without SARC 4-site enforcement and Agent SRE Governance compliance.
 
 ## Enforcement Stack
 

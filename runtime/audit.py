@@ -152,6 +152,7 @@ class AuditLogger:
 
     _MAX_LOG_SIZE = 100 * 1024 * 1024  # 100 MB
     _MAX_ROTATED = 5
+    _DEFAULT_RETENTION_DAYS = 183  # ~6 months (EU AI Act minimum post-deployment)
 
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -164,6 +165,39 @@ class AuditLogger:
         self._cache_lock = threading.Lock()
         # Dropped-write counter: fail-open writes are counted (never silent).
         self.dropped = 0
+        # Retention period (configurable via env var). Default: 183 days (~6 months).
+        # Set AIZEE_AUDIT_RETENTION_DAYS=0 to disable automatic purge entirely.
+        try:
+            self._retention_days = int(os.environ.get("AIZEE_AUDIT_RETENTION_DAYS", self._DEFAULT_RETENTION_DAYS))
+        except ValueError:
+            self._retention_days = self._DEFAULT_RETENTION_DAYS
+
+    def _purge_expired_rotations(self) -> None:
+        """Delete rotated audit logs older than the retention period.
+
+        EU AI Act Article 19(2) requires retaining logs for at least 6 months
+        post-deployment. This method purges only files OLDER than the retention
+        period — never the active log or files within retention.
+
+        Set ``AIZEE_AUDIT_RETENTION_DAYS=0`` to disable automatic purge
+        (logs retained indefinitely until manually managed).
+        Called on every ``log()`` call (cheap: stat-only, no read).
+        """
+        if self._retention_days <= 0:
+            return  # Purge disabled — retain indefinitely
+        try:
+            cutoff = datetime.now(timezone.utc).timestamp() - (self._retention_days * 86400)
+            for i in range(1, self._MAX_ROTATED + 10):
+                rotated = self.log_file.with_suffix(f".log.{i}")
+                if rotated.exists() and rotated.stat().st_mtime < cutoff:
+                    rotated.unlink()
+                    _logger.warning(
+                        "Purged expired audit log %s (older than %d days). "
+                        "Set AIZEE_AUDIT_RETENTION_DAYS=0 to retain indefinitely.",
+                        rotated.name, self._retention_days,
+                    )
+        except OSError as exc:
+            _logger.warning("Audit log purge failed: %s", exc)
 
     def _rotate_if_needed(self) -> None:
         """Rotate the audit log if it exceeds the max size.
@@ -305,6 +339,7 @@ class AuditLogger:
         with self._lock:
             try:
                 self._rotate_if_needed()
+                self._purge_expired_rotations()
                 prev_hash = self._last_hash()
                 entry: dict[str, Any] = {
                     "ts": datetime.now(timezone.utc).isoformat(),

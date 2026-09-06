@@ -74,6 +74,24 @@ class TestCatalogModel:
         )
         assert model.max_tokens == 200000
 
+    def test_model_card_fields_default(self) -> None:
+        """Model card fields default to empty (backward compatible)."""
+        model = CatalogModel(
+            model_id="m1", provider="openai", tier=ModelTier.FRONTIER,
+        )
+        assert model.training_cutoff == ""
+        assert model.known_limitations == []
+
+    def test_model_card_fields_set(self) -> None:
+        """Model card fields can be set for EU AI Act compliance."""
+        model = CatalogModel(
+            model_id="gpt-6", provider="openai", tier=ModelTier.FRONTIER,
+            training_cutoff="2026-07",
+            known_limitations=["no vision", "limited Arabic dialects"],
+        )
+        assert model.training_cutoff == "2026-07"
+        assert "no vision" in model.known_limitations
+
 
 # -- fixtures -------------------------------------------------------------
 

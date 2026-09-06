@@ -1,5 +1,80 @@
 # Changelog
 
+## [5.11.0] - 2026-09-04 (Comprehensive Tech-Stack + Skills + Governance Modernization)
+
+### New Tech-Stack Files (41)
+- **MCP 2026-07-28**: `mcp-2.md` (stateless core, MRTR, extensions, OAuth 2.1 RS, CIMD), `fastmcp-4.md` (FastMCP v4.0.0 GA).
+- **AI/ML APIs**: `openai-api-2026.md` (GPT-6 Astra, Responses API), `anthropic-api-2026.md` (Claude Fable 5.1, Opus 5), `gemini-api-2026.md` (Gemini 3.8 Flash, Interactions API GA).
+- **AI Frameworks**: `langchain-1.md`, `langgraph-1.md`, `openai-agents-sdk.md`, `pydantic-ai.md`, `mastra-1.md`, `microsoft-agent-framework.md`, `google-adk.md`, `a2a-protocol.md`, `acp.md`.
+- **AI Guardrails**: `nemo-guardrails.md`, `llama-guard-4.md`, `guardrails-ai.md`, `promptfoo.md`, `garak.md`.
+- **AI Infra**: `opentelemetry-2026.md`, `durable-execution.md`.
+- **Languages/Runtimes**: `python-3-14.md`, `typescript-6.md`, `nodejs-26.md`, `go-1-26.md`, `rust-1-98.md`, `kotlin-2-4.md`, `swift-6-3.md`.
+- **Frameworks**: `nextjs-16.md`, `nestjs-12.md`, `angular-22.md`, `astro-7.md`, `django-6.md`, `vite-8.md`.
+- **Databases**: `postgresql-18.md`, `redis-8.md`, `mysql-26.md`, `mongodb-8.md`.
+- **Infrastructure**: `kubernetes-1-35.md`, `docker-29.md`.
+- **Mobile**: `expo-sdk-57.md`.
+
+### New Lord Skills (8)
+- `mcp-architect-lord` — MCP 2026-07-28 server design, OAuth 2.1 RS, tool poisoning defense, dual-era migration.
+- `ai-redteam-lord` — CI-integrated adversarial testing (Promptfoo, Garak, Detoxio), OWASP LLM/ASI 2026 coverage.
+- `durable-execution-lord` — Temporal/Inngest/DBOS/Prefect/Restate patterns, checkpoint/replay, saga.
+- `agent-orchestration-lord` — Multi-agent orchestration (orchestrator-worker, supervisor-router), A2A/ACP/MCP.
+- `ai-observability-lord` — OpenTelemetry + OpenInference, Langfuse/Phoenix/LangSmith, drift detection.
+- `vector-db-lord` — Pinecone/Weaviate/Qdrant/Milvus/pgvector/Chroma, hybrid search, quantization, RAG.
+- `local-ai-lord` — Ollama/LM Studio/vLLM/llama.cpp/MLX, quantization, GPU acceleration, hybrid local+cloud.
+- `ai-code-review-lord` — Automated pre-PR review, Bugbot/Copilot/Claude self-review, hallucination detection.
+
+### Updated Skills (10)
+- `security-auditor` — +OWASP LLM Top 10 2026, OWASP ASI Top 10 2026, MCP security (CVEs), cross-modal injection, memory-persistence attacks, SARC enforcement, Agent SRE Governance, model weight provenance, rate-limiting layers.
+- `prompt-engineer` — +MCP tool use prompting, agentic prompting, multi-agent orchestration prompting, MCP 2026-07-28 stateless prompting, durable execution prompting, cross-modal prompt design, reasoning effort control.
+- `ml-engineer` — +agent frameworks (LangGraph 1.1, OpenAI Agents SDK, PydanticAI, MS Agent Framework, Google ADK, Mastra), durable execution, MCP integration, A2A protocol, vector DB selection, hybrid search, local AI, AI observability, red-teaming in CI.
+- `ai-agents-architect` — expanded from 6 to 20 rules covering agent architecture, evaluation, prompt engineering, memory, MCP builder, documentation, multi-agent orchestration, durable execution, HITL gates, agent frameworks, A2A, agent security, cost optimization, observability, testing, deployment, cross-modal handling, reasoning effort control.
+- `subagent-driven-development` — expanded from 2 to 15 rules covering dispatch process, parallel execution, context isolation, tool scoping, orchestrator-worker pattern, result aggregation, failure handling, quality gates, memory management, cost tracking, observability, Claude Code/Cursor patterns, anti-patterns.
+- `compliance-lord` — +EU AI Act Digital Omnibus (Regulation 2026/1744), UAGT crosswalk, ISO 42001 UKAS certifications, MITRE ATLAS/ATT&CK/CWE/CSA mapping, Article 50 transparency, incident notification timelines, Gartner MQ alignment, vendor independence.
+- `security-lord` — expanded to 20 rules covering OWASP Top 10 (web + LLM 2026 + ASI 2026), cryptography, TLS/PKI, MCP security, SARC enforcement, Agent SRE Governance, model weight provenance, rate-limiting layers, network/cloud security, detection/response, compliance/governance, cross-modal injection, memory-persistence attacks.
+- `agent-governance-lord` — +SARC 4 enforcement sites, Agent SRE Governance v1.0, Microsoft Agent Hooks, MCP 2026-07-28 stateless governance, per-PR spend limits, enterprise MCP server allowlist, 5-layer control plane.
+- `eval-reliability-lord` — +ReliabilityBench (consistency/robustness/fault tolerance), Deployment Decision Reliability (DDR), beyond pass@1 metrics (RDC/VAF/GDS/MOP), agentrel library, SWE-bench Verified gap, CI-integrated eval gates.
+- `supply-chain-lord` — +MCP tool poisoning defense (hash-pinning), model weight provenance (safetensors/GGUF), MCP CVE tracking (6 CVEs), Deadbugz campaign awareness, confused-deputy prevention (CIMD), AI/ML SBOM (CycloneDX AI/SPDX 3.0).
+
+### New Workflows (6)
+- `54-mcp-migration-2026.md` — MCP 2025-11-25 → 2026-07-28 migration (20 steps).
+- `55-ai-redteam-ci.md` — AI red-teaming in CI (15 steps, OWASP LLM/ASI 2026 coverage).
+- `56-agent-sre-governance.md` — Agent SRE Governance v1.0 (16 steps, SLOs, error budgets, circuit breakers, Ed25519 signing, SBOMs, OTel).
+- `57-durable-execution-setup.md` — Durable execution setup (14 steps, Temporal/Inngest/DBOS/Prefect/Restate).
+- `58-compliance-crosswalk.md` — Compliance crosswalk audit (19 steps, UAGT, EU AI Act Digital Omnibus, NIST AI RMF, ISO 42001).
+- `59-tech-stack-bulk-update.md` — Tech-stack bulk update (16 steps, Context7 verification, EOL tracking).
+
+### Updated Files
+- `tech-stack/mcp-1.md` — marked DEPRECATED with migration pointer to mcp-2.md.
+- `tech-stack/useful-repos.md` — +85 repos (AI observability, guardrails, vector DBs, local AI, frameworks, coding tools, protocols, durable execution, MCP tooling, eval, governance, compliance).
+- `runtime/personas.yaml` — +8 lord skills to 9 personas (ARCH, QA, SEC, ML, SRE, DEVOPS, API, DATA, MLOPS), +46 lord triggers (8 new lord skills with Arabic triggers).
+- `manifest.json` — +246 triggers (new workflows 54-59, new skills, Arabic triggers).
+
+### Quality Gates
+- `ruff check .` — All checks passed.
+- `mypy` — Success: no issues found in 275 source files.
+- `pytest` — 98 targeted tests passed (persona + skill_resolver + rule_frontmatter + manifest_encoding + agent_catalog + audit).
+- All 250 manifest trigger paths resolve to existing files.
+- All 46 lord_skills have SKILL.md files.
+- All persona lords have SKILL.md files.
+- All 8 new lord skills frontmatter aligned with personas.yaml (8/8).
+- All workflow tech-stack references resolve.
+- All workflow persona references resolve.
+- All 8 new lord skills verified via persona detection.
+
+### Runtime Changes
+- **`runtime/audit.py`**: Added `_purge_expired_rotations()` — time-based retention purge (183 days / ~6 months per EU AI Act Article 19(2)). Called on every `log()` call. Size-based rotation unchanged. +2 tests.
+- **`runtime/agent_catalog.py`**: Added `training_cutoff` and `known_limitations` fields to `CatalogModel` for EU AI Act model-card compliance. Backward-compatible (defaults: `""` and `[]`). +2 tests.
+
+### Counts
+- tech-stack: 197 → 238 (+41)
+- skills: 110 → 121 (+8 lord skills, 79 dir-based + 42 flat)
+- workflows: 54 → 60 (+6)
+- lord_skills: 38 → 46 (+8)
+- manifest triggers: 222 → 250 (+28)
+- tests: 3865 → 3869 (+4 new: 2 audit retention + 2 model card)
+- version: 5.10.1 → 5.11.0
+
 ## [5.10.1] - 2026-08-31 (Security Hardening + Architecture Cleanup + Docs Sync)
 
 ### Security

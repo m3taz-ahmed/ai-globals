@@ -46,6 +46,13 @@ Current AI coding agent benchmarks rank with the pass@k estimator but misapply i
 16. [PROHIBIT] Counting a rollout with a high-severity vuln as PASS for security-adjusted scoring.
 17. [PROHIBIT] Single-rollout "reliability" claims.
 18. [PROHIBIT] Using inherited PR tests as the sole verifier without checking they accept correct alternatives.
+19. [REQ] **ReliabilityBench.** Evaluate agents across three dimensions: consistency (k-trial pass rates), robustness (ε-perturbation levels), fault tolerance (λ-infrastructure failures). Agents drop from 96.9% pass@1 to 88.1% at ε=0.2.
+20. [REQ] **Deployment Decision Reliability (DDR).** Use Generalizability Theory. Agent main effect <3% of variance; agent-by-task interaction 7-23%. Leaderboards rank specialization, not pure capability. Training-cell reliability can negatively correlate with held-out reliability.
+21. [REQ] **Beyond pass@1 metrics.** Report Reliability Decay Curve (RDC), Variance Amplification Factor (VAF), Graceful Degradation Score (GDS), and Meltdown Onset Point (MOP) for long-horizon agents.
+22. [REQ] **agentrel library.** Use `agentrel` open-source library for reproducibility stats, ICC, pass@k/pass^k confidence intervals, and flakiness detection.
+23. [REQ] **SWE-bench Verified gap.** Macro-averaged hidden-test pass rate (0.80) diverges sharply from strict task resolution (0.20). Report both metrics.
+24. [REQ] **CI-integrated eval gates.** Block deployment on reliability@k < threshold. Use Braintrust or custom CI gates. RDC, VAF, GDS, MOP reporting mandatory for long-horizon agents.
+25. [PROHIBIT] Reporting pass@1 as reliability without multi-rollout validation and DDR analysis.
 
 ## References
 

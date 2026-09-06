@@ -8,6 +8,14 @@ personas:
     - seo-lord
     - agent-governance-lord
     - compliance-lord
+    - mcp-architect-lord
+    - durable-execution-lord
+    - agent-orchestration-lord
+    - ai-code-review-lord
+    - ai-redteam-lord
+    - ai-observability-lord
+    - vector-db-lord
+    - local-ai-lord
     keywords:
     - architecture
     - scalability
@@ -38,6 +46,8 @@ personas:
     - test-driven-development
     - test-guard
     - eval-reliability-lord
+    - ai-redteam-lord
+    - ai-code-review-lord
     skills:
     - qa-automation
     keywords:
@@ -73,6 +83,7 @@ personas:
     - flutter-design
     - seo-lord
     - arabic-dialect-lord
+    - mcp-architect-lord
     skills:
     - web-design-guidelines
     - design-taste
@@ -127,6 +138,11 @@ personas:
     - language-lord
     - page-sections-lord
     - seo-lord
+    - durable-execution-lord
+    - agent-orchestration-lord
+    - vector-db-lord
+    - ai-code-review-lord
+    - mcp-architect-lord
     skills:
     - backend-design
     keywords:
@@ -160,6 +176,9 @@ personas:
     - cloud-platforms-lord
     - devops-lord
     - linux-systems-lord
+    - ai-observability-lord
+    - durable-execution-lord
+    - local-ai-lord
     keywords:
     - cloud
     - aws
@@ -186,6 +205,10 @@ personas:
     - linux-systems-lord
     - supply-chain-lord
     - agent-governance-lord
+    - ai-redteam-lord
+    - mcp-architect-lord
+    - local-ai-lord
+    - ai-code-review-lord
     keywords:
     - security
     - secure
@@ -315,6 +338,7 @@ personas:
     lords:
     - database-lord
     - mariadb-lord
+    - vector-db-lord
     keywords:
     - data
     - database
@@ -346,6 +370,11 @@ personas:
     - ai-ml-lord
     - search-vector-lord
     - eval-reliability-lord
+    - vector-db-lord
+    - local-ai-lord
+    - agent-orchestration-lord
+    - ai-redteam-lord
+    - ai-observability-lord
     keywords:
     - machine learning
     - ml
@@ -376,6 +405,9 @@ personas:
     - devops-lord
     - cloud-platforms-lord
     - linux-systems-lord
+    - durable-execution-lord
+    - ai-observability-lord
+    - local-ai-lord
     keywords:
     - devops
     - cicd
@@ -400,6 +432,8 @@ personas:
     lords:
     - backend-frameworks-lord
     - security-lord
+    - mcp-architect-lord
+    - agent-orchestration-lord
     keywords:
     - api
     - rest
@@ -611,6 +645,7 @@ personas:
     - clean-code-guard
     - docs-guard
     - fullstack-optimizer
+    - mcp-architect-lord
     keywords:
     - developer experience
     - dx
@@ -636,6 +671,9 @@ personas:
     - devops-lord
     - eval-reliability-lord
     - search-vector-lord
+    - ai-observability-lord
+    - vector-db-lord
+    - local-ai-lord
     keywords:
     - mlops
     - model deployment
@@ -1088,6 +1126,128 @@ lord_skills:
   - vector db
   - embedding search
   - hybrid search
+  - qdrant
+  - weaviate
+  - chroma
+  - pgvector
+  - turbopuffer
+  - colbert
+  - quantization
+  - hnsw
+  - diskann
+  - mmr
+  - reranking
+  - knowledge graph
+  - graphrag
+  mcp-architect-lord:
+  - mcp server
+  - mcp design
+  - mcp protocol
+  - mcp security
+  - tool naming
+  - oauth resource server
+  - mcp architect
+  - mcp 2026
+  - stateless mcp
+  - cimd
+  - mcp extensions
+  - mrtr
+  - خادم mcp
+  - تصميم mcp
+  ai-redteam-lord:
+  - red team
+  - redteam
+  - adversarial
+  - prompt injection test
+  - jailbreak test
+  - garak
+  - promptfoo
+  - detoxio
+  - owasp llm
+  - owasp asl
+  - cross-modal attack
+  - memory persistence attack
+  - tool poisoning test
+  - فريق أحمر
+  - اختبار اختراق الذكاء الاصطناعي
+  durable-execution-lord:
+  - durable execution
+  - temporal
+  - inngest
+  - dbos
+  - prefect
+  - restate
+  - workflow
+  - crash resilient
+  - checkpoint
+  - saga pattern
+  - تنفيذ دائم
+  - سيرفور مقاوم
+  agent-orchestration-lord:
+  - multi-agent
+  - orchestration
+  - orchestrator worker
+  - supervisor router
+  - agent coordination
+  - a2a protocol
+  - agent cards
+  - task decomposition
+  - تنسيق الوكلاء
+  - توجيه الوكلاء
+  ai-observability-lord:
+  - observability
+  - tracing
+  - langsmith
+  - langfuse
+  - phoenix
+  - arize
+  - openinference
+  - otel
+  - opentelemetry
+  - span attributes
+  - drift detection
+  - مراقبة
+  - تتبع
+  vector-db-lord:
+  - vector database
+  - vector db
+  - pinecone
+  - weaviate
+  - qdrant
+  - milvus
+  - pgvector
+  - chroma
+  - rag
+  - hybrid search
+  - embedding
+  - hnsw
+  - quantization
+  - قاعدة بيانات متجهية
+  - بحث متجهي
+  local-ai-lord:
+  - local ai
+  - ollama
+  - lm studio
+  - llama.cpp
+  - vllm
+  - localai
+  - edge ai
+  - mlx
+  - quantization
+  - gguf
+  - ذكاء اصطناعي محلي
+  - تشغيل محلي
+  ai-code-review-lord:
+  - ai code review
+  - automated review
+  - bugbot
+  - self-review
+  - code scanning
+  - security scanning
+  - hallucination detection
+  - diff-aware review
+  - مراجعة كود
+  - فحص أمني
   security-lord:
   - owasp
   - vulnerability

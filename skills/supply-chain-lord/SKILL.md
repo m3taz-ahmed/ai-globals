@@ -47,6 +47,13 @@ AI agents commonly add imports of external packages not declared in the project 
 17. [PROHIBIT] Floating version ranges (`latest`, `*`, unbounded `>=`).
 18. [PROHIBIT] Unsigned container images in production.
 19. [PROHIBIT] A new import without a corresponding lockfile/manifest update in the same diff.
+20. [REQ] **MCP tool poisoning defense.** Hash-pin or sign allowed MCP tool definitions. Re-validate on every list refresh. CVE-2025-54136 (CVSS 8.8) showed tool definitions can change server-side after initial review.
+21. [REQ] **Model weight provenance.** Verify model weights have provenance metadata. Unsafe serialization (pickle) must be rejected. Use safe formats (safetensors, GGUF). AI/ML SBOMs required for all model deployments.
+22. [REQ] **MCP CVE tracking.** Monitor and patch: CVE-2026-52869 (Python SDK session-ID injection), CVE-2026-52870 (cross-client task access), CVE-2026-59950 (WebSocket origin bypass), CVE-2026-25536 (TypeScript SDK data leak), CVE-2026-27896 (Go SDK key parsing). Pin SDK versions above fix releases.
+23. [REQ] **Deadbugz campaign awareness.** Malicious MCP servers may activate payloads after a call-count threshold, evading initial review. Monitor for behavioral changes in MCP servers over time.
+24. [REQ] **Confused-deputy prevention.** MCP proxies with static client_id and DCR can let malicious clients hijack consent cookies. Use CIMD (Client ID Metadata Documents) instead of DCR. Validate issuer per RFC 9207.
+25. [REQ] **AI/ML SBOM.** Every AI/ML release artifact ships with an AI-specific SBOM (model weights, training data provenance, serialization format, dependencies). CycloneDX AI extension or SPDX 3.0 AI profile.
+26. [PROHIBIT] Using MCP servers without hash-pinned tool definitions and CVE compliance verification.
 
 ## Enforcement Stack
 

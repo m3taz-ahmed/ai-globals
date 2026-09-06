@@ -64,6 +64,15 @@ Gartner published the first Magic Quadrant for AI Governance Platforms (June 202
 14. [PROHIBIT] Deleting audit logs before regulatory retention minimum.
 15. [PROHIBIT] Cross-residency data movement without LEGAL persona review.
 16. [PROHIBIT] Claiming compliance without a completed `aizee compliance check` report.
+17. [REQ] **EU AI Act Digital Omnibus.** Regulation (EU) 2026/1744 published 24 July 2026, in force 27 July 2026. Annex III high-risk deferred to 2 December 2027. Annex I high-risk deferred to 2 August 2028. Article 5 original prohibitions in force since 2 February 2025; Digital Omnibus new prohibitions effective 2 December 2026. Article 50 transparency (chatbot disclosure, AI-content labeling) in force 2 August 2026 — NOT deferred. Penalties up to €35M or 7% of global turnover.
+18. [REQ] **UAGT crosswalk.** Map aiZee rules to Unified AI Governance Taxonomy (8 regulation-stable domains) reconciling ISO 42001, NIST AI RMF, and EU AI Act. One audit, three frameworks.
+19. [REQ] **ISO 42001 UKAS certifications.** UKAS-accredited certifications went live January 2026. ISO 42001 is now procurement table stakes. EU AI Act Article 40 allows harmonized standards (likely ISO 42001) for presumption of conformity.
+20. [REQ] **MITRE mapping.** Map aiZee detection rules to MITRE ATLAS v2026.06, ATT&CK v19.1, CWE 4.20, and CSA AI Controls Matrix v1. Cross-reference with OWASP LLM/ASI Top 10s.
+21. [REQ] **Article 50 transparency.** Ensure AI-generated content is labeled, chatbot disclosure is present, and deepfake detection metadata is attached. Non-compliance = penalty.
+22. [REQ] **Incident notification timelines.** EU AI Act Article 73: 15 days for ordinary serious incidents (Art 73(2)); 2 days for widespread infringement or serious and irreversible disruption of critical infrastructure (Art 73(3)); 10 days where a person has died (Art 73(4)). Update `workflows/19-incident-response.md` with regulatory notification templates per tier.
+23. [ALIGN] **Gartner/Forrester market alignment.** Align aiZee governance features with Gartner Magic Quadrant for Enterprise AI Coding Agents (May 2026) [VERIFY: cite licensed copy] and Forrester Agentic Development Platforms Landscape, Q3 2026 (RES198045) [VERIFY: cite licensed copy]. 12-field audit schema for procurement. These are market alignment targets, NOT legal compliance requirements.
+24. [REQ] **Vendor independence.** Position against market consolidation (Promptfoo→OpenAI, Portkey→Palo Alto, Langfuse→ClickHouse, Helicone→Mintlify, Lakera→Check Point). Open, self-hostable governance = competitive moat.
+25. [PROHIBIT] Claiming EU AI Act compliance without Digital Omnibus deadline tracking.
 
 ## Compliance Check Output
 

@@ -122,3 +122,87 @@ estjs/nest (76K stars, enterprise TS framework, DI + decorators + module encapsu
 [REQ] Arabic NLP - Eshal CX Benchmark: eshal.ai/blog/mena-cx-report-2026 (412 CX leaders UAE/SA/EG/Jordan/Kuwait, Arabic NLP 24-point dialect accuracy gap, PDPL data sovereignty, inspires aiZee arabic-dialect-lord dialect registry).
 [REQ] Arabic NLP - Majara Dev Survey: majara.dev/survey (First annual Arabic developer survey, tools/salaries/learning/AI usage, inspires aiZee MENA positioning).
 [REQ] i18n - IntlPull State of i18n 2026: intlpull.com/blog/state-of-i18n-2026-developer-survey (1000 developers, 73% LLM-based translation, workflow bottlenecks, OTA updates, inspires aiZee rules_materializer scope model).
+[REQ] AI Observability - Langfuse: github.com/langfuse/langfuse (Open source MIT, self-hostable, OpenTelemetry/OTLP ingest, 25k free spans/mo, Postgres+ClickHouse, multi-framework, acquired by ClickHouse Jan 2026).
+[REQ] AI Observability - Arize Phoenix: github.com/Arize-ai/phoenix (Open source ELv2, OpenInference, notebook-first RAG/LLM evals, arize-phoenix-otel>=0.16.0, first-class GUARDRAIL span).
+[REQ] AI Observability - Braintrust: github.com/braintrustdata/braintrust-sdk (Evaluation-first, structured experiments, CI-integrated eval gates, deployment-blocking automation).
+[REQ] AI Observability - Helicone: github.com/Helicone/helicone (Open source Apache 2.0 proxy + observability, one base-URL change, cost dashboards, rate limiting, prompt caching, acquired by Mintlify Mar 2026 — maintenance mode, use with caution).
+[REQ] AI Observability - Portkey: github.com/Portkey-AI/gateway (Open source MIT Gateway 2.0, AI gateway + observability, multi-provider routing, PII redaction, multi-tenant, Palo Alto acquisition pending Apr 2026).
+[REQ] AI Guardrails - NeMo Guardrails: github.com/NVIDIA-NeMo/Guardrails (v0.24, Apache 2.0, five rail types input/dialog/retrieval/execution/output, Colang DSL, IORails for tool calls, Polygraf PII).
+[REQ] AI Guardrails - Guardrails AI: github.com/guardrails-ai/guardrails (v0.10.2, Apache 2.0, composable validators per risk toxicity/PII/profanity/hallucination/bias, field-level validation).
+[REQ] AI Guardrails - Llama Guard 4: github.com/meta-llama/PurpleLlama (12B multimodal text+image safety classifier, 14 hazard categories, Llama Prompt Guard 2 for injection, MIT base).
+[REQ] AI Guardrails - Lakera Guard: lakera.ai (Acquired by Check Point Sep 2025 ~$300M, managed runtime protection, threat detection, SaaS).
+[REQ] AI Guardrails - Promptfoo: github.com/promptfoo/promptfoo (Acquired by OpenAI Mar 2026, MIT, red-teaming, evals, CI integration).
+[REQ] AI Guardrails - Garak: github.com/leondz/garak (Open source LLM vulnerability scanning, probes for prompt injection/data leakage/hallucination/bias, automated red-teaming).
+[REQ] AI Guardrails - Detoxio: detoxio.ai (Adversarial red-teaming, hardened safety classifiers, fine-tuned Llama Guard 4).
+[REQ] AI Guardrails - Arthur AI Shield: arthur.ai (Enterprise LLM firewall + benchmarks, Arthur Shield + Arthur Bench).
+[REQ] AI Guardrails - Veto: github.com/veto-ai/veto (Runtime authorization SDK for AI agents, allow/deny/escalate on tool calls).
+[REQ] AI Guardrails - Galileo: galileo.ai (Observability + guardrails, real-time monitoring).
+[REQ] AI Vector DB - Pinecone: pinecone.io (Serverless, full-text search public preview, BM25/fuzzy/n-gram/query_string, dense/sparse_vector scoring).
+[REQ] AI Vector DB - Weaviate: github.com/weaviate/weaviate (v1.39 GA, hybrid search + MMR diversity, Boost API, 4-bit Rotational Quantization, new Search REST API).
+[REQ] AI Vector DB - Qdrant: github.com/qdrant/qdrant (v1.13+, ACORN filtered HNSW, multi-vector/ColBERT, binary/scalar quantization, air-gapped).
+[REQ] AI Vector DB - Milvus: github.com/milvus-io/milvus (DISKANN, GPU acceleration, billion-scale distributed).
+[REQ] AI Vector DB - pgvector: github.com/pgvector/pgvector (0.8.2, iterative filtered HNSW scans, halfvec, pgvectorscale StreamingDiskANN).
+[REQ] AI Vector DB - Chroma: github.com/chroma-core/chroma (Embedded Python/Rust, hnswlib, LangChain default for local RAG).
+[REQ] AI Vector DB - turbopuffer: turbopuffer.com (Object-storage-first vector DB, very cheap at rest).
+[REQ] AI Vector DB - Vespa: github.com/vespa-engine/vespa (Real-time AI search, ranking, vector + text + structured data).
+[REQ] AI Local - Ollama: github.com/ollama/ollama (0.33.3, CLI-first, 4500+ models, OpenAI-compatible API, Anthropic endpoint, Metal/MLX auto-routing).
+[REQ] AI Local - LM Studio: lmstudio.ai (0.4.0, llmster headless daemon, continuous batching, stateful /v1/chat REST API, MCP, llama.cpp 2.0 engine).
+[REQ] AI Local - Jan: github.com/janhq/jan (Fully offline, no telemetry, local chat history, open-source desktop).
+[REQ] AI Local - GPT4All: github.com/nomic-ai/gpt4all (Single-installer, beginner-friendly, local LLM).
+[REQ] AI Local - llama.cpp: github.com/ggerganov/llama.cpp (GGUF, Metal/CUDA/ROCm/Vulkan/WebGPU, MTP speculative decoding, flash attention, MoE kernels, 64-bit indexing).
+[REQ] AI Local - vLLM: github.com/vllm-project/vllm (0.28.0, Kimi-K3/Qwen3.5/K-EXAONE-2.0, Decode Context Parallel, activation support).
+[REQ] AI Local - LocalAI: github.com/mudler/LocalAI (Open-source local AI, OpenAI-compatible, multi-model).
+[REQ] AI Local - Tabby: github.com/TabbyML/tabby (Team server for shared local LLM completion, self-hosted).
+[REQ] AI Local - Apple MLX: github.com/ml-explore/mlx (Apple Silicon ML framework, array API, Metal acceleration).
+[REQ] AI Framework - LangGraph: github.com/langchain-ai/langgraph (1.1, v2 type-safe streaming/invoke, StateSchema, durable checkpoints, HITL, subgraph replay).
+[REQ] AI Framework - OpenAI Agents SDK: github.com/openai/openai-agents-python (v0.13, replaces Swarm, any-LLM adapter, MCP resource support, guardrails, tracing).
+[REQ] AI Framework - PydanticAI: github.com/pydantic/pydantic-ai (Type-safe Python agents, durable execution via Temporal/DBOS/Prefect/Restate, MCP, streaming).
+[REQ] AI Framework - Mastra: github.com/mastra-ai/mastra (v1.x, Durable Agents/resumable streams, Inngest/Temporal-style execution, tool approval/HITL, MCP stateless 2026-07-28).
+[REQ] AI Framework - MS Agent Framework: github.com/microsoft/agent-framework (1.0 GA Apr 2026, replaces AutoGen, multi-agent orchestration, durable execution, MCP).
+[REQ] AI Framework - Google ADK: github.com/google/adk-python (Google Agent Development Kit, Gemini integration, tool use, MCP, multi-agent).
+[REQ] AI Framework - CrewAI: github.com/crewAIInc/crewAI (Enterprise tier, visual editor, scheduling, RBAC, observability).
+[REQ] AI Framework - Vercel AI SDK: github.com/vercel/ai (57M+ monthly downloads, TS-first, streaming, tool use, RSC support).
+[REQ] AI Framework - Agno: github.com/agno-agi/agno (Fast-growing 40k+ stars, multi-agent, memory, MCP).
+[REQ] AI Framework - LlamaIndex: github.com/run-llama/llama_index (Document/RAG agents, agentic RAG patterns, data connectors).
+[REQ] AI Coding - Cursor: cursor.com (v3.7+, Composer 2/2.5, Agent/Cloud Agents, Plan mode, Bugbot/Security Review, Best-of-n, MCP Apps).
+[REQ] AI Coding - Claude Code: anthropic.com/claude-code (Terminal-first agent, subagents Explore/Plan/custom, Hooks PreToolUse/PostToolUse/Stop, slash commands, CLAUDE.md).
+[REQ] AI Coding - GitHub Copilot: github.com/features/copilot (Copilot coding agent/cloud agent, model picker, self-review, custom agents .github/agents/, Agent Merge preview).
+[REQ] AI Coding - OpenAI Codex CLI: github.com/openai/codex (Rust-based v0.149-0.152, local TUI, codex exec for CI, codex queue, MCP server, remote/WebSocket).
+[REQ] AI Coding - Cline: github.com/cline/cline (v3.85, VS Code autonomous agent, Plan/Act loop, .clinerules, multi-file edits, terminal/test execution).
+[REQ] AI Coding - Continue.dev: github.com/continuedev/continue (v1.2+, Apache-2.0/MIT, Agent Mode, MCP servers, JSON config, shareable agents, Code Review Inbox).
+[REQ] AI Coding - Aider: github.com/Aider-AI/aider (v0.86.2, terminal-native, git-committed diffs, architect mode, repo map, 100+ providers, auto-lint/test).
+[REQ] AI Coding - Windsurf/Devin Desktop: windsurf.com (2.0 Jun 2026, Cascade agent, Plan Mode, SWE-1.5/1.6, Codemaps, parallel multi-agent, Agent Command Center).
+[REQ] AI Coding - Cody: sourcegraph.com/cody (Code-graph context, smart semantic context, enterprise self-hosted, SOC 2/HIPAA).
+[REQ] AI Coding - Tabnine: tabnine.com (On-prem/self-hosted, no customer-code training, air-gapped options).
+[REQ] AI Coding - Zed AI: zed.dev (Rust-native editor with AI workflows).
+[REQ] AI Coding - Google Antigravity: antigravity.google (Free agent-first IDE, preview).
+[REQ] AI Coding - JetBrains Junie: jetbrains.com/junie (JetBrains agent inside IntelliJ IDEs).
+[REQ] AI Coding - Augment Code: augmentcode.com (200k+ token codebase context engine).
+[REQ] AI Coding - Roo Code: github.com/RooCodeInc/Roo-Code (Open-source fork in Cline family).
+[REQ] AI Coding - OpenHands: github.com/All-Hands-AI/OpenHands (Open autonomous SWE agent).
+[REQ] AI Coding - Augment Code: augmentcode.com (200k+ token codebase context engine, enterprise AI coding).
+[REQ] AI Protocol - MCP: modelcontextprotocol.io (2026-07-28 spec, stateless core, MRTR, extensions, OAuth 2.1 Resource Server).
+[REQ] AI Protocol - A2A: a2a-protocol.org (Agent-to-Agent protocol, inter-agent task coordination, agent cards, task lifecycle).
+[REQ] AI Protocol - ACP: github.com/agntcy/acp-spec (Agent Connection Protocol, standardizes agent communication, complements MCP + A2A).
+[REQ] AI Protocol - OpenInference: github.com/Arize-ai/openinference (OpenTelemetry span attributes for LLM/agent/tool/retrieval/guardrail, default AI telemetry standard).
+[REQ] AI Durable - Temporal: github.com/temporalio/temporal (Workflow-as-code, durable timers, retries, signals/queries, crash-resilient).
+[REQ] AI Durable - Inngest: github.com/inngest/inngest (Serverless durable functions, step.run/step.sleep, fan-out, event-driven).
+[REQ] AI Durable - DBOS: github.com/dbos-inc/dbos-transact (Python durable workflows, transactions, checkpoint/replay).
+[REQ] AI Durable - Prefect: github.com/PrefectHQ/prefect (Data pipelines, flow/run, task orchestration).
+[REQ] AI Durable - Restate: github.com/restatedev/restate (Durable services, virtual objects, delayed calls, idempotency).
+[REQ] AI MCP Tooling - MCP Inspector: github.com/modelcontextprotocol/inspector (v0.22.0, reference test/debug tool, web/CLI/TUI modes, server/discover, protocol-era negotiation).
+[REQ] AI MCP Tooling - MCP Registry: github.com/modelcontextprotocol/registry (Official community registry and API, v0.1 freeze).
+[REQ] AI MCP Tooling - FastMCP: gofastmcp.com (v4.0.0 GA Aug 2026, Python SDK v2, multi-era negotiation, stateless UserSession, enterprise identity).
+[REQ] AI MCP Directory - findmcp.dev: findmcp.dev (8000+ MCP servers, searchable directory).
+[REQ] AI MCP Directory - mcpfind.org: mcpfind.org (25000+ MCP servers, searchable directory).
+[REQ] AI Eval - ReliabilityBench: arxiv.org/pdf/2601.06112 (Consistency/robustness/fault tolerance eval, agents drop 96.9% to 88.1% at ε=0.2).
+[REQ] AI Eval - agentrel: github.com/agentrel/agentrel (Open-source reproducibility stats, ICC, pass@k/pass^k confidence intervals, flakiness detection).
+[REQ] AI Governance - SARC: arxiv.org/html/2606.15954 (4 enforcement sites: Pre-Action Gate, Action-Time Monitor, Post-Action Auditor, Escalation Router; Green SARC adds cost/carbon gating).
+[REQ] AI Governance - Agent SRE: microsoft.github.io/agent-governance-toolkit (Agent SRE Governance v1.0, SLOs, error budgets, circuit breakers, Ed25519 signing, SBOMs, OTel).
+[REQ] AI Governance - Microsoft Agent Hooks: github.com/microsoft/agent-hooks (Framework-neutral governance contract, deny means deny, LangChain/CrewAI/OpenAI Agents SDK support).
+[REQ] AI Compliance - OWASP LLM Top 10 2026: genai.owasp.org (Published Aug 2026, 75% community + 25% incident data, cross-modal attacks, excessive agency #3, supply chain includes MCP).
+[REQ] AI Compliance - OWASP ASI Top 10 2026: genai.owasp.org/download/52117 (Agentic Applications list, ASI03 identity/privilege, ASI04 supply chain, ASI05 unexpected code execution).
+[REQ] AI Compliance - EU AI Act Digital Omnibus: eur-lex.europa.eu (Regulation 2026/1744, published 24 Jul 2026, Annex III deferred Dec 2027, Annex I deferred Aug 2028, Art 50 transparency Aug 2026).
+[REQ] AI Compliance - UAGT: arxiv.org/html/2608.07515 (Unified AI Governance Taxonomy, 8 domains reconciling ISO 42001 + NIST AI RMF + EU AI Act).
+[REQ] AI Compliance - MITRE ATLAS: attack.mitre.org/techniques/atas (v2026.06, AI adversary tactics, techniques, procedures).
+[REQ] AI Compliance - CSA AI Controls Matrix: cloudsecurityalliance.org (v1, AI security controls mapped to OWASP LLM/ASI).

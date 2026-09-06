@@ -6,6 +6,14 @@
 3. [REQ] Keep under 500 lines.
 [UPDATED] 2026-09-04
 [NOTES]
+- **v5.11.0 — comprehensive tech-stack + skills + governance modernization — 2026-09-04**:
+  - **New tech-stack files (41)**: mcp-2, fastmcp-4, nextjs-16, python-3-14, typescript-6, nodejs-26, vite-8, django-6, postgresql-18, redis-8, openai-api-2026, anthropic-api-2026, gemini-api-2026, langchain-1, langgraph-1, openai-agents-sdk, pydantic-ai, mastra-1, microsoft-agent-framework, a2a-protocol, nemo-guardrails, llama-guard-4, nestjs-12, angular-22, astro-7, go-1-26, rust-1-98, expo-sdk-57, mysql-26, mongodb-8, kubernetes-1-35, docker-29, kotlin-2-4, swift-6-3, guardrails-ai, promptfoo, garak, acp, opentelemetry-2026, durable-execution, google-adk.
+  - **New lord skills (8)**: mcp-architect-lord, ai-redteam-lord, durable-execution-lord, agent-orchestration-lord, ai-observability-lord, vector-db-lord, local-ai-lord, ai-code-review-lord.
+  - **Updated skills (10)**: security-auditor (+OWASP LLM/ASI 2026, MCP security, SARC), prompt-engineer (+MCP/agentic/durable/cross-modal prompting), ml-engineer (+agent frameworks, durable execution, MCP, A2A, vector DBs, local AI, observability, red-teaming), ai-agents-architect (expanded to 20 rules), subagent-driven-development (expanded to 15 rules), compliance-lord (+Digital Omnibus, UAGT, ISO 42001 UKAS, MITRE mapping), security-lord (expanded to 20 rules), agent-governance-lord (+SARC, Agent SRE, MCP 2026-07-28, per-PR spend limits), eval-reliability-lord (+ReliabilityBench, DDR, RDC/VAF/GDS/MOP), supply-chain-lord (+MCP tool poisoning, model weight provenance, MCP CVEs, AI/ML SBOM).
+  - **New workflows (6)**: 54-mcp-migration-2026, 55-ai-redteam-ci, 56-agent-sre-governance, 57-durable-execution-setup, 58-compliance-crosswalk, 59-tech-stack-bulk-update.
+  - **Updated**: personas.yaml (+8 lord skills to 9 personas, +46 lord triggers), manifest.json (+246 triggers), useful-repos.md (+85 AI governance/observability/guardrails/vector-db/local-AI/framework/coding/durable/protocol/eval/compliance repos), mcp-1.md (marked DEPRECATED).
+  - **Counts**: tech-stack 197→238, skills 110→121 (79 dir-based + 42 flat), workflows 54→60, lord_skills 38→46, manifest triggers 222→246.
+  - **Quality gates**: ruff OK, mypy OK (275 source files), 97 targeted tests OK (persona + skill_resolver + rule_frontmatter + manifest_encoding). All trigger paths resolve. All persona lords have SKILL.md files. All lord_skills have SKILL.md files. All workflow tech references resolve. All workflow persona references resolve.
 - **v5.10.1 release — security hardening + architecture cleanup — 2026-09-04**:
   - **SSRF**: IPv4+IPv6 private IP blocking via `ipaddress` module, DNS resolution re-check, `_validate_endpoint()` extracted, `launch()` uses `_a2a_open()`.
   - **RBAC**: `AIZEE_RBAC_STRICT=1` denies admin-only tools (logic bug fixed — was denying all).

@@ -1,5 +1,6 @@
 [TECH] mcp-1
 [OBJ] Model Context Protocol (FastMCP) 1.x server standards for aiZee MCP layer — streamable HTTP, OAuth 2.1, resource templates, elicitation, sampling, roots.
+[DEPRECATED] This file targets MCP spec 2025-03-26 which is now DEPRECATED. Use `mcp-2.md` for MCP 2026-07-28 (current). Key deprecations in 2026-07-28: `initialize`/`notifications/initialized` handshake removed, `Mcp-Session-Id` header removed, Roots/Sampling/Logging deprecated, HTTP+SSE transport deprecated, DCR deprecated (use CIMD). Migrate to `mcp-2.md` + FastMCP v4.0.0 or Python MCP SDK v2.1.0.
 [RULES]
 1. [REQ] `FastMCP` server instance per `aizee_mcp/aizee_server.py`. Tools registered via `@mcp.tool()`. Resources via `@mcp.resource()`. Prompts via `@mcp.prompt()`.
 2. [REQ] Tool functions: typed args, return `str` (JSON-serialized). Validate inputs at entry.
