@@ -314,6 +314,9 @@ IGNORED_FILE_REFS = {
     # example skill directory structure in workflow 30 template (glossary/cheatsheet
     # are illustrative of what a skill *may* contain, not tracked aiZee files)
     'glossary.md', 'cheatsheet.md',
+    # illustrative cross-reference example in workflow 59 (react-19.md is used
+    # as a hypothetical pairing with nextjs-16.md, not an actual tracked file)
+    'react-19.md',
 }
 
 def check_file_references(content: str, rel_name: str, ctx: ValidationContext, global_path: str) -> bool:
@@ -326,6 +329,10 @@ def check_file_references(content: str, rel_name: str, ctx: ValidationContext, g
         # Use a tight window so version ranges like <0.9.17 in the previous line do not hide real refs.
         prefix = content[max(0, ref.start()-12):ref.start()]
         if '*' in prefix or '<' in prefix or '>' in prefix:
+            continue
+        # Skip URL-based .md references (https://, http://, //)
+        # The regex captures `//host/path.md` from URLs like `https://...md`
+        if raw_t.startswith("//"):
             continue
         target = raw_t.replace("/", os.sep)
         if "server" + os.sep + ".ai" in target:

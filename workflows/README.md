@@ -4,7 +4,7 @@ Each file here activates when the AI detects a specific task type. Counts and th
 
 ## Numbered Workflows (Trigger-Based)
 
-This directory contains **68** `.md` files: **54** numbered trigger-based workflows (`00`-`53`) plus standards protocols and reference files.
+This directory contains **74** `.md` files: **60** numbered trigger-based workflows (`00`-`59`) plus standards protocols and reference files.
 
 | Trigger / Task Type | Workflow File | When to Use |
 |---|---|---|
@@ -62,6 +62,12 @@ This directory contains **68** `.md` files: **54** numbered trigger-based workfl
 | local seo / google business profile / citatio… | `51-local-seo.md` | GBP→citations→reviews local SEO flow that extends `seo-lord` locally using Google Busines… |
 | pr outreach / press release / HARO / علاقات ص… | `52-pr-outreach.md` | Query match→pitch→follow-up PR outreach flow using `pr-pitch` skill to match journalist q… |
 | community / بناء مجتمع / community building /… | `53-community-building.md` | Launch→moderate→grow RTL-aware community flow using `community-builder` skill and Chatwoo… |
+|| mcp migration / mcp upgrade / mcp 2026 / stateless mcp / ترحيل mcp | `54-mcp-migration-2026.md` | Migrate MCP servers from 2025-11-25 spec to 2026-07-28 stateless spec (MCP 2.0). |
+|| red team ci / redteam ci / adversarial test ci / promptfoo ci / garak ci / فريق أحمر | `55-ai-redteam-ci.md` | Adversarial red-teaming in CI pipelines using promptfoo, garak, nemo-guardrails, llama-guard. |
+|| agent sre / agent slo / agent error budget / agent circuit breaker / sre governance | `56-agent-sre-governance.md` | SRE governance for AI agents: SLOs, error budgets, circuit breakers, observability. |
+|| durable execution / temporal setup / inngest setup / dbos setup / prefect setup / تنفيذ دائم | `57-durable-execution-setup.md` | Setup durable execution with Temporal, Inngest, DBOS, Prefect, or Restate. |
+|| compliance crosswalk / iso 42001 / nist ai rmf / eu ai act / uagt / تدقيق الامتثال | `58-compliance-crosswalk.md` | Crosswalk audit across ISO 42001, NIST AI RMF, EU AI Act, UAGT compliance frameworks. |
+|| tech stack update / tech stack bulk / version update / stack refresh / تحديث التقنيات | `59-tech-stack-bulk-update.md` | Bulk update tech-stack reference files when new framework/language versions are released. |
 
 ## Standards & Reference Files
 
@@ -70,6 +76,7 @@ This directory contains **68** `.md` files: **54** numbered trigger-based workfl
 | `git-standards.md` | Git branching, commits, PR rules |
 | `ci-cd-standards.md` | CI/CD pipeline and deployment gates |
 | `testing-standards.md` | Test coverage, frameworks, TDD protocol |
+| `testing-tiers.md` | Two-tier testing protocol (FAST/FULL) per stack |
 | `security-standards.md` | OWASP, RBAC, threat modeling |
 | `performance-standards.md` | Query budgets, caching, profiling |
 | `observability-standards.md` | Logging, tracing, health checks |
