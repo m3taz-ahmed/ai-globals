@@ -15,6 +15,7 @@ desktop.ini
 !.env.example
 .devin/mcp_config.local.json
 .devin/config.local.json
+.claude/settings.json
 
 # Secrets & tokens — NEVER commit these
 token.json

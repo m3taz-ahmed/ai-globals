@@ -1,0 +1,52 @@
+# Auto-detect text files and normalize line endings to LF in the repo
+* text=auto eol=lf
+
+# Explicit text files (ensure LF)
+*.md       text eol=lf
+*.py       text eol=lf
+*.yaml      text eol=lf
+*.yml      text eol=lf
+*.json     text eol=lf
+*.mdc      text eol=lf
+*.bat      text eol=lf
+*.ps1      text eol=lf
+*.sh       text eol=lf
+*.js       text eol=lf
+*.css      text eol=lf
+*.html     text eol=lf
+*.csv      text eol=lf
+*.toml     text eol=lf
+*.txt      text eol=lf
+*.tpl      text eol=lf
+*.svg      text eol=lf
+*.example  text eol=lf
+*.gitignore text eol=lf
+*.dockerignore text eol=lf
+*.editorconfig text eol=lf
+*.aizee-version text eol=lf
+*.aiignore text eol=lf
+Dockerfile text eol=lf
+CODEOWNERS text eol=lf
+.windsurfrules text eol=lf
+.gitkeep   text eol=lf
+
+# Binary files — never normalize
+*.png  binary
+*.ico  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.tar  binary
+*.db   binary
+*.sqlite binary
+*.sqlite3 binary
+*.pyc  binary
+*.pyd  binary
+*.so   binary
+*.dll  binary
+*.exe  binary
+*.whl  binary
+*.egg  binary
