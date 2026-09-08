@@ -770,8 +770,8 @@ function Invoke-PreFlightChecks {
 
 # ---------------------------------------------------------------------------
 # Install log file - all GUI log messages are mirrored here.
-# After installation completes, the install.ps1 log is also merged into this file
-# so the user has a single comprehensive log.
+# This file contains ONLY the current session's messages (no merging with
+# old logs). install.ps1 output is captured live via Receive-Job.
 # ---------------------------------------------------------------------------
 $InstallLogDir = Join-Path $Repo "state"
 if (-not (Test-Path $InstallLogDir)) { New-Item -ItemType Directory -Path $InstallLogDir -Force | Out-Null }
@@ -1120,23 +1120,9 @@ function Start-Installation {
         Write-LogMessage "[VERIFY] All post-install checks passed"
     }
 
-    # --- Merge install.ps1 log into GUI log (single comprehensive file) ---
-    $installPs1LogPattern = Join-Path $installRoot "state\install-*.log"
-    $latestInstallLog = Get-ChildItem $installPs1LogPattern -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if ($latestInstallLog) {
-        Write-LogMessage ""
-        Write-LogMessage "--- install.ps1 log (merged) ---"
-        try {
-            $installLogContent = Get-Content $latestInstallLog.FullName -Raw -ErrorAction SilentlyContinue
-            if ($installLogContent) {
-                Add-Content -Path $InstallLogPath -Value $installLogContent -Encoding UTF8 -ErrorAction SilentlyContinue
-                Write-LogMessage "  Merged install.ps1 log: $($latestInstallLog.Name)"
-                Write-LogMessage "  (Full install.ps1 output appended to this GUI log file)"
-            }
-        } catch {
-            Write-LogMessage "  [WARN] Could not merge install.ps1 log: $_"
-        }
-    }
+    # NOTE: install.ps1 output is already captured live via Receive-Job above
+    # and written to this GUI log via Write-LogMessage. No file merge needed —
+    # the GUI log contains only the current session's messages (no old logs).
 
     # Show finish page
     $script:currentPage = 7
@@ -1168,9 +1154,9 @@ function Start-Installation {
     if ($latestLog) {
         $Window.FindName("FinishLog").Text = "Install log: $($latestLog.FullName)"
     }
-    # Also show the GUI log file path (includes merged install.ps1 log)
+    # Also show the GUI log file path (current session only, no merging)
     $script:guiLogPath = $InstallLogPath
-    $Window.FindName("FinishLog").Text += "`nGUI log (merged): $InstallLogPath"
+    $Window.FindName("FinishLog").Text += "`nGUI log: $InstallLogPath"
 
     $compCount = 0
     $allChecks = @("CompPip","CompGraphify","CompDashboard","CompMCPGraphify","CompMCPContext7","CompMCPUpwork","CompMCPFreelancer","CompMCPFiverr","CompMCPLinkedIn","CompAgentClaude","CompAgentWindsurf","CompAgentCursor","CompAgentAider","CompAgentDevin","CompAgentCopilot","CompAgentCline","CompCLIShim","CompEnvVar","CompStartMenu","CompDesktop")
