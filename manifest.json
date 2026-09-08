@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "5.11.0",
+    "version": "5.12.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
-    "updated": "2026-09-04"
+    "updated": "2026-09-08"
   },
   "triggers": {
     "/prompt": "workflows/00-prompt-architecting.md",
@@ -185,6 +185,35 @@
     "mcp architect": "skills/mcp-architect-lord/SKILL.md",
     "خادم mcp": "skills/mcp-architect-lord/SKILL.md",
     "تصميم mcp": "skills/mcp-architect-lord/SKILL.md",
+    "laravel ai": "skills/laravel-ai-lord/SKILL.md",
+    "laravel mcp": "skills/laravel-ai-lord/SKILL.md",
+    "laravel boost": "skills/laravel-ai-lord/SKILL.md",
+    "ai sdk": "skills/laravel-ai-lord/SKILL.md",
+    "laravel agent": "skills/laravel-ai-lord/SKILL.md",
+    "hitl": "skills/laravel-ai-lord/SKILL.md",
+    "human in the loop": "skills/laravel-ai-lord/SKILL.md",
+    "ذكاء اصطناعي لارافيل": "skills/laravel-ai-lord/SKILL.md",
+    "post quantum": "skills/post-quantum-lord/SKILL.md",
+    "pqc": "skills/post-quantum-lord/SKILL.md",
+    "ml-dsa": "skills/post-quantum-lord/SKILL.md",
+    "ml-kem": "skills/post-quantum-lord/SKILL.md",
+    "quantum safe": "skills/post-quantum-lord/SKILL.md",
+    "crypto migration": "skills/post-quantum-lord/SKILL.md",
+    "تشفير كمي": "skills/post-quantum-lord/SKILL.md",
+    "gitops": "skills/gitops-lord/SKILL.md",
+    "argocd": "skills/gitops-lord/SKILL.md",
+    "helm chart": "skills/gitops-lord/SKILL.md",
+    "flux cd": "skills/gitops-lord/SKILL.md",
+    "progressive delivery": "skills/gitops-lord/SKILL.md",
+    "argo rollouts": "skills/gitops-lord/SKILL.md",
+    "جيت اوبس": "skills/gitops-lord/SKILL.md",
+    "llm eval": "skills/llm-evals-lord/SKILL.md",
+    "llm evaluation": "skills/llm-evals-lord/SKILL.md",
+    "prompt regression": "skills/llm-evals-lord/SKILL.md",
+    "agent eval": "skills/llm-evals-lord/SKILL.md",
+    "llm scoring": "skills/llm-evals-lord/SKILL.md",
+    "llm quality": "skills/llm-evals-lord/SKILL.md",
+    "تقييم llm": "skills/llm-evals-lord/SKILL.md",
     "red team": "skills/ai-redteam-lord/SKILL.md",
     "redteam": "skills/ai-redteam-lord/SKILL.md",
     "adversarial": "skills/ai-redteam-lord/SKILL.md",
@@ -388,5 +417,5 @@
     "anti-patterns": "rules/anti-patterns.md",
     "behavioral": "rules/core-behavioral-compact.md"
   },
-  "version": "5.11.0"
+  "version": "5.12.0"
 }

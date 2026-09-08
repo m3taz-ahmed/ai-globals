@@ -202,10 +202,10 @@ aizee/                         # Sovereign root (AIZEE_ROOT)
 │   └── ...                    # 110 governance modules
 ├── aizee_mcp/                 # MCP server (84 tools)
 ├── memory/                    # SQLite + FTS5 + vector
-├── skills/                    # 119 persona + lord skills
-├── workflows/                 # 60 trigger-based execution protocols
+├── skills/                    # 124 persona + lord skills
+├── workflows/                 # 74 trigger-based execution protocols
 ├── rules/                     # Compressed behavioral rules
-├── tech-stack/                # 238 version-locked stack references
+├── tech-stack/                # 252 version-locked stack references
 │   └── spec-driven-templates/ # SDD templates (spec/plan/tasks/constitution/checklist)
 └── eval/                      # Agent benchmark harness
 

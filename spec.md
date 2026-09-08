@@ -36,8 +36,8 @@ aizee/                         # Sovereign root (discovered via AIZEE_ROOT)
 │   └── tools/                 # Tool modules by responsibility
 ├── memory/                    # SQLite + FTS5 + vector memory
 ├── eval/                      # Agent benchmark & eval harness
-├── skills/                    # 110 persona + lord skills
-├── workflows/                 # 54 trigger-based execution protocols
+├── skills/                    # 124 persona + lord skills
+├── workflows/                 # 74 trigger-based execution protocols
 ├── rules/                     # Compressed behavioral rules
 ├── tech-stack/                # Version-locked stack references
 ├── dashboard/                 # Web dashboard (Python stdlib HTTP)

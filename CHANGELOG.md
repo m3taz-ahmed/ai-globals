@@ -1,5 +1,62 @@
 # Changelog
 
+## [5.12.0] - 2026-09-08 (Tech-Stack + Skills + Personas Modernization)
+
+### New Tech-Stack Files (16)
+- **Languages**: `typescript-7.md` (Go compiler, 10x faster), `go-1-27.md` (generic methods, encoding/json/v2, crypto/mldsa), `kotlin-2-4-20.md`, `swift-6-4.md` (beta, WWDC 2026).
+- **Frontend**: `tailwind-4-3.md` (scrollbar utils, @container-size), `nestjs-12.md` (ESM-first, Rspack), `livewire-4.md` (single-file components, @island).
+- **Backend**: `django-6.md` (fetch_mode, DB-level on_delete), `pest-5.md` (TIA engine, Agent plugin, Evals plugin).
+- **Cloud/DevOps**: `kubernetes-1-36.md` (70 enhancements, User Namespaces GA), `helm-4.md`, `argocd-3.md` (impersonation, Source Hydrator).
+- **Mobile**: `flutter-3-47.md` (material_ui/cupertino_ui packages, Impeller default).
+- **Database**: `postgresql-19.md` (beta, io_method=worker), `redis-8-10.md` (compact hashes, BACKUP command).
+- **AI**: `laravel-ai-sdk.md` (Laravel AI SDK 0.11, MCP, Boost, HITL).
+
+### Updated Tech-Stack Files (5)
+- `openai-agents-sdk.md`: v0.13 → v0.22 (sandboxed execution, MCP resources, model pinning).
+- `google-adk.md`: v1 → v2.7 (graph-based workflow runtime, Task API, multi-language).
+- `transformers.md`: v4.46 → v5.16 (major v5 line, tensor-parallel API restored).
+- `langgraph-1.md`: v1.1 → v1.2 (trace_policy on nodes).
+- `go-1-26.md`: Updated rules for Go 1.27 features (generic methods, encoding/json/v2, crypto/mldsa).
+
+### New Lord Skills (4)
+- `laravel-ai-lord`: Laravel AI SDK, Laravel MCP server, Laravel Boost, HITL API for agent tool calls.
+- `post-quantum-lord`: NIST PQC standards (ML-DSA, ML-KEM, SLH-DSA), hybrid schemes, crypto-agility, migration timeline.
+- `gitops-lord`: ArgoCD 3.5, Helm 4, Argo Rollouts, progressive delivery, multi-cluster management.
+- `llm-evals-lord`: LLM evaluation methodology, golden datasets, LLM-as-judge, prompt regression, agent eval, RAG eval, production monitoring.
+
+### Personas Updated
+- ARCH: +laravel-ai-lord, +llm-evals-lord, +keywords (laravel ai, llm eval).
+- SEC: +post-quantum-lord, +keywords (post quantum, pqc, ml-dsa, ml-kem, quantum safe).
+- DEVOPS: +gitops-lord, +keywords (gitops, argocd, helm).
+- SRE: +gitops-lord, +keywords (gitops, argocd).
+- ML: +llm-evals-lord, +keywords (llm eval, prompt regression).
+- QA: +llm-evals-lord.
+- MLOPS: +llm-evals-lord.
+- API: +laravel-ai-lord, +keywords (laravel ai).
+
+### Speculative Labels Removed
+- `php-8-5.md`: Stable since Nov 2025 (8.5.10).
+- `laravel-13.md`: Stable since Mar 2026 (13.30.1).
+- `mysql-9-7.md`: Stable since Apr 2026 (9.7.3 LTS).
+- `filament-5.md`: Stable since Jan 2026 (5.7.8).
+
+### Manifest Updated
+- Version: 5.11.0 → 5.12.0.
+- Triggers: +35 new triggers for new skills (laravel ai, post quantum, gitops, llm eval, etc.).
+
+### Counts
+- tech-stack: 238 → 252
+- skills: 121 → 124 (82 dir + 42 flat)
+- workflows: 60 → 74
+- personas: 29 (unchanged)
+- lord_skills: 46 → 47
+- manifest triggers: 246 → 288
+
+### Research Methodology
+- 5 parallel subagents covering: PHP/Laravel, JS/TS/Frontend, Mobile/Systems/DB/Cloud, Python/AI-ML, SaaS/Marketing/Auth/Payments.
+- All versions verified against official docs, GitHub releases, and vendor changelogs.
+- Future/beta releases clearly marked as speculative.
+
 ## [5.11.0] - 2026-09-04 (Comprehensive Tech-Stack + Skills + Governance Modernization)
 
 ### New Tech-Stack Files (41)

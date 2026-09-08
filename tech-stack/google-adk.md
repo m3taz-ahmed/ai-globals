@@ -1,13 +1,18 @@
-[TECH] Google Agent Development Kit (ADK)
-[OBJ] First-party Google agent framework — Gemini integration, tool use, MCP support, multi-agent orchestration, deployment to Google Cloud.
+[TECH] Google Agent Development Kit (ADK) v2.7
+[OBJ] First-party Google agent framework v2.7 (latest 2.7.1, Aug 2026). Graph-based workflow engine, task delegation, multi-agent orchestration, Gemini integration, MCP support, deployment to Google Cloud. Available in Python, Java, Go, TypeScript, Kotlin.
 [RULES]
-1. [REQ] Use Google ADK as first-party Google agent framework — Gemini integration native, Google Cloud deployment built-in.
-2. [REQ] Use Gemini models via ADK — `Agent(model="gemini-2.5-pro", ...)` — no separate API client needed.
-3. [REQ] Use tool use via ADK — `FunctionTool` / `LangchainTool` / `CrewaiTool` wrappers for custom tools.
-4. [REQ] Use MCP support — ADK agents can consume MCP servers as tool sources; `adk.tools.mcp.MCPToolset`.
-5. [REQ] Use multi-agent orchestration — `SequentialAgent`, `LoopAgent`, `ParallelAgent` for agent composition.
-6. [REQ] Use `Agent` class with `instruction`, `tools`, `sub_agents` for hierarchical agent design.
-7. [REQ] Use session/state management — `SessionService` + `State` for persistent conversation context.
+1. [REQ] Use Google ADK v2.0+ as first-party Google agent framework — Gemini integration native, Google Cloud deployment built-in. GA across Python, Java, Go, TypeScript, Kotlin.
+2. [REQ] Use Workflow Runtime (v2.0+): graph-based execution engine where Agents/Tools/Functions are nodes in a workflow graph. Separates execution routing from language processing.
+3. [REQ] Use Task API for structured agent-to-agent delegation: parallel sub-agent workers, nested hierarchical team structures, resilient dynamic scheduling.
+4. [REQ] Use programmatic routing in workflows: transitions evaluated in code (not LLM) between deterministic nodes — reduces token consumption and latency.
+5. [REQ] Use Gemini models via ADK — `Agent(model="gemini-2.5-pro", ...)` — no separate API client needed.
+6. [REQ] Use tool use via ADK — `FunctionTool` / `LangchainTool` / `CrewaiTool` wrappers for custom tools.
+7. [REQ] Use MCP support — ADK agents can consume MCP servers as tool sources; `adk.tools.mcp.MCPToolset`.
+8. [REQ] Use multi-agent orchestration — `SequentialAgent`, `LoopAgent`, `ParallelAgent` for agent composition.
+9. [REQ] Use `Agent` class with `instruction`, `tools`, `sub_agents` for hierarchical agent design.
+10. [REQ] Use session/state management — `SessionService` + `State` for persistent conversation context.
+11. [REQ] Use `adk deploy` for one-command deployment to Vertex AI Agent Engine.
+12. [REQ] Use Go workflows (v2.7+): graph-based workflows now available for Go (previously Python-only in v2.0).
 8. [REQ] Use `Runner` for agent execution — `Runner(agent=my_agent, app_name="my_app", session_service=...)`.
 9. [REQ] Deploy to Google Cloud — Cloud Run, Vertex AI Agent Builder; `adk deploy` CLI.
 10. [REQ] Use `adk web` for local dev UI — test agents in browser before deploy.

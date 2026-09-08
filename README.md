@@ -4,16 +4,16 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.11.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.11.0">
+    <img src="https://img.shields.io/badge/Version-5.12.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.12.0">
     <img src="https://img.shields.io/badge/Tests-3865%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3865 passed">
     <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 Personas">
-    <img src="https://img.shields.io/badge/Skills-110-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="110 Skills">
-    <img src="https://img.shields.io/badge/Workflows-54-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="54 Workflows">
-    <img src="https://img.shields.io/badge/Tech--Stack-195-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="195 Tech-Stack refs">
+    <img src="https://img.shields.io/badge/Skills-124-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="124 Skills">
+    <img src="https://img.shields.io/badge/Workflows-74-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="74 Workflows">
+    <img src="https://img.shields.io/badge/Tech--Stack-252-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="252 Tech-Stack refs">
   </p>
 </div>
 
@@ -35,7 +35,7 @@ A **zero-compromise, version-controlled operating system** that sits between you
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
 | Raw SQL, missing XSS, weak secrets | OWASP, zero-trust, RBAC enforced by default |
 | Random drive-by refactoring | Surgical changes through policy + budget + audit gates |
-| One-size-fits-all AI answers | 29 personas + 71 skills auto-selected per task |
+| One-size-fits-all AI answers | 29 personas + 124 skills auto-selected per task |
 
 ---
 
@@ -91,8 +91,8 @@ aizee status    # Current persona, skills, budget
 ├── memory/                  # SQLite + FTS5 + vector memory service
 ├── aizee_mcp/                # MCP server (84 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 119 persona + lord skills
-├── workflows/               # 60 trigger-based execution protocols
+├── skills/                  # 124 persona + lord skills
+├── workflows/               # 74 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -106,7 +106,7 @@ aizee status    # Current persona, skills, budget
 ## The Six Pillars
 
 ### 1. Persona + Skill Composition
-29 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, `MARKETING`, `GROWTH`, `BRAND`, `EMAIL`, `SOCIAL`, `CRO`, `SALES`, etc.) with 46 lord-level domain skills. Auto-detected per task — no manual selection needed.
+29 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, `MARKETING`, `GROWTH`, `BRAND`, `EMAIL`, `SOCIAL`, `CRO`, `SALES`, etc.) with 47 lord-level domain skills. Auto-detected per task — no manual selection needed.
 
 ```bash
 aizee persona detect --multi "build a secure docker API with postgres"
@@ -149,6 +149,20 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 
 ---
 
+## What's New in v5.12.0
+
+### Tech-Stack + Skills + Personas Modernization (Sep 2026)
+
+- **16 new tech-stack files**: TypeScript 7 (Go compiler), Tailwind 4.3, NestJS 12, Go 1.27 (generic methods, encoding/json/v2, crypto/mldsa), PostgreSQL 19 (beta), Pest 5 (TIA engine), Livewire 4, Kubernetes 1.36, Django 6, Helm 4, ArgoCD 3.5, Flutter 3.47, Kotlin 2.4.20, Swift 6.4 (beta), Redis 8.10, Laravel AI SDK.
+- **4 new lord skills**: `laravel-ai-lord` (Laravel AI SDK, MCP, Boost, HITL), `post-quantum-lord` (ML-DSA, ML-KEM, PQC migration), `gitops-lord` (ArgoCD 3.5, Helm 4, progressive delivery), `llm-evals-lord` (LLM evaluation, prompt regression, agent eval).
+- **5 tech-stack files updated**: OpenAI Agents SDK v0.22, Google ADK v2.7, Transformers v5.16, LangGraph v1.2, Go 1.27 rules.
+- **8 personas updated**: ARCH, SEC, DEVOPS, SRE, ML, QA, MLOPS, API — new lords + keywords.
+- **Speculative labels removed**: PHP 8.5, Laravel 13, MySQL 9.7, Filament 5 — all stable releases.
+- **Counts**: tech-stack 238→252, skills 121→124, workflows 60→74, lord_skills 46→50.
+- **Research**: 5 parallel subagents across PHP/Laravel, JS/TS/Frontend, Mobile/Systems/DB/Cloud, Python/AI-ML, SaaS/Marketing/Auth/Payments. All versions verified against official sources.
+
+---
+
 ## What's New in v5.11.0
 
 ### Security Hardening + Architecture Cleanup + Docs Sync
@@ -161,7 +175,7 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 - **Performance:** telemetry `summary()` tail-read with `deque(maxlen=...)`, metrics `_quantile` accepts pre-sorted values, learning loop batch persist + `flush()`.
 - **Coverage:** `fail_under` raised from 80% → 95% across `pyproject.toml`, CLI, eval harness, and all CI workflows.
 - **Tests:** new `aizee_mcp/tests/` package with MCP command injection tests; 3865 tests total.
-- **Docs:** counts synced (110 modules / 119 skills / 60 workflows / 238 tech-stack / 3869 tests), stale 80% references fixed, garbled tree characters fixed.
+- **Docs:** counts synced (110 modules / 124 skills / 74 workflows / 252 tech-stack / 3869 tests), stale 80% references fixed, garbled tree characters fixed.
 
 ## What's New in v5.10.0
 

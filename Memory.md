@@ -4,8 +4,18 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-09-04
+[UPDATED] 2026-09-08
 [NOTES]
+- **v5.12.0 — comprehensive tech-stack + skills + personas modernization — 2026-09-08**:
+  - **New tech-stack files (16)**: typescript-7, tailwind-4-3, nestjs-12, go-1-27, postgresql-19, pest-5, livewire-4, kubernetes-1-36, django-6, helm-4, argocd-3, flutter-3-47, kotlin-2-4-20, swift-6-4, redis-8-10, laravel-ai-sdk.
+  - **Updated tech-stack files (5)**: openai-agents-sdk (v0.13→v0.22), google-adk (v1→v2.7), transformers (v4.46→v5.16), langgraph-1 (v1.1→v1.2), go-1-26 (→go-1-27 rules).
+  - **New lord skills (4)**: laravel-ai-lord (Laravel AI SDK, MCP, Boost, HITL), post-quantum-lord (ML-DSA, ML-KEM, PQC migration), gitops-lord (ArgoCD 3.5, Helm 4, progressive delivery), llm-evals-lord (LLM evaluation, prompt regression, agent eval).
+  - **Updated personas.yaml**: +4 lord skills to ARCH/SEC/DEVOPS/SRE/ML/QA/MLOPS/API personas, +20 keywords (laravel ai, post quantum, pqc, gitops, argocd, llm eval, prompt regression, etc.).
+  - **Updated manifest.json**: +35 triggers for new skills, version 5.11.0→5.12.0.
+  - **Removed speculative labels**: php-8-5, laravel-13, mysql-9-7 (all stable releases as of 2026).
+  - **Counts**: tech-stack 238→252, skills 121→124 (82 dir + 42 flat), workflows 60→74, personas 29 (unchanged), lord_skills 46→47, manifest triggers 246→288.
+  - **Research sources**: 5 parallel subagents covering PHP/Laravel, JS/TS/Frontend, Mobile/Systems/DB/Cloud, Python/AI-ML, SaaS/Marketing/Auth/Payments. All versions verified against official docs/GitHub releases.
+  - **Key version updates discovered**: TypeScript 7.0 (Go compiler), NestJS 12, Tailwind 4.3, Go 1.27 (generic methods, encoding/json/v2), Kotlin 2.4.20, Swift 6.4 (beta), Helm 4, ArgoCD 3.5, Pest 5 (TIA engine), Livewire 4, Laravel AI SDK 0.11, Redis 8.10, PostgreSQL 19 (beta).
 - **v5.11.0 — comprehensive tech-stack + skills + governance modernization — 2026-09-04**:
   - **New tech-stack files (41)**: mcp-2, fastmcp-4, nextjs-16, python-3-14, typescript-6, nodejs-26, vite-8, django-6, postgresql-18, redis-8, openai-api-2026, anthropic-api-2026, gemini-api-2026, langchain-1, langgraph-1, openai-agents-sdk, pydantic-ai, mastra-1, microsoft-agent-framework, a2a-protocol, nemo-guardrails, llama-guard-4, nestjs-12, angular-22, astro-7, go-1-26, rust-1-98, expo-sdk-57, mysql-26, mongodb-8, kubernetes-1-35, docker-29, kotlin-2-4, swift-6-3, guardrails-ai, promptfoo, garak, acp, opentelemetry-2026, durable-execution, google-adk.
   - **New lord skills (8)**: mcp-architect-lord, ai-redteam-lord, durable-execution-lord, agent-orchestration-lord, ai-observability-lord, vector-db-lord, local-ai-lord, ai-code-review-lord.

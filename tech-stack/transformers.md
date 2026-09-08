@@ -1,7 +1,7 @@
-[TECH] Hugging Face Transformers
-[OBJ] Python library for using and fine-tuning pre-trained transformer models via pipeline API, AutoModel/AutoTokenizer, quantization, and GGUF export.
+[TECH] Hugging Face Transformers v5.16
+[OBJ] Python library v5.16.x (latest 5.16.1, Aug 2026) for using and fine-tuning pre-trained transformer models via pipeline API, AutoModel/AutoTokenizer, quantization, GGUF export. v5 major line — GLM-5.3-Flash, Qwen4-Exp, OpenAI Privacy Filter support.
 [RULES]
-1. [REQ] Install with `pip install transformers` (>=4.46.0); install `tokenizers`, `accelerate`, and `safetensors` alongside for optimal performance and security.
+1. [REQ] Install with `pip install transformers` (>=5.0.0); install `tokenizers`, `accelerate`, and `safetensors` alongside for optimal performance and security. v5 is the current major line.
 2. [REQ] Use `AutoTokenizer.from_pretrained(model_id)` and `AutoModelForCausalLM.from_pretrained(model_id)` for model loading; never hardcode model class names (e.g., `LlamaForCausalLM`) unless you need model-specific behavior.
 3. [REQ] Always call `tokenizer.apply_chat_template(messages, tokenize=False)` to format chat inputs; never manually concatenate role strings — chat templates are model-specific and critical for correct behavior.
 4. [REQ] Use `pipeline("text-generation", model=model_id, device_map="auto")` for quick inference; pass `torch_dtype=torch.bfloat16` to reduce memory and improve speed on Ampere+ GPUs.
@@ -12,13 +12,14 @@
 9. [REQ] Save fine-tuned models with `model.save_pretrained(path)` and `tokenizer.save_pretrained(path)`; always save both — a model without its tokenizer is unusable.
 10. [REQ] Use `GGUF` export via `llama-cpp-python` or the `convert_hf_to_gguf.py` script from `llama.cpp` for deployment on CPU or edge devices; specify quantization level (e.g., `q4_k_m`) during conversion.
 11. [REQ] Set `HF_HOME` or `TRANSFORMERS_CACHE` environment variable to control model cache location; the default `~/.cache/huggingface` can fill disk on large model downloads.
-12. [CMD] `pip install transformers accelerate safetensors tokenizers bitsandbytes` to install the full inference stack.
-13. [CMD] `huggingface-cli login` to authenticate for gated models (Llama, Mistral, etc.); store token in `HF_TOKEN` env var for CI/CD.
-14. [PROHIBIT] Never use `torch.float32` for inference on GPUs; always use `bfloat16` or `float16` to halve memory usage with no quality loss on modern hardware.
-15. [PROHIBIT] Never download models at runtime in production; pre-download and pin to a local path or specific revision (`from_pretrained(model_id, revision="...")`) to avoid silent model updates.
+12. [REQ] Use tensor-parallel API for multi-GPU inference: `from transformers import tensor_parallel`. v5.16.1 restored backward compatibility for the TP API.
+13. [CMD] `pip install transformers accelerate safetensors tokenizers bitsandbytes` to install the full inference stack.
+14. [CMD] `huggingface-cli login` to authenticate for gated models (Llama, Mistral, etc.); store token in `HF_TOKEN` env var for CI/CD.
+15. [PROHIBIT] Never use `torch.float32` for inference on GPUs; always use `bfloat16` or `float16` to halve memory usage with no quality loss on modern hardware.
+16. [PROHIBIT] Never download models at runtime in production; pre-download and pin to a local path or specific revision (`from_pretrained(model_id, revision="...")`) to avoid silent model updates.
 [COMPAT]
-- Python: transformers>=4.46.0 (Python 3.9+)
-- Dependencies: torch>=2.1.0, accelerate>=1.0.0, safetensors>=0.4.0
+- Python: transformers>=5.0.0 (Python 3.10+)
+- Dependencies: torch>=2.2.0, accelerate>=1.0.0, safetensors>=0.4.0
 - Fine-tuning: trl>=0.12.0, peft>=0.13.0
 [REFS]
 - https://huggingface.co/docs/transformers

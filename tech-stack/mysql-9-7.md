@@ -1,5 +1,5 @@
 [TECH] mysql-9-7
-[OBJ] MySQL 9.7.0 Advanced Schema Rules (Speculative/Preview).
+[OBJ] MySQL 9.7.0 LTS Advanced Schema Rules (Stable Apr 21 2026, latest 9.7.2 Jul 2026).
 [RULES]
 1. [REQ] Vector: Native Vector types for AI semantic search. Vector indexes (cosine/L2).
 2. [REQ] JS Stored Procedures: Use ONLY for complex JSON manipulation. Prefer native SQL. ⛔ NO filesystem/network access.

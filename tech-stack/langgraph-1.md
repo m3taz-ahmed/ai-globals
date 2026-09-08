@@ -1,5 +1,5 @@
-[TECH] LangGraph 1.1
-[OBJ] LangGraph 1.1 (Mar 2026). `version="v2"` type-safe streaming/invoke, StateSchema, ReducedValue, UntrackedValue, MessagesValue, durable checkpoints, human-in-the-loop, subgraph replay.
+[TECH] LangGraph 1.2
+[OBJ] LangGraph 1.2.x (latest 1.2.11, Aug 2026). `version="v2"` type-safe streaming/invoke, StateSchema, ReducedValue, UntrackedValue, MessagesValue, durable checkpoints, human-in-the-loop, subgraph replay, `trace_policy` on nodes.
 [RULES]
 1. [REQ] Use `version="v2"` for type-safe streaming + invoke: `graph.invoke(input, version="v2")` / `graph.stream(input, version="v2")`. v2 returns typed `StreamEvent` objects with full type safety.
 2. [REQ] Define state with `StateSchema`: `class MyState(StateSchema): messages: MessagesValue; count: ReducedValue[int]`. Typed, validated, replaces `TypedDict` state.

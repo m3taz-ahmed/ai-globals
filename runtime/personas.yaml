@@ -16,6 +16,8 @@ personas:
     - ai-observability-lord
     - vector-db-lord
     - local-ai-lord
+    - laravel-ai-lord
+    - llm-evals-lord
     keywords:
     - architecture
     - scalability
@@ -38,6 +40,8 @@ personas:
     - eu ai act
     - nist ai rmf
     - iso 42001
+    - laravel ai
+    - llm eval
   QA:
     name: Software Tester
     weight: 1.2
@@ -48,6 +52,7 @@ personas:
     - eval-reliability-lord
     - ai-redteam-lord
     - ai-code-review-lord
+    - llm-evals-lord
     skills:
     - qa-automation
     keywords:
@@ -179,6 +184,7 @@ personas:
     - ai-observability-lord
     - durable-execution-lord
     - local-ai-lord
+    - gitops-lord
     keywords:
     - cloud
     - aws
@@ -196,6 +202,8 @@ personas:
     - sre
     - devops
     - infrastructure
+    - gitops
+    - argocd
   SEC:
     name: Hardcore Linux Kernel Master & SecOps Warlord
     weight: 1.3
@@ -209,6 +217,7 @@ personas:
     - mcp-architect-lord
     - local-ai-lord
     - ai-code-review-lord
+    - post-quantum-lord
     keywords:
     - security
     - secure
@@ -236,6 +245,11 @@ personas:
     - agent gateway
     - agent governance
     - mcp securable
+    - post quantum
+    - pqc
+    - ml-dsa
+    - ml-kem
+    - quantum safe
   GAME:
     name: Principal Game Architect & JavaScript Engine Master
     weight: 1.3
@@ -375,6 +389,7 @@ personas:
     - agent-orchestration-lord
     - ai-redteam-lord
     - ai-observability-lord
+    - llm-evals-lord
     keywords:
     - machine learning
     - ml
@@ -397,6 +412,8 @@ personas:
     - vector
     - classification
     - regression
+    - llm eval
+    - prompt regression
   DEVOPS:
     name: DevOps & CI/CD Engineer
     weight: 1.2
@@ -408,6 +425,7 @@ personas:
     - durable-execution-lord
     - ai-observability-lord
     - local-ai-lord
+    - gitops-lord
     keywords:
     - devops
     - cicd
@@ -422,6 +440,9 @@ personas:
     - deployment
     - release
     - infrastructure as code
+    - gitops
+    - argocd
+    - helm
     - iac
     - terraform
     - ansible
@@ -434,6 +455,7 @@ personas:
     - security-lord
     - mcp-architect-lord
     - agent-orchestration-lord
+    - laravel-ai-lord
     keywords:
     - api
     - rest
@@ -448,6 +470,7 @@ personas:
     - api versioning
     - webhook
     - endpoint
+    - laravel ai
   LEGAL:
     name: Legal & Compliance Officer
     weight: 1.3
@@ -674,6 +697,7 @@ personas:
     - ai-observability-lord
     - vector-db-lord
     - local-ai-lord
+    - llm-evals-lord
     keywords:
     - mlops
     - model deployment
@@ -1609,3 +1633,42 @@ lord_skills:
   - query discipline
   - observability
   - boring tech
+  laravel-ai-lord:
+  - laravel ai
+  - laravel mcp
+  - laravel boost
+  - ai sdk
+  - laravel agent
+  - hitl
+  - human in the loop
+  - laravel llm
+  - ذكاء اصطناعي لارافيل
+  post-quantum-lord:
+  - post quantum
+  - pqc
+  - ml-dsa
+  - ml-kem
+  - kyber
+  - dilithium
+  - quantum safe
+  - crypto migration
+  - تشفير كمي
+  gitops-lord:
+  - gitops
+  - argocd
+  - helm
+  - flux
+  - progressive delivery
+  - argo rollouts
+  - gitops sync
+  - multi cluster
+  - جيت اوبس
+  llm-evals-lord:
+  - llm eval
+  - llm evaluation
+  - prompt regression
+  - agent eval
+  - llm scoring
+  - llm quality
+  - eval harness
+  - تقييم llm
