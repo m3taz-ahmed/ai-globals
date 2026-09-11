@@ -31,7 +31,7 @@
     - **Model routing (1)**: model_router (cost-aware routing across 16 models, 4 tiers).
     - **Fairness (1)**: fairness_detector (EU AI Act compliance, 10 protected attributes).
   - **Kernel wiring**: All 17 modules initialized in `_init_core_services()`, 13 new status fields, 60+ new `__all__` exports (224 total).
-  - **Research basis**: 32 competitor repositories studied, 45 ideas extracted, 7 domains implemented. See `temp/competitor-study-v3/ANALYSIS.md`.
+  - **Research basis**: 32 competitor repositories studied, 45 ideas extracted, 7 domains implemented (temp research artifact, not persisted in deployment).
   - **Version**: 5.12.0 → 5.13.0.
 - **v5.12.0 — comprehensive tech-stack + skills + personas modernization — 2026-09-08**:
   - **New tech-stack files (16)**: typescript-7, tailwind-4-3, nestjs-12, go-1-27, postgresql-19, pest-5, livewire-4, kubernetes-1-36, django-6, helm-4, argocd-3, flutter-3-47, kotlin-2-4-20, swift-6-4, redis-8-10, laravel-ai-sdk.

@@ -37,4 +37,4 @@
 33. [REQ] Dynamic Navigation Visibility (v5.6+): `NavigationItem::make()->visible(fn() => $this->can('view'))` for context-aware nav. Combine with `FilamentShield` roles. NEVER hardcode nav visibility in Blade.
 34. [REQ] Backed Enum Locale Support (v5.6+): `->locale('ar')` on backed enums for localized labels. Use with `getLabel()` override for full i18n. Store translations in `lang/{locale}/enums.php`.
 35. [REQ] Vapor Downloader (v5.8+): Custom downloader for Laravel Vapor environments. Auto-detects Vapor via `app()->environment()`. Use for S3-compatible file serving without local disk.
-36. [REQ] Filament Blueprint (AI Docs): Use `filament:blueprint` command to generate AI-readable documentation for panels/resources. Enables AI agents to understand Filament admin structure. Keep generated docs in `docs/filament-blueprint.md`.
+36. [REQ] Filament Blueprint (AI Docs): Use `filament:blueprint` command to generate AI-readable documentation for panels/resources. Enables AI agents to understand Filament admin structure. Keep generated docs in a version-controlled blueprint file under your project's docs directory.
