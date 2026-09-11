@@ -50,13 +50,49 @@ from runtime.agent_catalog import AgentCatalog as AgentCatalog
 from runtime.agent_catalog import CatalogAgent as CatalogAgent
 from runtime.agent_catalog import CatalogFlow as CatalogFlow
 from runtime.agent_catalog import CatalogModel as CatalogModel
+from runtime.agent_circuit_breaker import CbConfig as CbConfig
+from runtime.agent_circuit_breaker import CbState as CbState
+from runtime.agent_circuit_breaker import SemanticCircuitBreaker as SemanticCircuitBreaker
 from runtime.agent_discovery import AgentDiscovery as AgentDiscovery
 from runtime.agent_gateway import AgentGateway as AgentGateway
 from runtime.agent_gateway import GuardrailContext as GuardrailContext
 from runtime.agent_gateway import GuardrailPhase as GuardrailPhase
 from runtime.agent_gateway import GuardrailResult as GuardrailResult
 from runtime.agent_gateway import Verdict as Verdict
+from runtime.agent_sli import AgentSliCollector as AgentSliCollector
+from runtime.agent_sli import SliResult as SliResult
+from runtime.agent_sli import SliStatus as SliStatus
+from runtime.agent_sli import TaskRecord as TaskRecord
+from runtime.approval_channels import DiscordChannel as DiscordChannel
+from runtime.approval_channels import EmailChannel as EmailChannel
+from runtime.approval_channels import SlackChannel as SlackChannel
 from runtime.approval_service import ApprovalService as ApprovalService
+from runtime.approval_sla import ApprovalSlaManager as ApprovalSlaManager
+from runtime.approval_sla import DecisionDelta as DecisionDelta
+from runtime.approval_sla import SlaAction as SlaAction
+from runtime.approval_sla import SlaPolicy as SlaPolicy
+from runtime.audit_signing import AuditSigner as AuditSigner
+from runtime.audit_signing import SignatureResult as SignatureResult
+from runtime.audit_signing import SignatureScheme as SignatureScheme
+from runtime.blade_template_linter import BladeFinding as BladeFinding
+from runtime.blade_template_linter import BladeSeverity as BladeSeverity
+from runtime.blade_template_linter import BladeTemplateLinter as BladeTemplateLinter
+from runtime.blast_radius import BlastEdge as BlastEdge
+from runtime.blast_radius import BlastNode as BlastNode
+from runtime.blast_radius import BlastPath as BlastPath
+from runtime.blast_radius import BlastRadiusGraph as BlastRadiusGraph
+from runtime.blast_radius import ImpactLevel as ImpactLevel
+from runtime.blast_radius import NodeType as NodeType
+from runtime.budget_advanced import BurnForecast as BurnForecast
+from runtime.budget_advanced import BurnForecaster as BurnForecaster
+from runtime.budget_advanced import ModelCostOptimizer as ModelCostOptimizer
+from runtime.budget_advanced import ReserveHold as ReserveHold
+from runtime.budget_advanced import ReserveSettleProtocol as ReserveSettleProtocol
+from runtime.budget_advanced import ShadowModeTracker as ShadowModeTracker
+from runtime.budget_advanced import SpendAnomaly as SpendAnomaly
+from runtime.budget_advanced import SpendAnomalyDetector as SpendAnomalyDetector
+from runtime.budget_advanced import ThrottleConfig as ThrottleConfig
+from runtime.budget_advanced import ThrottleTier as ThrottleTier
 from runtime.closure_evaluator import ClosureEvaluator as ClosureEvaluator
 from runtime.closure_evaluator import GuardianClosureEvaluator as GuardianClosureEvaluator
 from runtime.commands import Command as Command
@@ -79,6 +115,14 @@ from runtime.cost_attribution import CostAnomaly as CostAnomaly
 from runtime.cost_attribution import CostAnomalyType as CostAnomalyType
 from runtime.cost_attribution import CostAttribution as CostAttribution
 from runtime.cost_attribution import CostRecord as CostRecord
+from runtime.cross_tool_taint import CrossToolTaintTracker as CrossToolTaintTracker
+from runtime.cross_tool_taint import DataClassification as DataClassification
+from runtime.cross_tool_taint import ToolCall as ToolCall
+from runtime.cross_tool_taint import ToolSensitivity as ToolSensitivity
+from runtime.cross_tool_taint import ToxicFlow as ToxicFlow
+from runtime.db_migration_safety import MigrationFinding as MigrationFinding
+from runtime.db_migration_safety import MigrationSafetyChecker as MigrationSafetyChecker
+from runtime.db_migration_safety import MigrationSeverity as MigrationSeverity
 from runtime.defensive_injection import DefenseResult as DefenseResult
 from runtime.defensive_injection import DefenseStrategy as DefenseStrategy
 from runtime.defensive_injection import DefensiveInjector as DefensiveInjector
@@ -98,6 +142,21 @@ from runtime.dual_llm import DualLLMError as DualLLMError
 from runtime.dual_llm import DualLLMOrchestrator as DualLLMOrchestrator
 from runtime.dual_llm import DualLLMResult as DualLLMResult
 from runtime.dual_llm import LLMRole as LLMRole
+from runtime.durable import DurableExecutor as DurableExecutor
+from runtime.durable import DurableStep as DurableStep
+from runtime.durable import DurableWorkflow as DurableWorkflow
+from runtime.durable import StepStatus as StepStatus
+from runtime.fairness_detector import FairnessDetector as FairnessDetector
+from runtime.fairness_detector import FairnessFinding as FairnessFinding
+from runtime.fairness_detector import FairnessReport as FairnessReport
+from runtime.fairness_detector import FairnessStrategy as FairnessStrategy
+from runtime.fairness_detector import ProtectedAttribute as ProtectedAttribute
+from runtime.filament_access_auditor import AccessFinding as AccessFinding
+from runtime.filament_access_auditor import AccessSeverity as AccessSeverity
+from runtime.filament_access_auditor import FilamentAccessAuditor as FilamentAccessAuditor
+from runtime.hallucination_detector import HallucinationDetector as HallucinationDetector
+from runtime.hallucination_detector import HallucinationFinding as HallucinationFinding
+from runtime.hallucination_detector import HallucinationSeverity as HallucinationSeverity
 from runtime.hook_lifecycle import HookContext as HookContext
 from runtime.hook_lifecycle import HookPhase as HookPhase
 from runtime.hook_lifecycle import HookRegistry as HookRegistry
@@ -108,11 +167,26 @@ from runtime.injection_detector import InjectionTechnique as InjectionTechnique
 from runtime.injection_detector import InjectionVerdict as InjectionVerdict
 from runtime.kernel import Kernel as Kernel
 from runtime.kernel import KernelBuilder as KernelBuilder
+
+# Laravel/Filament/UI governance modules (v5.14).
+from runtime.laravel_policy_linter import LaravelFinding as LaravelFinding
+from runtime.laravel_policy_linter import LaravelLintSeverity as LaravelLintSeverity
+from runtime.laravel_policy_linter import LaravelPolicyLinter as LaravelPolicyLinter
 from runtime.layers import Layer as Layer
 from runtime.layers import LayerManifest as LayerManifest
 from runtime.learning_loop import LearningLoop as LearningLoop
+from runtime.llm_attestation import AttestationEnvelope as AttestationEnvelope
+from runtime.llm_attestation import AttestationStatement as AttestationStatement
+from runtime.llm_attestation import AttestationType as AttestationType
+from runtime.llm_attestation import LlmAttestor as LlmAttestor
+from runtime.llm_attestation import PrivacyMode as PrivacyMode
 from runtime.loop_detector import LoopDetector as LoopDetector
+from runtime.mcp_auditor import Finding as McpAuditorFinding
+from runtime.mcp_auditor import FindingSeverity as FindingSeverity
+from runtime.mcp_auditor import McpAuditor as McpAuditor
 from runtime.mcp_firewall import McpFirewall as McpFirewall
+from runtime.mcp_manifest_lock import ManifestFingerprint as ManifestFingerprint
+from runtime.mcp_manifest_lock import ManifestLock as ManifestLock
 from runtime.mcp_securable import Grant as Grant
 from runtime.mcp_securable import McpPermission as McpPermission
 from runtime.mcp_securable import McpSecurableRegistry as McpSecurableRegistry
@@ -126,6 +200,11 @@ from runtime.mobile_patterns import MobilePatternAuditor as MobilePatternAuditor
 from runtime.mobile_patterns import MobilePlatform as MobilePlatform
 from runtime.mobile_patterns import PatternResult as PatternResult
 from runtime.mobile_patterns import PatternSeverity as PatternSeverity
+from runtime.model_router import ModelCapability as ModelCapability
+from runtime.model_router import ModelInfo as ModelInfo
+from runtime.model_router import ModelRouter as ModelRouter
+from runtime.model_router import RouteDecision as RouteDecision
+from runtime.model_router import RouteTier as RouteTier
 from runtime.plan_diff_validator import Finding as Finding
 from runtime.plan_diff_validator import PlanDiffValidator as PlanDiffValidator
 from runtime.plan_diff_validator import ValidationLevel as ValidationLevel
@@ -136,6 +215,9 @@ from runtime.plugin_system import PluginManifest as PluginManifest
 from runtime.plugin_system import PluginRegistry as PluginRegistry
 from runtime.plugin_system import PluginStatus as PluginStatus
 from runtime.plugin_system import PluginType as PluginType
+from runtime.policy_lint import LintFinding as LintFinding
+from runtime.policy_lint import LintSeverity as LintSeverity
+from runtime.policy_lint import PolicyLinter as PolicyLinter
 from runtime.prompt_gate import PromptGate as PromptGate
 from runtime.prompt_injection_detector import DetectionLevel as DetectionLevel
 from runtime.prompt_injection_detector import PromptInjectionDetector as PromptInjectionDetector
@@ -167,6 +249,9 @@ from runtime.skill_scanner import PatternSeverity as ScanPatternSeverity
 from runtime.skill_scanner import ScanResult as ScanResult
 from runtime.skill_scanner import ScanRiskLevel as ScanRiskLevel
 from runtime.skill_scanner import SkillScanner as SkillScanner
+from runtime.stale_api_detector import StaleApiDetector as StaleApiDetector
+from runtime.stale_api_detector import StaleApiFinding as StaleApiFinding
+from runtime.stale_api_detector import StaleApiSeverity as StaleApiSeverity
 from runtime.supply_chain_guard import DeclaredDependency as DeclaredDependency
 from runtime.supply_chain_guard import DependencyEcosystem as DependencyEcosystem
 from runtime.supply_chain_guard import OsvDevClient as OsvDevClient
@@ -183,6 +268,9 @@ from runtime.tool_output_sanitizer import ToolOutputSanitizer as ToolOutputSanit
 from runtime.tool_output_sanitizer import ToolSanitizeResult as ToolSanitizeResult
 from runtime.trajectory import FailureCategory as FailureCategory
 from runtime.trajectory import TrajectoryTracker as TrajectoryTracker
+from runtime.ui_a11y_checker import A11yChecker as A11yChecker
+from runtime.ui_a11y_checker import A11yFinding as A11yFinding
+from runtime.ui_a11y_checker import A11ySeverity as A11ySeverity
 
 __all__ = [
     "ActionContext",
@@ -191,16 +279,30 @@ __all__ = [
     "AgentCatalog",
     "AgentDiscovery",
     "AgentGateway",
+    "AgentSliCollector",
     "AnomalyAlert",
     "AnomalyType",
     "ApprovalService",
+    "ApprovalSlaManager",
+    "AttestationEnvelope",
+    "AttestationStatement",
+    "AttestationType",
+    "AuditSigner",
     "Baseline",
     "BaselineRegistry",
+    "BlastEdge",
+    "BlastNode",
+    "BlastPath",
+    "BlastRadiusGraph",
     "Bounder",
     "BrandDesignSystem",
+    "BurnForecast",
+    "BurnForecaster",
     "CatalogAgent",
     "CatalogFlow",
     "CatalogModel",
+    "CbConfig",
+    "CbState",
     "ClosureEvaluator",
     "Command",
     "CommandBus",
@@ -218,6 +320,10 @@ __all__ = [
     "CostAttribution",
     "CostProvider",
     "CostRecord",
+    "CrossToolTaintTracker",
+    "CrossToolTaintTracker",
+    "DataClassification",
+    "DecisionDelta",
     "DeclaredDependency",
     "DefenseResult",
     "DefenseStrategy",
@@ -229,11 +335,20 @@ __all__ = [
     "DesignSlopError",
     "DesignSlopVerifier",
     "DetectionLevel",
+    "DiscordChannel",
     "DualLLMError",
     "DualLLMOrchestrator",
     "DualLLMResult",
+    "DurableExecutor",
+    "DurableStep",
+    "DurableWorkflow",
+    "EmailChannel",
     "Evidence",
     "FailureCategory",
+    "FairnessDetector",
+    "FairnessFinding",
+    "FairnessReport",
+    "FairnessStrategy",
     "Finding",
     "FixedRateCostProvider",
     "FusionResult",
@@ -242,9 +357,13 @@ __all__ = [
     "GuardrailContext",
     "GuardrailPhase",
     "GuardrailResult",
+    "HallucinationDetector",
+    "HallucinationFinding",
+    "HallucinationSeverity",
     "HookContext",
     "HookPhase",
     "HookRegistry",
+    "ImpactLevel",
     "InjectionDetector",
     "InjectionSeverity",
     "InjectionSignal",
@@ -257,8 +376,15 @@ __all__ = [
     "LayerManifest",
     "LazyImport",
     "LearningLoop",
+    "LintFinding",
+    "LintSeverity",
+    "LlmAttestor",
     "LoopDetector",
+    "ManifestFingerprint",
+    "ManifestLock",
     "MaterializationResult",
+    "McpAuditor",
+    "McpAuditorFinding",
     "McpFirewall",
     "McpPermission",
     "McpSecurableRegistry",
@@ -269,6 +395,10 @@ __all__ = [
     "MobilePattern",
     "MobilePatternAuditor",
     "MobilePlatform",
+    "ModelCapability",
+    "ModelCostOptimizer",
+    "ModelInfo",
+    "ModelRouter",
     "OsvDevClient",
     "OutputEnvelope",
     "PatternResult",
@@ -282,14 +412,21 @@ __all__ = [
     "PluginRegistry",
     "PluginStatus",
     "PluginType",
+    "PolicyLinter",
     "Principal",
     "PrincipalRole",
+    "PrivacyMode",
     "ProjectType",
     "PromptGate",
     "PromptInjectionDetector",
+    "ProtectedAttribute",
     "ReasoningGraph",
     "ReflexionEntry",
     "ReflexionLog",
+    "ReserveHold",
+    "ReserveSettleProtocol",
+    "RouteDecision",
+    "RouteTier",
     "RuleEntry",
     "RulesMaterializer",
     "ScanPatternSeverity",
@@ -298,21 +435,42 @@ __all__ = [
     "ScopeLevel",
     "ScopedManager",
     "ScopedRegistry",
+    "SemanticCircuitBreaker",
     "SemanticDetectionResult",
+    "ShadowModeTracker",
+    "SignatureResult",
+    "SignatureScheme",
     "SkillFinding",
     "SkillRouter",
     "SkillScanner",
+    "SlaAction",
+    "SlaPolicy",
+    "SlackChannel",
+    "SliResult",
+    "SliStatus",
     "SlopCategory",
     "SlopFinding",
     "SlopSeverity",
     "SlopVerdict",
+    "SpendAnomaly",
+    "SpendAnomalyDetector",
+    "StaleApiDetector",
+    "StaleApiFinding",
+    "StaleApiSeverity",
+    "StepStatus",
     "SupplyChainGuard",
     "TaintError",
     "TaintLabel",
     "TaintTracker",
+    "TaskRecord",
+    "ThrottleConfig",
+    "ThrottleTier",
+    "ToolCall",
     "ToolOutputSanitizer",
     "ToolSanitizeResult",
+    "ToolSensitivity",
     "ToolTarget",
+    "ToxicFlow",
     "TrajectoryTracker",
     "TyposquatDetector",
     "TyposquatFinding",

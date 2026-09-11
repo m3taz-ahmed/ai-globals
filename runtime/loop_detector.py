@@ -235,9 +235,11 @@ class LoopDetector:
                 if sim > best_sim:
                     best_sim = sim
                     best_args = past_args
-        # Single-similar firing is too strict (false positives on retries);
-        # require at least 2 similar past actions.
-        if similar_count >= 2 and best_sim > 0:
+        # Trigger fuzzy detection when at least 1 similar past action is found.
+        # The threshold parameter controls exact-repeat sensitivity; fuzzy
+        # detection is a separate, more lenient path that fires earlier to
+        # catch near-duplicates before they reach the exact-repeat threshold.
+        if similar_count >= 1 and best_sim > 0:
             return best_sim, best_args
         return None
 

@@ -358,7 +358,9 @@ def _validate_endpoint(endpoint: str) -> None:
             f"localhost/loopback. Got host: {host!r}"
         )
     # SSRF guard: block private/reserved IPs for BOTH http and https.
-    if _is_private_or_reserved_ip(host):
+    # Loopback IPs (127.0.0.1, ::1) are exempt — they are already validated
+    # by the HTTP scheme check above and are safe for local development.
+    if _is_private_or_reserved_ip(host) and not _is_loopback_ip(host):
         raise AdapterError(
             "RemoteA2AAdapter endpoint resolves to a private/reserved IP "
             f"(SSRF blocked). Got host: {host!r}"

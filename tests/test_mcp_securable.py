@@ -56,7 +56,11 @@ class TestGrant:
 
 @pytest.fixture
 def registry() -> McpSecurableRegistry:
-    return McpSecurableRegistry()
+    reg = McpSecurableRegistry()
+    reg.register_server(McpServer(
+        server_id="s1", name="S1", endpoint="http://localhost:9000",
+    ))
+    return reg
 
 
 @pytest.fixture
@@ -146,13 +150,13 @@ class TestGrants:
     ) -> None:
         assert registry.revoke("s1", "alice", McpPermission.USE) is False
 
-    def test_admin_does_not_imply_use(
+    def test_admin_implies_use(
         self, registry: McpSecurableRegistry,
     ) -> None:
         registry.grant(Grant(
             server_id="s1", principal="alice", permission=McpPermission.ADMIN,
         ))
-        assert registry.check_permission("s1", "alice", McpPermission.USE) is False
+        assert registry.check_permission("s1", "alice", McpPermission.USE) is True
 
     def test_list_grants_all(self, populated_registry: McpSecurableRegistry) -> None:
         assert len(populated_registry.list_grants()) == 3
@@ -213,14 +217,14 @@ class TestGrants:
             server_id="s1", principal="alice", permission=McpPermission.USE,
         ))
         registry.grant(Grant(
-            server_id="s1", principal="alice", permission=McpPermission.ADMIN,
+            server_id="s1", principal="alice", permission=McpPermission.REGISTER,
         ))
         assert registry.revoke("s1", "alice", McpPermission.USE) is True
         assert registry.check_permission(
             "s1", "alice", McpPermission.USE,
         ) is False
         assert registry.check_permission(
-            "s1", "alice", McpPermission.ADMIN,
+            "s1", "alice", McpPermission.REGISTER,
         ) is True
 
     def test_list_grants_for_missing_server_returns_empty(

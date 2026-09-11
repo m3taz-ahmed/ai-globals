@@ -361,7 +361,7 @@ class TestRunMcpPlan:
         with patch("aizee_mcp.tools.workflow_tools.McpAgent"), \
              patch("aizee_mcp.tools.workflow_tools.McpOrchestrator") as mock_orch_cls:
             mock_orch = MagicMock()
-            mock_orch.execute = AsyncMock(return_value={"s1": mock_step_result})
+            mock_orch.execute_async = AsyncMock(return_value={"s1": mock_step_result})
             mock_orch_cls.return_value = mock_orch
 
             result = _call("run_mcp_plan", {"steps": [{"id": "s1", "tool": "read"}]})
@@ -380,7 +380,7 @@ class TestRunMcpPlan:
         with patch("aizee_mcp.tools.workflow_tools.McpAgent"), \
              patch("aizee_mcp.tools.workflow_tools.McpOrchestrator") as mock_orch_cls:
             mock_orch = MagicMock()
-            mock_orch.execute = AsyncMock(return_value={"s1": mock_step_result})
+            mock_orch.execute_async = AsyncMock(return_value={"s1": mock_step_result})
             mock_orch_cls.return_value = mock_orch
 
             result = _call("run_mcp_plan", {

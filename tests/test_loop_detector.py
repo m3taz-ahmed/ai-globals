@@ -89,7 +89,7 @@ def test_stats() -> None:
     det.check_and_record("exec", {"cmd": "ls"})  # blocked
     stats = det.stats()
     assert stats["blocks"] == 1
-    assert stats["size"] == 2
+    assert stats["size"] == 1  # blocked actions are NOT appended to history
     assert "fuzzy_threshold" in stats
     assert "fuzzy_enabled" in stats
 

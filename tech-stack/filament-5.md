@@ -1,5 +1,5 @@
 [TECH] filament-5
-[OBJ] Filament v5.x Architecture Rules.
+[OBJ] Filament v5.x Architecture Rules (latest v5.8.1 Sep 2026).
 [RULES]
 1. [REQ] Islands: Livewire v4 independent renders. â›” waterfalls. Deferred filters for heavy queries.
 2. [REQ] Async/Defer: `->deferLoading()`. Reverb/SSE for real-time. â›” client-side polling.
@@ -27,3 +27,14 @@
 23. [REQ] Minimal Plugin Pattern: Plugin with empty register()/boot() as marker only, functionality in Page classes. Use when feature is page-centric, not resource-centric.
 24. [REQ] View Customization Hooks: Override $view, $headerView, $recordView, $statusView per page for granular Blade template customization. Use for white-label or per-tenant UI variations.
 25. [REQ] Asset Publishing via Install Command: hasInstallCommand() with publishAssets() for CSS/JS delivery. FilamentAsset::register() with loadedOnRequest() for lazy-loaded JS. AlpineComponent + Js + Css asset types.
+26. [REQ] Deferred Schema Loading (v5.8+): Use `->deferLoading()` on schemas to load heavy relation managers asynchronously. Prevents waterfall renders. Combine with Reverb SSE for real-time updates. â›” NEVER client-side polling for admin panels.
+27. [REQ] Table Grouping Persistence (v5.8+): Table grouping now persists in user session via `->persistGroupingInSession()`. Use `->defaultGroup(column, direction: 'asc'|'desc')` for default sort. Reduces repeated group re-application.
+28. [REQ] Trait-Named Lifecycle Hooks (v5.8+): Lifecycle hooks (`boot`, `mount`, `updated`) auto-discovered from traits. Use `getTraitHooks()` for explicit control. Enables reusable behavior across pages/importers without inheritance.
+29. [REQ] RichEditor min/maxHeight (v5.8+): `RichEditor::make('content')->minHeight(200)->maxHeight(600)` for controlled editor sizing. Prevents layout shift on long content. Use for blog/CMS-style content fields.
+30. [REQ] MultiFactorChallenge Reusable Component (v5.8+): `MultiFactorChallenge` class for 2FA/MFA flows. Reuse across panels. Integrate with `FilamentShield` for role-gated MFA enforcement.
+31. [REQ] Empty State Behavior in Stats (v5.8+): Stats widgets support empty state behavior via `->emptyStateHeading()`, `->emptyStateDescription()`, `->emptyStateActions()`. NEVER show raw "No data" — provide actionable empty states.
+32. [REQ] SlideOver Position (v5.6+): `SlideOver::make()->position('left'|'right'|'top'|'bottom')` for directional slide-overs. Use `left` for RTL/Arabic interfaces (natural reading direction).
+33. [REQ] Dynamic Navigation Visibility (v5.6+): `NavigationItem::make()->visible(fn() => $this->can('view'))` for context-aware nav. Combine with `FilamentShield` roles. NEVER hardcode nav visibility in Blade.
+34. [REQ] Backed Enum Locale Support (v5.6+): `->locale('ar')` on backed enums for localized labels. Use with `getLabel()` override for full i18n. Store translations in `lang/{locale}/enums.php`.
+35. [REQ] Vapor Downloader (v5.8+): Custom downloader for Laravel Vapor environments. Auto-detects Vapor via `app()->environment()`. Use for S3-compatible file serving without local disk.
+36. [REQ] Filament Blueprint (AI Docs): Use `filament:blueprint` command to generate AI-readable documentation for panels/resources. Enables AI agents to understand Filament admin structure. Keep generated docs in `docs/filament-blueprint.md`.

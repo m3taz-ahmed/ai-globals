@@ -286,4 +286,4 @@ def test_gui_installer_has_preflight_checks():
     assert "CheckNpx" in content
     assert "CheckUvx" in content
     assert "CheckDisk" in content
-    assert "Run-PreFlightChecks" in content
+    assert "Invoke-PreFlightChecks" in content

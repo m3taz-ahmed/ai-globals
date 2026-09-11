@@ -88,6 +88,38 @@ def _init_core_services(kernel: Kernel) -> None:
     kernel.governance = GovernanceHooks(kernel.audit, kernel.telemetry)
     kernel.mcp_firewall = kernel._build_mcp_firewall()
     kernel.loop_detector = LoopDetector(window=20, threshold=5)
+    # -- Modernization v5.13: advanced governance services --
+    # MCP security: deterministic auditor + manifest lock + cross-tool taint
+    kernel.mcp_auditor = kernel._build_mcp_auditor()
+    kernel.mcp_manifest_lock = kernel._build_mcp_manifest_lock()
+    kernel.cross_tool_taint = kernel._build_cross_tool_taint()
+    # Budget: progressive throttling + reserve/settle + burn forecast + anomaly
+    kernel.budget_advanced = kernel._build_budget_advanced()
+    # HITL: SLA manager + audit signer
+    kernel.approval_sla = kernel._build_approval_sla()
+    kernel.audit_signer = kernel._build_audit_signer()
+    # Observability: agent SLIs + semantic circuit breaker
+    kernel.agent_sli = kernel._build_agent_sli()
+    kernel.circuit_breaker = kernel._build_circuit_breaker()
+    # Durable execution
+    kernel.durable_executor = kernel._build_durable_executor()
+    # Supply chain: LLM attestation + blast radius
+    kernel.llm_attestor = kernel._build_llm_attestor()
+    kernel.blast_radius = kernel._build_blast_radius()
+    # Code review: hallucination + stale API detection
+    kernel.hallucination_detector = kernel._build_hallucination_detector()
+    kernel.stale_api_detector = kernel._build_stale_api_detector()
+    # Policy: policy linter
+    kernel.policy_linter = kernel._build_policy_linter()
+    # Model routing + fairness
+    kernel.model_router = kernel._build_model_router()
+    kernel.fairness_detector = kernel._build_fairness_detector()
+    # -- Modernization v5.14: Laravel/Filament/UI governance services --
+    kernel.laravel_policy_linter = kernel._build_laravel_policy_linter()
+    kernel.filament_access_auditor = kernel._build_filament_access_auditor()
+    kernel.db_migration_safety = kernel._build_db_migration_safety()
+    kernel.ui_a11y_checker = kernel._build_ui_a11y_checker()
+    kernel.blade_template_linter = kernel._build_blade_template_linter()
     # User-facing settings (dashboard override layer). Process-wide cached so
     # the dashboard, McpClient, and PluginManager share one source of truth.
     kernel.settings_manager = get_settings_manager(kernel.root)
@@ -387,6 +419,29 @@ class Kernel:
     mcp_firewall: McpFirewall
     loop_detector: LoopDetector
     settings_manager: SettingsManager
+    # Modernization v5.13: advanced governance services
+    mcp_auditor: Any
+    mcp_manifest_lock: Any
+    cross_tool_taint: Any
+    budget_advanced: Any
+    approval_sla: Any
+    audit_signer: Any
+    agent_sli: Any
+    circuit_breaker: Any
+    durable_executor: Any
+    llm_attestor: Any
+    blast_radius: Any
+    hallucination_detector: Any
+    stale_api_detector: Any
+    policy_linter: Any
+    model_router: Any
+    fairness_detector: Any
+    # v5.14 Laravel/Filament/UI governance
+    laravel_policy_linter: Any
+    filament_access_auditor: Any
+    db_migration_safety: Any
+    ui_a11y_checker: Any
+    blade_template_linter: Any
     policy_mgr: PolicyManager
     workflow_mgr: WorkflowManager
     agent_mgr: AgentManager
@@ -470,6 +525,150 @@ class Kernel:
             for rule in McpFirewall.from_yaml(project_rules).rules:
                 fw.add_rule(rule)
         return fw
+
+    # -- Modernization v5.13: builder methods for new governance services --
+
+    def _build_mcp_auditor(self) -> Any:
+        """Build the MCP security auditor (14 deterministic detectors)."""
+        from runtime.mcp_auditor import McpAuditor
+
+        return McpAuditor(lock_dir=self.root / "state" / "mcp_locks")
+
+    def _build_mcp_manifest_lock(self) -> Any:
+        """Build the MCP manifest lock (SHA-256 fingerprinting)."""
+        from runtime.mcp_manifest_lock import ManifestLock
+
+        return ManifestLock(lock_dir=self.root / "state" / "mcp_locks")
+
+    def _build_cross_tool_taint(self) -> Any:
+        """Build the cross-tool taint tracker (toxic flow detection)."""
+        from runtime.cross_tool_taint import CrossToolTaintTracker
+
+        return CrossToolTaintTracker()
+
+    def _build_budget_advanced(self) -> Any:
+        """Build advanced budget services (throttle, reserve, forecast)."""
+        from runtime.budget_advanced import (
+            BurnForecaster,
+            ModelCostOptimizer,
+            ReserveSettleProtocol,
+            ShadowModeTracker,
+            SpendAnomalyDetector,
+        )
+
+        class _BudgetAdvanced:
+            """Aggregator for advanced budget services."""
+
+            def __init__(self) -> None:
+                self.reserve_settle = ReserveSettleProtocol()
+                self.burn_forecaster = BurnForecaster()
+                self.anomaly_detector = SpendAnomalyDetector()
+                self.model_optimizer = ModelCostOptimizer()
+                self.shadow_tracker = ShadowModeTracker()
+
+        return _BudgetAdvanced()
+
+    def _build_approval_sla(self) -> Any:
+        """Build the approval SLA manager."""
+        from runtime.approval_sla import ApprovalSlaManager, SlaPolicy
+
+        return ApprovalSlaManager(default_policy=SlaPolicy(timeout_seconds=3600.0))
+
+    def _build_audit_signer(self) -> Any:
+        """Build the audit signer (Ed25519 with HMAC fallback)."""
+        from runtime.audit_signing import AuditSigner
+
+        return AuditSigner(key_path=self.root / "state" / "audit_signing.key")
+
+    def _build_agent_sli(self) -> Any:
+        """Build the agent SLI collector."""
+        from runtime.agent_sli import AgentSliCollector
+
+        return AgentSliCollector()
+
+    def _build_circuit_breaker(self) -> Any:
+        """Build the semantic circuit breaker."""
+        from runtime.agent_circuit_breaker import SemanticCircuitBreaker
+
+        return SemanticCircuitBreaker()
+
+    def _build_durable_executor(self) -> Any:
+        """Build the durable execution engine."""
+        from runtime.durable import DurableExecutor
+
+        return DurableExecutor(state_dir=self.root / "state" / "durable")
+
+    def _build_llm_attestor(self) -> Any:
+        """Build the LLM artifact attestor."""
+        from runtime.llm_attestation import LlmAttestor
+
+        return LlmAttestor(state_dir=self.root / "state" / "attestations")
+
+    def _build_blast_radius(self) -> Any:
+        """Build the blast radius graph."""
+        from runtime.blast_radius import BlastRadiusGraph
+
+        return BlastRadiusGraph()
+
+    def _build_hallucination_detector(self) -> Any:
+        """Build the hallucinated import detector."""
+        from runtime.hallucination_detector import HallucinationDetector
+
+        return HallucinationDetector()
+
+    def _build_stale_api_detector(self) -> Any:
+        """Build the stale API detector."""
+        from runtime.stale_api_detector import StaleApiDetector
+
+        return StaleApiDetector()
+
+    def _build_policy_linter(self) -> Any:
+        """Build the policy linter."""
+        from runtime.policy_lint import PolicyLinter
+
+        return PolicyLinter()
+
+    def _build_model_router(self) -> Any:
+        """Build the cost-aware model router."""
+        from runtime.model_router import ModelRouter
+
+        return ModelRouter()
+
+    def _build_fairness_detector(self) -> Any:
+        """Build the fairness detector."""
+        from runtime.fairness_detector import FairnessDetector
+
+        return FairnessDetector()
+
+    def _build_laravel_policy_linter(self) -> Any:
+        """Build the Laravel policy linter (v5.14)."""
+        from runtime.laravel_policy_linter import LaravelPolicyLinter
+
+        return LaravelPolicyLinter()
+
+    def _build_filament_access_auditor(self) -> Any:
+        """Build the Filament access auditor (v5.14)."""
+        from runtime.filament_access_auditor import FilamentAccessAuditor
+
+        return FilamentAccessAuditor()
+
+    def _build_db_migration_safety(self) -> Any:
+        """Build the database migration safety checker (v5.14)."""
+        from runtime.db_migration_safety import MigrationSafetyChecker
+
+        return MigrationSafetyChecker()
+
+    def _build_ui_a11y_checker(self) -> Any:
+        """Build the UI accessibility checker (v5.14)."""
+        from runtime.ui_a11y_checker import A11yChecker
+
+        return A11yChecker()
+
+    def _build_blade_template_linter(self) -> Any:
+        """Build the Blade template linter (v5.14)."""
+        from runtime.blade_template_linter import BladeTemplateLinter
+
+        return BladeTemplateLinter()
 
     def detect_persona(self, text: str) -> dict[str, Any]:
         """Detect the best persona for a user prompt."""
@@ -637,6 +836,26 @@ class Kernel:
             "capabilities": self.capabilities.list(),
             "mcp_firewall_rules": len(self.mcp_firewall.rules),
             "loop_detector": self.loop_detector.stats(),
+            # Modernization v5.13
+            "mcp_auditor": "active",
+            "mcp_manifest_locks": self.mcp_manifest_lock.list_locks(),
+            "cross_tool_taint": self.cross_tool_taint.stats(),
+            "circuit_breaker": self.circuit_breaker.stats(),
+            "agent_sli": self.agent_sli.summary(),
+            "blast_radius": self.blast_radius.stats(),
+            "model_router": "active",
+            "fairness_detector": "active",
+            "policy_linter": "active",
+            "hallucination_detector": "active",
+            "stale_api_detector": "active",
+            "durable_workflows": self.durable_executor.list_workflows(),
+            "llm_attestations": len(self.llm_attestor.list_attestations()),
+            # v5.14 Laravel/Filament/UI governance
+            "laravel_policy_linter": "active",
+            "filament_access_auditor": "active",
+            "db_migration_safety": "active",
+            "ui_a11y_checker": "active",
+            "blade_template_linter": "active",
         }
 
 

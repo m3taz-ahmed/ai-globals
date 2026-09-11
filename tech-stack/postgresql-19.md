@@ -8,16 +8,19 @@
 5. [REQ] Use virtual generated columns: `GENERATED ALWAYS AS (expr) VIRTUAL` — computed on read, not stored.
 6. [REQ] Use `pg_upgrade` with `--link` mode for fast in-place upgrade (requires same filesystem).
 7. [REQ] Use logical replication for zero-downtime migrations: `pg_logical` slot + subscription.
-8. [REQ] Use `pgvector` extension for vector similarity search: `CREATE EXTENSION vector;` — supports ivfflat + hnsw indexes.
+8. [REQ] Use `pgvector` extension for vector similarity search: `CREATE EXTENSION vector;` — supports ivfflat + hnsw indexes. Laravel 13.31+ `AsVector` cast works natively with pgvector.
 9. [REQ] Use `pg_partman` for time-series partitioning — automatic partition creation + maintenance.
 10. [REQ] Use connection pooling: `pgbouncer` (transaction mode) or `pgcat` for multi-tenant.
 11. [PROHIBIT] Never run PG 19 Beta in production — wait for GA release (expected Sep/Oct 2026).
 12. [PROHIBIT] Never use `SELECT *` in production queries — explicit column lists only.
+13. [REQ] Laravel Vector Queries: Laravel 13.31+ `whereVectorSimilarTo()`, `orderByVectorDistance()` compile to pgvector `<=>` operator. Use `AsVector` cast on model. Ensure `CREATE EXTENSION vector` runs in migration.
+14. [REQ] Security: 28 security vulnerabilities fixed in PG 18.6/17.11/16.15/15.19/14.24 (Aug 2026). Always run latest patch. Use `pgaudit` extension for compliance logging.
 [COMPAT]
 - PostgreSQL 19 Beta 3 (released Aug 13 2026). GA expected Sep/Oct 2026.
 - PG 18.6 is the latest stable (Aug 2026).
 - PG 17.11, 16.15, 15.19, 14.24 also supported.
 - Python 3.12-3.14 supported (for PL/Python).
+- Laravel 13.31+ AsVector cast compatible (pgvector).
 [REFS]
 - https://www.postgresql.org/docs/19/release-19.html
 - https://www.postgresql.org/about/news/postgresql-186-1711-1615-1519-1424-and-19-beta-3-released-3365/

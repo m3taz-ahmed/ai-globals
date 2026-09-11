@@ -1,5 +1,94 @@
 # Changelog
 
+## [5.14.0] - 2026-09-11 (Laravel/Filament/UI Stack Mastery)
+
+### New Runtime Modules (5)
+
+**Laravel/Filament/UI Governance (5 modules)**
+- `laravel_policy_linter.py`: 8 checks (LP001-LP008) for Laravel policy/security — $guarded=[], raw SQL, missing FormRequest, bypassed gates, missing policy methods, Filament resource without Shield, Auth::check() bypass, missing $fillable.
+- `filament_access_auditor.py`: 8 checks (FA001-FA008) for Filament v5 RBAC — panel without auth middleware, resource without policy, ->can('*') wildcard, table without per-record auth, isAccessible()=true, navigation without visibility, missing Shield.
+- `db_migration_safety.py`: 10 checks (MG001-MG010) for migration safety — destructive operations, missing down(), non-concurrent indexes, Model::all(), raw UPDATE, renameColumn, change column type, DB::raw, missing return types.
+- `ui_a11y_checker.py`: 10 checks (A11y-001 to A11y-010) for WCAG 2.2 AA — missing alt, button without text, input without label, missing focus-visible, animations without motion-reduce, inline color, Arabic without dir="rtl", table without caption, onclick without keyboard, tabindex>0.
+- `blade_template_linter.py`: 10 checks (BL001-BL010) for Blade templates — unescaped output, missing CSRF, hardcoded URLs, missing @stack, missing @error, Filament override without $view, @auth without @can, data to JS without @json.
+
+### New Skills (5)
+
+- `laravel-filament-lord`: Full-stack Laravel 13 + Filament v5 mastery — admin panels, resources, API, database, UI in one cohesive workflow.
+- `filament-performance-lord`: Filament v5 performance optimization — deferred loading, query optimization, caching, Octane, real-time patterns.
+- `database-migration-lord`: Safe database migrations — Laravel migrations, schema design, zero-downtime deploys, MySQL/PostgreSQL/MariaDB compatibility.
+- `ui-design-lord`: UI/UX design mastery — HTML, CSS, Tailwind v4.3, Filament v5 UI components, responsive design, RTL/Arabic, accessibility.
+- `laravel-testing-lord`: Laravel 13 + Filament v5 testing mastery — Pest 3+, feature tests, Filament resource tests, API tests, database tests, CI/CD.
+
+### Tech-Stack Updates (6 files)
+
+- `laravel-13.md`: Updated to 13.31.0. Added Cloud facade, AsVector Eloquent cast, MariaDB vector distance queries, read-through filesystems, Queue totalSize(), JobInterrupted event, chaperone for BelongsToMany, Scout Turbopuffer driver, pre-deploy package checks.
+- `filament-5.md`: Updated to v5.8.1. Added deferred schema loading, table grouping persistence, trait-named lifecycle hooks, RichEditor min/maxHeight, MultiFactorChallenge, empty state behavior, SlideOver position, dynamic navigation visibility, backed enum locale, Vapor downloader, Filament Blueprint.
+- `mysql-9-7.md`: Added calendar versioning (26.7), Laravel AsVector compatibility note (plain MySQL has no vector support).
+- `postgresql-19.md`: Added Laravel vector query compatibility, security advisory note (28 vulnerabilities fixed Aug 2026).
+- `php-8-5.md`: Added asymmetric visibility, property hooks, PCRE \C forbidden, PDO_PGSQL lazy fetch fixes, DOM stack overflow fixes.
+- `tailwind-4-3.md`: Added Filament v5 integration, RTL/Arabic support with logical properties.
+
+### Kernel Integration
+
+- `_init_core_services()` initializes the 5 new governance services.
+- 5 new builder methods added to `Kernel`.
+- 5 new type-annotated attributes on `Kernel` class.
+- `Kernel.status()` includes all 5 new services.
+- `runtime/__init__.py` exports 16 new symbols (5 modules × ~3 exports each).
+
+### Version Bump
+
+- `5.13.0` → `5.14.0` in: `pyproject.toml`, `config.py`, `manifest.json`, `tests/test_config.py`, `scripts/validate-globals.py`.
+
+## [5.13.0] - 2026-09-11 (Deep Governance Modernization)
+
+### New Runtime Modules (17)
+
+**MCP Security (3 modules)**
+- `mcp_auditor.py`: 14 deterministic detectors (UNPINNED_PACKAGE, REMOTE_SCRIPT, WRITABLE_PATH, NON_HTTPS_URL, PLAINTEXT_SECRET, OVERBROAD_ROOT, CREDENTIAL_DIR, APPROVAL_BYPASS, IMPERATIVE_INJECTION, HIDDEN_CONTENT, INVISIBLE_UNICODE, CROSS_SERVER_REF, NAME_COLLISION, RUGPULL). Stdlib-only, no API keys or network access in scan path.
+- `mcp_manifest_lock.py`: SHA-256 fingerprinting for MCP server manifests. Detects rug-pulls by diffing command, args, and tool descriptions against a locked baseline.
+- `cross_tool_taint.py`: Cross-tool provenance tracking with toxic flow detection. Classifies tool results (untrusted/sensitive/normal), draws provenance edges via token matching (including base64/hex decoding), and blocks the untrusted→sensitive→egress path.
+
+**Budget Enforcement (1 module)**
+- `budget_advanced.py`: Progressive throttling (ADVISORY/THROTTLE/RESTRICT/HARD_STOP tiers), reserve/settle/release protocol (prevents double-spend), burn-rate forecaster, spend anomaly detector (z-score), model cost optimizer (34 models), shadow mode tracker (non-enforcing).
+
+**HITL / Approvals (3 modules)**
+- `approval_sla.py`: Approval SLA with escalation, auto-approve/auto-deny on timeout, reminder intervals, and decision delta tracking (proposed vs. approved payload diff).
+- `audit_signing.py`: Ed25519 signature support for audit entries with graceful HMAC-SHA512 fallback when cryptography library is unavailable.
+- `approval_channels.py`: Multi-channel approval notifications — Slack (Block Kit with approve/deny buttons), Discord (rich embed), Email (webhook API).
+
+**Observability (2 modules)**
+- `agent_sli.py`: Agent-specific SLIs — Decision Quality Rate (DQR), Tool Invocation Efficiency (TIE), Human Escalation Rate (HER), Approval Queue Depth Drift (AQDD). GREEN/YELLOW/RED status.
+- `agent_circuit_breaker.py`: Semantic circuit breaker that opens on semantic validation failure rate (not HTTP errors). CLOSED/OPEN/HALF_OPEN states with configurable thresholds.
+
+**Durable Execution (1 module)**
+- `durable.py`: Library-based durable execution with crash recovery, deterministic replay, and saga compensation. Persists state to JSON before/after each step. No external server required.
+
+**Supply Chain (2 modules)**
+- `llm_attestation.py`: LLM artifact attestation (PROMPT, CORPUS, EVAL, ROUTE, SLO) with signed DSSE envelopes, provenance DAG, and Ed25519/HMAC-SHA256 signing.
+- `blast_radius.py`: Blast radius graph for AI supply chain security. Tracks CVE→package→MCP server→agent→credentials→tools chain with BFS path finding.
+
+**Code Review (2 modules)**
+- `hallucination_detector.py`: Detects hallucinated imports in AI-generated Python and JavaScript/TypeScript code. Checks against 200+ known Python packages and 100+ npm packages.
+- `stale_api_detector.py`: Detects usage of deprecated/stale APIs (30+ entries across Python and JavaScript) with modern alternatives and deprecation info.
+
+**Policy Engine (1 module)**
+- `policy_lint.py`: Static analysis over policy rule sets — 7 checks (PL001-PL007): duplicate IDs, unmatchable conditions, ReDoS, shadowed denies, missing OWASP mapping, unreachable rules, empty conditions.
+
+**Model Routing (1 module)**
+- `model_router.py`: Cost-aware model routing with 16 models across 4 tiers (LOCAL/CHEAP/STANDARD/PREMIUM). Routes to cheapest capable model with timeout-aware escalation.
+
+**Fairness (1 module)**
+- `fairness_detector.py`: Fairness detection for EU AI Act compliance. Detects 10 protected attributes and proxy attributes. Includes Fairness Impossibility Theorem note and strategy recommendations.
+
+### Kernel Wiring
+- All 17 new modules initialized in `Kernel._init_core_services()` via dedicated builder methods.
+- `Kernel.status()` extended with 13 new status fields.
+- `runtime/__init__.py` re-exports 60+ new symbols (224 total in `__all__`).
+
+### Version
+- 5.12.0 → 5.13.0
+
 ## [5.12.0] - 2026-09-08 (Tech-Stack + Skills + Personas Modernization)
 
 ### New Tech-Stack Files (16)

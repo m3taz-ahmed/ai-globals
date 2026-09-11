@@ -733,6 +733,18 @@ class MemoryStore(BaseRepository):
                  m.valid_from, m.valid_to, sig)
             )
         with self._conn() as conn:
+            # Check which IDs already exist BEFORE inserting.
+            # This prevents faiss "id already present in index" crashes
+            # when re-ingesting unchanged files (deterministic IDs collide).
+            all_ids = [r[0] for r in rows]
+            placeholders = ",".join("?" * len(all_ids))
+            pre_existing = {
+                row[0]
+                for row in conn.execute(
+                    f"SELECT id FROM memories WHERE id IN ({placeholders})",
+                    all_ids,
+                ).fetchall()
+            }
             # OR IGNORE: check-then-insert in add() races under concurrency;
             # the PK makes the second writer a silent no-op instead of an
             # IntegrityError crash.
@@ -743,8 +755,17 @@ class MemoryStore(BaseRepository):
                 """,
                 rows,
             )
+        # Only add to vector index the memories that were actually new.
+        # Re-ingesting unchanged files produces duplicate IDs that SQLite
+        # silently ignores (INSERT OR IGNORE), but faiss's add_with_ids
+        # crashes on duplicate IDs ("id already present in index").
         if self.vector and self.vector.is_available():
-            self.vector.add_batch([m.id for m in memories], [m.content for m in memories])
+            new_memories = [m for m in memories if m.id not in pre_existing]
+            if new_memories:
+                self.vector.add_batch(
+                    [m.id for m in new_memories],
+                    [m.content for m in new_memories],
+                )
         return memories
 
     def _fts_query(self, query: str) -> str:

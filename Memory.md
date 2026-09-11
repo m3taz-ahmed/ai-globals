@@ -4,8 +4,35 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
-[UPDATED] 2026-09-08
+[UPDATED] 2026-09-11
 [NOTES]
+- **v5.14.0 — Laravel/Filament/UI stack mastery — 2026-09-11**:
+  - **5 new runtime modules** for Laravel/Filament/UI governance:
+    - `laravel_policy_linter.py` (LP001-LP008): $guarded=[], raw SQL, missing FormRequest, bypassed gates, missing policy methods, Filament without Shield, Auth::check() bypass, missing $fillable.
+    - `filament_access_auditor.py` (FA001-FA008): panel without auth, resource without policy, ->can('*'), table without per-record auth, isAccessible()=true, nav without visibility, missing Shield.
+    - `db_migration_safety.py` (MG001-MG010): destructive ops, missing down(), non-concurrent indexes, Model::all(), raw UPDATE, renameColumn, change column type, DB::raw.
+    - `ui_a11y_checker.py` (A11y-001 to A11y-010): missing alt, button without text, input without label, missing focus-visible, animations without motion-reduce, Arabic without dir="rtl", table without caption, onclick without keyboard, tabindex>0.
+    - `blade_template_linter.py` (BL001-BL010): unescaped output, missing CSRF, hardcoded URLs, missing @stack, missing @error, @auth without @can, data to JS without @json.
+  - **5 new lord skills**: laravel-filament-lord (full-stack), filament-performance-lord (optimization), database-migration-lord (safe migrations), ui-design-lord (HTML/CSS/Tailwind/Filament UI), laravel-testing-lord (Pest 3+ testing).
+  - **6 tech-stack files updated**: laravel-13 (13.31.0: Cloud facade, AsVector, MariaDB vector), filament-5 (v5.8.1: deferred loading, grouping persistence), mysql-9-7 (26.7 calendar versioning), postgresql-19 (Laravel vector compat), php-8-5 (asymmetric visibility, property hooks), tailwind-4-3 (Filament integration, RTL).
+  - **Kernel wiring**: 5 new services in `_init_core_services()`, 5 new builders, 5 new status fields, 16 new `__all__` exports.
+  - **Version**: 5.13.0 → 5.14.0.
+  - **Tests**: 22 new tests in `tests/test_laravel_governance.py` — all passing.
+- **v5.13.0 — deep governance modernization — 2026-09-11**:
+  - **17 new runtime modules** across 7 governance domains:
+    - **MCP security (3)**: mcp_auditor (14 deterministic detectors), mcp_manifest_lock (SHA-256 fingerprints), cross_tool_taint (toxic flow detection).
+    - **Budget (1)**: budget_advanced (progressive throttling, reserve/settle, burn forecast, anomaly detection, model cost optimizer, shadow mode).
+    - **HITL (3)**: approval_sla (SLA with escalation + decision delta), audit_signing (Ed25519 with HMAC fallback), approval_channels (Slack/Discord/Email).
+    - **Observability (2)**: agent_sli (DQR/TIE/HER/AQDD), agent_circuit_breaker (semantic circuit breaker).
+    - **Durable execution (1)**: durable (library-based durable execution with crash recovery).
+    - **Supply chain (2)**: llm_attestation (PROMPT/CORPUS/EVAL/ROUTE/SLO attestation), blast_radius (CVE→tools blast radius graph).
+    - **Code review (2)**: hallucination_detector (hallucinated imports), stale_api_detector (deprecated APIs).
+    - **Policy (1)**: policy_lint (7 policy lint checks PL001-PL007).
+    - **Model routing (1)**: model_router (cost-aware routing across 16 models, 4 tiers).
+    - **Fairness (1)**: fairness_detector (EU AI Act compliance, 10 protected attributes).
+  - **Kernel wiring**: All 17 modules initialized in `_init_core_services()`, 13 new status fields, 60+ new `__all__` exports (224 total).
+  - **Research basis**: 32 competitor repositories studied, 45 ideas extracted, 7 domains implemented. See `temp/competitor-study-v3/ANALYSIS.md`.
+  - **Version**: 5.12.0 → 5.13.0.
 - **v5.12.0 — comprehensive tech-stack + skills + personas modernization — 2026-09-08**:
   - **New tech-stack files (16)**: typescript-7, tailwind-4-3, nestjs-12, go-1-27, postgresql-19, pest-5, livewire-4, kubernetes-1-36, django-6, helm-4, argocd-3, flutter-3-47, kotlin-2-4-20, swift-6-4, redis-8-10, laravel-ai-sdk.
   - **Updated tech-stack files (5)**: openai-agents-sdk (v0.13→v0.22), google-adk (v1→v2.7), transformers (v4.46→v5.16), langgraph-1 (v1.1→v1.2), go-1-26 (→go-1-27 rules).

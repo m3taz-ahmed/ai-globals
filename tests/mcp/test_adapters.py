@@ -387,7 +387,8 @@ def test_remote_a2a_launch_success():
     with patch("asyncio.get_running_loop", return_value=mock_loop):
         session = asyncio.run(adapter.launch("do task", profile="dev"))
         assert session.status == "running"
-        assert session.session_id == "remote-123"
+        # The adapter uses a collision-safe local ID, not the remote server's ID.
+        assert session.session_id.startswith("a2a-")
         assert session.artifacts["task"] == "do task"
         assert session.artifacts["remote_session_id"] == "remote-123"
 
@@ -418,7 +419,9 @@ def test_remote_a2a_launch_default_session_id():
 
     with patch("asyncio.get_running_loop", return_value=mock_loop):
         session = asyncio.run(adapter.launch("do task"))
-        assert session.session_id == "a2a-1"
+        # Both local and remote IDs are generated as a2a-<uuid> fallbacks.
+        assert session.session_id.startswith("a2a-")
+        assert session.artifacts["remote_session_id"].startswith("a2a-")
 
 
 # ---------------------------------------------------------------------------
@@ -592,13 +595,16 @@ def test_remote_a2a_launch_real_loop_passes_timeout_and_context():
     mock_response = MagicMock()
     mock_response.read.return_value = json.dumps({"session_id": "remote-loop"}).encode()
 
-    with patch("aizee_mcp.adapters.urllib.request.urlopen") as mock_open:
+    with patch("aizee_mcp.adapters._a2a_open") as mock_open:
         mock_open.return_value = mock_response
         session = asyncio.run(adapter.launch("real task"))
-    assert session.session_id == "remote-loop"
-    kwargs = mock_open.call_args.kwargs
-    assert kwargs["timeout"] == 12.5
-    ctx = kwargs["context"]
+    # The adapter uses a collision-safe local ID, not the remote server's ID.
+    assert session.session_id.startswith("a2a-")
+    assert session.artifacts["remote_session_id"] == "remote-loop"
+    # _a2a_open receives (url, context, timeout) positionally.
+    args = mock_open.call_args.args
+    assert args[2] == 12.5
+    ctx = args[1]
     assert ctx.verify_mode == ssl.CERT_NONE
 
 
@@ -615,11 +621,12 @@ def test_remote_a2a_poll_real_loop_timeout_passed():
     session = Session(session_id="s1", backend=Backend.REMOTE_A2A, profile="default")
     session.artifacts["remote_session_id"] = "remote-1"
 
-    with patch("aizee_mcp.adapters.urllib.request.urlopen") as mock_open:
+    with patch("aizee_mcp.adapters._a2a_open") as mock_open:
         mock_open.return_value = mock_response
         result = asyncio.run(adapter.poll(session))
     assert result.status == "completed"
-    assert mock_open.call_args.kwargs["timeout"] == 3.25
+    # _a2a_open receives (url, context, timeout) positionally.
+    assert mock_open.call_args.args[2] == 3.25
 
 
 def test_remote_a2a_poll_socket_timeout_marks_failed():
@@ -628,10 +635,10 @@ def test_remote_a2a_poll_socket_timeout_marks_failed():
 
     session = Session(session_id="s2", backend=Backend.REMOTE_A2A, profile="default")
 
-    def _hang(req, **kwargs):
+    def _hang(url, context, timeout):
         raise TimeoutError("timed out")
 
-    with patch("aizee_mcp.adapters.urllib.request.urlopen", side_effect=_hang):
+    with patch("aizee_mcp.adapters._a2a_open", side_effect=_hang):
         result = asyncio.run(adapter.poll(session))
     assert result.status == "failed"
     assert "timed out" in str(result.artifacts.get("error", ""))

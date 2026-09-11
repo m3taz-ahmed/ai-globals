@@ -1,5 +1,5 @@
 [TECH] laravel-13
-[OBJ] Laravel 13.x Strict Standards (Stable Mar 17 2026, latest 13.26.1 Aug 2026).
+[OBJ] Laravel 13.x Strict Standards (Stable Mar 17 2026, latest 13.31.0 Sep 2026).
 [RULES]
 1. [REQ] Types: PHP 8.4 asymmetric visibility (`public private(set)`). Native Attributes. `strict_types=1`.
 2. [REQ] Context API: Inject trace/tenant IDs into `Context`. Auto-propagate to logs/queues.
@@ -18,3 +18,12 @@
 14. [REQ] Contract-First API Artifacts: Emit machine-readable JSON schema + TypeScript stubs from API Resources (Prisma-inspired). php artisan contract:emit writes <Resource>.json + <Resource>.d.ts. Enables AI agent understanding + frontend type safety without manual sync.
 15. [REQ] State Flushing for Octane: Granular flush listeners (FlushAuthenticationState, FlushSessionState, FlushUploadedFiles) for clean request isolation in long-running processes. Register in Octane config. Required for Octane-compatible packages.
 16. [REQ] Application Warming: Pre-resolve services via octane.warm config for persistent memory. Reduces cold-start latency for first requests after worker boot.
+17. [REQ] Cloud Facade (13.31+): Use `Illuminate\Support\Facades\Cloud` to detect Laravel Cloud at runtime. `Cloud::hosted()` checks if app is on Cloud, `Cloud::usesManagedQueues()` detects managed queue connection, `Cloud::queue()` accesses the connection. Never hardcode Cloud detection via env vars.
+18. [REQ] AsVector Eloquent Cast (13.31+): Use `Illuminate\Database\Eloquent\Casts\AsVector` for vector columns. Portable across MariaDB (binary format via `unpack('g*')`) and PostgreSQL (pgvector JSON text). Accepts arrays and `Arrayable` objects. NEVER use `array` cast for vector columns on MariaDB (returns binary garbage).
+19. [REQ] MariaDB Vector Distance Queries (13.31+): `whereVectorSimilarTo`, `whereVectorDistanceLessThan`, `orderByVectorDistance`, `selectVectorDistance` now support MariaDB via `vec_distance_cosine(col, vec_fromtext(?))`. Plain MySQL (non-HeatWave) still throws `RuntimeException` — use MariaDB 11.7+ or PostgreSQL with pgvector.
+20. [REQ] Read-Through Filesystems (13.30+): `driver: 'read-through'` with `primary` + `fallback` disks for zero-downtime file migration. Reads check primary first; if file only on fallback, returns it AND copies to primary. Writes target primary only. Use for gradual S3-to-R2 migration.
+21. [REQ] Queue totalSize() (13.31+): `Queue::totalSize()` counts every job on a connection (not just a single queue). Use for monitoring queue backlog across all queues. Combine with `Cloud::queue()` for managed queue monitoring.
+22. [REQ] JobInterrupted Event (13.31+): Listen to `JobInterrupted` event to perform cleanup when a job is interrupted (timeout, SIGTERM, memory limit). Register listener in `EventServiceProvider`. Never rely on `__destruct` for cleanup (not guaranteed to fire).
+23. [REQ] Chaperone for BelongsToMany (13.31+): Chaperone pattern now supports `BelongsToMany` pivot models. Use `->chaperone()` on `belongsToMany` relationships to automatically sync pivot records when parent is saved. Reduces manual pivot sync code.
+24. [REQ] Scout Turbopuffer Driver (13.30+): `turbopuffer` engine for Laravel Scout — serverless vector search without managing infrastructure. Use for AI semantic search without self-hosting pgvector/MariaDB vector. Configure via `SCOUT_ENGINE=turbopuffer`.
+25. [REQ] Pre-Deploy Package Checks (Cloud): Cloud reads `composer.lock` on every push and flags missing/outdated packages (Octane, Inertia SSR, Nightwatch) before deploy. Keep `composer.lock` committed and up-to-date. NEVER deploy with uncommitted `composer.lock` changes.

@@ -260,9 +260,10 @@ def _iter_files_bounded(base: Path, pattern: str = "*", max_files: int = _MAX_SC
                         continue
                     stack.append(Path(entry.path))
             elif current.is_file():
-                # Simple pattern match on name (supports "*suffix" globs).
+                # Pattern match: supports glob patterns like "*router*.dart".
+                import fnmatch
                 name = current.name
-                if pattern == "*" or (pattern.startswith("*") and name.endswith(pattern[1:])) or pattern == name:
+                if pattern == "*" or fnmatch.fnmatch(name, pattern):
                     results.append(current)
         except OSError:
             continue
@@ -557,7 +558,11 @@ class MobilePatternAuditor:
         )
 
     def _has_expo_typed_routes(self) -> bool:
-        """JSON-parse app config for expo.typedRoutes (not substring)."""
+        """JSON-parse app config for expo typedRoutes (not substring).
+
+        Checks both ``expo.typedRoutes`` and ``expo.experiments.typedRoutes``
+        (the latter is the documented location in Expo SDK 56+).
+        """
         for name in ("app.json", "app.config.json"):
             path = self._root / name
             if not path.is_file():
@@ -567,7 +572,12 @@ class MobilePatternAuditor:
             except (OSError, ValueError):
                 continue
             expo = data.get("expo", data) if isinstance(data, dict) else {}
-            if isinstance(expo, dict) and expo.get("typedRoutes") is True:
+            if not isinstance(expo, dict):
+                continue
+            if expo.get("typedRoutes") is True:
+                return True
+            experiments = expo.get("experiments", {})
+            if isinstance(experiments, dict) and experiments.get("typedRoutes") is True:
                 return True
         return False
 

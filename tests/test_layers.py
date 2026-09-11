@@ -51,9 +51,10 @@ def test_manifest_can_depend_same_or_lower() -> None:
     assert manifest.can_depend("runtime", "runtime") is True
 
 
-def test_manifest_can_depend_unknown_is_allowed() -> None:
+def test_manifest_can_depend_unknown_is_denied() -> None:
+    """Unknown packages are fail-closed (not allowed to depend)."""
     manifest = LayerManifest()
-    assert manifest.can_depend("unknown_a", "unknown_b") is True
+    assert manifest.can_depend("unknown_a", "unknown_b") is False
 
 
 def test_manifest_register_custom() -> None:

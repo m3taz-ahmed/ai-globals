@@ -13,8 +13,10 @@
 10. [REQ] Use `@container` (container queries), `@starting-style` (entry animations), subgrid.
 11. [REQ] Use `animate-*` utilities + View Transitions. `motion-reduce:` mandatory for a11y.
 12. [REQ] Use `text-shadow-*` utilities (v4.1+), `mask-*` utilities (v4.1+).
-13. [PROHIBIT] Never use Tailwind 4.1 — EOL Feb 2026. Upgrade to 4.3+ immediately.
-14. [PROHIBIT] Never use `tailwind.config.js` for v4+ — use `@theme` in CSS instead.
+13. [REQ] Filament v5 Integration: Filament v5 requires Tailwind v4.1+. Use `@theme` in CSS (not `tailwind.config.js`). Add Filament asset paths to `@source` directives. Set `LIVEWIRE_CSP_SAFE=false` in dev for Filament Alpine `x-init` compatibility.
+14. [REQ] RTL/Arabic Support: Use logical properties (`ms-*`, `me-*`, `ps-*`, `pe-*`) for direction-aware layouts. Filament SlideOver `->position('left')` for RTL. Use `dir="rtl"` on `<html>` — Tailwind auto-flips logical properties.
+15. [PROHIBIT] Never use Tailwind 4.1 — EOL Feb 2026. Upgrade to 4.3+ immediately.
+16. [PROHIBIT] Never use `tailwind.config.js` for v4+ — use `@theme` in CSS instead.
 [COMPAT]
 - Tailwind CSS 4.3.3 (released Jul 2026).
 - v4.1 EOL: Feb 18, 2026 — no security patches.

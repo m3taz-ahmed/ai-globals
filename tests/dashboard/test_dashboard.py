@@ -412,7 +412,7 @@ def test_dashboard_check_invalid_action(monkeypatch):
     try:
         time.sleep(0.1)
         with pytest.raises(urllib.error.HTTPError) as exc:
-            urlopen(f"http://127.0.0.1:{port}/api/check?action=invalid%20action")
+            urlopen(f"http://127.0.0.1:{port}/api/check?action=invalid!action")
         assert exc.value.code == 400
     finally:
         server.shutdown()
