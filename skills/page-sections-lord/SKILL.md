@@ -6,7 +6,7 @@ description: Design and build section-based landing and content pages with Filam
 [OBJ] Design, scaffold, and operate reusable page sections and landing pages via Filament/Laravel.
 [RULES]
 1. [CMD] IDs: Filament `/filamentphp/filament`; Filament Spatie Translatable Plugin `/filamentphp/spatie-laravel-translatable-plugin`; Spatie Translatable `/spatie/laravel-translatable`; Spatie Query Builder `/spatie/laravel-query-builder`; Filament Fabricator `/z3d0x/filament-fabricator` (block-based alternative).
-2. [REQ] Tourx pattern core: `Page` model with JSON `content`; translatable `title`, `slug`, `description`, `content`, `meta_title`, `meta_desc`, `meta_keywords`; parent `page_id` self-reference; `is_home`, `is_header`, `is_footer` flags.
+2. [REQ] Page-builder pattern core: `Page` model with JSON `content`; translatable `title`, `slug`, `description`, `content`, `meta_title`, `meta_desc`, `meta_keywords`; parent `page_id` self-reference; `is_home`, `is_header`, `is_footer` flags.
 3. [REQ] Filament `Builder` for `content.{locale}`; one `Block::make('X_section')` per section with a unique type key and a schema that matches the frontend component props.
 4. [REQ] Standard block shape: `{ "type": "hero_section", "data": { ... } }`; keep `data` flat; use consistent image key names (`image`, `background_image`, `*_image`, `logo`, `icon`).
 5. [REQ] Static pages: `StaticPage` model with `type` and translatable `title`/`content`/`slug`; seed `privacy-policy`, `terms-of-service`, `faqs`, `ai-ethics`, `about-us`; embed via a `static_*_section` block that maps type to slug.

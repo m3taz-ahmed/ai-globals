@@ -4,7 +4,7 @@
 **الشخصيات:** SEC (أساسي) + ML (ثانوي)  
 **الـ Skills المُحمّلة:** security-auditor, ml-engineer, ai-ml-lord, security-lord, agent-governance-lord  
 **المصادر:** OWASP LLM Top 10 2025, Sysdig 2026, Wraith 2026, PIArena (ACL 2026), Lakera PINT Benchmark, PromptInject, GenAI-Security-Project, NCSC UK, Five Eyes 2026  
-**الـ Repos المُستنسخة:** `D:\server\temp\prompt-injection-study\` (pint-benchmark, PromptInject, PIArena)
+**الـ Repos المُستنسخة:** external temp study dir خارج الريبو (pint-benchmark, PromptInject, PIArena)
 
 ---
 
@@ -235,10 +235,10 @@
 - PIArena (ACL 2026) — benchmark شامل
 - Hughes et al. (2024) — Best-of-N scaling
 
-### Repos مُستنسخة (للدراسة)
-- `D:\server\temp\prompt-injection-study\pint-benchmark` — Lakera PINT Benchmark
-- `D:\server\temp\prompt-injection-study\PromptInject` — attack framework
-- `D:\server\temp\prompt-injection-study\PIArena` — ACL 2026 benchmark (9 دفاعات + 9 هجمات)
+### Repos مُستنسخة (للدراسة — external temp dir خارج الريبو)
+- `pint-benchmark` — Lakera PINT Benchmark
+- `PromptInject` — attack framework
+- `PIArena` — ACL 2026 benchmark (9 دفاعات + 9 هجمات)
 
 ### معايير وحوكمة
 - MITRE ATLAS AML.T0051

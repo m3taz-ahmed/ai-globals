@@ -4,8 +4,10 @@
 1. [REQ] Read at session start.
 2. [REQ] Update at session end via `workflows/17-memory-sync.md`.
 3. [REQ] Keep under 500 lines.
+4. [PROHIBIT] PUBLIC REPO — this file is committed to GitHub. Never write private project names (client work, other repos in the dev folder), absolute local paths (`D:\`, `C:\Users\<name>`), usernames, machine names, hostnames, IPs, or profile URLs. Refer to external projects generically ("a private Laravel project") and external dirs as "outside repo". `.env`, `state/`, `backups/`, `.ai/` are gitignored — real details belong there, not here.
 [UPDATED] 2026-09-18
 [NOTES]
+- **2026-09-18 — workflow 60: atomic release deployment**: Created `workflows/60-atomic-release-deployment.md` — the canonical `releases/ + current symlink + shared/` reference (Capistrano/Deployer pattern) generalized for 4 hosting tiers (VPS+root, shared+SSH, FTP-only cPanel, panel-git-pull). Key fixes encoded: `mv -T` two-step swap (never `rm+ln`/`ln -sf` — race window), post-swap executor restarts (FPM/queue/octane/reverb), expand/contract migrations, keep_releases=5, deploy lock, Tier-C index.php shim + tokenized HTTP runner. Indexes updated: workflows README (61 numbered), manifest.json (+11 triggers incl. Arabic), CHANGELOG [Unreleased], `04-deployment.md` cross-ref. Reference impl exists in a private Laravel project (Deployer recipe + GitHub Actions release workflow + ops runbook).
 - **v5.15.0 — observation memory + IDE hooks + external ecosystem — 2026-09-18**:
   - **External-repo review** (claude-mem, vercel-labs/skills, VibeSec-Skill, styles.refero.design) turned into features: borrowed the *architecture*, re-implemented aiZee-native.
   - `memory/observations.py`: capture->compress->inject loop (claude-mem pattern). Crash-safe `pending_events` queue + dedup (`content_hash` UNIQUE) + `context_block()` markdown injection + `session_summary()`. Store at `<project>/state/observations.db` (standalone SQLite, separate schema from MemoryStore).
@@ -225,7 +227,7 @@
   - **Tests**: 82 new tests across 7 test files. All pass.
   - **Eval results**: Detection rate 100% (33/33), False positive rate 0% (0/15), Containment rate 100% (33/33).
   - **Quality gates**: ruff PASS, mypy PASS (8 source files), pytest 82/82 PASS.
-  - **Research repos cloned** to `D:\server\temp\prompt-injection-study\`: pint-benchmark (Lakera), PromptInject, PIArena (ACL 2026).
+  - **Research repos cloned** to an external temp study dir (outside repo): pint-benchmark (Lakera), PromptInject, PIArena (ACL 2026).
   - **Research report**: `tech-stack/prompt-injection-research.md` (252 lines, comprehensive).
 - **Comprehensive review report remediation — 2026-08-24 (ARCH persona)**:
   - **Schema drift fix** (`memory/store.py`, `memory/schema_contract.py`): `memory_decay` table + `idx_decay_last_accessed` index now created in `_init_schema` (not lazily). FTS5 shadow tables (`memories_fts*`) ignored in `detect_schema_drift`. `verify_schema_integrity` now returns `(True, None)` for fresh DBs — no more false drift warnings.
@@ -277,7 +279,7 @@
   - **New test files**: test_kernel_probity_contract.py, test_policy_precedence.py, test_sdd_enforcement.py, test_memory_upgrades.py, test_confidence_gate.py, test_learning_loop.py, test_skill_routing.py, test_quality.py, test_pipeline.py, test_redteam.py, test_gate_verdict.py — 200+ new tests, all passing.
   - **Quality gates**: ruff PASS (repo-wide), mypy PASS (240 source files), full pytest suite green (1 skip for tkinter display).
 - **Competitor analysis + Phase 1 implementation — 2026-08-23 (ARCH/SEC/QA/DEV personas)**:
-  - **Competitor study**: Cloned 26 competitor repos to `D:\server\temp\competitor-study\`. Generated a report (262 lines) identifying 10 strengths, 15 weaknesses, 7 high-priority patterns to adopt. Sources: LLMFirewall (taint), SkillSpector (skill scanner), AgentGuard (typosquat + OSV.dev), agent-loop-guard (fuzzy + cycle + escalation), probity (Wilson CI + priority ladder), claw-eval (Pass^k + weighted scoring), microsoft/AgentRx (failure taxonomy), agent-trace (NDJSON + kill-switch), treehouse (safe sweep), mem0 (identity protection), AgentBudget (finalization reserve), agent-observatory (fail-open audit).
+  - **Competitor study**: Cloned 26 competitor repos to an external temp study dir (outside repo). Generated a report (262 lines) identifying 10 strengths, 15 weaknesses, 7 high-priority patterns to adopt. Sources: LLMFirewall (taint), SkillSpector (skill scanner), AgentGuard (typosquat + OSV.dev), agent-loop-guard (fuzzy + cycle + escalation), probity (Wilson CI + priority ladder), claw-eval (Pass^k + weighted scoring), microsoft/AgentRx (failure taxonomy), agent-trace (NDJSON + kill-switch), treehouse (safe sweep), mem0 (identity protection), AgentBudget (finalization reserve), agent-observatory (fail-open audit).
   - **2 new runtime modules**:
     - `runtime/taint.py` — 5-level taint label system (SYSTEM_TRUSTED → TOOL_OUTPUT → RAG_UNTRUSTED → USER_UNTRUSTED → SECRET) with Bell-LaPadula enforcement (no-write-up, no-read-down), sanitize/redact/merge/snapshot APIs, `classify_source()` heuristic for auto-labeling.
     - `runtime/skill_scanner.py` — Static security scanner with 30+ regex patterns across 7 categories (prompt injection, data exfiltration, secret exposure, privilege escalation, supply chain, tool poisoning, resource abuse). Baseline suppression via fingerprints, risk-level scoring (SAFE/LOW/MEDIUM/HIGH/CRITICAL), resource bounds (10K findings, 30s timeout cap).
@@ -359,7 +361,7 @@
   - **Tests**: 242 new tests across 9 test files. All PASS.
   - **Quality gates**: ruff PASS (0 errors), mypy PASS (0 errors), pytest FULL 3830 passed (275s), graphify update (13217 nodes/27857 edges), aizee memory ingest (131 memories).
   - **Competitive positioning**: aiZee now covers 10/10 identified market gaps (G1-G10). Unique moat: arabic-dialect-lord (no competitor has dialect-aware governance).
-  - **Study**: Analyzed 8 production mobile repos (5 Flutter + 3 React Native/Expo) cloned to `D:\server\temp\mobile-study`. Full report at `D:\server\temp\mobile-study\MOBILE_STRENGTHENING_REPORT.md` (408 lines).
+  - **Study**: Analyzed 8 production mobile repos (5 Flutter + 3 React Native/Expo) cloned to an external temp study dir (outside repo). Full report kept outside the repo (408 lines).
   - **Repos analyzed**: ultimate-flutter-template, flutter-firebase-blueprint, flutter-riverpod-clean-arch, flutter-ddd-template, riverpod-clean-arch, expo-supabase-starter, expo-boilerplate-sdk56, rn-copilot.
   - **New runtime module**: `runtime/mobile_patterns.py` (~580 lines) — MobilePatternAuditor with 18 pattern checks. Supports Flutter + RN + KMP + Swift + Kotlin Native. RN backend isolation now checks @supabase/firebase in components/hooks (not just Flutter). CI/CD check covers nested fastlane/Fastfile (ios/fastlane/, android/fastlane/).
   - **New tests**: `tests/test_mobile_patterns.py` (61 tests, all passing) — covers all 18 patterns for both platforms + RN backend isolation + nested Fastfile + audit_summary + edge cases.
@@ -407,7 +409,7 @@
   - **3-persona review**: SEC + UX + PRODUCT — all issues fixed (README badges, tkinter test flakiness, encoding issues).
 
 - **GitHub repos study v2 - 2026-08-22 (Laravel + Filament + Node.js top repos study -> aiZee integration)**:
-  - **Study**: Analyzed top 5 GitHub repos + 5 tools for each of Laravel, Filament, Node.js (15 repos total cloned to `D:\server\temp\github-study-v2`). Full report at `D:\server\temp\github-study-v2\REPOS_ANALYSIS_REPORT.md`.
+  - **Study**: Analyzed top 5 GitHub repos + 5 tools for each of Laravel, Filament, Node.js (15 repos total cloned to an external temp study dir). Full report kept outside the repo.
   - **15 patterns identified and implemented**:
     1. **Deepened EvaluatesClosures DI** (`runtime/closure_evaluator.py`): GuardianClosureEvaluator now resolves 14 param names (action, tool, attributes, context, request, decision, rule_name, reason, phase, user, tenant, session, user_id, tenant_id) inspired by Filament's automatic DI.
     2. **Command object pattern** (`runtime/commands.py` NEW): Command ABC + CommandBus with Saga-style rollback. Inspired by Invoice Ninja's `new MarkPaid()` pattern.
@@ -430,7 +432,7 @@
   - **Updated**: runtime/__init__.py (+15 exports), runtime/closure_evaluator.py (deepened DI), scripts/guard_invariants.py (+3 checks), tech-stack/filament-4.md (+5 rules), tech-stack/filament-5.md (+5 rules), tech-stack/laravel-12.md (+5 rules), tech-stack/laravel-13.md (+4 rules), tech-stack/useful-repos.md (+10 entries), skills/backend-frameworks-lord/SKILL.md (+7 rules), workflows/README.md (+1 workflow), manifest.json (+5 triggers, +6 features).
   - **Quality gates**: ruff PASS (17 files), mypy PASS (6 source files), pytest FAST PASS (89 tests), guard_invariants new checks PASS (3/3).
 - **SEO integration — 2026-08-21 (5 GitHub repos + 5 tools study → aiZee integration)**:
-  - **Study**: Analyzed top 5 SEO GitHub repos (claude-seo 14K stars, open-seo 12K stars, crawlseo 495 stars, seo-audit-skill/SEOmator 377 stars, rustyseo 312 stars) + 5 SEO building blocks (GSC API, DataForSEO, Playwright, Common Crawl, Lighthouse/PSI). Full report at `D:\server\temp\seo-study\SEO_REPORT.md` + integration plan at `D:\server\temp\seo-study\SEO_INTEGRATION_REPORT.md`.
+  - **Study**: Analyzed top 5 SEO GitHub repos (claude-seo 14K stars, open-seo 12K stars, crawlseo 495 stars, seo-audit-skill/SEOmator 377 stars, rustyseo 312 stars) + 5 SEO building blocks (GSC API, DataForSEO, Playwright, Common Crawl, Lighthouse/PSI). Full report + integration plan kept in an external temp study dir (outside repo).
   - **Phase 1 — seo-lord skill** (NEW, directory layout):
     - `skills/seo-lord/SKILL.md`: 20 rules (grounding, progressive disclosure, parallel analysis, falsifiability-first, confidence-weighted, health score, 251 audit rules, CWV, schema active/deprecated, GEO/AEO, crawl budget, LLM-safe output, free APIs first).
     - `skills/seo-lord/references/`: 7 files (technical-seo 9 categories, content-eeat E-E-A-T framework, schema-types active/deprecated/keep, geo-aeo AI search optimization, cwv-thresholds LCP/INP/CLS, audit-rules 251 rules/20 categories, health-scoring 0-100 algorithm).
@@ -485,7 +487,7 @@
   - **3-persona final review**: ARCH 14/14 ✅, DEV 18/18 ✅, QA-SEC 12/12 ✅ (after adding 5 authorize() auto-validation tests + fixing workflows count).
 
 - **GitHub repos study + Laravel/Filament tech-stack enrichment — v5.2.0**:
-  - **Analysis**: Analyzed 10 leading GitHub repos (5 Laravel + 5 Filament) cloned to `D:\server\temp\github-study\`. 5 parallel subagents (ARCH/DEV/PRODUCT/UX) read real files (composer.json, Models, Controllers, Services, Resources, tests). Full report at `D:\server\temp\github-study\REPOS_ANALYSIS_REPORT.md` (627 lines).
+  - **Analysis**: Analyzed 10 leading GitHub repos (5 Laravel + 5 Filament) cloned to an external temp study dir (outside repo). 5 parallel subagents (ARCH/DEV/PRODUCT/UX) read real files (composer.json, Models, Controllers, Services, Resources, tests). Full report kept outside the repo (627 lines).
   - **Repos analyzed**: bagisto (eCommerce/Concord), monica (CRM/DDD), krayin-crm (Modular/MagicAI), bookstack (Wiki/Activity), koel (Music/Repository+DTO+API), filament (framework/Plugin system), superduper-starter-kit (Clusters/12 plugins), lara-zeus-sky (CMS/Status enum), mvpable (SaaS/DDD+Actions), filament-blog (Faceless/trait-based).
   - **Phase 1 — tech-stack updates** (4 files):
     - `tech-stack/laravel-12.md`: +7 rules (Repository Pattern, Service Layer with permission dependencies, DTO/Value Objects, Three-Component Model, Activity Logging, UUID keys, Domain-Driven Structure).
@@ -699,7 +701,7 @@
 - **`scripts/mcp_env_wrapper.py`**: على Windows استُبدل `os.execvpe` بـ `subprocess.run` (inherited handles). POSIX فضّل `execvpe` (أكفأ). ده أصلح كل MCP servers دفعة واحدة.
 - **إعادة تسمية `cli.py` → `aizee_cli.py`** (إصلاح دائم للـ collision): تحديث `pyproject.toml` (`aizee = "aizee_cli:main"`, `py-modules`), `tests/test_cli.py`, `install.ps1`/`install.sh` (shim + verification), `runtime/ci.py` + `eval/harness.py` (mypy targets), docs (README, README-AR, BOOTLOADER, MAINTENANCE_PROMPT, ACTIVE_CONTEXT). `pip install -e .` لإعادة توليد editable finder MAPPING + `aizee.exe`.
 - **التحقق**: linkedin MCP رجع 28 أداة + `get_profile` رجع بيانات Moataz Ahmed. `aizee status`/`persona detect --multi` شغّال. ruff ✅, mypy ✅, `tests/test_cli.py` 23 passed.
-- **ملاحظة**: `aizee.exe` في `C:\Users\int190\AppData\Roaming\Python\Python314\Scripts` (user Scripts، ليس على PATH) — الـ WindowsApps shim `aizee.cmd` هو اللي على PATH. لو الـ shim قديم بيشاور لـ `cli.py`، شغّل `install.ps1` لتحديثه لـ `aizee_cli.py`.
+- **ملاحظة**: `aizee.exe` في `%APPDATA%\Python\Python314\Scripts` (user Scripts، ليس على PATH) — الـ WindowsApps shim `aizee.cmd` هو اللي على PATH. لو الـ shim قديم بيشاور لـ `cli.py`، شغّل `install.ps1` لتحديثه لـ `aizee_cli.py`.
 
 ## v5.14.0 - Post-Repair Verification Pass (QA + SEC)
 

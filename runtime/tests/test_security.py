@@ -49,12 +49,12 @@ def test_resolve_path_rejects_parent_refs(tmp_path: Path) -> None:
 
 def test_audit_redacts_sensitive_keys(tmp_path: Path) -> None:
     logger = AuditLogger(tmp_path)
-    logger.log("test", {"api_key": "secret123", "user": "moataz"})
+    logger.log("test", {"api_key": "secret123", "user": "testuser"})
     log_file = tmp_path / "state" / "audit.log"
     text = log_file.read_text(encoding="utf-8")
     assert "secret123" not in text
     assert "[REDACTED]" in text
-    assert "moataz" in text
+    assert "testuser" in text
 
 
 def test_bad_plugin_on_load_executes() -> None:

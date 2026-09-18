@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `workflows/60-atomic-release-deployment.md` — canonical atomic release
+  deployment reference (releases/ + `current` symlink + shared/) covering
+  VPS, shared+SSH, and FTP-only/cPanel tiers; `mv -T` atomic swap,
+  expand/contract migrations, rollback, failure-mode table, security
+  checklist, and Deployer/POSIX/GitHub-Actions templates. `04-deployment.md`
+  cross-references it; manifest.json + workflows README updated.
+
 ## [5.15.0] - 2026-09-18 (Observation Memory + Hooks + External Ecosystem)
 
 ### Added
@@ -900,7 +911,7 @@
 ## [5.5.0] — 2026-08-23 (15 Patterns from 15 Repos Study → aiZee Runtime)
 
 ### GitHub Repos Study v2 (15 repos analyzed: 5 Laravel + 5 Filament + 5 Node.js)
-Deep analysis of top 15 GitHub repositories across Laravel (Invoice Ninja, Bagisto, Monica), Filament, and Node.js (Fastify, Prisma, Remix, NestJS, pnpm). Full report at `D:\server\temp\github-study-v2\REPOS_ANALYSIS_REPORT.md`.
+Deep analysis of top 15 GitHub repositories across Laravel (Invoice Ninja, Bagisto, Monica), Filament, and Node.js (Fastify, Prisma, Remix, NestJS, pnpm). Full report kept outside the repo.
 
 ### New Runtime Modules (5 files)
 - **`runtime/commands.py`** (NEW): Command ABC + CommandBus with Saga-style rollback. Inspired by Invoice Ninja's `new MarkPaid()` pattern.
@@ -938,7 +949,7 @@ Deep analysis of top 15 GitHub repositories across Laravel (Invoice Ninja, Bagis
 ## [5.4.0] — 2026-08-21 (SEO Integration: 5 Repos + 5 Tools Study → aiZee)
 
 ### SEO Study (5 GitHub repos + 5 building blocks analyzed)
-Deep analysis of top 5 SEO GitHub repositories + 5 SEO tools/building blocks. Full reports at `D:\server\temp\seo-study\SEO_REPORT.md` + `D:\server\temp\seo-study\SEO_INTEGRATION_REPORT.md`.
+Deep analysis of top 5 SEO GitHub repositories + 5 SEO tools/building blocks. Full reports kept outside the repo.
 - **Repos**: claude-seo (14K stars, parallel agent delegation), open-seo (12K stars, 46 MCP tools), crawlseo (495 stars, GSC+crawler), seo-audit-skill/SEOmator (377 stars, 251 rules), rustyseo (312 stars, Rust log analysis).
 - **Building blocks**: GSC API (free official), DataForSEO (paid SERP), Playwright (JS rendering), Common Crawl (free backlinks), Lighthouse/PSI API (free CWV).
 
@@ -983,7 +994,7 @@ Deep analysis of top 5 SEO GitHub repositories + 5 SEO tools/building blocks. Fu
 ## [5.3.0] — 2026-08-19 (Laravel/Filament Tech-Stack Enrichment + Runtime Improvements)
 
 ### GitHub Repos Study (10 repos analyzed)
-Deep analysis of 10 leading GitHub repositories (5 Laravel + 5 Filament) cloned to `D:\server\temp\github-study\`. Full report at `D:\server\temp\github-study\REPOS_ANALYSIS_REPORT.md` (627 lines).
+Deep analysis of 10 leading GitHub repositories (5 Laravel + 5 Filament) cloned to an external temp study dir. Full report kept outside the repo (627 lines).
 - **Laravel repos**: Bagisto (eCommerce/Concord), Monica (CRM/DDD), Krayin (Modular/MagicAI), BookStack (Wiki/Activity), Koel (Music/Repository+DTO+API)
 - **Filament repos**: Filament (framework/Plugin system), SuperDuper Starter Kit (Clusters/12 plugins), Lara-Zeus Sky (CMS/Status enum), MVPable (SaaS/DDD+Actions), Filament-Blog (Faceless/trait-based)
 

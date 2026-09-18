@@ -1,10 +1,7 @@
 {
   "pythonVersion": "3.10",
-  "pythonPath": "C:/Program Files/Python310/python.exe",
   "extraPaths": [
-    ".",
-    "C:/Program Files/Python310/Lib/site-packages",
-    "C:/Users/Moataz/AppData/Roaming/Python/Python310/site-packages"
+    "."
   ],
   "typeCheckingMode": "basic",
   "reportMissingImports": true,

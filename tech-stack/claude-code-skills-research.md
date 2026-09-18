@@ -4,7 +4,7 @@
 **الشخصية:** UX (أساسي) + DEVX (ثانوي)  
 **الـ Skills المُحمّلة:** frontend-ui-expert, context-compressor  
 **الـ Lords:** frontend-frameworks-lord, flutter-design, clean-code-guard, docs-guard, arabic-dialect-lord  
-**الـ Repos المُستنسخة:** `D:\server\temp\claude-skills-study\` (7 repos)
+**الـ Repos المُستنسخة:** external temp study dir خارج الريبو (7 repos)
 
 ---
 

@@ -298,7 +298,7 @@ IGNORED_FILE_REFS = {
     'copilot-instructions.md',
     # dead/renamed historical references in CHANGELOG
     '09-memory-sync.md',
-    # external temp study reports (live in D:\server\temp\, not aizee root)
+    # external temp study reports (live outside the aizee root)
     'seo_report.md', 'seo_integration_report.md', 'repos_analysis_report.md',
     # deleted superseded skill
     'seo-content-generator.md',
@@ -307,7 +307,7 @@ IGNORED_FILE_REFS = {
     # rules_materializer OUTPUT targets (descriptive refs to what the tool emits,
     # not tracked input files): Aider reads CONVENTIONS.md, Devin reads .devin/rules/aizee.md
     'conventions.md', 'aizee.md',
-    # external temp study reports (live in D:\server\temp\, not aizee root)
+    # external temp study reports (live outside the aizee root)
     'mobile_strengthening_report.md',
     # files in external repos referenced descriptively (e.g. RNCopilot's docs/AI-GUIDE.md)
     'ai-guide.md',
