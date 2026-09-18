@@ -205,6 +205,7 @@ def test_all_schemas_contains_all_keys():
         "rule", "skill", "workflow", "tech_stack",
         "policy_decision", "plugin", "memory_entry",
         "seo_audit", "seo_cwv", "seo_schema",
+        "pagination", "cursor_pagination",
     }
     assert set(ALL_SCHEMAS.keys()) == expected_keys
 

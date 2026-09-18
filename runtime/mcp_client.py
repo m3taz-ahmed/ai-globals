@@ -231,7 +231,7 @@ def _validate_mcp_command(cmd: str, args: list[Any]) -> None:
 class _SettingsLike(Protocol):
     """Structural type for the settings manager dependency (avoids import cycle)."""
 
-    def is_mcp_enabled(self, server_name: str) -> bool: ...
+    def is_mcp_enabled(self, server_name: str) -> bool: ...  # pragma: no cover - Protocol stub
 
 
 class McpClient:

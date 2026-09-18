@@ -53,15 +53,23 @@ copy /Y "%SOURCE%\README.md" "%TARGET%\README.md" >nul
 copy /Y "%SOURCE%\README-AR.md" "%TARGET%\README-AR.md" >nul
 copy /Y "%SOURCE%\CHANGELOG.md" "%TARGET%\CHANGELOG.md" >nul
 copy /Y "%SOURCE%\AGENTS.md" "%TARGET%\AGENTS.md" >nul
+if exist "%SOURCE%\spec.md" copy /Y "%SOURCE%\spec.md" "%TARGET%\spec.md" >nul
+if exist "%SOURCE%\integrity.manifest" copy /Y "%SOURCE%\integrity.manifest" "%TARGET%\integrity.manifest" >nul
 copy /Y "%SOURCE%\.aizee-version" "%TARGET%\.aizee-version" >nul
 copy /Y "%SOURCE%\.windsurfrules" "%TARGET%\.windsurfrules" >nul
 copy /Y "%SOURCE%\config.py" "%TARGET%\config.py" >nul
 copy /Y "%SOURCE%\aizee_cli.py" "%TARGET%\aizee_cli.py" >nul
+if exist "%SOURCE%\conftest.py" copy /Y "%SOURCE%\conftest.py" "%TARGET%\conftest.py" >nul
 
 REM Sync .cursor/rules/ (updated rule files)
 echo Syncing .cursor/rules/...
 if exist "%SOURCE%\.cursor\rules" (
     xcopy "%SOURCE%\.cursor\rules\*" "%TARGET%\.cursor\rules\" /E /I /Y /Q >nul
+)
+
+REM Sync .cursor/hooks.json (IDE lifecycle hooks)
+if exist "%SOURCE%\.cursor\hooks.json" (
+    copy /Y "%SOURCE%\.cursor\hooks.json" "%TARGET%\.cursor\hooks.json" >nul
 )
 
 REM Sync .claude/ (MCP server config + permissions)
@@ -126,6 +134,7 @@ if exist "%SOURCE%\LICENSE" copy /Y "%SOURCE%\LICENSE" "%TARGET%\LICENSE" >nul
 if exist "%SOURCE%\NOTICE" copy /Y "%SOURCE%\NOTICE" "%TARGET%\NOTICE" >nul
 if exist "%SOURCE%\CONTRIBUTING.md" copy /Y "%SOURCE%\CONTRIBUTING.md" "%TARGET%\CONTRIBUTING.md" >nul
 if exist "%SOURCE%\DESIGN.md" copy /Y "%SOURCE%\DESIGN.md" "%TARGET%\DESIGN.md" >nul
+if exist "%SOURCE%\pyrightconfig.json" copy /Y "%SOURCE%\pyrightconfig.json" "%TARGET%\pyrightconfig.json" >nul
 
 echo.
 echo === Sync Complete ===

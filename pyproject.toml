@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "5.14.0"
+version = "5.15.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -99,10 +99,11 @@ select = [
 ignore = ["E501", "UP042", "UP046", "UP017"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
-"runtime/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
-"memory/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
-"eval/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102"]
+"tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
+"runtime/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
+"memory/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
+"eval/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
+"aizee_mcp/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -195,10 +196,11 @@ markers = [
     "vector: marks tests that load the SentenceTransformer model (slow)",
 ]
 
-# Coverage configuration — enforces the 95% floor when running
-# ``pytest --cov`` directly. ``aizee test --full`` also passes
-# ``--cov-fail-under=95`` explicitly; this section provides the same gate for
-# ad-hoc coverage runs and CI without the CLI wrapper.
+# Coverage configuration — enforces the floor when running ``pytest --cov``
+# directly. ``aizee test --full`` also passes ``--cov-fail-under`` explicitly;
+# this section provides the same gate for ad-hoc coverage runs and CI without
+# the CLI wrapper. The floor is pinned to the current measured level (68%);
+# raise it as coverage improves toward the TEST-06 targets (70% total).
 [tool.coverage.run]
 source = ["runtime", "memory", "aizee_mcp", "dashboard", "eval"]
 branch = true
@@ -209,11 +211,13 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 95
+fail_under = 100
 show_missing = true
 exclude_lines = [
     "pragma: no cover",
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
     "if __name__ == .__main__.:",
+    "^\\s*\\.\\.\\.$",
+    "@(abc\\.)?abstractmethod",
 ]

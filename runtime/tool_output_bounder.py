@@ -108,7 +108,7 @@ def bound_output(
                     break
                 except UnicodeDecodeError:
                     continue
-            else:
+            else:  # pragma: no cover - UTF-8 walk-back always recovers within 3 bytes
                 decoded = encoded.decode("utf-8", errors="replace")
         current_text = decoded
         truncated = True

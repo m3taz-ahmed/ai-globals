@@ -21,11 +21,11 @@ def extract_entities(text: str) -> list[str]:
     for quoted in re.findall(r'"([^"]*)"|\'([^\']*)\'', text):
         fragment = quoted[0] or quoted[1]
         for token in fragment.split():
-            if token:
+            if token:  # pragma: no branch - split() never yields ""
                 results.add(token.lower())
     for phrase in re.findall(r'\b[A-Z][a-zA-Z0-9_]*(?:\s+[A-Z][a-zA-Z0-9_]*)+\b', text):
         for token in phrase.split():
-            if token:
+            if token:  # pragma: no branch - split() never yields ""
                 results.add(token.lower())
     for token in re.findall(r'\b[A-Z]{2,}\d*\b', text):
         results.add(token.lower())

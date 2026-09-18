@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "aizee hook inject"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "aizee hook observe --event afterFileEdit"
+      }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "aizee hook observe --event afterShellExecution"
+      }
+    ],
+    "afterMCPExecution": [
+      {
+        "command": "aizee hook observe --event afterMCPExecution"
+      }
+    ],
+    "stop": [
+      {
+        "command": "aizee hook summary"
+      }
+    ]
+  }
+}

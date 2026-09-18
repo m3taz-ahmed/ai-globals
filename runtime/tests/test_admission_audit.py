@@ -39,7 +39,7 @@ class TestLogAdmission:
         logger = AuditLogger(tmp_path)
         logger.log_admission({
             "request_id": "r1",
-            "context_hash": "my_secret_hash",  # contains "secret"
+            "context_hash": "secret=my_secret_hash",  # assignment-like secret value
             "decision": "admit",
         })
         lines = logger.log_file.read_text(encoding="utf-8").strip().split("\n")
@@ -83,7 +83,7 @@ class TestLogAuthorization:
         logger = AuditLogger(tmp_path)
         logger.log_authorization({
             "decision_id": "dec-1",
-            "tuple_hash": "my_api_key_value",  # contains "api_key"
+            "tuple_hash": "api_key=my_api_key_value",  # assignment-like secret value
             "decision": "deny",
         })
         lines = logger.log_file.read_text(encoding="utf-8").strip().split("\n")

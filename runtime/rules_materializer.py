@@ -151,7 +151,10 @@ class RulesMaterializer:
         for level in sorted(ScopeLevel, key=lambda s: s.precedence):
             for entry in rule_sets.get(level, []):
                 existing = by_key.get(entry.key)
-                if existing is None or entry.scope.precedence >= existing.scope.precedence:
+                # Scopes are processed in ascending precedence order, so any
+                # existing entry has precedence <= entry.scope.precedence and
+                # the comparison below can never be False.
+                if existing is None or entry.scope.precedence >= existing.scope.precedence:  # pragma: no branch
                     by_key[entry.key] = entry
         return sorted(by_key.values(), key=lambda r: r.key)
 
@@ -332,7 +335,7 @@ class RulesMaterializer:
         with self._lock:
             for target in emit_targets:
                 rel = self._TARGET_FILES.get(target)
-                if rel is None:
+                if rel is None:  # pragma: no cover - unreachable: every ToolTarget maps to a file
                     continue
                 path = self.project_root / rel
                 if not path.exists():

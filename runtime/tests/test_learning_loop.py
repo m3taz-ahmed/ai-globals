@@ -146,8 +146,8 @@ class TestInject:
             for _ in range(3):
                 loop.record(f"action_{i}", {"ok": True}, success=True, gate="g")
         context = loop.inject(top_k=3)
-        # Should only include 3 patterns
-        assert context.count("- ") <= 3
+        # Should only include 3 patterns (count bullet lines, not " - status" suffixes)
+        assert sum(1 for ln in context.splitlines() if ln.startswith("- ")) <= 3
 
     def test_inject_marks_reliable_vs_unreliable(self) -> None:
         loop = LearningLoop()

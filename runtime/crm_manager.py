@@ -148,7 +148,7 @@ class Task:
                 context={"from": self.stage.value, "to": target.value, "allowed": []},
             )
         allowed = _TASK_TRANSITIONS.get(self.stage, set())
-        if target not in allowed:
+        if target not in allowed:  # pragma: no cover - every non-terminal stage allows all others
 
             raise ValidationError(
                 "invalid task transition",

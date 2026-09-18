@@ -27,6 +27,9 @@
     "linkedin": {
       "command": "python",
       "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"]
+    },
+    "refero": {
+      "url": "https://api.refero.design/mcp"
     }
   }
 }

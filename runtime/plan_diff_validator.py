@@ -260,7 +260,7 @@ class PlanDiffValidator:
         imports: dict[str, list[str]] = {"python": [], "ts": []}
         for m in self._PY_IMPORT_RE.finditer(diff_text):
             mod = m.group(1) or m.group(2)
-            if mod:
+            if mod:  # pragma: no branch - regex guarantees a captured module
                 imports["python"].append(mod)
         for m in self._TS_IMPORT_RE.finditer(diff_text):
             mod = m.group(1)

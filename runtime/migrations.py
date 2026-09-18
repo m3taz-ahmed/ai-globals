@@ -185,7 +185,7 @@ class MigrationRunner:
         try:
             with sqlite3.connect(uri, uri=True) as conn:
                 return self._get_version(conn)
-        except sqlite3.OperationalError:
+        except sqlite3.Error:
             return 0
 
     def _get_version(self, conn: sqlite3.Connection) -> int:

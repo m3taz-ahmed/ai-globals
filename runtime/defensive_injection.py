@@ -222,7 +222,7 @@ def _build_redirect_message(techniques: set[InjectionTechnique]) -> str:
     """Build a composite redirect message from all detected techniques."""
     parts: list[str] = []
     for tech in sorted(techniques, key=lambda t: t.value):
-        if tech in _REDIRECT_TEMPLATES:
+        if tech in _REDIRECT_TEMPLATES:  # pragma: no branch - all enum members have templates
             parts.append(_REDIRECT_TEMPLATES[tech])
     if not parts:
         parts.append(

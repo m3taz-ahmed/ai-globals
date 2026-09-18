@@ -212,7 +212,7 @@ class ApprovalSlaManager:
             return {"request_id": request_id, "action": None}
         with self._lock:
             state = self._states.get(request_id)
-            if state is None:
+            if state is None:  # pragma: no cover - TOCTOU guard: check() already verified state exists
                 return {"request_id": request_id, "action": None}
             now = time.time()
             self._apply_action(state, action, request_id, now)
@@ -235,7 +235,7 @@ class ApprovalSlaManager:
         elif action is SlaAction.REMIND:
             state.last_reminder = now
             _logger.debug("SLA reminder for %s", request_id[:8])
-        elif action in (SlaAction.AUTO_APPROVE, SlaAction.AUTO_DENY):
+        elif action in (SlaAction.AUTO_APPROVE, SlaAction.AUTO_DENY):  # pragma: no branch - all SlaAction members handled above
             state.auto_resolved = True
             _logger.warning(
                 "SLA auto-%s for %s after %.0fs",

@@ -16,8 +16,10 @@ class TestSimHash:
         h2 = compute_simhash("A completely different sentence about cats")
         assert h1 != h2
 
-    def test_empty_text_returns_zero(self) -> None:
-        assert compute_simhash("") == "0" * 16
+    def test_empty_text_returns_empty_fingerprint(self) -> None:
+        """Tokenless input returns "" so short texts don't all collide."""
+        assert compute_simhash("") == ""
+        assert compute_simhash("!?.,;-") == ""
 
     def test_hamming_distance_zero_for_identical(self) -> None:
         h = compute_simhash("test text")

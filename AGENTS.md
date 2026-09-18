@@ -74,9 +74,9 @@ Before declaring done, run from the OS root:
 
 - `ruff check .`
 
-- `mypy` (strict, 345 files)
+- `mypy` (strict, 293 files)
 
-- `aizee test --full` (full suite with coverage, ~180-300s, 3865 tests, 95% cov)
+- `aizee test --full` (full suite with coverage, ~180-300s, 7456 tests, 100% cov)
 
 - `python eval/harness.py` (read-only: ruff + mypy + pytest + validate-globals)
 
@@ -142,9 +142,9 @@ aiZee follows a layered design:
 
 - **Managers** — `runtime/managers/` (PolicyManager, WorkflowManager, AgentManager, ChatManager).
 
-- **Runtime Modules** — 110 governance modules in `runtime/`.
+- **Runtime Modules** — 131 governance modules in `runtime/`.
 
-- **MCP Server** — `aizee_mcp/` exposes 84 tools via FastMCP.
+- **MCP Server** — `aizee_mcp/` exposes 88 tools via FastMCP.
 
 - **Memory** — `memory/` SQLite + FTS5 + vector store.
 
@@ -193,17 +193,17 @@ aiZee follows a layered design:
 aizee/                         # Sovereign root (AIZEE_ROOT)
 ├── aizee_cli.py               # CLI entry point
 ├── config.py                  # Root discovery + version
-├── runtime/                   # Kernel + 110 governance modules
+├── runtime/                   # Kernel + 131 governance modules
 │   ├── kernel.py              # Facade
 │   ├── managers/              # Policy/Workflow/Agent/Chat managers
 │   ├── storage_backend.py     # StorageBackend protocol + factory
 │   ├── service_catalog.py     # ServiceDescriptor + multi-index catalog
 │   ├── schemas.py             # Pydantic + exceptions + pagination
-│   └── ...                    # 110 governance modules
-├── aizee_mcp/                 # MCP server (84 tools)
+│   └── ...                    # 131 governance modules
+├── aizee_mcp/                 # MCP server (88 tools)
 ├── memory/                    # SQLite + FTS5 + vector
-├── skills/                    # 124 persona + lord skills
-├── workflows/                 # 74 trigger-based execution protocols
+├── skills/                    # 131 persona + lord skills
+├── workflows/                 # 60 trigger-based execution protocols
 ├── rules/                     # Compressed behavioral rules
 ├── tech-stack/                # 252 version-locked stack references
 │   └── spec-driven-templates/ # SDD templates (spec/plan/tasks/constitution/checklist)

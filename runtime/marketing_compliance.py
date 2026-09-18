@@ -45,7 +45,9 @@ def check_compliance(
 
     def _add(violation: str) -> None:
         # Dedupe same root cause (email+gdpr+no-optin triple-count fix).
-        if violation not in violations:
+        # Every call site emits a distinct message today, so the duplicate
+        # check never fires - kept as a defensive guard for future sites.
+        if violation not in violations:  # pragma: no branch
             violations.append(violation)
 
     if channel in {"email", "sms", "push"}:

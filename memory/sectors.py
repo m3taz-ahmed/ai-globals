@@ -131,7 +131,7 @@ class SectorClassifier:
         for sector in _SECTOR_CONFIGS:
             if scores.get(sector) == best:
                 return sector
-        return Sector.SEMANTIC
+        return Sector.SEMANTIC  # pragma: no cover - best always matches a config sector
 
     def decay_score(
         self, sector: Sector | str, initial_salience: float, days_since: float,

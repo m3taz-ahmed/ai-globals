@@ -1,121 +1,177 @@
-"""Tests for runtime.crypto encryption utilities."""
+"""Tests for runtime/crypto.py — at-rest Fernet encryption utilities."""
 
 from __future__ import annotations
 
-from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from cryptography.fernet import Fernet
 
-from runtime.crypto import (
-    decrypt_bytes,
-    decrypt_file,
-    encrypt_bytes,
-    encrypt_file,
-    generate_key,
-    is_encrypted,
-)
+from runtime import crypto
 
 
-class TestEncryptDecrypt:
-    def test_encrypt_decrypt_roundtrip(self, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.fixture(autouse=True)
+def _isolate(monkeypatch, tmp_path):
+    """Point all key env vars at tmp and clear them by default."""
+    monkeypatch.delenv("AIOS_ENCRYPTION_KEY", raising=False)
+    monkeypatch.delenv("AIOS_ENCRYPTION_KEY_FILE", raising=False)
+    monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
+
+
+class TestKeyResolution:
+    def test_plaintext_opt_out(self, monkeypatch):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
+        assert crypto._get_fernet() is None
+
+    def test_env_key(self, monkeypatch):
         key = Fernet.generate_key().decode()
         monkeypatch.setenv("AIOS_ENCRYPTION_KEY", key)
-        original = b"hello world"
-        encrypted = encrypt_bytes(original)
-        assert encrypted != original
-        assert is_encrypted_bytes(encrypted)
-        decrypted = decrypt_bytes(encrypted)
-        assert decrypted == original
+        assert isinstance(crypto._get_fernet(), Fernet)
 
-    def test_no_key_returns_plaintext(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """When AIOS_ENCRYPTION_KEY=plaintext, encryption is explicitly disabled."""
+    def test_invalid_env_key(self, monkeypatch):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "not-a-key")
+        with pytest.raises(ValueError, match="not a valid Fernet key"):
+            crypto._get_fernet()
+
+    def test_key_file(self, monkeypatch, tmp_path):
+        kf = tmp_path / "enc.key"
+        kf.write_bytes(Fernet.generate_key())
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY_FILE", str(kf))
+        assert isinstance(crypto._get_fernet(), Fernet)
+
+    def test_key_file_empty(self, monkeypatch, tmp_path):
+        kf = tmp_path / "enc.key"
+        kf.write_bytes(b"")
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY_FILE", str(kf))
+        with pytest.raises(ValueError, match="empty or missing"):
+            crypto._get_fernet()
+
+    def test_key_file_invalid_contents(self, monkeypatch, tmp_path):
+        kf = tmp_path / "enc.key"
+        kf.write_bytes(b"garbage-not-fernet")
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY_FILE", str(kf))
+        with pytest.raises(ValueError, match="does not contain a valid Fernet key"):
+            crypto._get_fernet()
+
+    def test_key_file_missing(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY_FILE", str(tmp_path / "nope.key"))
+        with pytest.raises(ValueError, match="empty or missing"):
+            crypto._get_fernet()
+
+    def test_autogenerate_key(self, tmp_path):
+        f = crypto._get_fernet()
+        assert isinstance(f, Fernet)
+        key_path = tmp_path / "state" / ".encryption_key"
+        assert key_path.is_file()
+        # second call reuses stored key — roundtrip proof
+        f2 = crypto._get_fernet()
+        token = f.encrypt(b"hi")
+        assert f2.decrypt(token) == b"hi"
+
+    def test_stored_invalid_key_raises(self, tmp_path):
+        key_path = tmp_path / "state" / ".encryption_key"
+        key_path.parent.mkdir(parents=True)
+        key_path.write_bytes(b"bad")
+        with pytest.raises(ValueError, match="Stored encryption key"):
+            crypto._get_fernet()
+
+
+class TestEncryptDecryptBytes:
+    def test_no_key_passthrough(self, monkeypatch):
         monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
-        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
-        original = b"hello world"
-        result = encrypt_bytes(original)
-        assert result == original
-        assert decrypt_bytes(result) == original
+        assert crypto.encrypt_bytes(b"data") == b"data"
+        assert crypto.decrypt_bytes(b"data") == b"data"
 
-    def test_no_key_auto_generates(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """When no key is set, one is auto-generated (secure-by-default)."""
-        monkeypatch.delenv("AIOS_ENCRYPTION_KEY", raising=False)
-        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
-        original = b"hello world"
-        result = encrypt_bytes(original)
-        assert result != original  # Should be encrypted
-        assert decrypt_bytes(result) == original
+    def test_roundtrip(self, monkeypatch):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
+        enc = crypto.encrypt_bytes(b"secret")
+        assert enc.startswith(b"AIOS_ENC:")
+        assert crypto.decrypt_bytes(enc) == b"secret"
 
-    def test_decrypt_without_key_raises(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_decrypt_plaintext_passthrough(self, monkeypatch):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
+        assert crypto.decrypt_bytes(b"not encrypted") == b"not encrypted"
+
+    def test_encrypted_but_no_key(self, monkeypatch):
         key = Fernet.generate_key().decode()
         monkeypatch.setenv("AIOS_ENCRYPTION_KEY", key)
-        encrypted = encrypt_bytes(b"secret")
+        enc = crypto.encrypt_bytes(b"x")
         monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
-        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
-        with pytest.raises(ValueError, match="AIOS_ENCRYPTION_KEY"):
-            decrypt_bytes(encrypted)
+        with pytest.raises(ValueError, match="not set"):
+            crypto.decrypt_bytes(enc)
 
-    def test_decrypt_invalid_key_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        key1 = Fernet.generate_key().decode()
-        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", key1)
-        encrypted = encrypt_bytes(b"secret")
-        key2 = Fernet.generate_key().decode()
-        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", key2)
+    def test_wrong_key(self, monkeypatch):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
+        enc = crypto.encrypt_bytes(b"x")
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
         with pytest.raises(ValueError, match="Invalid encryption key"):
-            decrypt_bytes(encrypted)
+            crypto.decrypt_bytes(enc)
 
 
-class TestFileEncryption:
-    def test_encrypt_file_roundtrip(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        key = Fernet.generate_key().decode()
-        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", key)
-        f = tmp_path / "data.json"
-        f.write_text('{"budget": 100}', encoding="utf-8")
-        assert not is_encrypted(f)
-        encrypt_file(f)
-        assert is_encrypted(f)
-        content = decrypt_file(f)
-        assert content == '{"budget": 100}'
+class TestFileOps:
+    def test_is_encrypted(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
+        p = tmp_path / "f.txt"
+        p.write_bytes(b"hello")
+        assert crypto.is_encrypted(p) is False
+        crypto.encrypt_file(p)
+        assert crypto.is_encrypted(p) is True
 
-    def test_encrypt_file_no_key_is_noop(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """When AIOS_ENCRYPTION_KEY=plaintext, file encryption is a no-op."""
+    def test_is_encrypted_missing(self, tmp_path):
+        assert crypto.is_encrypted(tmp_path / "nope") is False
+
+    def test_is_encrypted_oserror(self, tmp_path, monkeypatch):
+        p = tmp_path / "f"
+        p.write_bytes(b"AIOS_ENC:x")
+        with patch("builtins.open", side_effect=OSError("denied")):
+            assert crypto.is_encrypted(p) is False
+
+    def test_encrypt_file_no_key_noop(self, monkeypatch, tmp_path):
         monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
-        monkeypatch.setenv("AIZEE_ROOT", str(tmp_path))
-        f = tmp_path / "data.json"
-        f.write_text('{"budget": 100}', encoding="utf-8")
-        encrypt_file(f)
-        assert not is_encrypted(f)
-        assert f.read_text(encoding="utf-8") == '{"budget": 100}'
+        p = tmp_path / "f.txt"
+        p.write_bytes(b"hello")
+        crypto.encrypt_file(p)
+        assert p.read_bytes() == b"hello"
 
-    def test_encrypt_file_already_encrypted_is_noop(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        key = Fernet.generate_key().decode()
-        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", key)
-        f = tmp_path / "data.json"
-        f.write_text('{"budget": 100}', encoding="utf-8")
-        encrypt_file(f)
-        size_after_first = f.stat().st_size
-        encrypt_file(f)
-        assert f.stat().st_size == size_after_first
+    def test_encrypt_file_missing_noop(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
+        crypto.encrypt_file(tmp_path / "gone")  # no error
 
-    def test_decrypt_file_not_found(self, tmp_path: Path) -> None:
+    def test_encrypt_file_idempotent(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
+        p = tmp_path / "f.txt"
+        p.write_bytes(b"hello")
+        crypto.encrypt_file(p)
+        first = p.read_bytes()
+        crypto.encrypt_file(p)  # already encrypted — skip
+        assert p.read_bytes() == first
+
+    def test_decrypt_file_roundtrip(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", Fernet.generate_key().decode())
+        p = tmp_path / "f.txt"
+        p.write_text("héllo wörld", encoding="utf-8")
+        crypto.encrypt_file(p)
+        assert crypto.decrypt_file(p) == "héllo wörld"
+
+    def test_decrypt_file_plaintext(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
+        p = tmp_path / "f.txt"
+        p.write_text("plain", encoding="utf-8")
+        assert crypto.decrypt_file(p) == "plain"
+
+    def test_decrypt_file_missing(self, tmp_path):
         with pytest.raises(FileNotFoundError):
-            decrypt_file(tmp_path / "nonexistent.json")
+            crypto.decrypt_file(tmp_path / "nope")
+
+    def test_decrypt_file_not_utf8(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("AIOS_ENCRYPTION_KEY", "plaintext")
+        p = tmp_path / "f.bin"
+        p.write_bytes(b"\xff\xfe\x00")
+        with pytest.raises(ValueError, match="not valid UTF-8"):
+            crypto.decrypt_file(p)
 
 
 class TestGenerateKey:
-    def test_generate_key_is_valid_fernet(self) -> None:
-        key = generate_key()
-        Fernet(key.encode())
-
-
-class TestIsEncrypted:
-    def test_nonexistent_file_returns_false(self, tmp_path: Path) -> None:
-        """Cover line 38: is_encrypted returns False for nonexistent path."""
-        assert is_encrypted(tmp_path / "missing.json") is False
-
-
-def is_encrypted_bytes(data: bytes) -> bool:
-    """Check if bytes start with the encryption magic prefix."""
-    return data.startswith(b"AIOS_ENC:")
+    def test_generate_key_valid(self):
+        key = crypto.generate_key()
+        assert isinstance(Fernet(key.encode()), Fernet)

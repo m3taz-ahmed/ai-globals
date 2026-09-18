@@ -25,16 +25,22 @@ class ManifestEntry:
     module: str
     symbol: str
     alias: str | None = None
+    plain_import: bool = False
 
     @property
     def import_line(self) -> str:
         """Generate the Python import line for this entry."""
         alias_part = f" as {self.alias}" if self.alias else ""
+        if self.plain_import:
+            return f"import {self.module}{alias_part}"
         return f"from {self.module} import {self.symbol}{alias_part}"
 
     @property
     def export_name(self) -> str:
         """The name exported in __all__."""
+        if self.plain_import:
+            # `import a.b` binds `a`; `import a.b as c` binds `c`.
+            return self.alias or self.module.split(".")[0]
         return self.alias or self.symbol
 
 
@@ -44,9 +50,17 @@ class Manifest:
 
     entries: list[ManifestEntry] = field(default_factory=list)
 
-    def add(self, module: str, symbol: str, alias: str | None = None) -> Manifest:
+    def add(
+        self,
+        module: str,
+        symbol: str,
+        alias: str | None = None,
+        plain_import: bool = False,
+    ) -> Manifest:
         """Add an entry. Returns self for chaining."""
-        self.entries.append(ManifestEntry(module=module, symbol=symbol, alias=alias))
+        self.entries.append(
+            ManifestEntry(module=module, symbol=symbol, alias=alias, plain_import=plain_import)
+        )
         return self
 
     @property
@@ -65,7 +79,12 @@ class Manifest:
         """Serialize manifest to a dict for JSON storage."""
         return {
             "entries": [
-                {"module": e.module, "symbol": e.symbol, "alias": e.alias}
+                {
+                    "module": e.module,
+                    "symbol": e.symbol,
+                    "alias": e.alias,
+                    "plain_import": e.plain_import,
+                }
                 for e in self.entries
             ]
         }
@@ -78,6 +97,7 @@ class Manifest:
                 module=e["module"],
                 symbol=e["symbol"],
                 alias=e.get("alias"),
+                plain_import=e.get("plain_import", False),
             )
             for e in data.get("entries", [])
         ]
@@ -112,16 +132,25 @@ def generate_init_source(
 def parse_existing_init(source: str) -> Manifest:
     """Parse an existing __init__.py to extract its re-export manifest."""
     manifest = Manifest()
-    pattern = re.compile(
+    from_pattern = re.compile(
         r"^from\s+(\S+)\s+import\s+(\w+)(?:\s+as\s+(\w+))?\s*$"
     )
+    plain_pattern = re.compile(r"^import\s+(\S+?)(?:\s+as\s+(\w+))?\s*$")
     for line in source.splitlines():
-        match = pattern.match(line.strip())
-        if match:
-            module, symbol, alias = match.groups()
+        stripped = line.strip()
+        from_match = from_pattern.match(stripped)
+        if from_match:
+            module, symbol, alias = from_match.groups()
             if module == "config":
                 continue  # skip version import
             manifest.add(module, symbol, alias)
+            continue
+        plain_match = plain_pattern.match(stripped)
+        if plain_match:
+            module, alias = plain_match.groups()
+            if module == "config":
+                continue  # skip version import
+            manifest.add(module, "", alias, plain_import=True)
     return manifest
 
 

@@ -599,6 +599,28 @@ def cmd_skill(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_hook(args: argparse.Namespace) -> int:
+    """IDE lifecycle hook entry point.
+
+    Reads the hook event JSON on stdin and delegates to
+    ``memory.observations.handle_hook``. Hooks must never block the editor,
+    so every failure path is swallowed and the command always exits 0.
+    """
+    try:
+        raw = "" if sys.stdin.isatty() else sys.stdin.read()
+        payload = json.loads(raw) if raw.strip() else {}
+        if not isinstance(payload, dict):
+            payload = {}
+    except (json.JSONDecodeError, OSError, ValueError):
+        payload = {}
+    from memory.observations import handle_hook
+
+    out = handle_hook(args.action, _project_root(args), payload, kind=args.kind, event=args.event)
+    if out:
+        print(out)
+    return 0
+
+
 def cmd_agents(args: argparse.Namespace) -> int:
     """Discover local AI agent configurations (read-only)."""
     from runtime.agent_discovery import AgentDiscovery
@@ -850,7 +872,7 @@ def cmd_test(args: argparse.Namespace) -> int:
             "--tb=short", "-p", "no:warnings",
             "--cov=runtime", "--cov=memory", "--cov=aizee_mcp",
             "--cov-report=term-missing",
-            "--cov-fail-under=95",
+            "--cov-fail-under=100",
         ]
         console.print("[cyan]Running FULL test suite (all tests + coverage)...[/]")
     else:
@@ -1013,6 +1035,12 @@ def main(argv: list[str] | None = None) -> int:
     p_skill_eject = sp_skill.add_parser("eject", help="Copy a skill into the project for customization")
     p_skill_eject.add_argument("name", help="Skill name to eject")
 
+    # --- hook ---
+    p_hook = sub.add_parser("hook", help="IDE lifecycle hook entry point (reads event JSON on stdin)")
+    p_hook.add_argument("action", choices=["inject", "observe", "summary"], help="Hook action")
+    p_hook.add_argument("--kind", default="", help="Observation kind for 'observe'")
+    p_hook.add_argument("--event", default="", help="Raw IDE event name for 'observe'")
+
     # --- agents ---
     p_agents = sub.add_parser("agents", help="Discover local AI agent configurations")
     sp_agents = p_agents.add_subparsers(dest="agents_subcommand", required=True)
@@ -1076,6 +1104,7 @@ def main(argv: list[str] | None = None) -> int:
         "agent": cmd_agent,
         "persona": cmd_persona,
         "skill": cmd_skill,
+        "hook": cmd_hook,
         "agents": cmd_agents,
         "linkedin": cmd_linkedin,
         "sync": cmd_sync,

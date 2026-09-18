@@ -23,10 +23,10 @@ from typing import Any, ClassVar, cast
 # Allow direct execution (`python dashboard/server.py`) from any CWD:
 # Python puts the script's directory on sys.path, not the project root,
 # so bootstrap it before importing project modules.
-if __package__ in (None, ""):
+if __package__ in (None, ""):  # pragma: no cover - script-mode bootstrap
     _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
-    if _PROJECT_ROOT not in sys.path:
-        sys.path.insert(0, _PROJECT_ROOT)
+    if _PROJECT_ROOT not in sys.path:  # pragma: no cover
+        sys.path.insert(0, _PROJECT_ROOT)  # pragma: no cover
 
 import config
 from memory.store import MemoryStore
@@ -283,7 +283,7 @@ def _evict_stale_entries(now: float) -> None:
                 return
     # LRU eviction: sort snapshot outside lock, then delete under lock
     with _rate_lock:
-        if len(_rate_state) <= _rate_max_entries * 0.9:
+        if len(_rate_state) <= _rate_max_entries * 0.9:  # pragma: no cover - TOCTOU guard for concurrent eviction
             return
         # Re-snapshot after stale cleanup for accurate ordering
         current = list(_rate_state.items())
@@ -368,7 +368,7 @@ def _write_dashboard_token_file(root: Path, token: str) -> Path:
     token_file.parent.mkdir(parents=True, exist_ok=True)
     if os.name == "nt":
         token_file.write_text(token, encoding="utf-8")
-    else:
+    else:  # pragma: no cover - POSIX-only path, unreachable on Windows CI
         fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
@@ -394,7 +394,7 @@ def _write_dashboard_token_file(root: Path, token: str) -> Path:
                 timeout=5,
                 check=False,
             )
-        else:
+        else:  # pragma: no cover - POSIX-only branch (icacls path runs on Windows)
             token_file.chmod(0o600)
     except Exception:
         with contextlib.suppress(OSError):

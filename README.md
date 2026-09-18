@@ -4,15 +4,15 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.14.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.14.0">
-    <img src="https://img.shields.io/badge/Tests-3865%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 3865 passed">
-    <img src="https://img.shields.io/badge/Coverage-95%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 95%">
+    <img src="https://img.shields.io/badge/Version-5.15.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.14.2">
+    <img src="https://img.shields.io/badge/Tests-7307%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7307 passed">
+    <img src="https://img.shields.io/badge/Coverage-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 100%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 Personas">
-    <img src="https://img.shields.io/badge/Skills-124-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="124 Skills">
-    <img src="https://img.shields.io/badge/Workflows-74-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="74 Workflows">
+    <img src="https://img.shields.io/badge/Skills-131-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="127 Skills">
+    <img src="https://img.shields.io/badge/Workflows-60-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="60 Workflows">
     <img src="https://img.shields.io/badge/Tech--Stack-252-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="252 Tech-Stack refs">
   </p>
 </div>
@@ -35,7 +35,7 @@ A **zero-compromise, version-controlled operating system** that sits between you
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
 | Raw SQL, missing XSS, weak secrets | OWASP, zero-trust, RBAC enforced by default |
 | Random drive-by refactoring | Surgical changes through policy + budget + audit gates |
-| One-size-fits-all AI answers | 29 personas + 124 skills auto-selected per task |
+| One-size-fits-all AI answers | 29 personas + 131 skills auto-selected per task |
 
 ---
 
@@ -87,12 +87,12 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 110 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 131 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
-├── aizee_mcp/                # MCP server (84 tools, 3 resources)
+├── aizee_mcp/                # MCP server (88 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 124 persona + lord skills
-├── workflows/               # 74 trigger-based execution protocols
+├── skills/                  # 131 persona + lord skills
+├── workflows/               # 60 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -140,12 +140,34 @@ aizee memory search "docker" # Full-text + vector search
 ```bash
 ruff check .                 # 0 warnings
 mypy                         # Strict typing, 345 files
-pytest -q                    # 3865 tests, 95% coverage
+pytest -q                    # 7456 tests, ~100% coverage
 python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 ```
 
 ### 6. Token Efficiency
 Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
+
+---
+
+## What's New in v5.15.0
+
+### Observation Memory + IDE Hooks + External Ecosystem (Sep 2026)
+
+- **Observation memory** (`memory/observations.py`): capture -> compress -> inject loop. IDE lifecycle hooks feed tool events into a crash-safe pending queue; events are deduplicated into compact observations in `state/observations.db`; recent observations are injected as markdown context at prompt time. Failed processing leaves pending events queued for retry.
+- **`aizee hook` command** + `.cursor/hooks.json`: wires `beforeSubmitPrompt` (context inject), `afterFileEdit`/`afterShellExecution`/`afterMCPExecution` (observe), and `stop` (session summary). Reads event JSON on stdin, always exits 0 — never blocks the editor.
+- **`DesignLibrary.import_brand()`**: import external `DESIGN.md` references (e.g. Refero exports) from a file path or raw markdown into `design-library/<brand>/` — name confinement blocks traversal, content structure-validated.
+- **3 new skills**: `skill-finder` (vet external skills from skills.sh registry), `web-security-checklist` (SSRF/upload/XXE/JWT/mass-assignment/GraphQL checks — adapted from VibeSec-Skill, Apache-2.0), `design-md-lord` (Refero catalog + DESIGN.md workflow). Skills: 127 -> 131.
+- **Refero MCP** registered in `.devin/mcp_config.json` (`https://api.refero.design/mcp`, OAuth/Bearer) — semantic search over 2,000+ real-world style references.
+
+---
+
+## What's New in v5.14.2
+
+### Full-Project Audit: 100% Coverage + Bug-Fix Batch (Sep 2026)
+
+- **100% line + branch coverage** (7,456 tests) across `runtime/`, `memory/`, `aizee_mcp/`, `dashboard/`, `eval/` — every remaining gap either tested or marked as verified-unreachable defensive/platform-specific code.
+- **Bug fixes surfaced by the audit**: spec-delta unknown types now rejected at validation (were silently counted as applied), `reasoning_graph` cycle guard (was `RecursionError`), `migrations.peek_version` survives corrupt DBs, `mcp_firewall` dict-spread entries no longer dropped, `supply_chain_guard` poetry deps parsed correctly, `context_tools` changelog section + folder-skill search fixed, `eval/vibe` custom refuse patterns honored.
+- **Coverage gate raised**: `fail_under` 68 → 100 in `pyproject.toml`, `aizee test --full`, and both CI workflows — regressions now fail CI. (`eval/harness.py` keeps a lower floor: it runs a marker-filtered suite that excludes `mcp`/`dashboard`/`integration`/`vector` tests by design.)
 
 ---
 
@@ -454,7 +476,7 @@ The installer auto-symlinks these to the correct global locations.
 
 | Server | Purpose | Requires |
 | :--- | :--- | :--- |
-| `aizee` | Core OS tools (84 tools) | Python |
+| `aizee` | Core OS tools (88 tools) | Python |
 | `graphify` | Codebase knowledge graph | Python + graphify |
 | `context7` | Live library documentation | Node.js 18+ |
 | `upwork` | Upwork job search + proposals | Node.js + OAuth |
@@ -534,7 +556,7 @@ Settings persist to `state/settings.json` (gitignored, survives updates). Schema
 
 - **Core:** Pure Python 3.10+ (no Node.js required for core OS)
 - **Memory:** SQLite + FTS5 + optional SentenceTransformers vectors
-- **MCP:** FastMCP server with 84 tools
+- **MCP:** FastMCP server with 88 tools
 - **Dashboard:** Python stdlib HTTP server + SQLite
 - **Knowledge graph:** graphify (optional)
 - **Dependencies:** pyyaml, pydantic, rich, cryptography, numpy, turbovec

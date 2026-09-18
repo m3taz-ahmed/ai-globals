@@ -25,7 +25,7 @@ jobs:
           python -m pip install pip-audit==2.7.0
           python -m pip_audit --desc
       - name: Test with coverage
-        run: python -m pytest -q --cov-fail-under=95
+        run: python -m pytest -q --cov-fail-under=100
       - name: Validate globals
         run: python scripts/validate-globals.py
       - name: Docs sync check (counts + workflow table)

@@ -284,11 +284,11 @@ class AuditLogger:
                     f.seek(pos)
                     chunk = f.read(size - pos).decode("utf-8", errors="ignore")
                     lines = [ln.strip() for ln in chunk.splitlines() if ln.strip()]
-                    if lines:
-                        # If we read from the very start, lines[0] is complete.
-                        # Otherwise lines[0] is a partial line (mid-record) and
-                        # we must use lines[1:] - but the LAST line is always
-                        # complete because the file ends with it.
+                    # lines[-1] is complete only when a record boundary precedes
+                    # it (a "\n" before the trailing newline/EOF) or the whole
+                    # file was read (pos == 0). Otherwise the read started
+                    # mid-record and the single returned line is truncated.
+                    if lines and (pos == 0 or "\n" in chunk.rstrip("\r\n")):
                         last_line = lines[-1]
                         break
                     # No complete line in this window; grow toward the start.

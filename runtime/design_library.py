@@ -15,6 +15,7 @@ The library supports:
 
 from __future__ import annotations
 
+import contextlib
 import os
 from dataclasses import dataclass, field
 from enum import Enum
@@ -217,6 +218,67 @@ class DesignLibrary:
             content="\n\n---\n\n".join(sections_content),
             rationale=rationale,
         )
+
+    def import_brand(
+        self, name: str, source: str | Path, *, overwrite: bool = False
+    ) -> BrandDesignSystem:
+        """Import an external DESIGN.md into the library (e.g., a Refero export).
+
+        Args:
+            name: Brand key (confined like ``load`` — no separators/traversal).
+            source: Path to a ``DESIGN.md`` file, or raw markdown content.
+            overwrite: Replace an existing imported brand.
+
+        Returns:
+            The loaded ``BrandDesignSystem``.
+
+        Raises:
+            DesignLibraryError: invalid name/source, duplicate without
+                ``overwrite``, or no library directory configured.
+
+        Note: imported content is stored as reference data only — it is
+        never executed. Validation checks structure (a markdown heading),
+        not semantics.
+        """
+        if self._dir is None:
+            raise DesignLibraryError("no library directory configured")
+        key = name.lower().strip()
+        if not key or key in (".", "..") or ".." in key or "/" in key or "\\" in key:
+            raise DesignLibraryError(f"invalid brand name: {name!r}")
+
+        content = self._read_source(source)
+        if "#" not in content.split("\n", 1)[0] and "\n#" not in content:
+            raise DesignLibraryError("source does not look like a DESIGN.md (no markdown heading)")
+        if len(content) > 512 * 1024:
+            raise DesignLibraryError("source too large (>512KB)")
+
+        brand_dir = self._dir / key
+        dest = brand_dir / self.DESIGN_FILE
+        if dest.exists() and not overwrite:
+            raise DesignLibraryError(f"brand already exists: {key}", {"path": str(dest)})
+        try:
+            brand_dir.mkdir(parents=True, exist_ok=True)
+            dest.write_text(content, encoding="utf-8")
+        except OSError as exc:
+            raise DesignLibraryError(f"cannot write brand file: {exc}") from exc
+        self._cache.pop(key, None)
+        system = self.load(key)
+        if system is None:  # pragma: no cover - file was just written
+            raise DesignLibraryError(f"imported brand failed to load: {key}")
+        return system
+
+    def _read_source(self, source: str | Path) -> str:
+        """Resolve ``source`` to markdown text: file path wins, else raw text."""
+        if isinstance(source, Path):
+            try:
+                return source.read_text(encoding="utf-8")
+            except OSError as exc:
+                raise DesignLibraryError(f"cannot read source file: {exc}") from exc
+        with contextlib.suppress(OSError, ValueError):
+            candidate = Path(source)
+            if candidate.is_file():
+                return candidate.read_text(encoding="utf-8")
+        return source
 
     def suggest(self, project_type: ProjectType) -> list[str]:
         """Suggest best-fit brands for a project type."""

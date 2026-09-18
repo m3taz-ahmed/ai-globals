@@ -31,7 +31,7 @@ class TestIsInvisibleCodepoint:
         assert is_invisible_codepoint(ord(" ")) is False
 
     def test_arabic_letter(self) -> None:
-        assert is_invisible_codepoint(ord("ا")) is False  # noqa: RUF001
+        assert is_invisible_codepoint(ord("ا")) is False
 
 
 class TestSanitizeText:

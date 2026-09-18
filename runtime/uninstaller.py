@@ -373,16 +373,42 @@ def _toggle_category(categories: list[UninstallCategory], num: int) -> bool:
     return False
 
 
+def is_aizee_root(root: Path) -> bool:
+    """True only if ``root`` looks like an actual aiZee install.
+
+    The uninstaller runs ``shutil.rmtree`` on generic directory names
+    (``runtime/``, ``scripts/``, ``docs/``, ``plugins/``). When ``root``
+    comes from ``AIZEE_ROOT`` or ``--root``, a wrong value would wipe
+    unrelated project directories. Require an aiZee-specific marker
+    before any deletion is allowed.
+    """
+    if (root / ".aizee-version").exists():
+        return True
+    return (root / "config.py").is_file() and (root / "runtime" / "kernel.py").is_file()
+
+
 def interactive_uninstall(root: Path, assume_yes: bool = False) -> int:
     """Run the interactive uninstall flow. Returns exit code."""
     categories = _build_categories(root)
 
-    # Filter to only categories that have existing content
+    # "Nothing to uninstall" means no on-disk content matched - the
+    # package/cli_shim/symlinks action-categories are always listed but
+    # count as content only when a file/dir actually exists.
+    has_content = any(c.exists() for c in categories)
     categories = [c for c in categories if c.exists() or c.key in ("package", "cli_shim", "symlinks")]
 
-    if not categories:
+    if not has_content:
         console.print("[yellow]Nothing to uninstall - no aiZee files found.[/yellow]")
         return 0
+
+    # Root sanity gate: only when something would actually be deleted,
+    # require proof that ``root`` is a real aiZee install.
+    if not is_aizee_root(root):
+        console.print(
+            f"[red]Refusing to uninstall: {root} does not look like an aiZee "
+            "install (no .aizee-version and no config.py + runtime/kernel.py).[/red]"
+        )
+        return 1
 
     if assume_yes:
         # Non-interactive: use defaults (delete OS, keep learned)

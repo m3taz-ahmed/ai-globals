@@ -17,7 +17,7 @@ to ``MCPServer``), this shim can be deleted and imports updated.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 # mypy: ignore-errors
 # ruff: noqa: I001
@@ -36,9 +36,15 @@ try:
 except ImportError:  # pragma: no cover - fallback for older mcp versions
     from mcp.server.fastmcp.resources import FunctionResource as _FunctionResourceImpl  # pyright: ignore[import-error,reportMissingImports]
 
-# Cast to Any so downstream attribute access (add_tool, run, etc.) is
-# permissive for both Pyright and mypy. The real classes are loaded above.
-FastMCP = cast(Any, _FastMCPImpl)
+# FastMCP binds the real class under TYPE_CHECKING so it stays valid in
+# type expressions (``def f(mcp: FastMCP)``) - a ``cast(Any, ...)`` result
+# is a variable, which Pyright rejects in annotations. Resource/
+# FunctionResource are used for isinstance() + attribute access
+# (``resource.fn``), not annotations, so they keep the permissive Any alias.
+if TYPE_CHECKING:
+    FastMCP = _FastMCPImpl
+else:
+    FastMCP = cast(Any, _FastMCPImpl)
 Resource = cast(Any, _ResourceImpl)
 FunctionResource = cast(Any, _FunctionResourceImpl)
 

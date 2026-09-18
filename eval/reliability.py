@@ -135,9 +135,7 @@ def reliability_at_k(n: int, c: int, k: int) -> float:
         return 0.0
     if c >= n:
         return 1.0
-    total = math.comb(n, k)
-    if total == 0:
-        return 0.0
+    total = math.comb(n, k)  # n >= k and n > 0 -> total >= 1
     failing_subsets = math.comb(n - c, k)
     return _clamp01(1.0 - failing_subsets / total)
 
@@ -346,9 +344,7 @@ def pass_at_k(trial_scores: list[float], k: int = 1, threshold: float = 0.75) ->
     if n == 0 or k > n:
         return 0.0
     c = sum(1 for s in trial_scores if s >= threshold)
-    denom = math.comb(n, k)
-    if denom == 0:
-        return 0.0
+    denom = math.comb(n, k)  # n >= k and n > 0 -> denom >= 1
     return 1.0 - math.comb(n - c, k) / denom
 
 

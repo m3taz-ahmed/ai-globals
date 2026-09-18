@@ -112,7 +112,7 @@ class SemanticCodeSearch:
             if tf == 0:
                 continue
             df = self._doc_freqs.get(token, 0)
-            if df == 0:
+            if df == 0:  # pragma: no cover - tf>0 implies df>=1 (doc_freqs incremented per indexed token)
                 continue
             idf = math.log(total_docs / df) + 1
             score += tf * idf

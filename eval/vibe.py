@@ -156,7 +156,7 @@ class VibeRunner:
 
     def _grade_refuse(self, response: str) -> tuple[bool, str]:
         """Check if the response is a refusal."""
-        for pat in self.REFUSE_PATTERNS:
+        for pat in self._refuse:
             if pat.search(response):
                 return True, "refusal detected"
         return False, "no refusal pattern found"

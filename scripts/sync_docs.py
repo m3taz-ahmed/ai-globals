@@ -22,6 +22,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -65,36 +66,67 @@ def count_tech_stack(root: Path) -> int:
     return len(list((root / "tech-stack").glob("*.md")))
 
 
+def _parametrize_count(fn: Any) -> int:
+    """Multiply a test by the size of its @pytest.mark.parametrize case lists."""
+    import ast
+
+    count = 1
+    for dec in fn.decorator_list:
+        if not isinstance(dec, ast.Call):
+            continue
+        func = dec.func
+        dotted = ""
+        while isinstance(func, ast.Attribute):
+            dotted = "." + func.attr + dotted
+            func = func.value
+        if isinstance(func, ast.Name):
+            dotted = func.id + dotted
+        if not dotted.endswith("parametrize"):
+            continue
+        argvalues = dec.args[1] if len(dec.args) > 1 else None
+        for kw in dec.keywords:
+            if kw.arg == "argvalues":
+                argvalues = kw.value
+        if isinstance(argvalues, (ast.List, ast.Tuple)):
+            count *= max(1, len(argvalues.elts))
+    return count
+
+
 def count_tests(root: Path) -> int | None:
-    """Count total pytest tests via --collect-only (sum of per-file counts).
+    """Count pytest tests via AST (parametrize-aware).
 
-    Returns ``None`` if pytest is not available or collection fails, so
-    callers can skip badge sync and warn instead of silently writing 0.
+    ``pytest --collect-only`` exceeds 60s on Windows for this suite size, so
+    tests are counted statically: module-level ``test_*`` functions plus
+    methods inside ``Test*`` classes, multiplied by parametrize cases.
+
+    Returns ``None`` when no tests are found so callers skip badge sync and
+    warn instead of silently writing 0.
     """
-    import subprocess
+    import ast
 
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pytest", "--collect-only", "-q"],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=60,
-        )
-        total = 0
-        for line in result.stdout.splitlines():
-            m = re.search(r":\s*(\d+)\s*$", line)
-            if m:
-                total += int(m.group(1))
-        if total == 0:
-            print("WARNING: count_tests collected 0 tests - badge sync skipped", file=sys.stderr)
-            return None
-        return total
-    except Exception as exc:
-        print(f"WARNING: count_tests failed ({exc}) - badge sync skipped", file=sys.stderr)
+    testpaths = ("runtime/tests", "memory/tests", "eval/tests", "aizee_mcp/tests", "tests")
+    total = 0
+    for rel in testpaths:
+        base = root / rel
+        if not base.exists():
+            continue
+        for path in base.rglob("test_*.py"):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+            except (OSError, SyntaxError):
+                continue
+            for node in tree.body:
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    if node.name.startswith("test_"):
+                        total += _parametrize_count(node)
+                elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
+                    for child in node.body:
+                        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)) and child.name.startswith("test_"):
+                            total += _parametrize_count(child)
+    if total == 0:
+        print("WARNING: count_tests found 0 tests - badge sync skipped", file=sys.stderr)
         return None
+    return total
 
 
 def gather_counts(root: Path) -> dict[str, int | None]:

@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.mcp]
 
 # Set up isolated root BEFORE importing the server module
 os.environ["AIZEE_ROOT"] = tempfile.mkdtemp(prefix="aizee_mcp_test_")
@@ -305,6 +305,7 @@ class TestExtensions:
         assert data3["ok"] is False
 
     def test_resources_direct_call(self):
+        os.environ["AIZEE_ROOT"] = str(ROOT)
         from aizee_mcp.aizee_server import get_rule_resource, get_workflow_resource
         core_rule = get_rule_resource("core")
         assert "Core rules" in core_rule

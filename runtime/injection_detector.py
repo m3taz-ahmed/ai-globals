@@ -459,7 +459,7 @@ def _try_decode_hex(text: str) -> str | None:
             # High threshold: must look like language, not just hex noise.
             if len(decoded) > 10 and any(c.isalpha() for c in decoded):
                 decoded_parts.append(decoded)
-        except (ValueError):
+        except (ValueError):  # pragma: no cover - hex-only even-length tokens cannot fail
             continue
     if not decoded_parts:
         return None

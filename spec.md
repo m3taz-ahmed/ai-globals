@@ -26,18 +26,18 @@ aiZee is a sovereign, version-controlled operating system that sits between you 
 aizee/                         # Sovereign root (discovered via AIZEE_ROOT)
 ├── aizee_cli.py               # CLI entry point (aizee command)
 ├── config.py                  # Root discovery + version
-├── runtime/                   # Kernel: policy, budget, audit, 109 governance modules
+├── runtime/                   # Kernel: policy, budget, audit, 131 governance modules
 │   ├── kernel.py              # Facade delegating to managers
 │   ├── managers/              # PolicyManager, WorkflowManager, AgentManager, ChatManager
 │   ├── uninstaller.py         # Interactive uninstaller with backup
-│   └── ...                    # 109 governance modules
-├── aizee_mcp/                 # MCP server (84 tools, 3 resources)
+│   └── ...                    # 131 governance modules
+├── aizee_mcp/                 # MCP server (88 tools, 3 resources)
 │   ├── aizee_server.py        # FastMCP server
 │   └── tools/                 # Tool modules by responsibility
 ├── memory/                    # SQLite + FTS5 + vector memory
 ├── eval/                      # Agent benchmark & eval harness
-├── skills/                    # 124 persona + lord skills
-├── workflows/                 # 74 trigger-based execution protocols
+├── skills/                    # 127 persona + lord skills
+├── workflows/                 # 60 trigger-based execution protocols
 ├── rules/                     # Compressed behavioral rules
 ├── tech-stack/                # Version-locked stack references
 ├── dashboard/                 # Web dashboard (Python stdlib HTTP)
@@ -63,7 +63,7 @@ aizee uninstall       # Interactive uninstall with backup
 | Types | `mypy` | 0 errors (strict, 345 files) |
 | Tests (targeted) | `pytest path/to/test_file.py -q` | ~5s max, during iteration |
 | Tests (fast) | `aizee test` | ~60-120s Linux / ~180s Windows, no cov |
-| Tests (full) | `aizee test --full` | 3865 tests, 95%+ coverage (actual 96%), ~180-300s |
+| Tests (full) | `aizee test --full` | 3888 tests, ~69% coverage (floor 68%), ~180-300s |
 | E2E | `python eval/harness.py` | all_pass: true (read-only) |
 
 ## Non-Goals

@@ -8,7 +8,11 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from aizee_mcp._compat import FastMCP
+
+pytestmark = pytest.mark.mcp
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aizee_pol_test_")

@@ -88,7 +88,7 @@ class AgentDiscovery:
                 path = base / rel
                 if path.exists():
                     agent = self._parse_config(kind, name, path)
-                    if agent is not None:
+                    if agent is not None:  # pragma: no cover - _parse_config never returns None (defensive)
                         found.append(agent)
         # Deduplicate by (kind, config_path).
         seen: set[tuple[str, str]] = set()

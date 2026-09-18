@@ -84,7 +84,7 @@ class SagaOrchestrator(BaseRepository):
 
         for index, step in enumerate(saga.steps):
             result = self._execute_step(saga_id, index, step, context, act)
-            if not isinstance(result, dict):
+            if not isinstance(result, dict):  # pragma: no cover — _execute_step always returns a dict
                 result = {"ok": False, "error": "saga step returned invalid result"}
             if result.get("ok"):
                 completed.append({"step": index, **result})

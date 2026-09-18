@@ -1617,17 +1617,28 @@ def test_dashboard_main_block_in_process(monkeypatch):
     monkeypatch.setenv("AIZEE_ROOT", str(tmp))
     monkeypatch.setenv("AGENT_OS_DASHBOARD_ALLOW_NO_TOKEN", "1")
     original_argv = sys.argv
-    sys.argv = ["server.py", "0"]
+    sys.argv = ["server.py", "8899"]  # valid port; ThreadingHTTPServer is mocked so nothing binds
     try:
-        mock_server = MagicMock()
+        # server.py subclasses ThreadingHTTPServer (_BoundedThreadingHTTPServer),
+        # so a real stub class is needed - a MagicMock base never sees the calls.
+        captured: dict[str, object] = {}
+
+        class _FakeHTTPServer:
+            def __init__(self, addr: object, handler: object) -> None:
+                captured["addr"] = addr
+
+            def serve_forever(self) -> None:
+                captured["served"] = True
+
         # runpy re-imports from http.server, so patch there
-        with patch("http.server.ThreadingHTTPServer", return_value=mock_server), \
+        with patch("http.server.ThreadingHTTPServer", _FakeHTTPServer), \
              patch("signal.signal"):
             runpy.run_path(
                 str(Path(__file__).resolve().parent.parent.parent / "dashboard" / "server.py"),
                 run_name="__main__",
             )
-        mock_server.serve_forever.assert_called_once()
+        assert captured.get("served") is True
+        assert captured["addr"] == ("127.0.0.1", 8899)
     finally:
         sys.argv = original_argv
 

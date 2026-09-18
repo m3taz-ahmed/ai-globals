@@ -149,7 +149,7 @@ def _safe_eval(expr: str, env: dict[str, Any]) -> bool:
     except SyntaxError as exc:
         logger.warning("firewall condition syntax error: %s - %s", expr, exc)
         return False
-    if tree.body is None:
+    if tree.body is None:  # pragma: no cover - mode="eval" always yields a body
         return False
     return bool(_eval_node(tree.body, env))
 
@@ -184,9 +184,9 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
         # without `command` is not running `rm -rf`) - not an error.
         # Either side may be the missing (None) one.
         if isinstance(node.op, ast.In):
-            return False if left is None or right is None else left in right
+            return False if left is None or right is None else left in right  # pragma: no cover - In/NotIn are Compare ops, never BinOp ops
         if isinstance(node.op, ast.NotIn):
-            return True if left is None or right is None else left not in right
+            return True if left is None or right is None else left not in right  # pragma: no cover - same as above
         return fn(left, right)
     if isinstance(node, ast.UnaryOp):
         fn = _ALLOWED_UNARYOPS.get(type(node.op))
@@ -227,7 +227,10 @@ def _eval_node(node: ast.AST, env: dict[str, Any]) -> Any:
     if isinstance(node, ast.Dict):
         out: dict[Any, Any] = {}
         for k, v in zip(node.keys, node.values, strict=True):
-            if k is not None:
+            if k is None:
+                # ``**spread`` keys are None in the AST - merge the mapping.
+                out.update(_eval_node(v, env))
+            else:
                 out[_eval_node(k, env)] = _eval_node(v, env)
         return out
     raise ValueError(f"unsupported expression node {type(node).__name__}")

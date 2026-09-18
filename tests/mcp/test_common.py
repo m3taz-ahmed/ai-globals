@@ -8,6 +8,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+pytestmark = pytest.mark.mcp
+
 # Set up isolated root BEFORE importing the module
 os.environ["AIZEE_ROOT"] = tempfile.mkdtemp(prefix="aizee_common_test_")
 ROOT = Path(os.environ["AIZEE_ROOT"])
@@ -112,6 +116,7 @@ class TestValidateQuery:
     def test_empty_query(self):
         """Cover line 93: empty query returns error JSON."""
         result = validate_query("")
+        assert result is not None
         data = json.loads(result)
         assert data["ok"] is False
         assert "Invalid query" in data["error"]
@@ -119,12 +124,14 @@ class TestValidateQuery:
     def test_non_string_query(self):
         """Cover line 93: non-string query returns error JSON."""
         result = validate_query(123)  # type: ignore[arg-type]
+        assert result is not None
         data = json.loads(result)
         assert data["ok"] is False
 
     def test_overlong_query(self):
         """Cover line 93: overlong query returns error JSON."""
         result = validate_query("x" * 100_001)
+        assert result is not None
         data = json.loads(result)
         assert data["ok"] is False
 
@@ -139,6 +146,7 @@ class TestValidateKind:
     def test_invalid_kind(self):
         """Cover line 102: unsafe kind name returns error JSON."""
         result = validate_kind("../etc")
+        assert result is not None
         data = json.loads(result)
         assert data["ok"] is False
         assert "Invalid kind" in data["error"]

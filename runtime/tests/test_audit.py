@@ -487,6 +487,14 @@ class TestLastHashEdgeCases:
         logger.log_file.write_text(json.dumps({"ts": "now", "type": "test"}) + "\n", encoding="utf-8")
         assert logger._last_hash() == _GENESIS_HASH
 
+    def test_last_hash_large_entry_tail_scan(self, tmp_path: Path) -> None:
+        """Entries larger than the 8KB tail window must not break the chain."""
+        logger = AuditLogger(tmp_path)
+        logger.log("big", {"blob": "x" * 12000})
+        fresh = AuditLogger(tmp_path)  # fresh cache forces the tail-scan path
+        fresh.log("next", {"command": "ls"})
+        assert fresh.verify_chain()["valid"] is True
+
 
 # ---------------------------------------------------------------------------
 # verify_chain - line 103 (skip blank lines)

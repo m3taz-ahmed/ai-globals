@@ -26,7 +26,7 @@ from aizee_mcp.tools.seo_tools import (  # pyright: ignore[reportMissingImports]
     register_seo_tools,
 )
 
-pytestmark = pytest.mark.slow
+pytestmark = [pytest.mark.slow, pytest.mark.mcp]
 
 
 # --- Helper to capture tool functions from a fake MCP ----------------------

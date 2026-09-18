@@ -28,7 +28,13 @@ class Trigger(str, Enum):
 
 
 def _as_aware(moment: datetime) -> datetime:
-    """Coerce a naive datetime to UTC (aware datetimes pass through)."""
+    """Coerce a naive datetime to UTC (aware datetimes pass through).
+
+    Raises ``TypeError`` for non-datetime input so callers scanning many
+    steps can skip corrupt entries instead of crashing on AttributeError.
+    """
+    if not isinstance(moment, datetime):
+        raise TypeError(f"expected datetime, got {type(moment).__name__}")
     if moment.tzinfo is None:
         return moment.replace(tzinfo=timezone.utc)
     return moment

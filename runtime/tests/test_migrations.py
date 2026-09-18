@@ -117,7 +117,7 @@ class TestMigrationGaps:
         assert version == 99
 
     def test_gap_in_migrations_breaks_early(self, db_path: Path) -> None:
-        """Cover lines 107-108: gap in migration chain causes warning and break."""
+        """A gap in the migration chain fails closed with RuntimeError."""
 
         # Set version to 0 but remove migration 0 to create a gap
         original_migrations = dict(_MIGRATIONS)
@@ -127,9 +127,8 @@ class TestMigrationGaps:
             _MIGRATIONS[1] = original_migrations[1]
         try:
             runner = MigrationRunner(db_path)
-            version = runner.run_migrations()
-            # No migration from 0, so it breaks immediately; version stays 0
-            assert version == 0
+            with pytest.raises(RuntimeError, match="No migration registered from version 0 to 1"):
+                runner.run_migrations()
         finally:
             _MIGRATIONS.clear()
             _MIGRATIONS.update(original_migrations)

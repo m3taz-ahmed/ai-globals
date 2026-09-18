@@ -22,6 +22,8 @@ from aizee_mcp.adapters import (
     default_registry,
 )
 
+pytestmark = pytest.mark.mcp
+
 # ---------------------------------------------------------------------------
 # LocalAdapter (existing tests, kept for regression)
 # ---------------------------------------------------------------------------

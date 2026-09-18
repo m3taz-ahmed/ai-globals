@@ -10,6 +10,8 @@ import pytest
 
 from aizee_mcp.agent import McpAgent, Tool, ToolCall
 
+pytestmark = pytest.mark.mcp
+
 # ---------------------------------------------------------------------------
 # Existing tests (kept for regression)
 # ---------------------------------------------------------------------------

@@ -51,8 +51,9 @@ def test_experiment_tracker_analyze_ab_test():
     res = experiment_tracker.analyze_ab_test(
         a_conv=120, a_vis=1000, b_conv=140, b_vis=1000, confidence=0.95, method="z_test"
     )
-    assert isinstance(res, dict)
+    assert isinstance(res, experiment_tracker.ABResult)
     assert 0.0 <= res["p_value"] <= 1.0
+    assert isinstance(res.to_dict(), dict)
 
 
 def test_lead_scorer():

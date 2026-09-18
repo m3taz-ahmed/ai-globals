@@ -153,7 +153,7 @@ class PromptGate:
             for i, pat in enumerate(patterns):
                 if pat.search(prompt):
                     label = f"{cat}[{i}]"
-                    if label not in matched:
+                    if label not in matched:  # pragma: no branch - label is unique per (cat, i); never revisited
                         matched.append(label)
                     score += _Patterns.SCORES[cat]
         if score >= self.BLOCK_THRESHOLD:

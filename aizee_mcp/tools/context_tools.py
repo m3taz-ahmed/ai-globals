@@ -65,9 +65,12 @@ def register_context_tools(mcp: FastMCP) -> None:
             if skill_file.parent.name in {"references", "templates", "node_modules", ".git"}:
                 continue
             fname = skill_file.stem
-            if fname.lower() in {"readme", "eval", "skill"}:
+            if fname == "SKILL":
+                name = skill_file.parent.name
+            elif fname.lower() in {"readme", "eval", "skill"}:
                 continue
-            name = skill_file.parent.name if fname == "SKILL" else fname
+            else:
+                name = fname
             try:
                 if skill_file.stat().st_size > 200_000:
                     continue
@@ -100,7 +103,7 @@ def register_context_tools(mcp: FastMCP) -> None:
             return json.dumps({"ok": True, "content": truncate(content, 5000)}, indent=2)
         lines = content.splitlines()
         output: list[str] = []
-        capturing = section == "unreleased"
+        capturing = False
         for line in lines:
             if line.startswith("## ["):
                 if section == "unreleased" and "[Unreleased]" in line:

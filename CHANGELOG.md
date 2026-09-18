@@ -1,5 +1,132 @@
 # Changelog
 
+## [5.15.0] - 2026-09-18 (Observation Memory + Hooks + External Ecosystem)
+
+### Added
+
+- `memory/observations.py` — continuous capture -> compress -> inject loop
+  (architectural pattern adapted from claude-mem): IDE lifecycle hooks feed
+  tool events into a crash-safe pending queue; events are deduplicated and
+  stored as compact observations in `state/observations.db`; at prompt time a
+  small markdown block of recent observations is injected as context.
+  Failed processing leaves pending events queued for retry — never loses data.
+- `aizee hook <inject|observe|summary>` — IDE lifecycle hook entry point.
+  Reads event JSON on stdin, always exits 0 (never blocks the editor).
+  `.cursor/hooks.json` wires it to `beforeSubmitPrompt`, `afterFileEdit`,
+  `afterShellExecution`, `afterMCPExecution`, and `stop`.
+- `DesignLibrary.import_brand(name, source, overwrite=)` — import external
+  `DESIGN.md` references (e.g. Refero exports) from a file path or raw
+  markdown into `design-library/<brand>/DESIGN.md`. Name confinement blocks
+  path traversal; content validated for markdown structure and size; cache
+  invalidated on overwrite.
+- `skills/skill-finder` — discover/vet external skills from the skills.sh
+  registry (`npx skills find`), with supply-chain checks and explicit user
+  approval before install (adapted from `vercel-labs/skills` `find-skills`).
+- `skills/web-security-checklist` — implementation-level web vuln checks
+  (SSRF bypass variants, upload magic bytes, XXE, JWT, mass assignment,
+  GraphQL, validation/encoding). Adapted from VibeSec-Skill (Apache-2.0);
+  complements `security-auditor`'s agent-layer focus.
+- `skills/design-md-lord` — DESIGN.md-driven UI workflow: pick/import/apply
+  real-world references via `DesignLibrary` + Refero MCP.
+- `refero` MCP server registered in `.devin/mcp_config.json`
+  (`https://api.refero.design/mcp`, OAuth/Bearer) for semantic style search.
+
+### Tooling / Tests
+
+- 50 new tests (`memory/tests/test_observations.py`, `tests/test_cli_hook.py`,
+  `tests/test_design_library.py` import suite). Coverage remains 100%.
+
+### Changed
+
+- Release pipeline: dropped the PyPI publish job. The wheel only carries
+  Python packages (`runtime`, `memory`, `aizee_mcp`, `plugins`, `eval`) —
+  not the content tree (`skills/`, `rules/`, `workflows/`, `tech-stack/`),
+  so `pip install aizee` would have shipped a hollow CLI. Distribution
+  stays via git clone, GitHub Release, and the Docker GHCR image (which
+  copies the full tree). PyPI can return later with a proper bootstrap.
+
+## [5.14.2] - 2026-09-17 (100% Coverage Milestone + Audit Fix Batch)
+
+### Fixed
+
+- `runtime/spec/engine.py`: `_SpecValidator.validate_deltas` now rejects
+  deltas with an unknown `delta_type` — previously they passed validation
+  and were silently counted as applied without touching requirements.
+- `runtime/reasoning_graph.py`: `_longest_path` gained a visited set —
+  an activated root reaching an activated cycle no longer crashes with
+  `RecursionError`.
+- `runtime/migrations.py`: `peek_version` catches `sqlite3.Error` (not only
+  `OperationalError`) — a corrupt DB file now returns 0 instead of raising
+  `DatabaseError`.
+- `runtime/mcp_firewall.py`: dict-spread arguments `{"a": 1, **d}` no longer
+  silently drop the spread entries during policy evaluation.
+- `runtime/supply_chain_guard.py`: `_parse_pyproject_deps` no longer
+  collects Poetry version strings (e.g. `requests = "^2.0"`) as dependency
+  names.
+- `aizee_mcp/tools/context_tools.py`: `search_skills` no longer skips
+  folder skills (`skills/<name>/SKILL.md`) via the stem=="skill" filter;
+  `get_changelog("unreleased")` no longer returns the file preamble when
+  no `[Unreleased]` section exists.
+- `eval/vibe.py`: `_grade_refuse` honors constructor-supplied refuse
+  patterns (was reading the class attribute, ignoring customization).
+
+### Tooling / Tests
+
+- **Coverage raised to 100%** (line + branch) across `runtime`, `memory`,
+  `aizee_mcp`, `dashboard`, `eval` — 7,456 tests; every residual gap either
+  covered by a focused test or marked `# pragma: no cover`/`no branch` with
+  an in-code justification (dead defensive guards, TOCTOU races, Protocol
+  stubs, POSIX-only paths on Windows).
+- `fail_under` raised 68 → 100 in `pyproject.toml`, `aizee test --full`, and
+  CI workflows so coverage regressions fail the suite (`eval/harness.py` keeps
+  its filtered-run floor).
+- `scripts/update_aizee.bat` now also syncs root `conftest.py`.
+- ~40 new gap-coverage test files under `runtime/tests/`, `memory/tests/`,
+  `aizee_mcp/tests/`, `eval/tests/`, `tests/`.
+
+## [5.14.1] - 2026-09-17 (Full-Project Audit & Fix Batch)
+
+### Fixed
+
+- `runtime/audit.py`: hash-chain verification no longer breaks when the tail
+  entry exceeds the 8 KB scan window (blank lines, missing trailing newline,
+  and multibyte entries covered by regression tests).
+- `memory/git_memory.py`: `commit()` returns `False` on empty/non-JSON-only
+  changes instead of crashing on `git add -- "*.json"` pathspec failure;
+  restores `RuntimeError` on non-repo (fail-loud); `diff()` accepts `HEAD~N`/
+  `HEAD^N` revisions.
+- `aizee_mcp/tools/seo_tools.py`: crawl RSS guard measures growth from a
+  per-crawl baseline instead of absolute process RSS — long-running MCP
+  servers (or coverage-instrumented processes) no longer abort small crawls.
+- `runtime/uninstaller.py` + `uninstaller_gui.py`: added `is_aizee_root()`
+  marker check — refuses to delete `runtime/`, `scripts/`, `docs/`, `plugins/`,
+  `eval/` under a root that isn't an aiZee install.
+- `runtime/__init__.py`: added 17 missing v5.14 exports to `__all__`
+  (241 total); `scripts/generate_manifest.py` now understands plain
+  `import X as Y` statements.
+- `scripts/sync_docs.py`: AST-based, parametrization-aware test counting —
+  no more `pytest --collect-only` subprocess timeout on Windows.
+- `aizee_mcp/_compat.py`: `FastMCP` binds the real class under
+  `TYPE_CHECKING` so it stays valid in type expressions; `Resource`/
+  `FunctionResource` keep permissive `Any` aliases for duck-typed access.
+
+### Tooling / Tests / Docs
+
+- New `pyrightconfig.json` points Pyright at the project interpreter
+  (fixes false unresolved-import diagnostics for `pytest`, `psutil`).
+- `tests/mcp/conftest.py`: `AIZEE_ROOT` is restored after every MCP test —
+  removes cross-suite environment pollution (flaky persona failures).
+- `tests/mcp/*`: `mcp` marker now actually applied (was registered but unused);
+  10 stale tests updated to intentional contracts (simhash empty string,
+  secret-filter narrowing, ABResult dataclass, migrations RuntimeError, ...).
+- `tests/dashboard/test_dashboard.py`: main-block test uses a valid port and
+  stubs `_BoundedThreadingHTTPServer` so `serve_forever` is observed.
+- Docs synced to reality: 131 runtime modules, 127 skills, 88 MCP tools,
+  3888 tests; coverage gate/badge aligned to measured 68% floor;
+  `.aizee-version` rewritten without UTF-8 BOM.
+- `scripts/update_aizee.bat`: also syncs `spec.md`, `integrity.manifest`,
+  and `pyrightconfig.json` to the deployment copy.
+
 ## [5.14.0] - 2026-09-11 (Laravel/Filament/UI Stack Mastery)
 
 ### New Runtime Modules (5)

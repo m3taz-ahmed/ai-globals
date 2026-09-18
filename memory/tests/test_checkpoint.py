@@ -195,7 +195,7 @@ class TestSqliteCheckpointSaver:
             ).fetchone()
             assert row is not None
             cols = {r[1] for r in conn.execute("PRAGMA table_info(checkpoints)")}
-            assert cols == {"id", "parent_id", "created_at", "channel_values", "channel_versions", "metadata"}
+            assert cols == {"id", "parent_id", "created_at", "channel_values", "channel_versions", "metadata", "thread_id"}
 
 
 # ---------------------------------------------------------------------------

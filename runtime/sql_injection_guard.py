@@ -144,4 +144,4 @@ def sanitize_identifier(value: str) -> str | None:
         cleaned = f"_{cleaned}"
     if _IDENTIFIER_RE.match(cleaned):
         return cleaned
-    return None
+    return None  # pragma: no cover - stripped + underscore-prefixed input always matches

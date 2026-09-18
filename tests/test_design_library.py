@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from runtime.design_library import (
     BrandDesignSystem,
     DesignLibrary,
+    DesignLibraryError,
     DesignSection,
     FusionResult,
     ProjectType,
@@ -127,3 +130,90 @@ def test_default_mapping(tmp_path: Path) -> None:
     # colors -> first brand, typography -> second brand
     assert result.section_mapping.get("colors") == "acme"
     assert result.section_mapping.get("typography") == "beta"
+
+# --- import_brand (Refero/external DESIGN.md import) ---
+
+def test_import_brand_from_text(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    system = lib.import_brand("refero-apple", "# Apple\n\n## Colors\n- #0071e3\n")
+    assert system.name == "refero-apple"
+    assert "0071e3" in system.content
+    assert (tmp_path / "refero-apple" / "DESIGN.md").exists()
+    assert "refero-apple" in lib.available_brands
+
+
+def test_import_brand_from_path_objects(tmp_path: Path) -> None:
+    src = tmp_path / "export" / "DESIGN.md"
+    src.parent.mkdir(parents=True)
+    src.write_text("# Vercel-like\n\n## Typography\n- Inter\n", encoding="utf-8")
+    lib = DesignLibrary(library_dir=tmp_path / "lib")
+    system = lib.import_brand("vcl", src)
+    assert "Inter" in system.content
+    system2 = lib.import_brand("vcl2", str(src))
+    assert system2.content == system.content
+
+
+def test_import_brand_missing_path_object(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    with pytest.raises(DesignLibraryError):
+        lib.import_brand("nope", tmp_path / "does-not-exist.md")
+
+
+def test_import_brand_no_library_dir() -> None:
+    lib = DesignLibrary()
+    with pytest.raises(DesignLibraryError, match="no library directory"):
+        lib.import_brand("x", "# X\n")
+
+
+def test_import_brand_invalid_names(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    for bad in ("", " ", ".", "..", "../evil", "a/b", "a\\b"):
+        with pytest.raises(DesignLibraryError):
+            lib.import_brand(bad, "# X\n")
+
+
+def test_import_brand_rejects_non_markdown(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    with pytest.raises(DesignLibraryError, match="no markdown heading"):
+        lib.import_brand("plain", "just text without heading")
+
+
+def test_import_brand_rejects_oversized(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    with pytest.raises(DesignLibraryError, match="too large"):
+        lib.import_brand("huge", "# Big\n" + "x" * (512 * 1024))
+
+
+def test_import_brand_duplicate_and_overwrite(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    lib.import_brand("dupe", "# Dupe v1\n")
+    with pytest.raises(DesignLibraryError, match="already exists"):
+        lib.import_brand("dupe", "# Dupe v2\n")
+    system = lib.import_brand("dupe", "# Dupe v2\n", overwrite=True)
+    assert "v2" in system.content
+    loaded = lib.load("dupe")
+    assert loaded is not None and "v2" in loaded.content
+
+
+def test_import_brand_write_error(tmp_path: Path) -> None:
+    (tmp_path / "blocked").write_text("not a dir", encoding="utf-8")
+    lib = DesignLibrary(library_dir=tmp_path)
+    with pytest.raises(DesignLibraryError, match="cannot write"):
+        lib.import_brand("blocked", "# Blocked\n")
+
+
+def test_import_brand_unusual_string_source(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    system = lib.import_brand("raw", "# Raw\x00Weird\n\ncontent")
+    assert "Raw" in system.content
+
+
+def test_import_brand_invalidates_cache(tmp_path: Path) -> None:
+    lib = DesignLibrary(library_dir=tmp_path)
+    lib.import_brand("cached", "# Cached v1\n")
+    first = lib.load("cached")
+    assert first is not None and "v1" in first.content
+    lib.import_brand("cached", "# Cached v2\n", overwrite=True)
+    second = lib.load("cached")
+    assert second is not None and "v2" in second.content
+

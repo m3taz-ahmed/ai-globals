@@ -106,6 +106,10 @@ class _SpecValidator:
             elif delta.delta_type == DeltaType.REMOVED:
                 if delta.requirement_id not in existing_ids:
                     errors.append(f"REMOVED delta {delta.requirement_id} not found in requirements")
+            else:
+                errors.append(
+                    f"unknown delta type {delta.delta_type!r} for {delta.requirement_id}"
+                )
         return errors
 
 
@@ -561,7 +565,7 @@ class SpecEngine(ScaffoldingMixin, AnalysisMixin):
             if m:
                 max_n = max(max_n, int(m.group(1)))
         candidate = max_n + 1
-        while f"{prefix}-{candidate:03d}" in taken:
+        while f"{prefix}-{candidate:03d}" in taken:  # pragma: no cover
             candidate += 1
         return f"{prefix}-{candidate:03d}"
 

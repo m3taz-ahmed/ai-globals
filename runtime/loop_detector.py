@@ -89,7 +89,7 @@ def _jaccard_similarity(set_a: set[str], set_b: set[str]) -> float:
     if not set_a and not set_b:
         return 1.0
     union = set_a | set_b
-    if not union:
+    if not union:  # pragma: no cover - unreachable: empty union implies both sets empty (handled above)
         return 0.0
     return len(set_a & set_b) / len(union)
 
@@ -134,13 +134,13 @@ def _args_similarity(args1: dict[str, Any], args2: dict[str, Any]) -> float:
     # Also compare stringified versions for edit distance
     s1 = json.dumps(args1, sort_keys=True, default=str)
     s2 = json.dumps(args2, sort_keys=True, default=str)
-    if not s1 and not s2:
+    if not s1 and not s2:  # pragma: no cover - unreachable: json.dumps of a dict is never ""
         return 1.0
     # Bound cost: skip edit distance on large payloads, use Jaccard only.
     if len(s1) > 20_000 or len(s2) > 20_000:
         return jaccard
     max_len = max(len(s1), len(s2))
-    if max_len == 0:
+    if max_len == 0:  # pragma: no cover - unreachable: serialized dicts are non-empty
         return 1.0
     edit_dist = _edit_distance(s1, s2)
     edit_sim = 1.0 - (edit_dist / max_len)
@@ -256,7 +256,7 @@ class LoopDetector:
         for cycle_len in range(2, max_cycle_len + 1):
             repeats = n // cycle_len
             if repeats < self.cycle_min_repeats:
-                continue
+                continue  # pragma: no cover - loop bound guarantees repeats >= min
             # Check if the last `repeats * cycle_len` items form a repeating cycle
             segment = history_list[-(repeats * cycle_len):]
             pattern = segment[:cycle_len]

@@ -186,7 +186,10 @@ def register_analytics_tools(mcp: FastMCP) -> None:
             return _err(exc.message)
         if not tps:
             return _err("'touchpoints' must be non-empty")
-        credit = _ATTRIBUTION_MODELS[model](tps)
+        try:
+            credit = _ATTRIBUTION_MODELS[model](tps)
+        except (ValidationError, TypeError, KeyError) as exc:
+            return _err(exc.message if isinstance(exc, ValidationError) else str(exc))
         return _ok(
             model=model,
             touchpoint_count=len(tps),
@@ -254,7 +257,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
             gross_margin = _finite(gross_margin, "gross_margin", minimum=1e-9, maximum=1.0)
             avg_lifetime_months = _finite(avg_lifetime_months, "avg_lifetime_months", maximum=1200.0)
         except (ValidationError, TypeError, ValueError) as exc:
-            return _err(exc.message if hasattr(exc, "message") else str(exc))
+            return _err(exc.message if isinstance(exc, ValidationError) else str(exc))
         if new_customers <= 0:
             return _err("'new_customers' must be positive")
         cac = spend / new_customers
@@ -284,7 +287,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         try:
             score = lead_scorer.score_lead(fit=fit, intent=intent, behavior=behavior)
         except (ValidationError, TypeError, ValueError) as exc:
-            return _err(exc.message if hasattr(exc, "message") else str(exc))
+            return _err(exc.message if isinstance(exc, ValidationError) else str(exc))
         grade = "A" if score >= 80 else "B" if score >= 60 else "C" if score >= 40 else "D"
         return _ok(
             score=score,
@@ -309,7 +312,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
                 is_gdpr=is_gdpr,
             )
         except (ValidationError, TypeError, ValueError) as exc:
-            return _err(exc.message if hasattr(exc, "message") else str(exc))
+            return _err(exc.message if isinstance(exc, ValidationError) else str(exc))
         return _ok(
             compliant=compliant,
             violations=violations,
@@ -357,7 +360,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
             nich = niche or None
             rate = pa.win_rate(platform=plat, niche=nich)
         except (ValidationError, TypeError, ValueError) as exc:
-            return _err(exc.message if hasattr(exc, "message") else str(exc))
+            return _err(exc.message if isinstance(exc, ValidationError) else str(exc))
         return _ok(
             win_rate=round(rate, 4),
             platform=plat,
@@ -397,7 +400,7 @@ def register_analytics_tools(mcp: FastMCP) -> None:
                 step.reached = count
             dropoff = f.dropoff()
         except (ValidationError, KeyError, TypeError, ValueError, AttributeError) as exc:
-            return _err(exc.message if hasattr(exc, "message") else str(exc))
+            return _err(exc.message if isinstance(exc, ValidationError) else str(exc))
         return _ok(
             step_count=len(steps_list),
             dropoff=dropoff,

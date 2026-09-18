@@ -35,6 +35,7 @@ from runtime.uninstaller import (
     _format_size,
     create_backup,
     delete_category,
+    is_aizee_root,
     pip_uninstall,
     remove_cli_shim,
     remove_mcp_config_entries,
@@ -418,6 +419,13 @@ class UninstallerGUI:
 
     def _execute_deletions(self) -> None:
         """Iterate categories and delete or keep each one."""
+        if not is_aizee_root(self.root_path):
+            self._log(
+                f"  [ABORT] {self.root_path} does not look like an aiZee "
+                "install (no .aizee-version and no config.py + runtime/kernel.py) "
+                "- refusing to delete.\n"
+            )
+            return
         for cat in self.categories:
             if cat.action != CategoryAction.DELETE:
                 self._log(f"  [KEEP] {cat.label}\n")

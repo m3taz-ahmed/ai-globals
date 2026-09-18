@@ -24,7 +24,7 @@ from runtime.schemas import ValidationError
 class _PatternCheck(Protocol):
     """A zero-arg pattern check returning a PatternResult."""
 
-    def __call__(self) -> PatternResult: ...
+    def __call__(self) -> PatternResult: ...  # pragma: no cover - Protocol stub
 
 
 class MobilePlatform(str, Enum):
@@ -369,7 +369,7 @@ class MobilePatternAuditor:
         results: list[PatternResult] = []
         for pattern in sorted(self._all_patterns, key=lambda p: p.value):
             checker = check_map.get(pattern)
-            if checker is not None:
+            if checker is not None:  # pragma: no branch - check_map covers every MobilePattern member
                 results.append(checker())
         return results
 

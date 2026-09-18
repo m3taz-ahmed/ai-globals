@@ -321,7 +321,7 @@ def _register_taint_guardrail() -> None:
                         results.append((key, v))
                     elif isinstance(v, (dict, list, tuple)):
                         results.extend(_iter_strings(v, key))
-            elif isinstance(obj, (list, tuple)):
+            elif isinstance(obj, (list, tuple)):  # pragma: no branch - callers only pass dict/list/tuple
                 for i, v in enumerate(obj):
                     key = f"{prefix}[{i}]"
                     if isinstance(v, str):

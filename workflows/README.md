@@ -24,50 +24,50 @@ This directory contains **74** `.md` files: **60** numbered trigger-based workfl
 | `/audit-perf` | `13-audit-perf.md` | Extreme speed, database, and caching optimization analysis. |
 | `/ponytail-review` | `14-ponytail-review.md` | Ruthless simplification — delete over-engineering, replace with minimal native code. |
 | /page-builder | `15-page-builder-setup.md` | Scaffold a section-based landing/page builder in a Laravel + Filament project. |
-| cleanup | `16-cleanup-and-scm.md` | Remove temporary and scratch files, review source control, and stage only relevant change… |
+| cleanup | `16-cleanup-and-scm.md` | Remove temporary and scratch files, review source control, and stage only relevant change... |
 | memory sync | `17-memory-sync.md` | Compress session learnings into continuous context. |
 | data-migration | `18-data-migration.md` | Database migrations, schema changes, and data transformation. |
 | incident-response | `19-incident-response.md` | Production incidents, outages, and emergency hotfixes. |
-| freelance | `20-freelance-pipeline.md` | End-to-end freelance job-to-contract pipeline: profile, search, score, proposal, approval… |
+| freelance | `20-freelance-pipeline.md` | End-to-end freelance job-to-contract pipeline: profile, search, score, proposal, approval... |
 | 21-spec-driven | `21-spec-driven.md` | Structured 4-phase development process: **Specify → Plan → Tasks → Implement**. |
-| 22-spec-analyze | `22-spec-analyze.md` | Non-destructive cross-artifact consistency analysis across `spec.md`, `plan.md`, and `tas… |
-| 23-spec-converge | `23-spec-converge.md` | Assess the codebase against a feature's spec/plan/tasks to identify remaining work. Class… |
-| /laravel-architecture | `24-laravel-architecture-setup.md` | Scaffold Laravel architecture patterns (Service Layer / Repository / DTO / Actions / DDD)… |
-| /filament-plugin | `25-filament-plugin-development.md` | Develop custom Filament plugins implementing the Plugin interface with register/boot life… |
-| /api-versioning | `26-laravel-api-versioning.md` | Setup header-based API versioning in Laravel (Koel pattern) with versioned route files an… |
-| /nativephp | `27-nativephp-app-development.md` | Full lifecycle for building native desktop/mobile apps with NativePHP (Laravel). Detect t… |
-| seo audit | `28-seo-audit.md` | Comprehensive SEO audit protocol for any website — technical, content, schema, GEO/AEO, p… |
+| 22-spec-analyze | `22-spec-analyze.md` | Non-destructive cross-artifact consistency analysis across `spec.md`, `plan.md`, and `tas... |
+| 23-spec-converge | `23-spec-converge.md` | Assess the codebase against a feature's spec/plan/tasks to identify remaining work. Class... |
+| /laravel-architecture | `24-laravel-architecture-setup.md` | Scaffold Laravel architecture patterns (Service Layer / Repository / DTO / Actions / DDD)... |
+| /filament-plugin | `25-filament-plugin-development.md` | Develop custom Filament plugins implementing the Plugin interface with register/boot life... |
+| /api-versioning | `26-laravel-api-versioning.md` | Setup header-based API versioning in Laravel (Koel pattern) with versioned route files an... |
+| /nativephp | `27-nativephp-app-development.md` | Full lifecycle for building native desktop/mobile apps with NativePHP (Laravel). Detect t... |
+| seo audit | `28-seo-audit.md` | Comprehensive SEO audit protocol for any website — technical, content, schema, GEO/AEO, p... |
 | filament ai | `29-filament-ai-workflow.md` | AI-assisted Filament development using Boost + Compass + FilaCheck pipeline. |
-| generate skill | `30-skill-generation.md` | Convert books, documents, RFCs, wikis, and PDFs into structured aiZee skills. Extract fra… |
-| draft and review | `31-drafter-reviewer.md` | Two-agent pipeline for content generation with adversarial review. The drafter produces a… |
-| mobile bootstrap | `32-mobile-app-bootstrap.md` | Bootstrap a production-grade cross-platform mobile app — Flutter or React Native/Expo — w… |
-| multi-tool sync | `33-multi-tool-sync.md` | Materialize aiZee's single source of truth into every AI coding tool's native format. Eli… |
-| agent gateway | `34-agent-gateway-audit.md` | Audit all LLM/MCP traffic passing through the agent gateway. Every request and response i… |
-| reliability eval | `35-reliability-eval.md` | Score AI coding agents with reliability@k + security-adjusted reliability@k. Replace the… |
-| onboarding / استقبال عميل / kickoff / intake… | `36-client-onboarding.md` | Structured client intake→contract→invoice→kickoff flow for new freelance engagements: col… |
-| contract / عقد / NDA / SOW / اتفاقية / IP tra… | `37-contract-lifecycle.md` | Generate→review→sign→store lifecycle for freelance contracts (NDA/SOW/MSA/IP-transfer) us… |
-| invoice / فاتورة / payment / عرض سعر / quotat… | `38-invoice-payment.md` | Quote→invoice→track→reconcile flow for freelance billing using the `invoice-manager` skil… |
-| pricing / تسعير / rate / retainer / حزمة / va… | `39-pricing-strategy.md` | Compute recommended rate→present→negotiate flow for freelance pricing using `pricing-stra… |
-| productize / خدمة جاهزة / packaged service /… | `40-productized-service.md` | Standardize→package→landing→sell flow that converts a custom freelance service into a fix… |
-| tax / ضريبة / cash flow / تدفق نقدي / savings… | `41-freelance-financials.md` | Income/expense/tax/cashflow planning for freelancers using `freelance-financials` skill a… |
-| win loss / تحليل فوز / win rate / bid analyti… | `42-win-loss-analytics.md` | Track bids→win rate→A/B proposals flow that turns freelance pipeline data into actionable… |
-| mostaql / خمسات / مستقل عربي / arabic freelan… | `43-arabic-freelance.md` | RTL-aware proposal/contract/invoice flow tailored to Arabic freelance platforms (Mostaql/… |
-| email setup / نشرة بريدية / drip / campaign ب… | `44-email-automation-setup.md` | Choose ESP→list→segment→drip→live setup for email marketing using the `email-marketing` s… |
-| social calendar / جدولة منشورات / content cal… | `45-social-content-calendar.md` | Draft→approve→schedule→publish→measure social content flow across X/IG/YT/TikTok/LinkedIn… |
-| cro / معدل تحويل / landing page / تجربة أ ب /… | `46-cro-audit.md` | Funnel→replay→hypothesis→experiment conversion-rate-optimization audit using the `cro-opt… |
-| marketing campaign / حملة إعلانية / campaign… | `47-marketing-campaign.md` | Brief→channels→budget→launch→measure marketing campaign flow using `marketing-strategy` a… |
-| lead gen / اكتساب عملاء / lead funnel / عميل… | `48-lead-generation-funnel.md` | Capture→score→nurture→handoff lead funnel using `lead-generation-crm` and `b2b-cold-outre… |
-| ga4 / analytics / attribution / CAC / LTV / ت… | `49-marketing-analytics.md` | Collect→attribute→dashboard→decide marketing analytics flow using the `marketing-analytic… |
-| automation / journey / أتمتة تسويق / marketin… | `50-marketing-automation.md` | Trigger→enrich→route→notify marketing automation flow using `marketing-automation` skill… |
-| local seo / google business profile / citatio… | `51-local-seo.md` | GBP→citations→reviews local SEO flow that extends `seo-lord` locally using Google Busines… |
-| pr outreach / press release / HARO / علاقات ص… | `52-pr-outreach.md` | Query match→pitch→follow-up PR outreach flow using `pr-pitch` skill to match journalist q… |
-| community / بناء مجتمع / community building /… | `53-community-building.md` | Launch→moderate→grow RTL-aware community flow using `community-builder` skill and Chatwoo… |
-|| mcp migration / mcp upgrade / mcp 2026 / stateless mcp / ترحيل mcp | `54-mcp-migration-2026.md` | Migrate MCP servers from 2025-11-25 spec to 2026-07-28 stateless spec (MCP 2.0). |
-|| red team ci / redteam ci / adversarial test ci / promptfoo ci / garak ci / فريق أحمر | `55-ai-redteam-ci.md` | Adversarial red-teaming in CI pipelines using promptfoo, garak, nemo-guardrails, llama-guard. |
-|| agent sre / agent slo / agent error budget / agent circuit breaker / sre governance | `56-agent-sre-governance.md` | SRE governance for AI agents: SLOs, error budgets, circuit breakers, observability. |
-|| durable execution / temporal setup / inngest setup / dbos setup / prefect setup / تنفيذ دائم | `57-durable-execution-setup.md` | Setup durable execution with Temporal, Inngest, DBOS, Prefect, or Restate. |
-|| compliance crosswalk / iso 42001 / nist ai rmf / eu ai act / uagt / تدقيق الامتثال | `58-compliance-crosswalk.md` | Crosswalk audit across ISO 42001, NIST AI RMF, EU AI Act, UAGT compliance frameworks. |
-|| tech stack update / tech stack bulk / version update / stack refresh / تحديث التقنيات | `59-tech-stack-bulk-update.md` | Bulk update tech-stack reference files when new framework/language versions are released. |
+| generate skill | `30-skill-generation.md` | Convert books, documents, RFCs, wikis, and PDFs into structured aiZee skills. Extract fra... |
+| draft and review | `31-drafter-reviewer.md` | Two-agent pipeline for content generation with adversarial review. The drafter produces a... |
+| mobile bootstrap | `32-mobile-app-bootstrap.md` | Bootstrap a production-grade cross-platform mobile app — Flutter or React Native/Expo — w... |
+| multi-tool sync | `33-multi-tool-sync.md` | Materialize aiZee's single source of truth into every AI coding tool's native format. Eli... |
+| agent gateway | `34-agent-gateway-audit.md` | Audit all LLM/MCP traffic passing through the agent gateway. Every request and response i... |
+| reliability eval | `35-reliability-eval.md` | Score AI coding agents with reliability@k + security-adjusted reliability@k. Replace the... |
+| onboarding / استقبال عميل / kickoff / intake... | `36-client-onboarding.md` | Structured client intake→contract→invoice→kickoff flow for new freelance engagements: col... |
+| contract / عقد / NDA / SOW / اتفاقية / IP tra... | `37-contract-lifecycle.md` | Generate→review→sign→store lifecycle for freelance contracts (NDA/SOW/MSA/IP-transfer) us... |
+| invoice / فاتورة / payment / عرض سعر / quotat... | `38-invoice-payment.md` | Quote→invoice→track→reconcile flow for freelance billing using the `invoice-manager` skil... |
+| pricing / تسعير / rate / retainer / حزمة / va... | `39-pricing-strategy.md` | Compute recommended rate→present→negotiate flow for freelance pricing using `pricing-stra... |
+| productize / خدمة جاهزة / packaged service /... | `40-productized-service.md` | Standardize→package→landing→sell flow that converts a custom freelance service into a fix... |
+| tax / ضريبة / cash flow / تدفق نقدي / savings... | `41-freelance-financials.md` | Income/expense/tax/cashflow planning for freelancers using `freelance-financials` skill a... |
+| win loss / تحليل فوز / win rate / bid analyti... | `42-win-loss-analytics.md` | Track bids→win rate→A/B proposals flow that turns freelance pipeline data into actionable... |
+| mostaql / خمسات / مستقل عربي / arabic freelan... | `43-arabic-freelance.md` | RTL-aware proposal/contract/invoice flow tailored to Arabic freelance platforms (Mostaql/... |
+| email setup / نشرة بريدية / drip / campaign ب... | `44-email-automation-setup.md` | Choose ESP→list→segment→drip→live setup for email marketing using the `email-marketing` s... |
+| social calendar / جدولة منشورات / content cal... | `45-social-content-calendar.md` | Draft→approve→schedule→publish→measure social content flow across X/IG/YT/TikTok/LinkedIn... |
+| cro / معدل تحويل / landing page / تجربة أ ب /... | `46-cro-audit.md` | Funnel→replay→hypothesis→experiment conversion-rate-optimization audit using the `cro-opt... |
+| marketing campaign / حملة إعلانية / campaign... | `47-marketing-campaign.md` | Brief→channels→budget→launch→measure marketing campaign flow using `marketing-strategy` a... |
+| lead gen / اكتساب عملاء / lead funnel / عميل... | `48-lead-generation-funnel.md` | Capture→score→nurture→handoff lead funnel using `lead-generation-crm` and `b2b-cold-outre... |
+| ga4 / analytics / attribution / CAC / LTV / ت... | `49-marketing-analytics.md` | Collect→attribute→dashboard→decide marketing analytics flow using the `marketing-analytic... |
+| automation / journey / أتمتة تسويق / marketin... | `50-marketing-automation.md` | Trigger→enrich→route→notify marketing automation flow using `marketing-automation` skill... |
+| local seo / google business profile / citatio... | `51-local-seo.md` | GBP→citations→reviews local SEO flow that extends `seo-lord` locally using Google Busines... |
+| pr outreach / press release / HARO / علاقات ص... | `52-pr-outreach.md` | Query match→pitch→follow-up PR outreach flow using `pr-pitch` skill to match journalist q... |
+| community / بناء مجتمع / community building /... | `53-community-building.md` | Launch→moderate→grow RTL-aware community flow using `community-builder` skill and Chatwoo... |
+| mcp migration | `54-mcp-migration-2026.md` | [TRIGGER] mcp migration, mcp upgrade, mcp 2026, stateless mcp, mcp 2.0, ترحيل mcp |
+| red team ci | `55-ai-redteam-ci.md` | [TRIGGER] red team ci, redteam ci, adversarial test ci, promptfoo ci, garak ci, detoxio c... |
+| agent sre | `56-agent-sre-governance.md` | [TRIGGER] agent sre, agent slo, agent error budget, agent circuit breaker, agent observab... |
+| durable execution | `57-durable-execution-setup.md` | [TRIGGER] durable execution, temporal setup, inngest setup, dbos setup, prefect setup, re... |
+| compliance crosswalk | `58-compliance-crosswalk.md` | [TRIGGER] compliance crosswalk, iso 42001, nist ai rmf, eu ai act, uagt, compliance audit... |
+| tech stack update | `59-tech-stack-bulk-update.md` | [TRIGGER] tech stack update, tech stack bulk, version update, stack refresh, تحديث التقني... |
 
 ## Standards & Reference Files
 

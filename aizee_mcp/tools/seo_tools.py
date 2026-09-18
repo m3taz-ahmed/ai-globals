@@ -358,7 +358,7 @@ class _SeoHtmlParser(html.parser.HTMLParser):
         # Pop tag from stack (handles nested identical tags correctly)
         if self._tag_stack and tag in self._tag_stack:
             # Pop until we find the matching tag (handles malformed nesting)
-            while self._tag_stack:
+            while self._tag_stack:  # pragma: no branch - tag is guaranteed in stack
                 popped = self._tag_stack.pop()
                 if popped == tag:
                     break
@@ -432,8 +432,6 @@ def _flesch_reading_ease(text: str) -> float:
     sentences = re.split(r"[.!?]+", text)
     n_sentences = max(1, len([s for s in sentences if s.strip()]))
     syllables = sum(_count_syllables(w) for w in words)
-    if n_words == 0 or n_sentences == 0:
-        return 0.0
     return max(0.0, min(100.0, 206.835 - 1.015 * (n_words / n_sentences) - 84.6 * (syllables / n_words)))
 
 
@@ -625,21 +623,33 @@ def register_seo_tools(mcp: FastMCP) -> None:
         # thread for hours on slow targets. Cap the whole crawl at 10 min.
         import time as _time
         deadline = _time.monotonic() + 600.0
+        # B8 baseline: measure RSS growth attributable to the crawl, not the
+        # host process' absolute RSS (the MCP server/pytest host may already
+        # exceed the limit before the first page is fetched).
+        baseline_rss = 0
+        try:
+            import psutil
+
+            baseline_rss = psutil.Process().memory_info().rss
+        except ImportError:
+            pass  # psutil not available - memory guard disabled.
 
         while queue and len(visited) < max_pages:
             if _time.monotonic() > deadline:
                 break
-            # B8: Memory guard - abort crawl if process RSS exceeds threshold.
+            # B8: Memory guard - abort crawl if it grows process RSS beyond
+            # the threshold relative to the pre-crawl baseline.
             try:
                 import psutil
 
                 rss = psutil.Process().memory_info().rss
-                if rss > _MAX_CRAWL_RSS_BYTES:
+                if baseline_rss and rss - baseline_rss > _MAX_CRAWL_RSS_BYTES:
                     return json.dumps({
                         "ok": False,
                         "error": (
                             f"Crawl aborted: memory limit {_MAX_CRAWL_RSS_BYTES} bytes "
-                            f"exceeded (RSS={rss}). Lower max_pages or increase server RAM."
+                            f"exceeded (crawl added RSS={rss - baseline_rss} bytes). "
+                            "Lower max_pages or increase server RAM."
                         ),
                         "pages_crawled": len(visited),
                         "partial_results": page_results[:50],
@@ -822,7 +832,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
         paragraphs: list[str] = []
         for i in range(0, len(sentences), 3):
             para = " ".join(sentences[i:i + 3])
-            if para:
+            if para:  # pragma: no branch - slice over range(0, len, 3) is never empty
                 paragraphs.append(para)
         if not paragraphs and text:
             paragraphs = [text]

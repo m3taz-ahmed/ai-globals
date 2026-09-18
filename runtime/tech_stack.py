@@ -316,7 +316,7 @@ def _parse_pep508(dep: str, versions: dict[str, str]) -> None:
     version = m.group(3)
     if version:
         cleaned = _clean_version(version)
-        if cleaned:
+        if cleaned:  # pragma: no branch - group(3) always starts with a digit, so cleaned is never None here
             versions[name] = cleaned
 
 
@@ -327,7 +327,7 @@ def _parse_pyproject_regex(path: Path) -> dict[str, str]:
     for m in re.finditer(r'^"?([A-Za-z0-9_.-]+)"?\s*[<>=!~]+\s*(\d[^;,\]"\n]+)', text, re.MULTILINE):
         name, version = m.group(1), m.group(2).strip()
         cleaned = _clean_version(version)
-        if cleaned:
+        if cleaned:  # pragma: no branch - regex requires group(2) to start with a digit, so cleaned is never None
             versions[name] = cleaned
     return versions
 

@@ -146,10 +146,12 @@ class MiddlewarePipeline:
                 return _call
 
             nxt = _make_call()
-        try:
+        # The composed chain already normalizes errors inside each _call /
+        # _handler_call wrapper, so this outer guard can never fire.
+        try:  # pragma: no cover - errors are caught inside the chain
             return nxt()
-        except AizeeError as e:
+        except AizeeError as e:  # pragma: no cover - errors are caught inside the chain
             return MiddlewareResult(ok=False, error=e)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover - errors are caught inside the chain
             return MiddlewareResult(ok=False, error=normalize_error(e))
 

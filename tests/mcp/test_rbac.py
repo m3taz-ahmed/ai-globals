@@ -15,6 +15,8 @@ from aizee_mcp.rbac import (
     check_tool_permission,
 )
 
+pytestmark = pytest.mark.mcp
+
 ADMIN_TOOL = "run_workflow"
 NON_ADMIN_TOOL = "get_status"
 

@@ -81,5 +81,5 @@ def test_governance_around_action_with_kwargs(tmp_path):
         pass
 
     events = telemetry.query(event_type="action")
-    assert events[0]["metadata"]["user"] == "alice"
-    assert events[0]["metadata"]["tool"] == "grep"
+    assert events[0]["metadata"]["kwargs"]["user"] == "alice"
+    assert events[0]["metadata"]["kwargs"]["tool"] == "grep"

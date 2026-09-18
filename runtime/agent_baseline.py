@@ -287,7 +287,7 @@ class AgentBaseline:
             return None
         recent_rate = window / recent_span
         mean_rate = len(recent) / total_span
-        if mean_rate <= 0:
+        if mean_rate <= 0:  # pragma: no cover - total_span > 0 implies mean_rate > 0
             return None
         if recent_rate > mean_rate * self.VOLUME_SPIKE_MULTIPLIER:
             return AnomalyAlert(

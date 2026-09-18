@@ -191,13 +191,17 @@ class GitMemoryStore:
         Stages only ``*.json`` under the repo root (never ``git add -A``,
         which could sweep up accidentally dropped secrets).
         """
-        self._git("add", "--", "*.json")
-        # Check if there are changes to commit
-        status = self._git("status", "--porcelain", check=False)
-        if status.stdout.strip() == "":
-            return False  # Nothing to commit
         if not message or len(message) > 500:
             raise ValueError("Commit message must be 1..500 chars")
+        # Check for *.json changes before staging: `git add -- *.json` fails
+        # with "pathspec did not match" when no such files exist (e.g. an
+        # empty repo), which must return False instead of raising.
+        status = self._git("status", "--porcelain", "--", "*.json", check=False)
+        if status.returncode != 0:
+            raise RuntimeError(f"git status --porcelain -- *.json failed: {status.stderr}")
+        if status.stdout.strip() == "":
+            return False  # Nothing to commit
+        self._git("add", "--", "*.json")
         self._git("commit", "-m", message)
         return True
 
@@ -224,7 +228,9 @@ class GitMemoryStore:
                 })
         return commits
 
-    _REF_RE: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/@-]{0,127}$")
+    # Allows ~ and ^ for revision suffixes (HEAD~1, HEAD^2); the leading-char
+    # class plus the explicit "-" check below still block option injection.
+    _REF_RE: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/@~^-]{0,127}$")
 
     def _safe_ref(self, ref: str, what: str = "ref") -> str:
         """Validate a git ref/branch/remote name (blocks option injection)."""

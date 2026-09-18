@@ -8,7 +8,11 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from aizee_mcp._compat import FastMCP, FunctionResource
+
+pytestmark = pytest.mark.mcp
 
 # Set up isolated root BEFORE importing
 _ROOT = tempfile.mkdtemp(prefix="aizee_ctx_test_")
@@ -245,7 +249,7 @@ class TestGetAgents:
         agents_fn = None
         for r in resources.values():
             if "AGENTS" in str(r.uri) and isinstance(r, FunctionResource):
-                agents_fn = r.fn
+                agents_fn = getattr(r, "fn", None)
                 break
         assert agents_fn is not None
         result = agents_fn()
@@ -260,7 +264,7 @@ class TestGetAgents:
         agents_fn = None
         for r in resources.values():
             if "AGENTS" in str(r.uri) and isinstance(r, FunctionResource):
-                agents_fn = r.fn
+                agents_fn = getattr(r, "fn", None)
                 break
         assert agents_fn is not None
         result = agents_fn()

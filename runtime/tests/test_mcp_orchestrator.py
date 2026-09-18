@@ -32,7 +32,7 @@ def test_plan_builds():
 
 def test_sequential_execution():
     agent = _FakeAgent({"read": {"content": "hello"}, "write": {"ok": True}})
-    orch = McpOrchestrator(agent)
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
     plan = Plan(
         id="seq",
         steps=[
@@ -55,7 +55,7 @@ def test_rollback():
                 return ToolCall(tool=name, arguments=arguments, error="disk full")
             return ToolCall(tool=name, arguments=arguments, result={"ok": True})
 
-    orch = McpOrchestrator(FailAgent())
+    orch = McpOrchestrator(FailAgent())  # type: ignore[arg-type]
     plan = Plan(
         id="rollback",
         steps=[
@@ -69,23 +69,27 @@ def test_rollback():
 
 
 def test_run_step_exception():
-    """Lines 93-94: _run_step catches exceptions and returns FAILED with traceback."""
+    """_run_step catches exceptions and returns FAILED with the message only.
+
+    The full traceback is logged, but the error field intentionally carries
+    only the exception message (no stack trace leaked to callers).
+    """
     class CrashAgent:
         async def call_tool(self, name: str, arguments: dict[str, Any]) -> object:
             raise RuntimeError("agent crashed")
 
-    orch = McpOrchestrator(CrashAgent())
+    orch = McpOrchestrator(CrashAgent())  # type: ignore[arg-type]
     plan = Plan(id="crash", steps=[Step(id="a", tool="read", arguments={})])
     results = asyncio.run(orch.execute(plan))
     assert results["a"].status == StepStatus.FAILED
     assert "agent crashed" in results["a"].error
-    assert "Traceback" in results["a"].error
+    assert "Traceback" not in results["a"].error
 
 
 def test_rollback_step_no_tool():
     """Line 98: _rollback_step with no rollback_tool returns ROLLED_BACK."""
     agent = _FakeAgent()
-    orch = McpOrchestrator(agent)
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
     step = Step(id="a", tool="read", arguments={})  # no rollback_tool
     result = asyncio.run(orch._rollback_step(step))
     assert result.status == StepStatus.ROLLED_BACK
@@ -98,7 +102,7 @@ def test_rollback_step_exception():
         async def call_tool(self, name: str, arguments: dict[str, Any]) -> object:
             raise RuntimeError("rollback crashed")
 
-    orch = McpOrchestrator(CrashAgent())
+    orch = McpOrchestrator(CrashAgent())  # type: ignore[arg-type]
     step = Step(id="a", tool="read", arguments={}, rollback_tool="undo")
     result = asyncio.run(orch._rollback_step(step))
     assert result.status == StepStatus.ROLLED_BACK
@@ -108,7 +112,7 @@ def test_rollback_step_exception():
 def test_no_ready_steps_breaks():
     """Line 126: circular dependency causes no ready steps, loop breaks."""
     agent = _FakeAgent()
-    orch = McpOrchestrator(agent)
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
     plan = Plan(
         id="circular",
         steps=[
@@ -126,7 +130,7 @@ def test_no_ready_steps_breaks():
 def test_parallel_execution():
     """Lines 131-132: parallel execution via asyncio.gather."""
     agent = _FakeAgent({"read": {"content": "hello"}, "write": {"ok": True}})
-    orch = McpOrchestrator(agent)
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
     plan = Plan(
         id="parallel",
         steps=[

@@ -285,7 +285,7 @@ class SupplyChainGuard:
                 return True
             if top.startswith("."):
                 return True
-        if ecosystem == DependencyEcosystem.NODE and (top.startswith(".") or top.startswith("/") or top == "node:"):
+        if ecosystem == DependencyEcosystem.NODE and (top.startswith(".") or top.startswith("/") or top.startswith("node:")):
             return True
         if ecosystem == DependencyEcosystem.PHP:
             # PHP `use` namespaces map to composer vendor prefixes case-insensitively.
@@ -324,7 +324,7 @@ class SupplyChainGuard:
         for line_no, line in enumerate(source.splitlines(), start=1):
             for match in _TS_IMPORT_RE.finditer(line):
                 name = match.group(1) or match.group(2) or match.group(3)
-                if name:
+                if name:  # pragma: no branch - every alternative captures a module name
                     modules.append((name, line_no))
         return modules
 
@@ -415,9 +415,18 @@ def _parse_pyproject_deps(text: str) -> set[str]:
 
 
 def _collect_dep_names(stripped: str, names: set[str]) -> None:
-    """Extract dependency names from quoted strings in a line."""
-    for quoted in re.findall(r'["\']([^"\']+)["\']', stripped):
-        name = _extract_dependency_name(quoted)
+    """Extract dependency names from quoted strings in a line.
+
+    Poetry/TOML key-value lines (``requests = "^2.0"``) carry the dependency
+    name as the unquoted key - collect the key, not the version spec.
+    """
+    quoted = re.findall(r'["\']([^"\']+)["\']', stripped)
+    key_match = re.match(r"^([A-Za-z0-9_.\-]+)\s*=", stripped)
+    if key_match and len(quoted) <= 1 and key_match.group(1) != "dependencies":
+        names.add(key_match.group(1))
+        return
+    for q in quoted:
+        name = _extract_dependency_name(q)
         if name:
             names.add(name)
 
@@ -485,7 +494,7 @@ def _parse_go_mod(text: str) -> set[str]:
                 names.add(parts[0])
         elif stripped.startswith("require "):
             parts = stripped[len("require "):].split()
-            if parts:
+            if parts:  # pragma: no branch - stripped() guarantees content after "require "
                 names.add(parts[0])
     return names
 

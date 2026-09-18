@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "5.14.0",
+    "version": "5.15.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
     "updated": "2026-09-08"
   },
@@ -292,7 +292,23 @@
     "أتمتة-تسويق": "workflows/50-marketing-automation.md",
     "سيو-محلي": "workflows/51-local-seo.md",
     "علاقات-صحفية": "workflows/52-pr-outreach.md",
-    "مجتمع": "workflows/53-community-building.md"
+    "مجتمع": "workflows/53-community-building.md",
+    "find skill": "skills/skill-finder/SKILL.md",
+    "external skill": "skills/skill-finder/SKILL.md",
+    "skills.sh": "skills/skill-finder/SKILL.md",
+    "install skill": "skills/skill-finder/SKILL.md",
+    "skill discovery": "skills/skill-finder/SKILL.md",
+    "web security": "skills/web-security-checklist/SKILL.md",
+    "ssrf": "skills/web-security-checklist/SKILL.md",
+    "xxe": "skills/web-security-checklist/SKILL.md",
+    "jwt security": "skills/web-security-checklist/SKILL.md",
+    "mass assignment": "skills/web-security-checklist/SKILL.md",
+    "graphql security": "skills/web-security-checklist/SKILL.md",
+    "design.md": "skills/design-md-lord/SKILL.md",
+    "design system": "skills/design-md-lord/SKILL.md",
+    "brand design": "skills/design-md-lord/SKILL.md",
+    "refero": "skills/design-md-lord/SKILL.md",
+    "design tokens": "skills/design-md-lord/SKILL.md"
   },
   "features": {
     "audit_log": "runtime/audit.py",
@@ -417,5 +433,5 @@
     "anti-patterns": "rules/anti-patterns.md",
     "behavioral": "rules/core-behavioral-compact.md"
   },
-  "version": "5.14.0"
+  "version": "5.15.0"
 }

@@ -1,19 +1,43 @@
 {
+  "pythonVersion": "3.10",
+  "pythonPath": "C:/Program Files/Python310/python.exe",
+  "extraPaths": [
+    ".",
+    "C:/Program Files/Python310/Lib/site-packages",
+    "C:/Users/Moataz/AppData/Roaming/Python/Python310/site-packages"
+  ],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
   "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
     "temp",
-    "graphify-out",
-    ".ruff_cache",
-    ".mypy_cache",
-    ".pytest_cache",
-    "__pycache__",
-    "aios.egg-info",
-    ".ai",
-    ".agents",
-    ".claude",
-    ".clinerules",
-    ".cursor",
-    ".devin",
-    ".github",
-    ".windsurf"
+    "backups"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "tests",
+      "typeCheckingMode": "off"
+    },
+    {
+      "root": "runtime/tests",
+      "typeCheckingMode": "off"
+    },
+    {
+      "root": "memory/tests",
+      "typeCheckingMode": "off"
+    },
+    {
+      "root": "eval/tests",
+      "typeCheckingMode": "off"
+    },
+    {
+      "root": "aizee_mcp/tests",
+      "typeCheckingMode": "off"
+    },
+    {
+      "root": "scripts/tests",
+      "typeCheckingMode": "off"
+    }
   ]
 }

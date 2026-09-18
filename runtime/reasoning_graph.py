@@ -153,17 +153,17 @@ class ReasoningGraph:
         # BFS longest path from each root.
         best: list[str] = []
         for root in roots:
-            path = self._longest_path(root)
+            path = self._longest_path(root, {root})
             if len(path) > len(best):
                 best = path
         return best
 
-    def _longest_path(self, start: str) -> list[str]:
+    def _longest_path(self, start: str, visited: set[str]) -> list[str]:
         """Longest simple path from start through activated nodes."""
         best = [start]
         for edge in self._out[start]:
-            if self._nodes[edge.target].activated:
-                sub = self._longest_path(edge.target)
+            if self._nodes[edge.target].activated and edge.target not in visited:
+                sub = self._longest_path(edge.target, visited | {edge.target})
                 if len(sub) + 1 > len(best):
                     best = [start, *sub]
         return best

@@ -71,7 +71,7 @@ def _safe_regex_search(pattern: str, text: str) -> bool:
     import signal as _signal
 
     use_alarm = hasattr(_signal, "SIGALRM") and _os.name != "nt"
-    if use_alarm:
+    if use_alarm:  # pragma: no cover - POSIX-only path (no signal.alarm on Windows)
         sigalrm: Any = getattr(_signal, "SIGALRM", None)
         alarm_fn: Any = getattr(_signal, "alarm", None)
 
