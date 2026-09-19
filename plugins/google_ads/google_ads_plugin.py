@@ -18,7 +18,7 @@ from runtime.plugin import AIOSPlugin
 class GoogleAdsPlugin(AIOSPlugin):
     """Bridge AIOS kernel to the external google-ads MCP server."""
 
-    name = "google-ads"
+    name = "google_ads"
     version = "0.1.0"
 
     def on_load(self) -> None:
@@ -33,7 +33,7 @@ class GoogleAdsPlugin(AIOSPlugin):
             )
 
     def _client(self) -> McpClient:
-        return McpClient("google-ads", self.kernel.root)
+        return McpClient("google_ads", self.kernel.root)
 
     def _proxy(self, tool: str, arguments: dict[str, Any]) -> str:
         """Call a tool on the external MCP server via stdio."""

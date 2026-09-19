@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import typing
+
 from runtime.persona import (
     RESET_TRIGGERS,
     PersonaDetector,
@@ -59,7 +61,7 @@ def test_all_triggers_are_valid_reset_commands() -> None:
 def test_reset_clears_existing_persona_and_redetects() -> None:
     """When /reset is sent, existing persona fields are cleared and re-detected."""
     detector = PersonaDetector()
-    context: dict[str, object] = {
+    context: dict[str, typing.Any] = {
         "message": "صمملي landing page",
         "persona": "UX",
         "skill": "frontend-ui-expert",
@@ -83,7 +85,7 @@ def test_reset_clears_existing_persona_and_redetects() -> None:
 def test_reset_without_hint_redetects_on_full_text() -> None:
     """Bare /reset still works - re-detects on the command itself."""
     detector = PersonaDetector()
-    context: dict[str, object] = {
+    context: dict[str, typing.Any] = {
         "message": "/reset",
         "persona": "DEV",
         "personas": ["DEV"],
@@ -97,7 +99,7 @@ def test_reset_without_hint_redetects_on_full_text() -> None:
 def test_non_reset_message_preserves_existing_persona() -> None:
     """Normal messages don't trigger re-detection when persona is already set."""
     detector = PersonaDetector()
-    context: dict[str, object] = {
+    context: dict[str, typing.Any] = {
         "message": "اكتب backend API",
         "persona": "UX",
         "personas": ["UX"],
@@ -113,7 +115,7 @@ def test_reset_switches_from_ux_to_dev() -> None:
     """Sending /reset with backend keywords switches persona from UX to DEV."""
     detector = PersonaDetector()
     # First message: UX persona
-    ctx1: dict[str, object] = {"message": "صمملي landing page جميل"}
+    ctx1: dict[str, typing.Any] = {"message": "صمملي landing page جميل"}
     inject_persona_context(detector, ctx1)
     assert ctx1["persona"] == "UX"
 
@@ -128,7 +130,7 @@ def test_reset_switches_from_ux_to_dev() -> None:
 def test_reset_arabic_switches_persona() -> None:
     """Arabic reset command /انتحل works the same as /reset."""
     detector = PersonaDetector()
-    context: dict[str, object] = {
+    context: dict[str, typing.Any] = {
         "message": "صمملي موقع",
         "persona": "UX",
         "personas": ["UX"],

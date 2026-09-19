@@ -105,7 +105,7 @@ def _load_checkpoint(root: Path) -> dict[str, object]:
     if not cp_path.exists():
         return {}
     try:
-        return json.loads(cp_path.read_text(encoding="utf-8"))
+        return json.loads(cp_path.read_text(encoding="utf-8"))  # type: ignore[no-any-return]
     except (json.JSONDecodeError, OSError):
         return {}
 

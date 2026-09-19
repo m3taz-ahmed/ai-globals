@@ -110,7 +110,7 @@ def _extract_workspace_from_initialize(line: bytes) -> str | None:
     return None
 
 
-def _install_intercept_pipe():
+def _install_intercept_pipe() -> None:
     """
     Install an OS-level pipe on fd 0 (stdin).
 
@@ -131,9 +131,9 @@ def _install_intercept_pipe():
     r_fd, w_fd = os.pipe()
 
     workspace_found = threading.Event()
-    workspace_path = [None]  # mutable container for thread result
+    workspace_path: list[str | None] = [None]  # mutable container for thread result
 
-    def _relay():
+    def _relay() -> None:
         """Read from original stdin, intercept initialize, relay everything."""
         try:
             with open(original_fd, "rb", closefd=True) as src, \
@@ -205,5 +205,5 @@ if __name__ == "__main__":
 
     # Now start graphify - it will read from the intercepted fd 0
     # which already has the initialize message queued up
-    from graphify.serve import serve
+    from graphify.serve import serve  # type: ignore[import-untyped]
     serve()

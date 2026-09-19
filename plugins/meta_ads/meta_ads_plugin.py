@@ -18,7 +18,7 @@ from runtime.plugin import AIOSPlugin
 class MetaAdsPlugin(AIOSPlugin):
     """Bridge AIOS kernel to the external meta-ads MCP server."""
 
-    name = "meta-ads"
+    name = "meta_ads"
     version = "0.1.0"
 
     def on_load(self) -> None:
@@ -33,7 +33,7 @@ class MetaAdsPlugin(AIOSPlugin):
             )
 
     def _client(self) -> McpClient:
-        return McpClient("meta-ads", self.kernel.root)
+        return McpClient("meta_ads", self.kernel.root)
 
     def _proxy(self, tool: str, arguments: dict[str, Any]) -> str:
         """Call a tool on the external MCP server via stdio."""

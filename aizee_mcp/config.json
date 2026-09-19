@@ -60,19 +60,19 @@
       "command": "python",
       "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@aizee/server-khamsat"]
     },
-    "google-ads": {
+    "google_ads": {
       "command": "python",
       "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-google-ads"]
     },
-    "meta-ads": {
+    "meta_ads": {
       "command": "python",
       "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-meta-ads"]
     },
-    "tiktok-ads": {
+    "tiktok_ads": {
       "command": "python",
       "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-tiktok-ads"]
     },
-    "linkedin-ads": {
+    "linkedin_ads": {
       "command": "python",
       "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@modelcontextprotocol/server-linkedin-ads"]
     },

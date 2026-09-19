@@ -75,13 +75,13 @@ plugins:
     enabled: true
   khamsat:
     enabled: true
-  google-ads:
+  google_ads:
     enabled: true
-  meta-ads:
+  meta_ads:
     enabled: true
-  tiktok-ads:
+  tiktok_ads:
     enabled: true
-  linkedin-ads:
+  linkedin_ads:
     enabled: true
   posthog:
     enabled: true

@@ -88,7 +88,7 @@ MCP_CATEGORIES: dict[str, list[str]] = {
     "Freelance": ["upwork", "freelancer", "fiverr", "mostaql", "khamsat"],
     "Marketing": ["brevo", "sendgrid", "klaviyo", "kit", "listmonk"],
     "Social": ["twitter", "youtube", "postiz", "automatisch"],
-    "Ads": ["google-ads", "meta-ads", "tiktok-ads", "linkedin-ads"],
+    "Ads": ["google_ads", "meta_ads", "tiktok_ads", "linkedin_ads"],
     "Analytics": ["posthog", "growthbook", "flagsmith", "openreplay"],
     "CRM": ["hubspot", "twenty", "chatwoot", "formbricks", "erpnext"],
     "Billing": ["lago"],

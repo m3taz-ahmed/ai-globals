@@ -18,7 +18,7 @@ from runtime.plugin import AIOSPlugin
 class TiktokAdsPlugin(AIOSPlugin):
     """Bridge AIOS kernel to the external tiktok-ads MCP server."""
 
-    name = "tiktok-ads"
+    name = "tiktok_ads"
     version = "0.1.0"
 
     def on_load(self) -> None:
@@ -33,7 +33,7 @@ class TiktokAdsPlugin(AIOSPlugin):
             )
 
     def _client(self) -> McpClient:
-        return McpClient("tiktok-ads", self.kernel.root)
+        return McpClient("tiktok_ads", self.kernel.root)
 
     def _proxy(self, tool: str, arguments: dict[str, Any]) -> str:
         """Call a tool on the external MCP server via stdio."""

@@ -18,7 +18,7 @@ from runtime.plugin import AIOSPlugin
 class LinkedinAdsPlugin(AIOSPlugin):
     """Bridge AIOS kernel to the external linkedin-ads MCP server."""
 
-    name = "linkedin-ads"
+    name = "linkedin_ads"
     version = "0.1.0"
 
     def on_load(self) -> None:
@@ -33,7 +33,7 @@ class LinkedinAdsPlugin(AIOSPlugin):
             )
 
     def _client(self) -> McpClient:
-        return McpClient("linkedin-ads", self.kernel.root)
+        return McpClient("linkedin_ads", self.kernel.root)
 
     def _proxy(self, tool: str, arguments: dict[str, Any]) -> str:
         """Call a tool on the external MCP server via stdio."""

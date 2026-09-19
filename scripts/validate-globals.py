@@ -8,6 +8,7 @@ import math
 import os
 import re
 import sys
+import typing
 
 AI_TITLE_TAGS = ("FILE", "TECH", "WORKFLOW", "SKILL")
 
@@ -31,7 +32,7 @@ class ValidationContext:
         self.warning_count = 0
         self.healed_count = 0
         self.global_headers: dict[str, list[str]] = {}
-        self.defined_codes: set = set()
+        self.defined_codes: set[str] = set()
 
 def cprint(text: str, color: str = Colors.RESET) -> None:
     if sys.stdout.isatty():
@@ -111,8 +112,8 @@ def check_core_rules(global_path: str, manifest: dict[str, str]) -> bool:
     for cf in core_files:
         cf_path = os.path.join(global_path, cf)
         if os.path.exists(cf_path):
-            with open(cf_path, 'rb') as f:
-                h = hashlib.sha256(f.read()).hexdigest()
+            with open(cf_path, 'rb') as file_obj:
+                h = hashlib.sha256(file_obj.read()).hexdigest()
             if manifest.get(cf) != h:
                 cprint(f"Core rule change in {cf} - forcing full scan.", Colors.YELLOW)
                 return True
@@ -391,7 +392,7 @@ def check_version_consistency(global_path: str, ctx: ValidationContext) -> bool:
     cprint(f"Version: {next(iter(unique))} (all consistent)", Colors.GREEN)
     return True
 
-def validate_single_file(rel_name: str, data: dict, ctx: ValidationContext, global_path: str) -> tuple[str | None, bool]:
+def validate_single_file(rel_name: str, data: dict[str, typing.Any], ctx: ValidationContext, global_path: str) -> tuple[str | None, bool]:
     content = data['content']
     ctx.scanned_count += 1
 
@@ -418,8 +419,8 @@ def validate_single_file(rel_name: str, data: dict, ctx: ValidationContext, glob
     return (data['hash'] if not error_found else None), error_found
 
 def run_pass1(rule_files: list[str], global_path: str, manifest: dict[str, str],
-              force: bool, ctx: ValidationContext) -> dict[str, dict]:
-    file_data: dict[str, dict] = {}
+              force: bool, ctx: ValidationContext) -> dict[str, dict[str, typing.Any]]:
+    file_data: dict[str, dict[str, typing.Any]] = {}
     for rel in rule_files:
         fpath = os.path.join(global_path, rel)
         with open(fpath, 'rb') as f:
