@@ -89,6 +89,7 @@ personas:
     - seo-lord
     - arabic-dialect-lord
     - mcp-architect-lord
+    - python-ui-lord
     skills:
     - web-design-guidelines
     - design-taste
@@ -148,6 +149,7 @@ personas:
     - vector-db-lord
     - ai-code-review-lord
     - mcp-architect-lord
+    - python-ui-lord
     skills:
     - backend-design
     keywords:
@@ -669,6 +671,7 @@ personas:
     - docs-guard
     - fullstack-optimizer
     - mcp-architect-lord
+    - python-ui-lord
     keywords:
     - developer experience
     - dx
@@ -1084,6 +1087,39 @@ lord_skills:
   - ssr
   - ssg
   - islands
+  python-ui-lord:
+  - gui
+  - desktop
+  - python gui
+  - python desktop app
+  - desktop app
+  - desktop ui
+  - web ui
+  - pyside
+  - pyside6
+  - pyqt
+  - pyqt6
+  - qt app
+  - qml
+  - qt designer
+  - textual
+  - textual app
+  - tui
+  - terminal ui
+  - flet
+  - reflex
+  - reflex app
+  - nicegui
+  - customtkinter
+  - tkinter
+  - kivy
+  - python web ui
+  - python dashboard
+  - pywebview
+  - برنامج سطح المكتب
+  - تطبيق ديسكتوب
+  - واجهة رسومية
+  - بايثون واجهة
   backend-frameworks-lord:
   - laravel
   - django

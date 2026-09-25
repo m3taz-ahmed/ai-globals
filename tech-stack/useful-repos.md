@@ -204,3 +204,10 @@
 [REQ] AI Compliance - UAGT: arxiv.org/html/2608.07515 (Unified AI Governance Taxonomy, 8 domains reconciling ISO 42001 + NIST AI RMF + EU AI Act).
 [REQ] AI Compliance - MITRE ATLAS: attack.mitre.org/techniques/atas (v2026.06, AI adversary tactics, techniques, procedures).
 [REQ] AI Compliance - CSA AI Controls Matrix: cloudsecurityalliance.org (v1, AI security controls mapped to OWASP LLM/ASI).
+[REQ] Python UI - PySide6 Examples: github.com/PySide6/Examples + pythonguis.com (Qt 6 widgets/QML canonical samples; Model/View, threads, QSS theming, packaging).
+[REQ] Python UI - Textual: github.com/Textualize/textual (TUI framework v8; examples/ + docs widgets are the canonical patterns; textual-dev + pytest-textual-snapshot for tests).
+[REQ] Python UI - Flet: github.com/flet-dev/flet (v1.0 production; Flutter-engine Python UI to 8 build targets; examples + Flet Studio gallery).
+[REQ] Python UI - Reflex: github.com/reflex-dev/reflex (0.9.x pure-Python full-stack; rx.State event model, background events, templates/ gallery).
+[REQ] Python UI - NiceGUI: github.com/zauberzeug/nicegui (v3.x FastAPI+Vue/Quasar; examples + native-window mode for tools/IoT dashboards).
+[REQ] Python UI - Patterns Catalog: github.com/faif/python-patterns + RefactoringGuru/design-patterns-python (Pythonic pattern implementations; check trade-offs, not just code).
+[REQ] Python UI - ArjanCodes Examples: github.com/ArjanCodes/examples (per-video Python design/SOLID/composition code, organized by year).
