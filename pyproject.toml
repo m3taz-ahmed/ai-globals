@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "5.15.0"
+version = "5.16.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -168,6 +168,7 @@ module = [
     "aizee_mcp.tools.analytics_tools",
     "aizee_mcp.tools.cro_tools",
     "aizee_mcp.tools.freelance_tools",
+    "aizee_mcp.tools.task_tools",
 ]
 disallow_untyped_decorators = false
 

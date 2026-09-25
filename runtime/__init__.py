@@ -93,6 +93,7 @@ from runtime.budget_advanced import SpendAnomaly as SpendAnomaly
 from runtime.budget_advanced import SpendAnomalyDetector as SpendAnomalyDetector
 from runtime.budget_advanced import ThrottleConfig as ThrottleConfig
 from runtime.budget_advanced import ThrottleTier as ThrottleTier
+from runtime.c4_docs import C4Generator as C4Generator
 from runtime.closure_evaluator import ClosureEvaluator as ClosureEvaluator
 from runtime.closure_evaluator import GuardianClosureEvaluator as GuardianClosureEvaluator
 from runtime.commands import Command as Command
@@ -157,6 +158,9 @@ from runtime.filament_access_auditor import FilamentAccessAuditor as FilamentAcc
 from runtime.hallucination_detector import HallucinationDetector as HallucinationDetector
 from runtime.hallucination_detector import HallucinationFinding as HallucinationFinding
 from runtime.hallucination_detector import HallucinationSeverity as HallucinationSeverity
+from runtime.harness_exporter import InstallResult as InstallResult
+from runtime.harness_exporter import harnesses as harnesses
+from runtime.harness_exporter import install_skill as install_skill
 from runtime.hook_lifecycle import HookContext as HookContext
 from runtime.hook_lifecycle import HookPhase as HookPhase
 from runtime.hook_lifecycle import HookRegistry as HookRegistry
@@ -249,6 +253,8 @@ from runtime.skill_scanner import PatternSeverity as ScanPatternSeverity
 from runtime.skill_scanner import ScanResult as ScanResult
 from runtime.skill_scanner import ScanRiskLevel as ScanRiskLevel
 from runtime.skill_scanner import SkillScanner as SkillScanner
+from runtime.skill_validator import SkillReport as SkillReport
+from runtime.skill_validator import validate_skills as validate_skills
 from runtime.stale_api_detector import StaleApiDetector as StaleApiDetector
 from runtime.stale_api_detector import StaleApiFinding as StaleApiFinding
 from runtime.stale_api_detector import StaleApiSeverity as StaleApiSeverity
@@ -264,6 +270,11 @@ from runtime.taint import TaintError as TaintError
 from runtime.taint import TaintLabel as TaintLabel
 from runtime.taint import TaintTracker as TaintTracker
 from runtime.taint import classify_source as classify_taint_source
+from runtime.task_contract import ContractTask as ContractTask
+from runtime.task_contract import TaskContractError as TaskContractError
+from runtime.task_contract import TaskContractManager as TaskContractManager
+from runtime.task_contract import TaskPlan as TaskPlan
+from runtime.task_contract import classify_prompt as classify_prompt
 from runtime.tool_output_sanitizer import ToolOutputSanitizer as ToolOutputSanitizer
 from runtime.tool_output_sanitizer import ToolSanitizeResult as ToolSanitizeResult
 from runtime.trajectory import FailureCategory as FailureCategory
@@ -306,6 +317,7 @@ __all__ = [
     "BrandDesignSystem",
     "BurnForecast",
     "BurnForecaster",
+    "C4Generator",
     "CatalogAgent",
     "CatalogFlow",
     "CatalogModel",
@@ -323,6 +335,7 @@ __all__ = [
     "ConfidenceVerdict",
     "ContextManager",
     "ContractArtifact",
+    "ContractTask",
     "CostAnomaly",
     "CostAnomalyType",
     "CostAttribution",
@@ -379,6 +392,7 @@ __all__ = [
     "InjectionSignal",
     "InjectionTechnique",
     "InjectionVerdict",
+    "InstallResult",
     "Kernel",
     "KernelBuilder",
     "LLMRole",
@@ -458,6 +472,7 @@ __all__ = [
     "SignatureResult",
     "SignatureScheme",
     "SkillFinding",
+    "SkillReport",
     "SkillRouter",
     "SkillScanner",
     "SlaAction",
@@ -479,6 +494,9 @@ __all__ = [
     "TaintError",
     "TaintLabel",
     "TaintTracker",
+    "TaskContractError",
+    "TaskContractManager",
+    "TaskPlan",
     "TaskRecord",
     "ThrottleConfig",
     "ThrottleTier",
@@ -498,10 +516,14 @@ __all__ = [
     "VulnerabilityAdvisory",
     "Witness",
     "WitnessRecorder",
+    "classify_prompt",
     "classify_taint_source",
     "emit_contract",
     "emit_contracts",
+    "harnesses",
+    "install_skill",
     "scoped_factory",
+    "validate_skills",
 ]
 
 # Freelance + Marketing/E-marketing runtime modules (Phase 1) - re-exported.

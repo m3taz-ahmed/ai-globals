@@ -1,6 +1,6 @@
 ---
-name: graphify-windows
-description: Graphify knowledge graph integration for Windows.
+name: graphify
+description: "Graphify knowledge graph integration for Windows."
 ---
 
 [SKILL] graphify-windows

@@ -29,7 +29,12 @@
       "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"]
     },
     "refero": {
-      "url": "https://api.refero.design/mcp"
+      "url": "https://api.refero.design/mcp",
+      "disabled": true
+    },
+    "mobbin": {
+      "url": "https://api.mobbin.com/mcp",
+      "disabled": true
     }
   }
 }

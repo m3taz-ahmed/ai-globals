@@ -797,7 +797,7 @@ if (-not $SkipMCP) {
     "fiverr": { "command": "python", "args": ["$EnvWrapper", "uvx", "fiverr-mcp-server"] },
     "linkedin": { "command": "python", "args": ["$EnvWrapper", "octopus-linkedin-mcp"] }
   },
-  "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context"] }
+  "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context","refero_search_styles","refero_search_screens","refero_search_flows","refero_get_style","refero_get_screen","refero_get_flow","refero_get_similar_screens","search_screens","search_flows","search_sections"] }
 }
 "@
     if (-not $WhatIf) {

@@ -3,8 +3,8 @@
 
 import importlib.util
 import os
-import unittest
 import typing
+import unittest
 
 _spec = importlib.util.spec_from_file_location(
     "validate_globals",

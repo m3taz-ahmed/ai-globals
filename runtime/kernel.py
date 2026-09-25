@@ -35,6 +35,7 @@ from .probity import GuardrailViolationError
 from .settings import SettingsManager, apply_settings_to_kernel, get_settings_manager
 from .skill_resolver import SkillResolver
 from .sovereign import AgentCapabilities
+from .task_contract import TaskContractManager
 from .tech_stack import detect_stack
 from .telemetry import TelemetryCollector
 from .tracing import ConsoleSpanExporter, TracerProvider, with_span
@@ -123,6 +124,9 @@ def _init_core_services(kernel: Kernel) -> None:
     # User-facing settings (dashboard override layer). Process-wide cached so
     # the dashboard, McpClient, and PluginManager share one source of truth.
     kernel.settings_manager = get_settings_manager(kernel.root)
+    # Task contract: decompose/verify/review enforcement for multi-step work.
+    # Constructor is filesystem-light (paths only); state lives in .task/.
+    kernel.task_contract = TaskContractManager(kernel.project_root)
     # Ensure taint guardrail is registered (import triggers auto-registration).
     # A broken import silently disables taint tracking - log a warning so the
     # operator knows defenses are degraded instead of running blind.
@@ -442,6 +446,7 @@ class Kernel:
     db_migration_safety: Any
     ui_a11y_checker: Any
     blade_template_linter: Any
+    task_contract: TaskContractManager
     policy_mgr: PolicyManager
     workflow_mgr: WorkflowManager
     agent_mgr: AgentManager

@@ -1,6 +1,6 @@
 ---
 name: security-lord
-description: Security architect: OWASP, crypto, TLS, PKI, zero-trust, MCP security, agent SRE governance.
+description: "Security architect: OWASP, crypto, TLS, PKI, zero-trust, MCP security, agent SRE governance."
 ---
 [SKILL] security-lord
 [OBJ] Threat-model, choose crypto, configure TLS, design PKI, harden workloads, and secure AI agents and MCP infrastructure.

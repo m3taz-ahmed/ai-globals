@@ -1,69 +1,44 @@
 # aiZee — Active Context / Handoff
 
-**Session type:** Stop-and-continue (PC → laptop)  
-**Repo:** `https://github.com/m3taz-ahmed/ai-globals.git` (branch `main`)  
-**Version:** 5.7.1  
-**Last checkpoint:** 2026-08-24 — Comprehensive review + fixes (schema drift, lazy vector, doc sync, validate-globals, manifest, graphify rebuild)  
-**Next:** Ready for commit (pending user approval).
+**Repo:** `ai-globals` (branch `main`) — version 5.15.0 + [Unreleased]
+**Last checkpoint:** 2026-09-25 — Task Contract + 7-source external adoption package
+**Next:** FULL tier (`aizee test --full` with `AIZEE_ROOT` set to working root), then commit (pending user approval), then `update_aizee.bat` sync to deployment mirror.
 
 ---
 
-## ✅ تم الانتهاء منه (Completed)
+## ✅ Done this session (Unreleased)
 
-### v5.7.1 — Comprehensive Review & Fixes (2026-08-24)
+### Task Contract — enforced task lifecycle
+- `runtime/task_contract/` package: models / classifier / validation / evidence / enforce / engine.
+- `aizee task` CLI: classify, decompose, status, start, verify, complete, block, amend, finish, abandon, scope, context.
+- Kernel service `kernel.task_contract`; `runtime/__init__.py` exports.
+- `rules/task-contract.md` (TASK-01..06 in vocabulary) + `workflows/61-task-contract.md`.
+- `.cursor/hooks.json` injects contract block at prompt time; `afterFileEdit` observes scope.
+- `AIZEE_TASK_STRICT=1` = hard scope denials (default: advisory).
 
-**Schema & Memory:**
-- Fixed memory schema contract drift: `memory_decay` now created in `_init_schema` (not lazily), FTS5 shadow tables ignored in drift detector → `verify_schema_integrity` returns `True` for fresh DBs.
-- Lazy-loaded `SentenceTransformer` model in `memory/vector.py` — `Embedder.__init__` no longer triggers network download; model loads on first `embed()` call via `_ensure_model()`.
+### External-source adoption
+- `rules/untrusted-content.md` — BrowserSkill injection doctrine.
+- `runtime/skill_validator.py` + `aizee skill validate` — 133 skills, 0 errors.
+- `runtime/harness_exporter.py` + `aizee skill install --harness X`.
+- `runtime/c4_docs.py` + `aizee docs c4` — graphify → C4 markdown.
+- `eval/trigger_cases.json` + `tests/test_trigger_routing.py`.
+- `AGENT_INSTALL.md`; skills: `aizee-lite`, `project-voice`, `browser-automation`.
+- `tech-stack/animejs-4.md`; `workflows/62-localhost-tunnel.md`.
+- `skills/prompt-engineer.md` upgraded with prompt-master v1.8 delta.
+- `skills/design-research/` — Refero+Mobbin evidence doctrine; `mobbin` MCP registered; install.ps1 alwaysAllow += design tools.
+- `aizee_mcp/tools/task_tools.py` — 10 MCP task tools (88→98); kernel `task_contract` annotation; update_aizee.bat += AGENT_INSTALL.md.
+- manifest.json +25 triggers; counts: runtime 134 / skills 134 / numbered wf 63 / stack 253 / tests 7429.
 
-**Documentation Sync:**
-- Updated all doc numbers to match filesystem: 85 runtime modules, 72 skills, 50 workflows, 163 tech-stack refs, 36 MCP tools, 22 personas.
-- Fixed `aios_` → `aizee_` metric names in `docs/ONBOARDING_SRE.md`.
-- `validate-globals.py` PASS (0 errors, 0 warnings): fixed broken competitive-analysis report ref, `validate-globals.ps1` version 5.6.0→5.7.1, CRLF→LF in `AGENTS.md`/`spec.md`.
-
-**Manifest & Graph:**
-- `manifest.json` features expanded from 35 → 97 (all 85 runtime modules + 12 cross-dir features).
-- Deleted duplicate `skills/seo-content-generator.md` (superseded by `skills/seo-lord/`).
-- `graphify update .` rebuilt: 13036 nodes, 27701 edges (was edges=0).
-
-**Quality Gates:**
-- `ruff check .` ✅
-- `mypy` ✅
-- `aizee test --full` ✅ 4028 passed, 96.33% coverage
-- `validate-globals.py` ✅ 0 errors
-- `sync_docs.py --check` ✅ in sync
-
-### Previous Milestones (v5.5.0–v5.7.0)
-- 8 workstreams (WS-A through WS-J): security hardening, gate-contract repairs, dead code removal (26 modules), eval overhaul, SDD enforcement, memory upgrades, confidence gating, learning loop, skills/personas, misc quality.
-- 2 new runtime modules: `taint.py` (5-level taint labels), `skill_scanner.py` (static security scanner).
-- 9 enhanced existing modules (reliability, supply_chain_guard, audit, budget, loop_detector, trajectory, worktree_pool, store, guardian).
-- 200+ new tests across 11 new test files.
+### Gate status
+- ruff ✅ mypy (new/changed files) ✅ targeted pytest (70 new) ✅ validate-globals 0/0 ✅ sync_docs ✅
+- Pending: FULL suite + `python eval/harness.py` before declaring done.
 
 ---
 
-## 🚧 قيد التنفيذ (In Progress)
-- No active in-progress task. Ready for next milestone.
-
----
-
-## 📁 ملفات تم تعديلها في هذه الجلسة
-
-### تم تعديلها (Modified)
-- `memory/store.py` — `memory_decay` in `_init_schema` + `idx_decay_last_accessed` in `_index_sql`
-- `memory/schema_contract.py` — FTS5 shadow table filtering in `detect_schema_drift`
-- `memory/vector.py` — lazy `Embedder._ensure_model()` 
-- `memory/tests/test_vector.py` — updated tests for lazy loading
-- `spec.md`, `README.md`, `README-AR.md`, `AGENTS.md` — doc number sync
-- `docs/ONBOARDING_SRE.md` — `aios_`→`aizee_` metrics, 85 modules, 36 tools
-- `tech-stack/aizee-5.md`, `tech-stack/README.md` — number sync
-- `Memory.md` — removed broken competitive-analysis report ref
-- `scripts/validate-globals.ps1` — version 5.6.0→5.7.1
-- `manifest.json` — features 35→97
-- `ACTIVE_CONTEXT.md` — this file
-
-### تم حذفها (Deleted)
-- `skills/seo-content-generator.md` — superseded by `skills/seo-lord/`
-
----
+## ⚠️ Gotchas
+- `aizee` PATH shim hardcodes `AIZEE_ROOT` to the deployment mirror — for working-repo runs use `python aizee_cli.py` or set `AIZEE_ROOT` explicitly.
+- Mirror `D:\server\aizee` is read-only; sync via `update_aizee.bat` only.
+- validate-globals requires `[RULES]` marker in SKILL bodies; generated-artifact refs go in `IGNORED_FILE_REFS`.
+- Never text-rewrite UTF-8 files via PowerShell (BOM/mojibake risk) — use Python.
 
 > هذا الملف هو نقطة التوقف للاستمرار من اللابتوب. لا تبدأ أي مهمة جديدة قبل قراءته.

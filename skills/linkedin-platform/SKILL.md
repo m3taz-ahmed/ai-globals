@@ -1,6 +1,6 @@
 ---
 name: linkedin-platform
-description: LinkedIn content automation, profile optimization, and lead generation via the octopus-linkedin MCP server. Governed draft→approve→publish workflow.
+description: "LinkedIn content automation, profile optimization, and lead generation via the octopus-linkedin MCP server. Use when drafting, approving, scheduling, publishing, or analyzing LinkedIn posts — governed draft→approve→publish workflow."
 personas:
   - PROPOSAL
   - CV
@@ -8,6 +8,13 @@ personas:
   - ARCH
   - DEV
   - DEVOPS
+triggers:
+  - linkedin
+  - linkedin post
+  - لينكدإن
+  - بوست لينكدإن
+  - b2b outreach
+  - profile optimization
 ---
 
 # LinkedIn Platform Skill

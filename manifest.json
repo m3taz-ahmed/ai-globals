@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "version": "5.15.0",
+    "version": "5.16.0",
     "description": "Machine-readable trigger->workflow/file routing map for aiZee.",
     "updated": "2026-09-08"
   },
@@ -307,7 +307,7 @@
     "find skill": "skills/skill-finder/SKILL.md",
     "external skill": "skills/skill-finder/SKILL.md",
     "skills.sh": "skills/skill-finder/SKILL.md",
-    "install skill": "skills/skill-finder/SKILL.md",
+    "install skill": "runtime/harness_exporter.py",
     "skill discovery": "skills/skill-finder/SKILL.md",
     "web security": "skills/web-security-checklist/SKILL.md",
     "ssrf": "skills/web-security-checklist/SKILL.md",
@@ -319,7 +319,41 @@
     "design system": "skills/design-md-lord/SKILL.md",
     "brand design": "skills/design-md-lord/SKILL.md",
     "refero": "skills/design-md-lord/SKILL.md",
-    "design tokens": "skills/design-md-lord/SKILL.md"
+    "design tokens": "skills/design-md-lord/SKILL.md",
+    "task contract": "workflows/61-task-contract.md",
+    "decompose work": "workflows/61-task-contract.md",
+    "split into tasks": "workflows/61-task-contract.md",
+    "task plan": "workflows/61-task-contract.md",
+    "قسم الشغل": "workflows/61-task-contract.md",
+    "تاسكات": "workflows/61-task-contract.md",
+    "خطة عمل": "workflows/61-task-contract.md",
+    "راجع كل تاسك": "workflows/61-task-contract.md",
+    "zero-downtime deploy": "workflows/60-atomic-release-deployment.md",
+    "voice profile": "skills/project-voice/SKILL.md",
+    "learn my voice": "skills/project-voice/SKILL.md",
+    "brand voice": "skills/project-voice/SKILL.md",
+    "browser automation": "skills/browser-automation/SKILL.md",
+    "bsk": "skills/browser-automation/SKILL.md",
+    "logged-in session": "skills/browser-automation/SKILL.md",
+    "aizee lite": "skills/aizee-lite/SKILL.md",
+    "aizee portable": "skills/aizee-lite/SKILL.md",
+    "localhost tunnel": "workflows/62-localhost-tunnel.md",
+    "cloudflared": "workflows/62-localhost-tunnel.md",
+    "expose localhost": "workflows/62-localhost-tunnel.md",
+    "quick tunnel": "workflows/62-localhost-tunnel.md",
+    "install-skill": "runtime/harness_exporter.py",
+    "harness export": "runtime/harness_exporter.py",
+    "c4 diagram": "runtime/c4_docs.py",
+    "c4 docs": "runtime/c4_docs.py",
+    "generate architecture docs": "runtime/c4_docs.py",
+    "design research": "skills/design-research/SKILL.md",
+    "ui inspiration": "skills/design-research/SKILL.md",
+    "design references": "skills/design-research/SKILL.md",
+    "mobbin": "skills/design-research/SKILL.md",
+    "redesign": "skills/design-research/SKILL.md",
+    "ui patterns": "skills/design-research/SKILL.md",
+    "الهام تصميم": "skills/design-research/SKILL.md",
+    "مراجع تصميم": "skills/design-research/SKILL.md"
   },
   "features": {
     "audit_log": "runtime/audit.py",
@@ -418,7 +452,8 @@
     "trajectory": "runtime/trajectory.py",
     "uninstaller": "runtime/uninstaller.py",
     "uninstaller_gui": "runtime/uninstaller_gui.py",
-    "workflow": "runtime/workflow.py"
+    "workflow": "runtime/workflow.py",
+    "task_contract": "runtime/task_contract/"
   },
   "standards": {
     "git": "workflows/git-standards.md",
@@ -444,5 +479,5 @@
     "anti-patterns": "rules/anti-patterns.md",
     "behavioral": "rules/core-behavioral-compact.md"
   },
-  "version": "5.15.0"
+  "version": "5.16.0"
 }

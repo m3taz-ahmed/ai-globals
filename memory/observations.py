@@ -384,15 +384,55 @@ def handle_hook(
         session_id = session_id_of(payload)
         if action == "inject":
             query = payload.get("prompt") or payload.get("text")
-            return store.context_block(session_id=session_id, query=query if isinstance(query, str) else None)
+            block = store.context_block(
+                session_id=session_id, query=query if isinstance(query, str) else None
+            )
+            contract = _task_contract_block(project_root)
+            return "\n\n".join(part for part in (contract, block) if part)
         if action == "observe":
             store.enqueue(session_id, event or kind or "event", payload)
             store.process_pending(session_id)
+            warning = _task_contract_scope_warning(project_root, payload, event or kind)
+            if warning:
+                store.enqueue(session_id, "scope_violation", {"warning": warning})
+                store.process_pending(session_id)
+                return warning
         elif action == "summary":
             summary = store.session_summary(session_id)
             if summary["observations"]:
                 kinds = ", ".join(f"{k}:{v}" for k, v in sorted(summary["kinds"].items()))
                 return f"Session summary: {summary['observations']} observations ({kinds}) in {summary['duration_s']}s"
         return ""
+    except Exception:
+        return ""
+
+
+def _task_contract_block(project_root: Path) -> str:
+    """Active task-plan status for prompt injection. Never raises."""
+    try:
+        from runtime.task_contract import TaskContractManager
+
+        return TaskContractManager(project_root).hook_inject_block()
+    except Exception:
+        return ""
+
+
+def _task_contract_scope_warning(
+    project_root: Path, payload: dict[str, Any], event: str
+) -> str:
+    """After-file-edit scope check against the active contract task."""
+    kind = _EVENT_KINDS.get(event, event if event in KINDS else "")
+    if kind != KIND_FILE_EDIT:
+        return ""
+    paths: list[str] = []
+    _extract_paths(payload, paths)
+    if not paths:
+        return ""
+    try:
+        from runtime.task_contract import TaskContractManager
+
+        mgr = TaskContractManager(project_root)
+        warnings = [w for w in (mgr.hook_observe_edit(p) for p in paths) if w]
+        return "\n".join(warnings)
     except Exception:
         return ""

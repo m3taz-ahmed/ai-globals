@@ -4,15 +4,15 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.15.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.14.2">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-7307%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="7307 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.16.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.14.2">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-7429%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="7429 اختبار ناجح">
     <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 100%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 شخصية">
-    <img src="https://img.shields.io/badge/%D%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-131-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="127 مهارة">
-    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-60-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="60 سير عمل">
+    <img src="https://img.shields.io/badge/%D%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-131-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="134 مهارة">
+    <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-63-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 سير عمل">
     <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-173-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="173 مرجع تقنية">
   </p>
 </div>
@@ -120,6 +120,17 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 
 ### 6. كفاءة Tokens
 كشف الشخصيات محلي (Python خالص، صفر tokens). فقط أسماء المهارات relevant تُرجع — ليس الملفات كاملة.
+
+---
+
+## الجديد في v5.16.0
+
+### Task Contract + تبنّي المصادر الخارجية (سبتمبر 2026)
+
+- **Task Contract** (`runtime/task_contract/` + `aizee task`): دورة إجبارية `تصنيف → تقسيم → تحقق لكل تاسك → مراجعة نهائية`. كل برومبت بياخد تصنيف مسجّل (trivial/standard/complex)؛ الشغل غير التافه محتاج `.task/plan.json` (deps بدون دورات، سكوب معلن، acceptance checks، عقود `produces:`)؛ «تم» محتاج دليل مسجّل مش ادعاء. الإجبار: rules + IDE hooks، مع `AIZEE_TASK_STRICT=1` للرفض الصلب خارج السكوب.
+- **10 أدوات MCP جديدة** (`task_classify` → `task_scope`) — عدد الأدوات 88 → 98.
+- **تبنّي مصادر خارجية**: `rules/untrusted-content.md`، `aizee skill validate`، `aizee skill install --harness X`، `aizee docs c4` (graphify → توثيق C4)، `AGENT_INSTALL.md`.
+- **4 مهارات جديدة**: `aizee-lite` (انضباط aiZee محمول)، `project-voice`، `browser-automation`، `design-research` (Refero + Mobbin). المهارات: 130 → 134.
 
 ---
 

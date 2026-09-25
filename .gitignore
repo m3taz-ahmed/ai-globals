@@ -63,3 +63,6 @@ scripts/ingest-community-skill.ps1
 
 # Nested duplicate (canonical is .github/copilot-instructions.md)
 .github/.github/
+
+# Task-contract working state (per project)
+.task/

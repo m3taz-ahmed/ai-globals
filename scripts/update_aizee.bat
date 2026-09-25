@@ -135,6 +135,7 @@ if exist "%SOURCE%\NOTICE" copy /Y "%SOURCE%\NOTICE" "%TARGET%\NOTICE" >nul
 if exist "%SOURCE%\CONTRIBUTING.md" copy /Y "%SOURCE%\CONTRIBUTING.md" "%TARGET%\CONTRIBUTING.md" >nul
 if exist "%SOURCE%\DESIGN.md" copy /Y "%SOURCE%\DESIGN.md" "%TARGET%\DESIGN.md" >nul
 if exist "%SOURCE%\pyrightconfig.json" copy /Y "%SOURCE%\pyrightconfig.json" "%TARGET%\pyrightconfig.json" >nul
+if exist "%SOURCE%\AGENT_INSTALL.md" copy /Y "%SOURCE%\AGENT_INSTALL.md" "%TARGET%\AGENT_INSTALL.md" >nul
 
 echo.
 echo === Sync Complete ===

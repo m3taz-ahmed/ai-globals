@@ -4,15 +4,15 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.15.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.14.2">
-    <img src="https://img.shields.io/badge/Tests-7307%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7307 passed">
+    <img src="https://img.shields.io/badge/Version-5.16.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.14.2">
+    <img src="https://img.shields.io/badge/Tests-7429%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7429 passed">
     <img src="https://img.shields.io/badge/Coverage-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 100%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 Personas">
-    <img src="https://img.shields.io/badge/Skills-131-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="127 Skills">
-    <img src="https://img.shields.io/badge/Workflows-60-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="60 Workflows">
+    <img src="https://img.shields.io/badge/Skills-134-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="134 Skills">
+    <img src="https://img.shields.io/badge/Workflows-63-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 Workflows">
     <img src="https://img.shields.io/badge/Tech--Stack-252-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="252 Tech-Stack refs">
   </p>
 </div>
@@ -87,12 +87,12 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 131 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 134 governance modules
 ├── memory/                  # SQLite + FTS5 + vector memory service
-├── aizee_mcp/                # MCP server (88 tools, 3 resources)
+├── aizee_mcp/                # MCP server (98 tools, 3 resources)
 ├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 131 persona + lord skills
-├── workflows/               # 60 trigger-based execution protocols
+├── skills/                  # 134 persona + lord skills
+├── workflows/               # 63 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
 ├── dashboard/               # Web dashboard (Python stdlib HTTP)
@@ -146,6 +146,18 @@ python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 
 ### 6. Token Efficiency
 Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
+
+---
+
+## What's New in v5.16.0
+
+### Task Contract + External-Source Adoption (Sep 2026)
+
+- **Task Contract** (`runtime/task_contract/` + `aizee task`): enforced `classify → decompose → per-task verify → final review` lifecycle. Every prompt gets a recorded trivial/standard/complex classification; non-trivial work requires `.task/plan.json` (acyclic deps, declared scope, acceptance checks, `produces:` handoffs); `done` requires recorded evidence. Enforcement: rules + IDE hooks, `AIZEE_TASK_STRICT=1` for hard scope denials.
+- **10 new MCP tools** (`aizee_mcp/tools/task_tools.py`) expose the whole contract lifecycle to MCP clients — tool count 88 → 98.
+- **External-source adoption**: `rules/untrusted-content.md` (BrowserSkill doctrine), `runtime/skill_validator.py` + `aizee skill validate`, `runtime/harness_exporter.py` + `aizee skill install --harness X`, `runtime/c4_docs.py` + `aizee docs c4` (graphify → C4 docs), `AGENT_INSTALL.md`.
+- **4 new skills**: `aizee-lite` (portable aiZee discipline for other harnesses), `project-voice` (`.ai/voice.md` foundation artifact), `browser-automation` (bsk wrapper), `design-research` (Refero + Mobbin evidence doctrine). Skills: 130 → 134.
+- **References**: `tech-stack/animejs-4.md`, `workflows/62-localhost-tunnel.md` (cloudflared), `mobbin` MCP registered; `prompt-engineer` upgraded with prompt-master v1.8 delta.
 
 ---
 
@@ -476,7 +488,7 @@ The installer auto-symlinks these to the correct global locations.
 
 | Server | Purpose | Requires |
 | :--- | :--- | :--- |
-| `aizee` | Core OS tools (88 tools) | Python |
+| `aizee` | Core OS tools (98 tools) | Python |
 | `graphify` | Codebase knowledge graph | Python + graphify |
 | `context7` | Live library documentation | Node.js 18+ |
 | `upwork` | Upwork job search + proposals | Node.js + OAuth |
@@ -556,7 +568,7 @@ Settings persist to `state/settings.json` (gitignored, survives updates). Schema
 
 - **Core:** Pure Python 3.10+ (no Node.js required for core OS)
 - **Memory:** SQLite + FTS5 + optional SentenceTransformers vectors
-- **MCP:** FastMCP server with 88 tools
+- **MCP:** FastMCP server with 98 tools
 - **Dashboard:** Python stdlib HTTP server + SQLite
 - **Knowledge graph:** graphify (optional)
 - **Dependencies:** pyyaml, pydantic, rich, cryptography, numpy, turbovec

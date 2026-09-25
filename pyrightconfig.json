@@ -14,27 +14,33 @@
   "executionEnvironments": [
     {
       "root": "tests",
-      "typeCheckingMode": "off"
+      "typeCheckingMode": "off",
+      "reportMissingImports": false
     },
     {
       "root": "runtime/tests",
-      "typeCheckingMode": "off"
+      "typeCheckingMode": "off",
+      "reportMissingImports": false
     },
     {
       "root": "memory/tests",
-      "typeCheckingMode": "off"
+      "typeCheckingMode": "off",
+      "reportMissingImports": false
     },
     {
       "root": "eval/tests",
-      "typeCheckingMode": "off"
+      "typeCheckingMode": "off",
+      "reportMissingImports": false
     },
     {
       "root": "aizee_mcp/tests",
-      "typeCheckingMode": "off"
+      "typeCheckingMode": "off",
+      "reportMissingImports": false
     },
     {
       "root": "scripts/tests",
-      "typeCheckingMode": "off"
+      "typeCheckingMode": "off",
+      "reportMissingImports": false
     }
   ]
 }

@@ -424,6 +424,121 @@ def cmd_spec(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_task(args: argparse.Namespace) -> int:
+    """Task contract commands: classify, decompose, lifecycle, finish."""
+    from runtime.task_contract import TaskContractManager, classify_prompt
+
+    mgr = TaskContractManager(_project_root(args))
+    action = args.task_action
+
+    if action == "classify":
+        heuristic = classify_prompt(args.prompt)
+        if args.level:
+            record = mgr.record_classification(
+                args.prompt, args.level, args.reason or heuristic["reason"]
+            )
+            print(json.dumps(record, indent=2, ensure_ascii=False))
+        else:
+            print(json.dumps({"heuristic": heuristic}, indent=2, ensure_ascii=False))
+        return 0
+
+    if action == "status":
+        status = mgr.status()
+        if args.json or status.get("plan") is None:
+            print(json.dumps(status, indent=2, ensure_ascii=False))
+        else:
+            console.print(f"[cyan]{status['plan']}[/cyan] — {status['title']} [{status['status']}]")
+            for t in status["tasks"]:
+                console.print(f"  [{t['status']}] {t['id']} (deps: {t['depends_on'] or '-'})")
+            nxt = status.get("next_pending")
+            if nxt:
+                console.print(f"[green]Next:[/green] aizee task start {nxt}")
+        return 0
+
+    if action == "context":
+        block = mgr.hook_inject_block()
+        print(block if block else "No active plan.")
+        return 0
+
+    if action == "decompose":
+        tasks = _json_input(args.tasks, "--tasks")
+        if not isinstance(tasks, list):
+            console.print("[red]--tasks must be a JSON list of task objects[/red]")
+            return 1
+        plan = mgr.decompose(
+            args.title, args.prompt, tasks, args.classification, args.reason
+        )
+        console.print(f"[green]Plan active:[/green] {plan.id} — {len(plan.tasks)} task(s)")
+        nxt = plan.next_pending()
+        if nxt:
+            console.print(f"[green]Next:[/green] aizee task start {nxt.id}")
+        return 0
+
+    if action == "start":
+        task = mgr.start(args.task_id)
+        console.print(f"[green]Started:[/green] {task.id} — {task.title}")
+        if task.files:
+            console.print(f"[dim]Declared scope: {', '.join(task.files)}[/dim]")
+        return 0
+
+    if action == "verify":
+        result = mgr.verify(args.task_id, args.evidence, run_cmd=args.run)
+        console.print(f"[green]Verified:[/green] {result['task']} — now `aizee task complete`")
+        return 0
+
+    if action == "complete":
+        task = mgr.complete(args.task_id, args.note)
+        console.print(f"[green]Done:[/green] {task.id}")
+        nxt = mgr.require_plan().next_pending()
+        if nxt:
+            console.print(f"[green]Next:[/green] aizee task start {nxt.id}")
+        return 0
+
+    if action == "block":
+        task = mgr.block(args.task_id, args.reason)
+        console.print(f"[yellow]Blocked:[/yellow] {task.id} — {args.reason}")
+        return 0
+
+    if action == "amend":
+        ops = _json_input(args.ops, "--ops")
+        if not isinstance(ops, list):
+            console.print("[red]--ops must be a JSON list of amend operations[/red]")
+            return 1
+        plan = mgr.amend(ops, args.reason)
+        console.print(f"[green]Amended:[/green] {plan.id} — {len(plan.amendments)} amendment(s)")
+        return 0
+
+    if action == "finish":
+        report = mgr.finish(args.note)
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        console.print("[yellow]Plan closed — run the final checklist before declaring done.[/yellow]")
+        return 0
+
+    if action == "abandon":
+        plan = mgr.abandon(args.reason)
+        console.print(f"[yellow]Abandoned:[/yellow] {plan.id}")
+        return 0
+
+    if action == "scope":
+        result = mgr.scope_check(args.path)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if result["allowed"] else 1
+
+    return 0
+
+
+def _json_input(raw: str, flag: str) -> Any:
+    """Parse a JSON payload from an inline string, @file, or '-' stdin."""
+    if raw == "-":
+        raw = sys.stdin.read()
+    elif raw.startswith("@"):
+        raw = Path(raw[1:]).read_text(encoding="utf-8")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise CLIInputError(f"{flag}: invalid JSON — {exc}") from exc
+
+
 def cmd_stack(args: argparse.Namespace) -> int:
     k = _kernel(args)
     if args.subcommand == "detect":
@@ -596,6 +711,50 @@ def cmd_skill(args: argparse.Namespace) -> int:
         dest = dest_dir / f"{args.name}.md"
         dest.write_text(content, encoding="utf-8")
         console.print(f"[green]Ejected[/green] {args.name} -> {dest}")
+    elif args.skill_subcommand == "validate":
+        from runtime.skill_validator import validate_skills
+
+        report = validate_skills(k.root / "skills")
+        if args.json:
+            print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+        else:
+            for f in report.findings:
+                color = "red" if f.level == "error" else "yellow"
+                console.print(f"[{color}]{f.level.upper():5}[/{color}] {f.skill}: [{f.rule}] {f.message}")
+            verdict = "green]PASS" if report.ok else "red]FAIL"
+            console.print(
+                f"[{verdict}[/] — {report.skills_checked} skills, "
+                f"{len(report.errors)} errors, {len(report.warnings)} warnings"
+            )
+        return 0 if report.ok else 1
+    elif args.skill_subcommand == "install":
+        from runtime.harness_exporter import install_skill
+
+        r = install_skill(
+            k.root / "skills", args.name, args.harness, args.dest, args.force
+        )
+        if args.json:
+            print(json.dumps(r.to_dict(), indent=2, ensure_ascii=False))
+        elif r.ok:
+            console.print(f"[green]Installed[/green] {r.skill} -> {r.dest} ({len(r.files)} files)")
+        else:
+            console.print(f"[red]Failed[/red] {r.skill}: {r.error}")
+        return 0 if r.ok else 1
+    return 0
+
+
+def cmd_docs(args: argparse.Namespace) -> int:
+    k = _kernel(args)
+    if args.docs_subcommand == "c4":
+        from runtime.c4_docs import C4Generator
+
+        graph = k.root / args.graph
+        if not graph.exists():
+            console.print(f"[red]Graph not found:[/red] {graph} — run `graphify` first")
+            return 1
+        written = C4Generator(graph).generate(k.root / args.out)
+        for p in written:
+            console.print(f"[green]wrote[/green] {p}")
     return 0
 
 
@@ -961,6 +1120,55 @@ def main(argv: list[str] | None = None) -> int:
     p_stack = sub.add_parser("stack", help="Tech-stack detection")
     p_stack.add_argument("subcommand", choices=["detect", "show"])
 
+    p_task = sub.add_parser("task", help="Task contract: decompose/verify/review enforced work plans")
+    sp_task = p_task.add_subparsers(dest="task_action", required=True)
+
+    p_task_classify = sp_task.add_parser("classify", help="Classify a prompt (trivial/standard/complex)")
+    p_task_classify.add_argument("--prompt", required=True, help="The work prompt to classify")
+    p_task_classify.add_argument("--level", default="", choices=["trivial", "standard", "complex"], help="Record this level (agent's call)")
+    p_task_classify.add_argument("--reason", default="", help="Justification for the recorded level")
+
+    p_task_decompose = sp_task.add_parser("decompose", help="Create the active plan from a task list")
+    p_task_decompose.add_argument("--title", required=True, help="Plan title")
+    p_task_decompose.add_argument("--prompt", default="", help="Original work prompt")
+    p_task_decompose.add_argument("--classification", required=True, choices=["trivial", "standard", "complex"])
+    p_task_decompose.add_argument("--reason", required=True, help="Classification justification")
+    p_task_decompose.add_argument("--tasks", required=True, help="Task list JSON, @file, or - for stdin")
+
+    p_task_status = sp_task.add_parser("status", help="Show active plan status")
+    p_task_status.add_argument("--json", action="store_true", help="Machine-readable output")
+
+    p_task_start = sp_task.add_parser("start", help="Start a pending task (deps must be done)")
+    p_task_start.add_argument("task_id", help="Task id")
+
+    p_task_verify = sp_task.add_parser("verify", help="Record verification evidence for the active task")
+    p_task_verify.add_argument("task_id", help="Task id")
+    p_task_verify.add_argument("--evidence", default="", help="Test output, diff summary, or proof text")
+    p_task_verify.add_argument("--run", action="store_true", help="Execute the task's verify_cmd (must exit 0)")
+
+    p_task_complete = sp_task.add_parser("complete", help="Mark a verified task done")
+    p_task_complete.add_argument("task_id", help="Task id")
+    p_task_complete.add_argument("--note", default="", help="Review note")
+
+    p_task_block = sp_task.add_parser("block", help="Mark a task blocked with a reason")
+    p_task_block.add_argument("task_id", help="Task id")
+    p_task_block.add_argument("--reason", required=True, help="Blocker reason")
+
+    p_task_amend = sp_task.add_parser("amend", help="Logged plan amendment (add/update/remove tasks)")
+    p_task_amend.add_argument("--ops", required=True, help="Amend ops JSON, @file, or - for stdin")
+    p_task_amend.add_argument("--reason", required=True, help="Amendment reason — no silent drift")
+
+    p_task_finish = sp_task.add_parser("finish", help="Close plan and emit final-review report")
+    p_task_finish.add_argument("--note", default="", help="Final review note")
+
+    p_task_abandon = sp_task.add_parser("abandon", help="Abandon the active plan")
+    p_task_abandon.add_argument("--reason", required=True, help="Abandon reason")
+
+    p_task_scope = sp_task.add_parser("scope", help="Check a path against the active task's declared scope")
+    p_task_scope.add_argument("path", help="Relative path to check")
+
+    sp_task.add_parser("context", help="Print the hook-injected contract block")
+
     p_spec = sub.add_parser("spec", help="Spec-driven development commands")
     p_spec.add_argument("subcommand", choices=["list", "analyze", "converge", "scaffold", "advance"])
     p_spec.add_argument("spec_id", nargs="?", default="", help="Spec ID")
@@ -1034,6 +1242,21 @@ def main(argv: list[str] | None = None) -> int:
     p_skill_search.add_argument("query", help="Search keyword")
     p_skill_eject = sp_skill.add_parser("eject", help="Copy a skill into the project for customization")
     p_skill_eject.add_argument("name", help="Skill name to eject")
+    p_skill_validate = sp_skill.add_parser("validate", help="Validate SKILL.md contracts (frontmatter, naming, structure)")
+    p_skill_validate.add_argument("--json", action="store_true", help="Machine-readable output")
+    p_skill_install = sp_skill.add_parser("install", help="Install a skill into an agent harness (cursor/claude/codex/opencode/project/path)")
+    p_skill_install.add_argument("name", help="Skill name to install")
+    p_skill_install.add_argument("--harness", default="project", help="Target harness (default: project)")
+    p_skill_install.add_argument("--dest", default="", help="Target dir when --harness=path")
+    p_skill_install.add_argument("--force", action="store_true", help="Overwrite existing install")
+    p_skill_install.add_argument("--json", action="store_true", help="Machine-readable output")
+
+    # --- docs ---
+    p_docs = sub.add_parser("docs", help="Documentation generation")
+    sp_docs = p_docs.add_subparsers(dest="docs_subcommand", required=True)
+    p_docs_c4 = sp_docs.add_parser("c4", help="Generate C4 docs from graphify-out/graph.json")
+    p_docs_c4.add_argument("--graph", default="graphify-out/graph.json", help="Path to graph JSON")
+    p_docs_c4.add_argument("--out", default="docs/c4", help="Output directory")
 
     # --- hook ---
     p_hook = sub.add_parser("hook", help="IDE lifecycle hook entry point (reads event JSON on stdin)")
@@ -1104,9 +1327,11 @@ def main(argv: list[str] | None = None) -> int:
         "agent": cmd_agent,
         "persona": cmd_persona,
         "skill": cmd_skill,
+        "docs": cmd_docs,
         "hook": cmd_hook,
         "agents": cmd_agents,
         "linkedin": cmd_linkedin,
+        "task": cmd_task,
         "sync": cmd_sync,
         "graphify": cmd_graphify,
         "version": cmd_version,

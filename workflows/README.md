@@ -4,7 +4,7 @@ Each file here activates when the AI detects a specific task type. Counts and th
 
 ## Numbered Workflows (Trigger-Based)
 
-This directory contains **75** `.md` files: **61** numbered trigger-based workflows (`00`-`60`) plus standards protocols and reference files.
+This directory contains **77** `.md` files: **63** numbered trigger-based workflows (`00`-`62`) plus standards protocols and reference files.
 
 | Trigger / Task Type | Workflow File | When to Use |
 |---|---|---|
@@ -68,7 +68,9 @@ This directory contains **75** `.md` files: **61** numbered trigger-based workfl
 | durable execution | `57-durable-execution-setup.md` | [TRIGGER] durable execution, temporal setup, inngest setup, dbos setup, prefect setup, re... |
 | compliance crosswalk | `58-compliance-crosswalk.md` | [TRIGGER] compliance crosswalk, iso 42001, nist ai rmf, eu ai act, uagt, compliance audit... |
 | tech stack update | `59-tech-stack-bulk-update.md` | [TRIGGER] tech stack update, tech stack bulk, version update, stack refresh, تحديث التقني... |
-| atomic deploy / zero-downtime / نشر | `60-atomic-release-deployment.md` | [TRIGGER] atomic deploy, zero-downtime deploy, release deployment, shared hosting deploy... |
+| atomic deploy | `60-atomic-release-deployment.md` | Atomic release deployment (releases/ + current symlink + shared/) — canonical reference f... |
+| task contract | `61-task-contract.md` | Forced task decomposition with per-task verification and a final review gate — the aiZee... |
+| localhost tunnel | `62-localhost-tunnel.md` | Expose a local dev server to the internet for webhooks, agent loops, screenshots, and hum... |
 
 ## Standards & Reference Files
 

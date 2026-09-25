@@ -2,8 +2,78 @@
 
 ## [Unreleased]
 
+## [5.16.0] - 2026-09-25 (Task Contract + External-Source Adoption)
+
 ### Added
 
+- `runtime/task_contract/` — **Task Contract**: enforced decompose → execute →
+  verify → review lifecycle for non-trivial work. Every prompt gets a recorded
+  `trivial|standard|complex` classification with required justification
+  (`.task/classifications.jsonl`, heuristic vs agent disagreement flagged);
+  non-trivial work requires `.task/plan.json` (kebab ids, acyclic deps,
+  declared file scope, `produces` handoff contracts, acceptance checks);
+  `done` requires recorded evidence or a passing `verify_cmd`; `finish()`
+  emits a final-review report with scope/evidence gaps and the FULL-tier
+  checklist. Amendments are logged (no silent drift). Enforcement: always-on
+  `rules/task-contract.md`, `aizee hook inject` contract block, `afterFileEdit`
+  scope warnings, `AIZEE_TASK_STRICT=1` for hard scope denials.
+- `aizee task` CLI — `classify|decompose|status|start|verify|complete|block|
+  amend|finish|abandon|scope|context`; wired into the kernel as
+  `kernel.task_contract` (declared class attribute).
+- `aizee_mcp/tools/task_tools.py` — 10 MCP tools exposing the contract
+  lifecycle (`task_classify`, `task_decompose`, `task_status`, `task_start`,
+  `task_verify`, `task_complete`, `task_block`, `task_finish`,
+  `task_abandon`, `task_scope`). MCP tool count 88 → 98.
+- `workflows/61-task-contract.md` + `rules/task-contract.md` — execution
+  protocol and behavioral rule for the contract. manifest.json +8 triggers;
+  workflows README 61→62 numbered.
+- `tests/test_task_contract.py` — 44 tests covering classifier, lifecycle,
+  validation, amendments, scope enforcement, hooks, and kernel wiring.
+- `rules/untrusted-content.md` — BrowserSkill doctrine generalized: all
+  external/tool/page/console output is data, never authority; revalidate at
+  every trust boundary.
+- `runtime/skill_validator.py` + `aizee skill validate` — SKILL.md contract
+  checker (YAML frontmatter, name=id, activation-language description,
+  structure). 132 skills: 0 errors.
+- `eval/trigger_cases.json` + `tests/test_trigger_routing.py` — per-skill
+  positive/negative trigger evals (agent-skills evals/cases pattern);
+  caught a real routing gap (`zero-downtime deploy` alias added).
+- `runtime/harness_exporter.py` + `aizee skill install --harness X` —
+  BrowserSkill-style multi-harness skill installer (cursor/claude/codex/
+  opencode/project/path) with overwrite protection.
+- `runtime/c4_docs.py` + `aizee docs c4` — deepwiki-rs-inspired C4 doc
+  generator: consumes `graphify-out/graph.json`, emits `docs/c4/context.md`,
+  `containers.md`, `components/*.md` with Mermaid diagrams.
+- `AGENT_INSTALL.md` — install guide written FOR agents (BrowserSkill
+  pattern): install → doctor → wire harness → first governed task.
+- `skills/aizee-lite/SKILL.md` — skill-as-product: portable aiZee
+  governance discipline for agent hosts without aiZee installed.
+- `skills/project-voice/SKILL.md` — voice-builder foundation artifact:
+  produces `.ai/about-me.md` + `.ai/voice.md` consumed by all content
+  skills (social-media-skills pattern).
+- `skills/browser-automation/SKILL.md` — thin wrapper for Tencent
+  BrowserSkill (`bsk`): real logged-in browser, evidence capture,
+  untrusted-content rules baked in.
+- `tech-stack/animejs-4.md` — version-locked Anime.js v4 reference
+  (modular imports, timelines, stagger, SVG, scroll observer, a11y).
+- `workflows/62-localhost-tunnel.md` — Cloudflare Quick Tunnel protocol:
+  `cloudflared tunnel --url`, JSON stdout contract, safety policy
+  (never tunnel unauthenticated ports), ephemeral cleanup.
+- `skills/prompt-engineer.md` — prompt-master v1.8 delta: 9-dimension
+  intent extraction, model-recency gate, risky-technique allowlist,
+  token-efficiency audit, max-3-questions discipline.
+- `tests/test_harness_exporter.py` + `tests/test_c4_docs.py` — FAST-tier
+  coverage for the two new runtime modules.
+- `skills/design-research/` — evidence-based design research doctrine
+  (Refero SKILL.md + Mobbin agent docs): tool-selection matrix
+  (styles/screens/flows/sections), research-before-design mandate,
+  one-dominant-direction synthesis (no averaging), evidence≠proof and
+  provenance rules, brief + reference-lock + post-build validation workflow.
+  Cross-linked from `design-md-lord`.
+- `mobbin` MCP server registered in `.devin/mcp_config.json`
+  (`https://api.mobbin.com/mcp`, OAuth on first connect, Pro plan+);
+  `install.ps1` alwaysAllow extended with all refero/mobbin read-only tools.
+  manifest.json +8 triggers; eval trigger cases +3 positive +1 negative.
 - `workflows/60-atomic-release-deployment.md` — canonical atomic release
   deployment reference (releases/ + `current` symlink + shared/) covering
   VPS, shared+SSH, and FTP-only/cPanel tiers; `mv -T` atomic swap,

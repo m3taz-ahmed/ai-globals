@@ -1,0 +1,118 @@
+{
+  "_meta": {
+    "purpose": "Trigger-routing eval cases — adapted from addyosmani/agent-skills evals/cases/*.json format. Positive cases assert a trigger phrase routes to the expected artifact in manifest.json; negative cases assert a phrase does NOT route to a given artifact.",
+    "runner": "tests/test_trigger_routing.py"
+  },
+  "positive": [
+    {
+      "trigger": "task contract",
+      "expect": "workflows/61-task-contract.md"
+    },
+    {
+      "trigger": "decompose work",
+      "expect": "workflows/61-task-contract.md"
+    },
+    {
+      "trigger": "قسم الشغل",
+      "expect": "workflows/61-task-contract.md"
+    },
+    {
+      "trigger": "atomic deploy",
+      "expect": "workflows/60-atomic-release-deployment.md"
+    },
+    {
+      "trigger": "zero-downtime deploy",
+      "expect": "workflows/60-atomic-release-deployment.md"
+    },
+    {
+      "trigger": "/prompt",
+      "expect": "workflows/00-prompt-architecting.md"
+    },
+    {
+      "trigger": "refero",
+      "expect": "skills/design-md-lord/SKILL.md"
+    },
+    {
+      "trigger": "localhost tunnel",
+      "expect": "workflows/62-localhost-tunnel.md"
+    },
+    {
+      "trigger": "cloudflared",
+      "expect": "workflows/62-localhost-tunnel.md"
+    },
+    {
+      "trigger": "expose localhost",
+      "expect": "workflows/62-localhost-tunnel.md"
+    },
+    {
+      "trigger": "voice profile",
+      "expect": "skills/project-voice/SKILL.md"
+    },
+    {
+      "trigger": "brand voice",
+      "expect": "skills/project-voice/SKILL.md"
+    },
+    {
+      "trigger": "browser automation",
+      "expect": "skills/browser-automation/SKILL.md"
+    },
+    {
+      "trigger": "bsk",
+      "expect": "skills/browser-automation/SKILL.md"
+    },
+    {
+      "trigger": "aizee lite",
+      "expect": "skills/aizee-lite/SKILL.md"
+    },
+    {
+      "trigger": "install-skill",
+      "expect": "runtime/harness_exporter.py"
+    },
+    {
+      "trigger": "c4 docs",
+      "expect": "runtime/c4_docs.py"
+    },
+    {
+      "trigger": "mobbin",
+      "expect": "skills/design-research/SKILL.md"
+    },
+    {
+      "trigger": "design research",
+      "expect": "skills/design-research/SKILL.md"
+    },
+    {
+      "trigger": "ui inspiration",
+      "expect": "skills/design-research/SKILL.md"
+    }
+  ],
+  "negative": [
+    {
+      "trigger": "invoice",
+      "must_not": "workflows/61-task-contract.md"
+    },
+    {
+      "trigger": "seo audit",
+      "must_not": "workflows/60-atomic-release-deployment.md"
+    },
+    {
+      "trigger": "نشر الإصدارات",
+      "must_not": "workflows/61-task-contract.md"
+    },
+    {
+      "trigger": "post scorer",
+      "must_not": "workflows/61-task-contract.md"
+    },
+    {
+      "trigger": "git commit",
+      "must_not": "workflows/62-localhost-tunnel.md"
+    },
+    {
+      "trigger": "write linkedin post",
+      "must_not": "skills/aizee-lite/SKILL.md"
+    },
+    {
+      "trigger": "linkedin",
+      "must_not": "skills/design-research/SKILL.md"
+    }
+  ]
+}

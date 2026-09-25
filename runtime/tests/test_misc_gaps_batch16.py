@@ -471,7 +471,7 @@ class TestConfigVersionFallback:
         fake_pyproject.read_text.return_value = "[project]\nname='x'\n"
         fake_path.resolve.return_value.parent.__truediv__.return_value = fake_pyproject
         with patch.object(config, "Path", return_value=fake_path):
-            assert config._version() == "5.15.0"
+            assert config._version() == "5.16.0"
 
 
 class TestSeoGraphScalar:
