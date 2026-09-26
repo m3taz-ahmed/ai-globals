@@ -19,6 +19,7 @@ personas:
     - laravel-ai-lord
     - llm-evals-lord
     - problem-solving-lord
+    - production-readiness-lord
     keywords:
     - architecture
     - scalability
@@ -55,6 +56,7 @@ personas:
     - ai-code-review-lord
     - llm-evals-lord
     - problem-solving-lord
+    - production-readiness-lord
     skills:
     - qa-automation
     keywords:
@@ -154,6 +156,7 @@ personas:
     - mcp-architect-lord
     - python-ui-lord
     - problem-solving-lord
+    - production-readiness-lord
     skills:
     - backend-design
     keywords:
@@ -192,6 +195,7 @@ personas:
     - local-ai-lord
     - gitops-lord
     - server-ops-lord
+    - production-readiness-lord
     keywords:
     - cloud
     - aws
@@ -243,6 +247,7 @@ personas:
     - ai-code-review-lord
     - post-quantum-lord
     - server-ops-lord
+    - production-readiness-lord
     keywords:
     - security
     - secure
@@ -452,6 +457,7 @@ personas:
     - local-ai-lord
     - gitops-lord
     - server-ops-lord
+    - production-readiness-lord
     keywords:
     - devops
     - cicd
@@ -1225,6 +1231,29 @@ lord_skills:
   - تصميم جديد
   - ابداع تصميمي
   - تصميم مميز
+  production-readiness-lord:
+  - production readiness
+  - production audit
+  - pre-launch review
+  - pre-launch audit
+  - go-live
+  - launch readiness
+  - readiness review
+  - ready for production
+  - audit project
+  - full project review
+  - production checklist
+  - before launch
+  - before deploy
+  - launch checklist
+  - release readiness
+  - مراجعة قبل الإطلاق
+  - جاهزية الإنتاج
+  - راجع المشروع
+  - مراجعة المشروع
+  - مراجعة شاملة
+  - جاهز للانتاج
+  - قبل النشر
   backend-frameworks-lord:
   - laravel
   - django
