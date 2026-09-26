@@ -211,3 +211,10 @@
 [REQ] Python UI - NiceGUI: github.com/zauberzeug/nicegui (v3.x FastAPI+Vue/Quasar; examples + native-window mode for tools/IoT dashboards).
 [REQ] Python UI - Patterns Catalog: github.com/faif/python-patterns + RefactoringGuru/design-patterns-python (Pythonic pattern implementations; check trade-offs, not just code).
 [REQ] Python UI - ArjanCodes Examples: github.com/ArjanCodes/examples (per-video Python design/SOLID/composition code, organized by year).
+[REQ] Server Ops - Self-Hosted Catalog: github.com/awesome-selfhosted/awesome-selfhosted (canonical index of self-hostable software; first stop before any "what tool runs this on my server" question).
+[REQ] Server Ops - Proxmox Community Scripts: github.com/community-scripts/ProxmoxVE (curated one-command LXC/VM installers for hundreds of apps on PVE).
+[REQ] Server Ops - Coolify: github.com/coollabsio/coolify (self-hosted PaaS v4; git-push deploys, DBs, remote servers via SSH).
+[REQ] Server Ops - SSH Hardening Baseline: infosec.mozilla.org/guidelines/openssh (Mozilla's maintained OpenSSH hardening guide).
+[REQ] Server Ops - Linux Hardening: github.com/awesome-security-hardening + CIS Benchmarks (server baseline references; apply via Ansible where possible).
+[REQ] Design Innovation - Awwwards SOTD: awwwards.com (daily frontier of web design; sample for direction, never copy).
+[REQ] Design Innovation - Godly + Land-book: godly.website / land-book.com (curated real-product UI galleries; god-tier reference feed).

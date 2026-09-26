@@ -18,6 +18,7 @@ personas:
     - local-ai-lord
     - laravel-ai-lord
     - llm-evals-lord
+    - problem-solving-lord
     keywords:
     - architecture
     - scalability
@@ -53,6 +54,7 @@ personas:
     - ai-redteam-lord
     - ai-code-review-lord
     - llm-evals-lord
+    - problem-solving-lord
     skills:
     - qa-automation
     keywords:
@@ -90,6 +92,7 @@ personas:
     - arabic-dialect-lord
     - mcp-architect-lord
     - python-ui-lord
+    - design-innovation-lord
     skills:
     - web-design-guidelines
     - design-taste
@@ -150,6 +153,7 @@ personas:
     - ai-code-review-lord
     - mcp-architect-lord
     - python-ui-lord
+    - problem-solving-lord
     skills:
     - backend-design
     keywords:
@@ -187,6 +191,7 @@ personas:
     - durable-execution-lord
     - local-ai-lord
     - gitops-lord
+    - server-ops-lord
     keywords:
     - cloud
     - aws
@@ -206,6 +211,23 @@ personas:
     - infrastructure
     - gitops
     - argocd
+    - server
+    - servers
+    - vps
+    - bare metal
+    - dedicated server
+    - ssh
+    - nginx
+    - caddy
+    - reverse proxy
+    - uptime
+    - sysadmin
+    - provisioning
+    - server hardening
+    - firewall
+    - backup
+    - استضافة
+    - سيرفر
   SEC:
     name: Hardcore Linux Kernel Master & SecOps Warlord
     weight: 1.3
@@ -220,6 +242,7 @@ personas:
     - local-ai-lord
     - ai-code-review-lord
     - post-quantum-lord
+    - server-ops-lord
     keywords:
     - security
     - secure
@@ -428,6 +451,7 @@ personas:
     - ai-observability-lord
     - local-ai-lord
     - gitops-lord
+    - server-ops-lord
     keywords:
     - devops
     - cicd
@@ -448,6 +472,18 @@ personas:
     - iac
     - terraform
     - ansible
+    - server
+    - servers
+    - vps
+    - ssh
+    - nginx
+    - hosting
+    - sysadmin
+    - provisioning
+    - patching
+    - migration
+    - سيرفر
+    - سيرفرات
   API:
     name: API Architect & Integration Specialist
     weight: 1.1
@@ -1120,6 +1156,75 @@ lord_skills:
   - تطبيق ديسكتوب
   - واجهة رسومية
   - بايثون واجهة
+  server-ops-lord:
+  - server
+  - vps
+  - ssh
+  - nginx
+  - caddy
+  - reverse proxy
+  - ssl
+  - tls
+  - firewall
+  - ufw
+  - fail2ban
+  - hardening
+  - backup
+  - restore
+  - monitoring server
+  - systemd service
+  - docker host
+  - coolify
+  - dokploy
+  - portainer
+  - cockpit
+  - proxmox
+  - tailscale
+  - wireguard
+  - lets encrypt
+  - bare metal
+  - dedicated server
+  - shared hosting
+  - سيرفر
+  - خادم
+  - استضافة
+  - سيرفرات
+  problem-solving-lord:
+  - stuck
+  - workaround
+  - alternative approach
+  - can't fix
+  - impossible
+  - problem solving
+  - root cause
+  - hard bug
+  - out of the box
+  - creative solution
+  - different approach
+  - another way
+  - مشكلة مستعصية
+  - حل بديل
+  - حل ذكي
+  - عالق
+  - طريقة تانية
+  - افكر بره الصندوق
+  design-innovation-lord:
+  - innovative design
+  - unique design
+  - creative direction
+  - design concept
+  - signature design
+  - standout design
+  - original design
+  - experimental layout
+  - design exploration
+  - awwwards
+  - award winning
+  - تصميم مبتكر
+  - تصميم فريد
+  - تصميم جديد
+  - ابداع تصميمي
+  - تصميم مميز
   backend-frameworks-lord:
   - laravel
   - django
