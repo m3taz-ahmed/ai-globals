@@ -119,7 +119,7 @@ def _load_skill_description(name: str, skills_dir: Path) -> str:
                     fm = yaml.safe_load(parts[1])
                     if isinstance(fm, dict):
                         return str(fm.get("description", "")).strip()
-            except (OSError, yaml.YAMLError):
+            except (OSError, yaml.YAMLError):  # aizee-scan: ignore A10-SWALLOW — description fallback — missing/corrupt yaml yields ''
                 pass
     return ""
 

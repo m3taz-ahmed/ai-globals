@@ -53,6 +53,7 @@ class TestAuditKey:
     def test_stored_key_reused(self, monkeypatch, tmp_path):
         monkeypatch.delenv("AIZEE_AUDIT_KEY", raising=False)
         monkeypatch.delenv("AIZEE_AUDIT_KEY_FILE", raising=False)
+        audit._audit_key_cache = None
         k1 = _get_audit_key()
         audit._audit_key_cache = None
         k2 = _get_audit_key()
@@ -111,9 +112,9 @@ class TestTsAfter:
 
 
 class TestRotation:
-    def test_rotation_preserves_chain(self, tmp_path):
+    def test_rotation_preserves_chain(self, tmp_path, monkeypatch):
         log = AuditLogger(tmp_path)
-        log._MAX_LOG_SIZE = 200  # force rotation quickly
+        monkeypatch.setattr(log, "_MAX_LOG_SIZE", 200)  # force rotation quickly
         log.log("a", {"x": 1})
         log.log("b", {"x": 2})
         log.log("c", {"x": 3})
@@ -126,9 +127,9 @@ class TestRotation:
         # OR the impl seeds correctly; at minimum no crash
         assert "entries_checked" in result
 
-    def test_rotation_oserror_warns(self, tmp_path):
+    def test_rotation_oserror_warns(self, tmp_path, monkeypatch):
         log = AuditLogger(tmp_path)
-        log._MAX_LOG_SIZE = 1
+        monkeypatch.setattr(log, "_MAX_LOG_SIZE", 1)
         log.log("a", {})
         with patch.object(Path, "rename", side_effect=OSError("denied")):
             log.log("b", {})  # warns, doesn't raise beyond

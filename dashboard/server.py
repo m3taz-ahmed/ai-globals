@@ -223,7 +223,7 @@ def _sync_claude_mcp_settings(root: Path, mcp_settings: dict[str, Any]) -> None:
             for name, defn in raw.get("mcpServers", {}).items():
                 if name not in canonical:
                     canonical[name] = defn
-        except (ValueError, OSError):
+        except (ValueError, OSError):  # aizee-scan: ignore A10-SWALLOW — manifest merge best-effort; skip malformed defn
             pass
 
     changed = False
@@ -324,7 +324,7 @@ def _client_ip(handler: DashboardHandler) -> str:
             try:
                 ipaddress.ip_address(parts[0])
                 return parts[0]
-            except ValueError:
+            except ValueError:  # aizee-scan: ignore A10-SWALLOW — IP-literal probe — non-IP falls to direct
                 pass
     return direct
 
@@ -1109,7 +1109,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f"data: {payload}\n\n".encode())
                 self.wfile.flush()
                 time.sleep(5)  # 5s poll interval (was 1s)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):  # aizee-scan: ignore A10-SWALLOW — SSE client disconnect is normal
             pass
         finally:
             with self._sse_lock:

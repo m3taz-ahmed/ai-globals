@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """OWASP Agentic Top 10 compliance scanner for aiZee.
 
+aizee-scan: ignore-file — detection patterns/advisory text are data, not sinks.
+
 Scans agent configurations, MCP server definitions, skills, and policy
 rules against the OWASP Agentic Top 10 (2026) controls:
 

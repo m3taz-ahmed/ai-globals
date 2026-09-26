@@ -81,7 +81,7 @@ def _action_hash(tool: str, args: dict[str, Any]) -> str:
     """
     stable_args = {k: v for k, v in args.items() if k not in _VOLATILE_KEYS}
     payload = json.dumps({"tool": tool, "args": stable_args}, sort_keys=True, default=str)
-    return hashlib.md5(payload.encode("utf-8")).hexdigest()
+    return hashlib.md5(payload.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def _jaccard_similarity(set_a: set[str], set_b: set[str]) -> float:

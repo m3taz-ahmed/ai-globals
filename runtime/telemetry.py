@@ -49,7 +49,7 @@ class TelemetryCollector:
                         old.rename(new)
                 rotated = self.log_path.with_suffix(".jsonl.1")
                 self.log_path.rename(rotated)
-        except OSError:
+        except OSError:  # aizee-scan: ignore A10-SWALLOW — log rotation best-effort
             pass  # Best-effort rotation
 
     def record(

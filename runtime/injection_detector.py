@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Comprehensive prompt-injection detector covering all 13 attack techniques.
 
+aizee-scan: ignore-file — detector regex catalogue; patterns are data, not sinks.
+
 This module implements detection for the full prompt-injection attack taxonomy
 documented in OWASP LLM01, Sysdig 2026, and Wraith 2026:
 

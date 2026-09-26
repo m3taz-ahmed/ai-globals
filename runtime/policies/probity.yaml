@@ -1,3 +1,4 @@
+# aizee-scan: ignore-file — probity rules list forbidden patterns as data
 # aiZee Probity Guardrails — Integrity verification layer
 # Evaluated by Guardrails.check() on write/command events.
 # Rule kinds: forbidCommandPattern, requireCommand, forbidContentPattern,

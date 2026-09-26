@@ -80,7 +80,7 @@ def _validate_webhook_url(url: str) -> bool:
             _logger.warning("Webhook URL rejected: private/loopback IP %s", ip)
             return False
         return True
-    except ValueError:
+    except ValueError:  # aizee-scan: ignore A10-SWALLOW — not an IP literal — proceeds to DNS resolution
         pass  # Not an IP literal - proceed to DNS resolution.
     # Resolve hostname to IP addresses; reject if any resolution fails or is private.
     try:

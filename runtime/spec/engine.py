@@ -176,7 +176,7 @@ class _SpecDriftHelper:
                 return SpecManifest.from_dict(
                     json.loads(baseline_path.read_text(encoding="utf-8"))
                 )
-            except (ValueError, KeyError, TypeError, OSError):
+            except (ValueError, KeyError, TypeError, OSError):  # aizee-scan: ignore A10-SWALLOW — baseline manifest optional — corrupt file ignored
                 pass
         manifest = SpecManifest()
         json_path = self._engine._spec_path(spec_id)

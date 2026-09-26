@@ -30,7 +30,7 @@ def _canonical_tokens(text: str) -> list[str]:
 
 def _token_hash(token: str) -> int:
     """Compute a stable 64-bit hash for a token using MD5."""
-    digest = hashlib.md5(token.encode("utf-8")).digest()
+    digest = hashlib.md5(token.encode("utf-8"), usedforsecurity=False).digest()
     return int.from_bytes(digest[:8], "little")
 
 

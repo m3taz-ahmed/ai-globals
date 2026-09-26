@@ -83,7 +83,7 @@ def _migrate_4_21_to_4_22(root: Path) -> None:
                 if name not in servers:
                     # Mark for installer to fill in; migrate just ensures structure.
                     pass
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError):  # aizee-scan: ignore A10-SWALLOW — malformed config JSON — structure ensured anyway
             pass
 
     # 3. Update .devin/mcp_config.json to remove disabled flags.
@@ -99,7 +99,7 @@ def _migrate_4_21_to_4_22(root: Path) -> None:
                     changed = True
             if changed:
                 mcp_config.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError):  # aizee-scan: ignore A10-SWALLOW — malformed mcp_config JSON — left untouched
             pass
 
 

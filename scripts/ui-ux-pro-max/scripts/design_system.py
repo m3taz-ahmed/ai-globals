@@ -104,7 +104,7 @@ class DesignSystemGenerator:
         decision_rules = {}
         try:
             decision_rules = json.loads(rule.get("Decision_Rules", "{}"))
-        except json.JSONDecodeError:
+        except json.JSONDecodeError:  # aizee-scan: ignore A10-SWALLOW — Decision_Rules optional — defaults used
             pass
 
         return {

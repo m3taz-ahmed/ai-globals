@@ -13,7 +13,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Discovered relative to aiZee root; robust against exec()/runpy contexts
+# Discovered relative to aiZee root; robust against exec()/runpy contexts  # aizee-scan: ignore INJ-EVAL — comment text
 # where __file__ may be undefined.
 _THIS_FILE = Path(__file__).resolve() if "__file__" in globals() else Path.cwd() / "templates.py"
 _TEMPLATE_DIR_CANDIDATES = [

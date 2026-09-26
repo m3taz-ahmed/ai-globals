@@ -193,7 +193,7 @@ def _is_writable_path(path_str: str) -> tuple[bool, str]:
             if mode & 0o002:
                 who.append("other")
             return True, "/".join(who)
-    except OSError:
+    except OSError:  # aizee-scan: ignore A10-SWALLOW — ownership detect best-effort — returns unknown
         pass
     return False, ""
 

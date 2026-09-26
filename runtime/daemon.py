@@ -51,6 +51,8 @@ from typing import Any
 
 from runtime.schemas import AizeeError, ErrorSeverity
 
+_PLIST_DTD = "http://www.apple.com/DTDs/PropertyList-1.0.dtd"  # aizee-scan: ignore HTTP-PLAINTEXT — Apple plist DTD literal required by the format
+
 _logger = logging.getLogger(__name__)
 
 # --- Constants ---
@@ -335,7 +337,7 @@ class AizeeDaemon:
                 for name, defn in raw.get("mcpServers", {}).items():
                     if name not in canonical:
                         canonical[name] = defn
-            except (ValueError, OSError):
+            except (ValueError, OSError):  # aizee-scan: ignore A10-SWALLOW — manifest merge best-effort; skip malformed defn
                 pass
 
         changed = False
@@ -584,7 +586,7 @@ class AizeeDaemon:
         python_exe = sys.executable
         daemon_script = str(Path(root) / "runtime" / "daemon.py")
         plist = f"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "{_PLIST_DTD}">
 <plist version="1.0">
 <dict>
     <key>Label</key>

@@ -4,16 +4,16 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.16.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.14.2">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.17.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.17.0">
     <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-7429%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="7429 اختبار ناجح">
     <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 100%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
-    <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-22-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="22 شخصية">
-    <img src="https://img.shields.io/badge/%D%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-131-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="134 مهارة">
+    <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 شخصية">
+    <img src="https://img.shields.io/badge/%D%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-139-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="139 مهارة">
     <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-63-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 سير عمل">
-    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-173-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="173 مرجع تقنية">
+    <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-265-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="265 مرجع تقنية">
   </p>
 </div>
 
@@ -37,7 +37,7 @@
 | حزم قديمة وديون تقنية صامتة | تثبيت إصدار دقيق عبر MCP حي |
 | SQL خام، XSS مفقود، أسرار ضعيفة | OWASP و zero-trust و RBAC مفروضة |
 | إعادة هيكلة عشوائية | تغييرات جراحية عبر بوابات policy + budget + audit |
-| إجابات واحدة-للجميع | 22 شخصية + 80 مهارة تُختار تلقائيًا |
+| إجابات واحدة-للجميع | 29 شخصية + 80 مهارة تُختار تلقائيًا |
 
 ---
 
@@ -85,7 +85,7 @@ aizee status    # الشخصية، المهارات، الميزانية
 ## الأعمدة الستة
 
 ### 1. الشخصيات + المهارات
-22 شخصية (`ARCH`، `QA`، `SEC`، `DEV`، `SRE`، `DATA`، `ML`، `DEVOPS`، `FREELANCE`، إلخ) مع 29 مهارة lord. تُكتشف تلقائيًا حسب المهمة.
+29 شخصية (`ARCH`، `QA`، `SEC`، `DEV`، `SRE`، `DATA`، `ML`، `DEVOPS`، `FREELANCE`، إلخ) مع 29 مهارة lord. تُكتشف تلقائيًا حسب المهمة.
 
 ```bash
 aizee persona detect --multi "ابني API آمن مع docker و postgres"
@@ -123,9 +123,16 @@ python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
 
 ---
 
-## الجديد في v5.16.0
+## الجديد في v5.17.0
 
-### Task Contract + تبنّي المصادر الخارجية (سبتمبر 2026)
+### طبقة تنفيذ الفحص الأمني (سبتمبر 2026)
+
+- **`aizee security scan <path>`** — فحص SAST حقيقي + تنسيق أدوات خارجية في `runtime/security_scanner.py`: قواعد مدمجة مربوطة بـ OWASP 2025 (أسرار، injection، misconfig، استثناءات، XSS، redirects) + تشغيل تلقائي لـ bandit / ruff-S / pip-audit / npm audit / composer audit / trivy لو مثبتة. `--json` للـ CI، `--no-tools` للأوفلاين، `--limit N`؛ خروج بكود 1 عند وجود blockers.
+- **`tech-stack/appsec-hardening.md`** — ماتريكس ثغرة→دفاع شاملة لكل المجالات مربوطة بـ OWASP Top 10 **2025**.
+- **`skills/production-readiness-lord/`** — بروتوكول مراجعة إنتاج 13 محور بالأدلة + تقرير إجراءات بشرية.
+- لوردات جديدة: `server-ops-lord`، `problem-solving-lord`، `design-innovation-lord`، `python-ui-lord`؛ +11 مرجع tech-stack مقيد بالإصدار؛ ~25 سكيل اتعمّقت.
+
+### سابقاً — v5.16.0: Task Contract + تبنّي المصادر الخارجية (سبتمبر 2026)
 
 - **Task Contract** (`runtime/task_contract/` + `aizee task`): دورة إجبارية `تصنيف → تقسيم → تحقق لكل تاسك → مراجعة نهائية`. كل برومبت بياخد تصنيف مسجّل (trivial/standard/complex)؛ الشغل غير التافه محتاج `.task/plan.json` (deps بدون دورات، سكوب معلن، acceptance checks، عقود `produces:`)؛ «تم» محتاج دليل مسجّل مش ادعاء. الإجبار: rules + IDE hooks، مع `AIZEE_TASK_STRICT=1` للرفض الصلب خارج السكوب.
 - **10 أدوات MCP جديدة** (`task_classify` → `task_scope`) — عدد الأدوات 88 → 98.

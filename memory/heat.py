@@ -52,7 +52,7 @@ def _to_timestamp(value: Any) -> float | None:
         text = value.strip()
         try:
             return float(text)
-        except ValueError:
+        except ValueError:  # aizee-scan: ignore A10-SWALLOW — float-parse probe — falls through to datetime parse
             pass
         try:
             from datetime import datetime

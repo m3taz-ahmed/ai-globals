@@ -758,6 +758,42 @@ def cmd_docs(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_security(args: argparse.Namespace) -> int:
+    """Security scan: built-in rules + external scanners (bandit/ruff-S/pip-audit/npm audit/composer audit/trivy)."""
+    if args.security_subcommand == "scan":
+        from runtime.security_scanner import scan_project
+
+        target = Path(args.path).resolve() if args.path else _project_root(args)
+        report = scan_project(target, use_tools=not args.no_tools)
+        if args.json:
+            print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+            return 0 if report.ok else 1
+        console.print(
+            f"[cyan]Scanned[/cyan] {report.target} — {report.files_scanned} files, "
+            f"tools: {', '.join(report.tools_run) or 'none'}"
+            + (f" (skipped: {', '.join(report.tools_skipped)})" if report.tools_skipped else "")
+        )
+        colors = {"blocker": "red", "high": "red", "medium": "yellow", "low": "dim"}
+        for f in report.findings[: args.limit]:
+            loc = f"{f.file}:{f.line}" if f.file else "-"
+            console.print(
+                f"[{colors[f.severity.value]}]{f.severity.value.upper():8}[/{colors[f.severity.value]}] "
+                f"[{f.category}] {f.message} — {loc} ({f.scanner})"
+            )
+        if len(report.findings) > args.limit:
+            console.print(f"[dim]... and {len(report.findings) - args.limit} more (--limit to raise)[/dim]")
+        summary = report.summary()
+        verdict = "green]PASS" if report.ok else "red]FAIL"
+        console.print(
+            f"[{verdict}[/] — {summary['blocker']} blockers, {summary['high']} high, "
+            f"{summary['medium']} medium, {summary['low']} low"
+            + (f" (+{report.suppressed} suppressed via inline markers)"
+               if report.suppressed else "")
+        )
+        return 0 if report.ok else 1
+    return 0
+
+
 def cmd_hook(args: argparse.Namespace) -> int:
     """IDE lifecycle hook entry point.
 
@@ -1258,6 +1294,15 @@ def main(argv: list[str] | None = None) -> int:
     p_docs_c4.add_argument("--graph", default="graphify-out/graph.json", help="Path to graph JSON")
     p_docs_c4.add_argument("--out", default="docs/c4", help="Output directory")
 
+    # --- security ---
+    p_sec = sub.add_parser("security", help="Security scanning commands")
+    sp_sec = p_sec.add_subparsers(dest="security_subcommand", required=True)
+    p_sec_scan = sp_sec.add_parser("scan", help="Scan a project for vulnerabilities (built-in rules + bandit/ruff-S/pip-audit/npm/composer/trivy)")
+    p_sec_scan.add_argument("path", nargs="?", default="", help="Path to scan (default: project root)")
+    p_sec_scan.add_argument("--no-tools", action="store_true", help="Built-in rules only (skip external scanners)")
+    p_sec_scan.add_argument("--limit", type=int, default=50, help="Max findings shown (default: 50)")
+    p_sec_scan.add_argument("--json", action="store_true", help="Machine-readable output")
+
     # --- hook ---
     p_hook = sub.add_parser("hook", help="IDE lifecycle hook entry point (reads event JSON on stdin)")
     p_hook.add_argument("action", choices=["inject", "observe", "summary"], help="Hook action")
@@ -1328,6 +1373,7 @@ def main(argv: list[str] | None = None) -> int:
         "persona": cmd_persona,
         "skill": cmd_skill,
         "docs": cmd_docs,
+        "security": cmd_security,
         "hook": cmd_hook,
         "agents": cmd_agents,
         "linkedin": cmd_linkedin,

@@ -298,7 +298,7 @@ class PlanDiffValidator:
                 text = pyproject.read_text(encoding="utf-8")
                 for m in re.finditer(r"^\s*([a-zA-Z0-9_-]+)\s*[=<>~!\[]", text, re.MULTILINE):
                     deps.add(m.group(1).lower().replace("-", "_"))
-            except OSError:
+            except OSError:  # aizee-scan: ignore A10-SWALLOW — requirements parse best-effort
                 pass
         if reqs.exists():
             try:
@@ -308,7 +308,7 @@ class PlanDiffValidator:
                         name = re.split(r"[=<>~!\[]", line)[0].strip().lower().replace("-", "_")
                         if name:
                             deps.add(name)
-            except OSError:
+            except OSError:  # aizee-scan: ignore A10-SWALLOW — requirements parse best-effort
                 pass
         return deps
 
@@ -321,7 +321,7 @@ class PlanDiffValidator:
                 data = json.loads(pkg.read_text(encoding="utf-8"))
                 for section in ("dependencies", "devDependencies"):
                     deps.update(data.get(section, {}).keys())
-            except (OSError, ValueError):
+            except (OSError, ValueError):  # aizee-scan: ignore A10-SWALLOW — package.json parse best-effort
                 pass
         return deps
 

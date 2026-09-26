@@ -1,5 +1,6 @@
 name: agentic-owasp
 apiVersion: governance.aizee/v1
+# aizee-scan: ignore-file — policy conditions list forbidden patterns as data
 # default_action moved to default.yaml per GATE-B3
 description: >
   OWASP Agentic Top 10 (2026) compliance policy. Enforces controls for

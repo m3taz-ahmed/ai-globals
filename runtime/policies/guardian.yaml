@@ -1,3 +1,4 @@
+# aizee-scan: ignore-file — guardian rules list forbidden patterns as data
 # aiZee Guardian Policy — Pre-action guardian gate
 # Evaluated BEFORE the policy engine. Blocks dangerous tools outright,
 # requires approval for sensitive operations.

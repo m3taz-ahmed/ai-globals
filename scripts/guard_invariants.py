@@ -274,8 +274,15 @@ def check_manifest_no_drift(root: Path) -> list[Violation]:
                 line=1,
                 message=f"exports in __all__ but not imported: {sorted(extra)}",
             ))
-    except Exception:
+    except ImportError:  # aizee-scan: ignore A10-SWALLOW — generator module absent; check N/A
         pass
+    except Exception as exc:  # fail-closed: check failure is itself a violation
+        violations.append(Violation(
+            check="manifest_drift",
+            file="runtime/__init__.py",
+            line=1,
+            message=f"manifest drift check failed: {exc}",
+        ))
     return violations
 
 

@@ -288,7 +288,7 @@ def remove_cli_shim() -> bool:
                 candidates.append(user_base / "Scripts" / "aizee.cmd")
             else:
                 candidates.append(user_base / "bin" / "aizee")
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError):  # aizee-scan: ignore A10-SWALLOW — pip show probe best-effort
         pass
 
     for c in candidates:
@@ -319,7 +319,7 @@ def remove_mcp_config_entries(root: Path) -> list[str]:
                     json.dumps(data, indent=2), encoding="utf-8"
                 )
                 removed.append(str(cfg_path))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError):  # aizee-scan: ignore A10-SWALLOW — config clean best-effort; malformed file skipped
             pass
 
     return removed
@@ -484,7 +484,7 @@ def _ask_backup(categories: list[UninstallCategory]) -> Path | None:
             custom = input("Backup path: ").strip()
             if custom:
                 return Path(custom)
-        except (EOFError, KeyboardInterrupt):
+        except (EOFError, KeyboardInterrupt):  # aizee-scan: ignore A10-SWALLOW — no TTY/custom input — default choice
             pass
     return None
 

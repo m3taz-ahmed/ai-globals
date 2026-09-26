@@ -226,8 +226,9 @@ class ObservationStore:
         if session_id is not None:
             sql += " WHERE session_id = ?"
             params = (session_id,)
+        sql += " ORDER BY created_at"
         with self._connect() as conn:
-            rows = conn.execute(sql + " ORDER BY created_at", params).fetchall()
+            rows = conn.execute(sql, params).fetchall()
         out: list[dict[str, Any]] = []
         for row in rows:
             try:

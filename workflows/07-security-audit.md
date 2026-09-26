@@ -2,6 +2,7 @@
 [OBJ] Security review and infrastructure hardening.
 [TRIGGER] security audit
 [RULES]
+0. [REQ] Execution layer first: run `aizee security scan <project-root> --json` — built-in OWASP-2025 rules + bandit/ruff-S/pip-audit/npm-audit/composer-audit/trivy when installed. Exit 1 = blockers present; fix or document before continuing.
 1. [REQ] Dependencies: Run `composer audit`, `npm audit`. Check for outdated/GPL packages.
 2. [REQ] Code Review: Check for mass assignment (`guarded = []`), raw SQL, unescaped XSS, missing auth gates, unprotected file uploads, missing CSRF.
 3. [REQ] Auth Audit: Enforce 12+ char passwords. Ensure `Session::regenerate()`. Throttle auth routes. Check privilege escalation.

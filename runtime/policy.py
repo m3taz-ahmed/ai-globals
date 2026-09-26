@@ -229,7 +229,7 @@ class _SafeEvaluator(ast.NodeVisitor):
             try:
                 if len(result) > 10_000:
                     raise ValueError("policy string/list concatenation exceeds 10k")
-            except TypeError:
+            except TypeError:  # aizee-scan: ignore A10-SWALLOW — non-sized operand hits 10k guard path
                 pass
             return result
         raise ValueError(f"Unsupported node: {type(node).__name__}")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -394,3 +395,255 @@ class TestKernelWiring:
         k = Kernel(project_root=tmp_path)
         assert isinstance(k.task_contract, TaskContractManager)
         assert k.task_contract.project_root == tmp_path
+
+
+class TestClassifierSignals:
+    def test_long_prompt_signal(self) -> None:
+        r = classify_prompt("implement " + "word " * 90)
+        assert "long-prompt" in r["signals"]
+
+    def test_enumerated_items_signal(self) -> None:
+        r = classify_prompt("do these:\n1. step one\n2. step two\n3. step three")
+        assert "enumerated-items" in r["signals"]
+
+    def test_no_signals_is_trivial(self) -> None:
+        r = classify_prompt("hello")
+        assert r["level"] == "trivial"
+        assert r["reason"] == "no decomposition signals"
+
+
+class TestValidationEdges:
+    def test_empty_plan_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(TaskContractError) as exc:
+            _mgr(tmp_path).decompose("t", "p", [], "standard", "r")
+        assert exc.value.error_code == "INVALID_PLAN"
+
+    def test_duplicate_id_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(TaskContractError) as exc:
+            _plan(_mgr(tmp_path), [
+                {"id": "a", "title": "x", "acceptance": ["t"]},
+                {"id": "a", "title": "y", "acceptance": ["t"]},
+            ])
+        assert exc.value.error_code == "INVALID_PLAN"
+
+    def test_blank_title_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(TaskContractError) as exc:
+            _plan(_mgr(tmp_path), [{"id": "a", "title": "  ", "acceptance": ["t"]}])
+        assert exc.value.error_code == "INVALID_PLAN"
+
+    def test_self_dependency_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(TaskContractError) as exc:
+            _plan(_mgr(tmp_path), [
+                {"id": "a", "title": "x", "acceptance": ["t"], "depends_on": ["a"]},
+            ])
+        assert exc.value.error_code == "INVALID_PLAN"
+
+    def test_cycle_visited_skipping(self) -> None:
+        from runtime.task_contract.models import ContractTask
+        from runtime.task_contract.validation import check_cycles
+
+        # t4 depends on t1 which was already visited via the t1->t2->t3 chain.
+        tasks = [
+            ContractTask(id="t1", title="1", depends_on=["t2"]),
+            ContractTask(id="t2", title="2", depends_on=["t3"]),
+            ContractTask(id="t3", title="3"),
+            ContractTask(id="t4", title="4", depends_on=["t1"]),
+        ]
+        check_cycles(tasks)  # acyclic — exercises the visited-skip branch
+
+
+class TestModelEdges:
+    def test_from_dict_bad_status_and_risk(self) -> None:
+        from runtime.task_contract.models import ContractTask, Risk
+
+        t = ContractTask.from_dict(
+            {"id": "x", "title": "t", "status": "bogus", "risk": "bogus"}
+        )
+        assert t.status is TaskStatus.PENDING
+        assert t.risk is Risk.LOW
+
+    def test_task_not_found_raises(self, tmp_path: Path) -> None:
+        plan = _plan(_mgr(tmp_path))
+        with pytest.raises(TaskContractError) as exc:
+            plan.task("ghost")
+        assert exc.value.error_code == "TASK_NOT_FOUND"
+
+    def test_next_pending_none_when_all_done(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr, [{"id": "only", "title": "x", "acceptance": ["ok"]}])
+        mgr.start("only")
+        mgr.verify("only", "done")
+        mgr.complete("only")
+        plan = mgr.load()
+        assert plan is not None and plan.next_pending() is None
+
+
+class TestEvidenceEdges:
+    def test_review_artifact_write_failure_nonfatal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr)
+        orig = Path.write_text
+
+        def flaky(self: Path, *a, **k):  # type: ignore[no-untyped-def]
+            if self.name == "impl.md":
+                raise OSError("disk full")
+            return orig(self, *a, **k)
+
+        monkeypatch.setattr(Path, "write_text", flaky)
+        mgr.start("impl")
+        # verify still succeeds — artifact write failure is logged, not raised
+        assert mgr.verify("impl", "evidence")
+
+    def test_final_report_write_failure_nonfatal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr, [{"id": "only", "title": "x", "acceptance": ["ok"]}])
+        mgr.start("only")
+        mgr.verify("only", "ok")
+        mgr.complete("only")
+        orig = Path.write_text
+
+        def flaky(self: Path, *a, **k):  # type: ignore[no-untyped-def]
+            if self.name.endswith("-final.json"):
+                raise OSError("disk full")
+            return orig(self, *a, **k)
+
+        monkeypatch.setattr(Path, "write_text", flaky)
+        report = mgr.finish()
+        assert report["tasks_done"] == 1
+
+    def test_run_cmd_oserror_returns_127(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import runtime.task_contract.evidence as ev
+
+        def boom(*a, **k):  # type: ignore[no-untyped-def]
+            raise OSError("spawn failed")
+
+        monkeypatch.setattr(ev.subprocess, "run", boom)
+        out = ev._run_cmd("definitely-not-a-cmd", str(tmp_path))
+        assert out["exit_code"] == 127
+
+
+class TestEnforceEdges:
+    def test_scope_check_task_without_files_allows(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr, [{"id": "t", "title": "x", "acceptance": ["ok"]}])
+        mgr.start("t")
+        assert mgr.scope_check("anywhere/file.py")["allowed"] is True
+
+    def test_inject_block_corrupt_plan_returns_empty(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        mgr.plan_path.parent.mkdir(parents=True, exist_ok=True)
+        mgr.plan_path.write_text("{not json", encoding="utf-8")
+        assert mgr.hook_inject_block() == ""
+
+    def test_inject_block_no_next_pending(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr, [{"id": "only", "title": "x", "acceptance": ["ok"]}])
+        mgr.start("only")
+        plan = mgr.load()
+        assert plan is not None
+        plan.active_task_id = ""  # active plan, no active task, nothing pending
+        mgr._save(plan)
+        block = mgr.hook_inject_block()
+        assert "Next pending" not in block
+
+    def test_inject_block_active_task_without_files(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr, [{"id": "only", "title": "x", "acceptance": ["ok"]}])
+        mgr.start("only")
+        assert "Declared scope" not in mgr.hook_inject_block()
+
+    def test_observe_edit_strict_raise_returns_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("AIZEE_TASK_STRICT", "1")
+        mgr = _mgr(tmp_path)
+        _plan(mgr)
+        mgr.start("impl")
+        # scope_check raises in strict mode; observe swallows it
+        assert mgr.hook_observe_edit("src/other.py") == ""
+
+
+class TestEngineEdges:
+    def test_corrupt_plan_raises(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        mgr.plan_path.parent.mkdir(parents=True, exist_ok=True)
+        mgr.plan_path.write_text("{bad json", encoding="utf-8")
+        with pytest.raises(TaskContractError) as exc:
+            mgr.load()
+        assert exc.value.error_code == "PLAN_CORRUPT"
+
+    def test_empty_title_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(TaskContractError) as exc:
+            _mgr(tmp_path).decompose(
+                "   ", "p", [{"id": "a", "title": "x", "acceptance": ["t"]}], "standard", "r"
+            )
+        assert exc.value.error_code == "INVALID_PLAN"
+
+    def test_start_non_pending_rejected(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr, [{"id": "only", "title": "x", "acceptance": ["ok"]}])
+        mgr.start("only")
+        mgr.verify("only", "ok")
+        mgr.complete("only")
+        with pytest.raises(TaskContractError) as exc:
+            mgr.start("only")
+        assert exc.value.error_code == "TASK_NOT_PENDING"
+
+    def test_complete_clears_matching_active_only(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr, [{"id": "only", "title": "x", "acceptance": ["ok"]}])
+        mgr.start("only")
+        mgr.verify("only", "ok")
+        plan = mgr.load()
+        assert plan is not None
+        plan.active_task_id = "other"  # complete a non-active in-progress task
+        mgr._save(plan)
+        mgr.complete("only")
+        plan = mgr.load()
+        assert plan is not None
+        assert plan.active_task_id == "other"
+
+    def test_block_clears_matching_active_only(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr)
+        mgr.start("impl")
+        plan = mgr.load()
+        assert plan is not None
+        plan.active_task_id = "other"
+        mgr._save(plan)
+        mgr.block("impl", "blocked")
+        plan = mgr.load()
+        assert plan is not None
+        assert plan.active_task_id == "other"
+
+    def test_amend_update_and_remove(self, tmp_path: Path) -> None:
+        mgr = _mgr(tmp_path)
+        _plan(mgr)
+        mgr.amend([{"op": "update", "id": "verify", "task": {"title": "V2"}}], "reason")
+        plan = mgr.load()
+        assert plan is not None
+        assert plan.task("verify").title == "V2"
+        mgr.amend([{"op": "remove", "id": "verify"}], "drop it")
+        plan = mgr.load()
+        assert plan is not None
+        with pytest.raises(TaskContractError):
+            plan.task("verify")
+
+    def test_save_failure_raises_and_cleans_tmp(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mgr = _mgr(tmp_path)
+
+        def boom(*a, **k):  # type: ignore[no-untyped-def]
+            raise OSError("readonly fs")
+
+        monkeypatch.setattr(os, "replace", boom)
+        with pytest.raises(TaskContractError) as exc:
+            _plan(mgr)
+        assert exc.value.error_code == "PLAN_SAVE_FAILED"

@@ -198,7 +198,7 @@ if __name__ == "__main__":
     try:
         from mcp_secrets_loader import load_env
         load_env()
-    except ImportError:
+    except ImportError:  # aizee-scan: ignore A10-SWALLOW — secrets loader optional
         pass
 
     _install_intercept_pipe()

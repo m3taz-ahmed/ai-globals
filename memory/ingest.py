@@ -71,7 +71,12 @@ class Ingestor:
     def _validate(self, content: str, source: str) -> bool:
         if not self._is_ai_file(content):
             return True
-        if "[OBJ]" not in content or "[RULES]" not in content:
+        # Mirror scripts/validate-globals.py::check_struct — tech-stack files may
+        # use [DATA]/[API] sections instead of [RULES].
+        is_tech = source.startswith("tech-stack") or "[TECH]" in content
+        has_rules = "[RULES]" in content
+        has_data_or_api = "[DATA]" in content or "[API]" in content
+        if "[OBJ]" not in content or not (has_rules or (is_tech and has_data_or_api)):
             warnings.warn(f"Skipping malformed AI file {source}: missing [OBJ] or [RULES]", stacklevel=2)
             return False
         return True

@@ -8,7 +8,8 @@ condition expressions evaluated against the call arguments.
 
 Condition expressions use a restricted Python subset (comparisons, boolean
 operators, attribute/index access, literals) evaluated via ``_safe_eval`` -
-never ``eval()``. This keeps the firewall deterministic and injection-safe.
+never ``eval()``. (aizee-scan: ignore INJ-EVAL — docstring contrast)
+This keeps the firewall deterministic and injection-safe.
 
 Rule sources (first match wins, highest priority first):
 1. ``runtime/policies/mcp_firewall.yaml`` - OS-level defaults

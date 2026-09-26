@@ -74,3 +74,40 @@ def test_main_list_outputs_json(tmp_path: Path, capsys: pytest.CaptureFixture) -
     assert main(["--list"]) == 0
     out = json.loads(capsys.readouterr().out)
     assert "cursor" in out
+
+
+def test_result_to_dict(skills_root: Path, tmp_path: Path) -> None:
+    r = install_skill(skills_root, "flatskill", "path", str(tmp_path / "out"))
+    d = r.to_dict()
+    assert d["skill"] == "flatskill" and d["ok"] is True
+    assert d["files"] == ["flatskill.md"]
+
+
+def test_resolve_known_harness_uses_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    assert resolve_harness_dir("cursor") == tmp_path / ".cursor" / "skills"
+
+
+def test_flat_skill_existing_target_requires_force(
+    skills_root: Path, tmp_path: Path
+) -> None:
+    dest = str(tmp_path / "out")
+    install_skill(skills_root, "flatskill", "path", dest)
+    r = install_skill(skills_root, "flatskill", "path", dest)
+    assert not r.ok and "force" in r.error
+
+
+def test_main_installs_skill(
+    skills_root: Path, tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    from runtime.harness_exporter import main
+
+    rc = main([
+        "flatskill", "--harness", "path",
+        "--dest", str(tmp_path / "o"),
+        "--skills-root", str(skills_root),
+    ])
+    assert rc == 0
+    assert json.loads(capsys.readouterr().out)["ok"] is True

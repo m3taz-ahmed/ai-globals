@@ -244,6 +244,11 @@ from runtime.rules_materializer import ToolTarget as ToolTarget
 from runtime.scoped_manager import ScopedManager as ScopedManager
 from runtime.scoped_manager import ScopedRegistry as ScopedRegistry
 from runtime.scoped_manager import scoped_factory as scoped_factory
+from runtime.security_scanner import ScanFinding as ScanFinding
+from runtime.security_scanner import ScanReport as ScanReport
+from runtime.security_scanner import ScanSeverity as ScanSeverity
+from runtime.security_scanner import SecurityScanner as SecurityScanner
+from runtime.security_scanner import scan_project as scan_project
 from runtime.skill_routing import PersonaDetectionResult as PersonaDetectionResult
 from runtime.skill_routing import PersonaDetectorV2 as PersonaDetectorV2
 from runtime.skill_routing import SkillRouter as SkillRouter
@@ -460,12 +465,16 @@ __all__ = [
     "RouteTier",
     "RuleEntry",
     "RulesMaterializer",
+    "ScanFinding",
     "ScanPatternSeverity",
+    "ScanReport",
     "ScanResult",
     "ScanRiskLevel",
+    "ScanSeverity",
     "ScopeLevel",
     "ScopedManager",
     "ScopedRegistry",
+    "SecurityScanner",
     "SemanticCircuitBreaker",
     "SemanticDetectionResult",
     "ShadowModeTracker",
@@ -522,6 +531,7 @@ __all__ = [
     "emit_contracts",
     "harnesses",
     "install_skill",
+    "scan_project",
     "scoped_factory",
     "validate_skills",
 ]

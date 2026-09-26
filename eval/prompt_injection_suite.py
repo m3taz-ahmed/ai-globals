@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Prompt-injection evaluation suite - measures defense effectiveness.
 
+aizee-scan: ignore-file — attack payloads; evil.com URLs/eval patterns are data.
+
 A comprehensive test suite that runs the full 13-technique attack taxonomy
 against aiZee's defense stack and measures:
 

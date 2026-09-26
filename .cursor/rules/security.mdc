@@ -18,3 +18,6 @@ alwaysApply: true
 9. [REQ] `[SEC-09]` API throttling & rate-limiting.
 10. [REQ] `[SEC-10]` JWT in HttpOnly cookies. Regenerate session on login.
 11. [PROHIBIT] No CORS wildcard `*`. No plaintext passwords. No internal traces in API.
+12. [REQ] `[SEC-12]` Audit against OWASP Top 10 **2025** (A01 access-control incl. SSRF/BOLA/BFLA, A03 supply-chain, A10 exceptional-conditions). Full vuln matrix: `tech-stack/appsec-hardening.md`.
+13. [REQ] `[SEC-13]` Fail-closed defaults — errors deny, never `except: allow`. CSRF token or Origin check on state changes.
+14. [REQ] `[SEC-14]` Desktop/local-UI: secrets in OS keyring (never QSettings/plaintext); local servers bind 127.0.0.1 + session token; updaters signed + verified; URL schemes/deep-links = untrusted input.

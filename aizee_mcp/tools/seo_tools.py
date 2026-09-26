@@ -631,7 +631,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
             import psutil
 
             baseline_rss = psutil.Process().memory_info().rss
-        except ImportError:
+        except ImportError:  # aizee-scan: ignore A10-SWALLOW — psutil optional — memory guard disabled
             pass  # psutil not available - memory guard disabled.
 
         while queue and len(visited) < max_pages:
@@ -654,7 +654,7 @@ def register_seo_tools(mcp: FastMCP) -> None:
                         "pages_crawled": len(visited),
                         "partial_results": page_results[:50],
                     }, indent=2)
-            except ImportError:
+            except ImportError:  # aizee-scan: ignore A10-SWALLOW — psutil optional — skip memory check
                 pass  # psutil not available - skip memory check gracefully.
             current = queue.popleft()
             normalized = _normalize_url(current)

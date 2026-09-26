@@ -119,6 +119,28 @@ class TestValidate:
             result = ing._validate(content, "rules/bad.md")
         assert result is False
 
+    def test_tech_stack_data_api_format_valid(self, tmp_path: Path):
+        ing = _ingestor(tmp_path)
+        # Vendor/SaaS references: [OBJ] + [DATA]/[API] instead of [RULES]
+        content = "[TECH] acme-1\n[OBJ] SaaS ref\n[DATA]\n- Model: x\n[API]\n- REST"
+        assert ing._validate(content, "tech-stack/acme-1.md") is True
+
+    def test_tech_tag_without_rules_or_data_invalid(self, tmp_path: Path):
+        ing = _ingestor(tmp_path)
+        content = "[TECH] bare\n[OBJ] Description only"
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            result = ing._validate(content, "tech-stack/bare.md")
+        assert result is False
+
+    def test_non_tech_file_without_rules_invalid(self, tmp_path: Path):
+        ing = _ingestor(tmp_path)
+        content = "[SKILL] x\n[OBJ] Desc\n[DATA]\n- y"
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            result = ing._validate(content, "skills/x.md")
+        assert result is False
+
     def test_ai_file_with_frontmatter_valid(self, tmp_path: Path):
         ing = _ingestor(tmp_path)
         content = "---\nname: myskill\n---\n[SKILL] myskill\n[OBJ] Does things.\n[RULES]\n1. [REQ] Do this."

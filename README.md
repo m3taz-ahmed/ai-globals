@@ -4,16 +4,16 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.16.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.14.2">
+    <img src="https://img.shields.io/badge/Version-5.17.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.17.0">
     <img src="https://img.shields.io/badge/Tests-7429%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7429 passed">
     <img src="https://img.shields.io/badge/Coverage-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 100%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 Personas">
-    <img src="https://img.shields.io/badge/Skills-134-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="134 Skills">
+    <img src="https://img.shields.io/badge/Skills-139-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="139 Skills">
     <img src="https://img.shields.io/badge/Workflows-63-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 Workflows">
-    <img src="https://img.shields.io/badge/Tech--Stack-252-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="252 Tech-Stack refs">
+    <img src="https://img.shields.io/badge/Tech--Stack-265-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="265 Tech-Stack refs">
   </p>
 </div>
 
@@ -149,9 +149,16 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 
 ---
 
-## What's New in v5.16.0
+## What's New in v5.17.0
 
-### Task Contract + External-Source Adoption (Sep 2026)
+### Security Scan Execution Layer (Sep 2026)
+
+- **`aizee security scan <path>`** — real SAST + orchestration in `runtime/security_scanner.py`: built-in OWASP-2025-mapped rules (secrets, injection sinks, misconfig, exception handling, XSS surface, redirects) + auto-orchestrates bandit / ruff-S / pip-audit / npm audit / composer audit / trivy when installed. `--json` for CI, `--no-tools` for offline, `--limit N`; exit 1 on blockers.
+- **`tech-stack/appsec-hardening.md`** — master vuln→defense matrix across web/Python/desktop/server mapped to OWASP Top 10 **2025** (incl. new A03 supply-chain + A10 exceptional-conditions).
+- **`skills/production-readiness-lord/`** — 13-axis evidence-based audit protocol with severity tiers + human-only actions report.
+- New lords: `server-ops-lord`, `problem-solving-lord`, `design-innovation-lord`, `python-ui-lord`; 11 new version-locked tech-stack files; ~25 thin skills deepened.
+
+### Previously — v5.16.0: Task Contract + External-Source Adoption (Sep 2026)
 
 - **Task Contract** (`runtime/task_contract/` + `aizee task`): enforced `classify → decompose → per-task verify → final review` lifecycle. Every prompt gets a recorded trivial/standard/complex classification; non-trivial work requires `.task/plan.json` (acyclic deps, declared scope, acceptance checks, `produces:` handoffs); `done` requires recorded evidence. Enforcement: rules + IDE hooks, `AIZEE_TASK_STRICT=1` for hard scope denials.
 - **10 new MCP tools** (`aizee_mcp/tools/task_tools.py`) expose the whole contract lifecycle to MCP clients — tool count 88 → 98.
@@ -209,7 +216,7 @@ Persona detection is local (pure Python, zero LLM tokens). Only relevant skill n
 - **Performance:** telemetry `summary()` tail-read with `deque(maxlen=...)`, metrics `_quantile` accepts pre-sorted values, learning loop batch persist + `flush()`.
 - **Coverage:** `fail_under` raised from 80% → 95% across `pyproject.toml`, CLI, eval harness, and all CI workflows.
 - **Tests:** new `aizee_mcp/tests/` package with MCP command injection tests; 3865 tests total.
-- **Docs:** counts synced (110 modules / 124 skills / 74 workflows / 252 tech-stack / 3869 tests), stale 80% references fixed, garbled tree characters fixed.
+- **Docs:** counts synced (110 modules / 124 skills / 74 workflows / 265 Tech-Stack refs / 3869 tests), stale 80% references fixed, garbled tree characters fixed.
 
 ## What's New in v5.10.0
 

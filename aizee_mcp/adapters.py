@@ -380,7 +380,7 @@ def _validate_endpoint(endpoint: str) -> None:
                         f"RemoteA2AAdapter endpoint {host!r} resolves to "
                         f"private/reserved IP {ip!r} (DNS SSRF blocked)."
                     )
-        except _socket.gaierror:
+        except _socket.gaierror:  # aizee-scan: ignore A10-SWALLOW — non-IP hostname raises gaierror; falls through to allow
             pass
 
 

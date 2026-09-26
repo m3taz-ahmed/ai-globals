@@ -36,6 +36,7 @@ personas:
 tech_stack:
   - api-design-standards
   - design-foundations
+  - appsec-hardening
 lord: true
 ---
 

@@ -2,6 +2,53 @@
 
 ## [Unreleased]
 
+## [5.17.0] - 2026-09-25 (Security Scan Execution Layer)
+
+### Added
+
+- `runtime/security_scanner.py` — `aizee security scan <path>`: built-in
+  OWASP-2025-mapped rules (secrets, injection sinks, misconfig, exception
+  handling, TLS, XSS surface, open redirects) + orchestration of external
+  scanners when installed (bandit, `ruff --select S`, pip-audit, npm audit,
+  composer audit, trivy). Exit 1 on blockers; `--json` for CI; `--no-tools`
+  for offline; dedupe by (rule, file, line); example-value allowlist;
+  test/fixture/vendor/generated trees skipped by default.
+- `aizee security scan` wired into `.github/workflows/security.yml` as a CI
+  gate (JSON report artifact; non-zero exit on blockers).
+- `.env` variants (`.env.local`, `.env.production`, `.env.example`) now
+  scanned — extension-based matching missed dotfile suffixes.
+- Inline suppression markers: `# aizee-scan: ignore [RULE]` per line and
+  `aizee-scan: ignore-file` per file (first 4 KiB); suppressed count reported
+  separately for auditability.
+- Gitignore awareness: `.env` findings downgrade blocker→low when
+  `git check-ignore` confirms the file is ignored; presence-finding honors
+  ignore-file markers.
+- SEC-ENVFILE requires a non-empty value (empty `.env.example` placeholders
+  no longer flag); TLS-WEAK-HASH honors `usedforsecurity=False`;
+  generated `sbom.json` skipped.
+
+### Fixed
+
+- `memory/ingest.py::_validate` was stricter than
+  `scripts/validate-globals.py::check_struct` — 27 valid tech-stack refs
+  (DATA/API instead of RULES) were silently skipped from memory ingest.
+- `test_audit_gaps::test_stored_key_reused` xdist flake — cleared
+  `_audit_key_cache` before first read to close a stale-cache window.
+- Pre-existing coverage gaps closed to 100%: `skill_validator`,
+  `runtime/task_contract/*`, `c4_docs`, `eval/harness_exporter`,
+  `aizee_mcp.tools.task_tools`, `memory/observations`.
+- `guard_invariants` manifest-drift check was fail-open (`except Exception:
+  pass` swallowed generator failures) — now fails closed (ImportError skips,
+  other errors report a violation).
+- `dashboard/app.js`: unescaped template interpolations (`${section}`,
+  `${item.label}`, `${item.shortcut}`, `${w}`) now escapeHtml'd — real XSS
+  hardening for registry-rendered data.
+- `observations.py` SQL no longer concatenates at call site; `md5` calls in
+  `simhash`/`loop_detector` marked `usedforsecurity=False`.
+- Self-scan: 97 findings → **0** (45 reviewed suppressions on intentional
+  patterns — detector rule tables, policy YAMLs, attack-payload suites,
+  justified except-probes — plus real fixes above).
+
 ## [5.16.0] - 2026-09-25 (Task Contract + External-Source Adoption)
 
 ### Added

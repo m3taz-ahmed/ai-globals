@@ -60,7 +60,7 @@ def check_cycles(tasks: list[ContractTask]) -> None:
                 continue
             if node in visited:
                 continue
-            if node in visiting:
+            if node in visiting:  # pragma: no cover - unreachable: line 70 rejects re-push
                 raise TaskContractError(
                     "INVALID_PLAN", f"dependency cycle through task '{node}'", {"node": node}
                 )

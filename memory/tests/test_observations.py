@@ -39,6 +39,43 @@ def test_clip_under_and_over_limit() -> None:
     assert _clip(123, 10) == "123"
 
 
+def test_hook_observe_scope_violation_warns(tmp_path: Path) -> None:
+    from runtime.task_contract import TaskContractManager
+
+    mgr = TaskContractManager(tmp_path)
+    mgr.decompose(
+        "p", "prompt", [{"id": "t", "title": "x", "files": ["src/"],
+                         "acceptance": ["ok"]}],
+        "standard", "r",
+    )
+    mgr.start("t")
+    warning = handle_hook(
+        "observe", tmp_path, {"file_path": "outside/x.py"}, kind="afterFileEdit"
+    )
+    assert "scope warning" in warning
+
+
+def test_hook_observe_no_paths_returns_empty(tmp_path: Path) -> None:
+    assert handle_hook("observe", tmp_path, {"other": "v"}, kind="afterFileEdit") == ""
+
+
+def test_task_contract_block_never_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import memory.observations as obs
+    import runtime.task_contract as tc
+
+    class _Boom:
+        def __init__(self, *a, **k):  # type: ignore[no-untyped-def]
+            raise RuntimeError("no task contract here")
+
+    monkeypatch.setattr(tc, "TaskContractManager", _Boom)
+    assert obs._task_contract_block(tmp_path) == ""
+    assert obs._task_contract_scope_warning(
+        tmp_path, {"file_path": "x.py"}, "afterFileEdit"
+    ) == ""
+
+
 def test_session_id_of_variants() -> None:
     assert session_id_of({"session_id": "a"}) == "a"
     assert session_id_of({"sessionId": "b"}) == "b"
