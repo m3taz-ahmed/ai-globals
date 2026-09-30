@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import logging
 import math
@@ -47,12 +48,10 @@ def _resolve_sentence_transformer() -> None:
     if SentenceTransformer is not _ST_UNSET:
         return
     try:
-        from sentence_transformers import SentenceTransformer as _SentenceTransformer
+        SentenceTransformer = importlib.import_module("sentence_transformers").SentenceTransformer
     except Exception as exc:  # absent or broken optional dependency
         logger.info("sentence_transformers unavailable: %s", exc)
         SentenceTransformer = None
-    else:
-        SentenceTransformer = _SentenceTransformer
 
 
 def _mem_id_to_uint64(mem_id: str) -> int:

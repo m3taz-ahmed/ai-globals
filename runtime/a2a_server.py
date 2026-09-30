@@ -40,6 +40,8 @@ class TaskState(str, Enum):
 
 TERMINAL_STATES = {TaskState.COMPLETED, TaskState.FAILED, TaskState.CANCELED}
 
+_MAX_BODY = 1 << 20  # 1 MiB request cap (SEC-14: loopback server, bounded reads)
+
 
 @dataclass
 class A2ATask:
@@ -187,7 +189,8 @@ class A2AServer:
             def _authed(self) -> bool:
                 if not server.token:
                     return True
-                return self.headers.get("Authorization") == f"Bearer {server.token}"
+                provided = self.headers.get("Authorization", "")
+                return secrets.compare_digest(provided, f"Bearer {server.token}")
 
             def _send_json(self, payload: dict[str, Any], status: int = 200) -> None:
                 body = json.dumps(payload).encode("utf-8")
@@ -212,8 +215,15 @@ class A2AServer:
                     return
                 try:
                     length = int(self.headers.get("Content-Length", "0"))
+                except ValueError:
+                    self._send_json({"error": "bad request"}, 400)
+                    return
+                if length < 0 or length > _MAX_BODY:
+                    self._send_json({"error": "payload too large"}, 413)
+                    return
+                try:
                     req = json.loads(self.rfile.read(length) or b"{}")
-                except (ValueError, json.JSONDecodeError):
+                except json.JSONDecodeError:
                     self._send_json({"error": "bad request"}, 400)
                     return
                 self._send_json(server._dispatch(req))

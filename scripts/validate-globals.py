@@ -321,6 +321,9 @@ IGNORED_FILE_REFS = {
     # illustrative cross-reference example in workflow 59 (react-19.md is used
     # as a hypothetical pairing with nextjs-16.md, not an actual tracked file)
     'react-19.md',
+    # working-root-only artifacts referenced from Memory.md audit entries —
+    # temp/ and nested .ai/ dirs are not synced to the deployment mirror
+    'temp\\competitor-study-v3\\analysis.md', '.ai\\repos-report.md',
 }
 
 def check_file_references(content: str, rel_name: str, ctx: ValidationContext, global_path: str) -> bool:

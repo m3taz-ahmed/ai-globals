@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import threading
 from collections.abc import Callable
 from contextlib import redirect_stdout
@@ -36,6 +37,8 @@ from pathlib import Path
 from typing import Any
 
 from runtime.plugin import _is_plugin_source_safe
+
+_logger = logging.getLogger(__name__)
 
 _SAFE_BUILTINS: dict[str, Any] = {
     "abs": abs, "all": all, "any": any, "bool": bool, "dict": dict,
@@ -176,5 +179,6 @@ class CodeModeExecutor:
             from runtime.enforcement import enforce_tool_result_root
 
             return enforce_tool_result_root(self.os_root, server, tool, result_text)
-        except Exception:
+        except Exception as exc:
+            _logger.warning("codemode result enforcement error (degraded): %s", exc)
             return True, result_text

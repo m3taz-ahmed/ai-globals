@@ -893,6 +893,7 @@ function Start-Installation {
     $script:installJob = Start-Job -ScriptBlock {
         param($InstallArgs)
         & powershell @InstallArgs 2>&1
+        "__AIZEE_EXIT__=$LASTEXITCODE"
     } -ArgumentList (, $installArgs)
     $installJob = $script:installJob
 
@@ -946,6 +947,10 @@ function Start-Installation {
     }
 
     $exitCode = 0
+    # install.ps1 runs as a nested powershell.exe: its exit code is emitted as
+    # an __AIZEE_EXIT__ marker (job State alone stays "Completed" on failure).
+    $exitMarker = $allOutput | Where-Object { $_ -match "__AIZEE_EXIT__=(\d+)" } | Select-Object -Last 1
+    if ($exitMarker -match "(\d+)\s*$") { $exitCode = [int]$Matches[1] }
     if ($installJob.State -ne "Completed") { $exitCode = 1 }
     # Capture the actual exit code from the install job
     if ($installJob.State -eq "Completed" -and $installJob.ChildJobs.Count -gt 0) {

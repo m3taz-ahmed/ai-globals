@@ -11,36 +11,12 @@
     "temp",
     "backups"
   ],
-  "executionEnvironments": [
-    {
-      "root": "tests",
-      "typeCheckingMode": "off",
-      "reportMissingImports": false
-    },
-    {
-      "root": "runtime/tests",
-      "typeCheckingMode": "off",
-      "reportMissingImports": false
-    },
-    {
-      "root": "memory/tests",
-      "typeCheckingMode": "off",
-      "reportMissingImports": false
-    },
-    {
-      "root": "eval/tests",
-      "typeCheckingMode": "off",
-      "reportMissingImports": false
-    },
-    {
-      "root": "aizee_mcp/tests",
-      "typeCheckingMode": "off",
-      "reportMissingImports": false
-    },
-    {
-      "root": "scripts/tests",
-      "typeCheckingMode": "off",
-      "reportMissingImports": false
-    }
+  "ignore": [
+    "tests",
+    "runtime/tests",
+    "memory/tests",
+    "eval/tests",
+    "aizee_mcp/tests",
+    "scripts/tests"
   ]
 }
