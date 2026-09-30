@@ -81,9 +81,9 @@ class TestDecision:
         assert Decision.ALLOW == "allow"
         assert Decision.DENY == "deny"
 
-    def test_decision_has_three_members(self) -> None:
+    def test_decision_has_five_members(self) -> None:
         # Assert
-        assert len(list(Decision)) == 3
+        assert len(list(Decision)) == 5
 
 
 class TestActionResultStatus:

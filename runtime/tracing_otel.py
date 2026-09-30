@@ -38,7 +38,7 @@ def get_tracer(name: str = "aizee") -> Any | None:
         return None
 
     try:
-        from opentelemetry import trace  # type: ignore
+        from opentelemetry import trace
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore
             OTLPSpanExporter,
         )

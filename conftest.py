@@ -9,6 +9,7 @@ in favour of this single source of truth (P3.3 / I12-Q4).
 from __future__ import annotations
 
 import gc
+import itertools
 import shutil
 import tempfile
 from collections.abc import Iterator
@@ -18,6 +19,12 @@ import pytest
 
 from memory.store import MemoryStore
 from runtime.kernel import Kernel
+
+# Boot-phase GC window: collection allocates almost exclusively permanent
+# objects, so automatic cyclic sweeps during boot only add pauses. GC stays
+# off until pytest_collection_modifyitems, where survivors are frozen into
+# the permanent generation and GC resumes with sparse thresholds.
+gc.disable()
 
 # ---------------------------------------------------------------------------
 # Auto-mark slow tests based on file path
@@ -51,6 +58,14 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
                 break
         if not marked_slow:
             item.add_marker(pytest.mark.fast)
+
+    # End of the boot GC window: freeze survivors so the collector never
+    # rescans them, then resume with sparse thresholds. The deliberate lack of
+    # a pre-freeze collect freezes a small amount of boot garbage (~MBs) but
+    # saves a full sweep (~0.1s+ on this heap) per invocation.
+    gc.freeze()
+    gc.set_threshold(50_000, 20, 20)
+    gc.enable()
 
 
 # ---------------------------------------------------------------------------
@@ -93,17 +108,23 @@ def store(tmp_root: Path) -> MemoryStore:
 # ---------------------------------------------------------------------------
 
 
+_gc_sweep_tick = itertools.count(1)
+
+
 @pytest.fixture(autouse=True)
 def _close_sqlite_connections() -> Iterator[None]:
-    """Force-close any leaked SQLite connections after each test.
+    """Periodically force-close leaked SQLite connections after tests.
 
     Prevents ``ResourceWarning: unclosed database`` warnings that occur
     when tests create ``MemoryStore`` / ``SqliteStorage`` instances without
-    explicit cleanup. Runs garbage collection to trigger ``__del__`` on
-    unreachable connection holders.
+    explicit cleanup. A full ``gc.collect()`` after every test costs ~0.1s on
+    this suite's heap (~11 min across the fast tier); cyclic garbage — the
+    only thing refcounting misses — accumulates safely between sweeps, so
+    collect every 64 tests instead.
     """
     yield
-    gc.collect()
+    if next(_gc_sweep_tick) % 64 == 0:
+        gc.collect()
 
 
 # ---------------------------------------------------------------------------

@@ -4,8 +4,8 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-5.17.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 5.17.0">
-    <img src="https://img.shields.io/badge/Tests-7429%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7429 passed">
+    <img src="https://img.shields.io/badge/Version-6.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 6.0.0">
+    <img src="https://img.shields.io/badge/Tests-7653%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7653 passed">
     <img src="https://img.shields.io/badge/Coverage-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 100%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
@@ -27,7 +27,7 @@
 
 A **zero-compromise, version-controlled operating system** that sits between you and every AI coding assistant — Cursor, Claude, Copilot, Windsurf, Cline, Aider, Devin — enforcing engineering standards, security policies, and architectural discipline on every line of generated code.
 
-**The problem it solves:** AI assistants hallucinate APIs, forget conventions, ignore security, and silently ship technical debt. aiZee forces them to read from a centralized source of truth *before* writing a single line.
+**The problem it solves:** AI assistants hallucinate APIs, forget conventions, ignore security, and silently ship technical debt. aiZee forces them to read from a centralized source of truth *before* writing a single line — and in v6, every action is verified *while* it executes, not just documented after.
 
 | Without aiZee | With aiZee |
 | :--- | :--- |
@@ -35,7 +35,46 @@ A **zero-compromise, version-controlled operating system** that sits between you
 | Deprecated packages, silent tech debt | Exact-version tech-stack locked via live MCP docs |
 | Raw SQL, missing XSS, weak secrets | OWASP, zero-trust, RBAC enforced by default |
 | Random drive-by refactoring | Surgical changes through policy + budget + audit gates |
-| One-size-fits-all AI answers | 29 personas + 131 skills auto-selected per task |
+| Guardrails that exist but aren't on the path | **v6: enforcement wired into `Kernel.act()` + every MCP call** |
+
+---
+
+## What's New in v6.0.0 — Governed Runtime
+
+The headline change: **enforcement is on the execution path**. Guardrail modules that previously existed as standalone, tested-but-unwired units now run inside the action pipeline.
+
+### Enforcement on the action path
+
+- **`runtime/enforcement.py`** — unified helper: MCP firewall → AgentGateway request checks → execution → gateway response checks → audit. Shared by every call path.
+- **`Kernel.act()`** — AgentGateway verdicts (ALLOW / REDACT / BLOCK) now gate real actions; prompt-injection and secret-leak checks apply to prompt-like fields without blocking ordinary file writes.
+- **Outbound MCP** — `McpClient` (sync + async) and `McpAgent` run the firewall and gateway around every external tool call.
+- **Inbound MCP** — the aiZee server's 98 tools keep RBAC *and* get gateway wrapping.
+
+### Detection depth
+
+- **Injection detector L1→L3** — 13-technique regex layer + L2 embedding-similarity layer + optional L3 LLM-judge hook. Deterministic/model-free by default.
+- **Dual-LLM hardening** — quarantined worker output is schema-enforced via Pydantic; parse failure is fail-safe.
+- **MCP 2026-07-28 stateless** — per-request `protocolVersion` negotiation + `Mcp-Method`/`Mcp-Name` header routing (`runtime/mcp_protocol.py`).
+
+### Governance depth
+
+- **APL verdicts** — policies can now `modify` (rewrite payloads, audited) and `observe` (log-only) in addition to allow/ask/deny.
+- **Lifecycle hooks** — `output.pre_send` and `memory.pre_write` phases; hooks can veto or mutate.
+- **`aizee heal`** — safe autofix orchestrator (dry-run default, `--apply` with confirmation, audit to `state/heal.log`).
+- **Per-PR budgets** — cumulative spend limits keyed by PR id (`AIZEE_PR_ID`), on top of session/hour/day windows.
+- **Release gate** — `eval/release_gate.py` runs the reliability priority ladder over recorded rollouts; wired into `aizee ci`.
+- **Chaos suite** — `eval/chaos.py` fault-injection scenarios + error-budget math.
+
+### Memory & protocol surfaces
+
+- **Bi-temporal memory** — `store.as_of(as_of=..., valid_at=...)` answers "what did we know then" and "what was true then" separately; `pinned`, soft-delete with tombstone-time queries, contradiction relations.
+- **`aizee memory compact`** — `Memory.md` auto-compaction (500-line budget, `[PINNED]` rescue, archive under `memory/archive/`).
+- **Code Mode** — `aizee codemode` executes sandboxed Python snippets that call MCP tools directly (AST scan + restricted builtins + governed bridge + timeout).
+- **A2A server** — expose aiZee as an A2A peer: `/.well-known/agent-card.json` + JSON-RPC `tasks/send|get|cancel` (loopback + bearer token).
+- **`aizee bootstrap`** — materialize a minimal OS root after `pip install aizee` (idempotent, dry-run default).
+- **Advisory audits** — `aizee task overcheck` (over-engineering signals from plan + graph), `aizee task curriculum` (staged learning plan from tech-stack refs).
+
+Full detail: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -71,10 +110,18 @@ cd .ai
 bash install.sh
 ```
 
+**PyPI:**
+```bash
+pip install aizee
+aizee bootstrap --target ~/.aizee --yes   # materialize a minimal OS root
+export AIZEE_ROOT=~/.aizee
+```
+
 ### Verify
 
 ```bash
-aizee doctor    # Health check
+aizee doctor    # Health check (46 checks)
+aizee heal      # Diagnose + safe autofixes (dry-run; --apply to fix)
 aizee status    # Current persona, skills, budget
 ```
 
@@ -87,11 +134,18 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 134 governance modules
-├── memory/                  # SQLite + FTS5 + vector memory service
-├── aizee_mcp/                # MCP server (98 tools, 3 resources)
-├── eval/                    # Agent benchmark & eval harness
-├── skills/                  # 134 persona + lord skills
+├── runtime/                 # Kernel: policy, budget, audit, 142 governance modules
+│   ├── kernel.py            # Facade — Probity → Guardian → Policy → Loop → Budget → Audit
+│   ├── enforcement.py       # Unified firewall+gateway enforcement helper
+│   ├── agent_gateway.py     # Request/response guardrails (ALLOW/REDACT/BLOCK)
+│   ├── injection_detector.py# L1 regex + L2 embeddings + L3 LLM-judge
+│   ├── codemode/            # Sandboxed code-mode tool execution
+│   ├── a2a_server.py        # A2A peer exposure (agent card + tasks)
+│   └── policies/            # default/guardian/probity/mcp_firewall YAMLs
+├── memory/                  # SQLite + FTS5 + vector, bi-temporal queries
+├── aizee_mcp/               # MCP server (98 tools, 3 resources)
+├── eval/                    # Benchmarks, chaos, reliability, release gate
+├── skills/                  # 139 persona + lord skills
 ├── workflows/               # 63 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
@@ -106,7 +160,7 @@ aizee status    # Current persona, skills, budget
 ## The Six Pillars
 
 ### 1. Persona + Skill Composition
-29 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, `MARKETING`, `GROWTH`, `BRAND`, `EMAIL`, `SOCIAL`, `CRO`, `SALES`, etc.) with 47 lord-level domain skills. Auto-detected per task — no manual selection needed.
+29 personas (`ARCH`, `QA`, `SEC`, `DEV`, `SRE`, `DATA`, `ML`, `DEVOPS`, `API`, `FREELANCE`, `MARKETING`, `GROWTH`, `BRAND`, `EMAIL`, `SOCIAL`, `CRO`, `SALES`, etc.) with lord-level domain skills. Auto-detected per task — no manual selection needed.
 
 ```bash
 aizee persona detect --multi "build a secure docker API with postgres"
@@ -114,422 +168,56 @@ aizee persona detect --multi "build a secure docker API with postgres"
 ```
 
 ### 2. Runtime Governance
-Every action passes through a 5-gate pipeline before execution:
+Every action passes through the gate pipeline before execution:
 
 ```
-Probity → Guardian → Policy → Budget → Audit
+Probity → Guardian → Policy → Loop Detector → Budget → Audit
+        └─ AgentGateway: injection + secret-leak verdicts (v6)
 ```
 
-- **Policy engine** — `allow/ask/deny` YAML rules with AST-safe evaluation
-- **Budget manager** — token/cost/call limits per session/hour/day/week/month
-- **Audit logger** — SHA-256 hash-chained, tamper-evident trail
-- **Workflow runner** — durable SQLite-backed execution with saga support
+- **Policy engine** — `allow/ask/deny/modify/observe` YAML rules with AST-safe evaluation
+- **MCP firewall** — rule-based outbound tool-call gate (deny destructive, ask unknown)
+- **AgentGateway** — prompt/response guardrails on every enforced path
+- **Budget manager** — token/cost/call limits per session/hour/day/week/month **and per PR**
+- **Audit logger** — SHA-256 hash-chained, Ed25519-signed, tamper-evident trail
+- **Workflow runner** — durable SQLite-backed execution with saga compensation
 
 ### 3. Live Ground-Truth
 Context7 MCP fetches current library docs before implementation. Graphify knowledge graph replaces blind `grep` for codebase navigation.
 
 ### 4. Hybrid Memory
-SQLite + FTS5 full-text search + optional vector indexing (SentenceTransformers). Episodic, semantic, factual, and procedural memory layers.
+SQLite + FTS5 full-text + optional vector index (SentenceTransformers). Episodic, semantic, factual, procedural layers — now with pinning, soft-delete, contradiction links, HMAC integrity, and bi-temporal `as_of` queries.
 
 ```bash
-aizee memory ingest          # Rebuild index after changes
-aizee memory search "docker" # Full-text + vector search
+aizee memory ingest                # Rebuild index after changes
+aizee memory search "docker"       # Full-text + vector search
+aizee memory compact               # Keep Memory.md under its line budget
 ```
 
 ### 5. Quality Gates (Zero Defect)
 ```bash
 ruff check .                 # 0 warnings
-mypy                         # Strict typing, 345 files
-pytest -q                    # 7456 tests, ~100% coverage
+mypy                         # Strict typing
+aizee test --full            # full suite + coverage (fail-under=100)
 python eval/harness.py       # E2E eval: ruff + mypy + pytest + validate-globals
 ```
 
 ### 6. Token Efficiency
-Persona detection is local (pure Python, zero LLM tokens). Only relevant skill names are returned — not full files. Default limits: 1 primary persona + 4 secondary + 5 lord skills.
+Persona detection is local (pure Python, zero LLM tokens). Code Mode replaces tool-call JSON ping-pong with sandboxed snippets that invoke tools directly — materially fewer orchestration tokens on multi-tool tasks.
 
 ---
 
-## What's New in v5.17.0
+## Runtime Enforcement Map
 
-### Security Scan Execution Layer (Sep 2026)
-
-- **`aizee security scan <path>`** — real SAST + orchestration in `runtime/security_scanner.py`: built-in OWASP-2025-mapped rules (secrets, injection sinks, misconfig, exception handling, XSS surface, redirects) + auto-orchestrates bandit / ruff-S / pip-audit / npm audit / composer audit / trivy when installed. `--json` for CI, `--no-tools` for offline, `--limit N`; exit 1 on blockers.
-- **`tech-stack/appsec-hardening.md`** — master vuln→defense matrix across web/Python/desktop/server mapped to OWASP Top 10 **2025** (incl. new A03 supply-chain + A10 exceptional-conditions).
-- **`skills/production-readiness-lord/`** — 13-axis evidence-based audit protocol with severity tiers + human-only actions report.
-- New lords: `server-ops-lord`, `problem-solving-lord`, `design-innovation-lord`, `python-ui-lord`; 11 new version-locked tech-stack files; ~25 thin skills deepened.
-
-### Previously — v5.16.0: Task Contract + External-Source Adoption (Sep 2026)
-
-- **Task Contract** (`runtime/task_contract/` + `aizee task`): enforced `classify → decompose → per-task verify → final review` lifecycle. Every prompt gets a recorded trivial/standard/complex classification; non-trivial work requires `.task/plan.json` (acyclic deps, declared scope, acceptance checks, `produces:` handoffs); `done` requires recorded evidence. Enforcement: rules + IDE hooks, `AIZEE_TASK_STRICT=1` for hard scope denials.
-- **10 new MCP tools** (`aizee_mcp/tools/task_tools.py`) expose the whole contract lifecycle to MCP clients — tool count 88 → 98.
-- **External-source adoption**: `rules/untrusted-content.md` (BrowserSkill doctrine), `runtime/skill_validator.py` + `aizee skill validate`, `runtime/harness_exporter.py` + `aizee skill install --harness X`, `runtime/c4_docs.py` + `aizee docs c4` (graphify → C4 docs), `AGENT_INSTALL.md`.
-- **4 new skills**: `aizee-lite` (portable aiZee discipline for other harnesses), `project-voice` (`.ai/voice.md` foundation artifact), `browser-automation` (bsk wrapper), `design-research` (Refero + Mobbin evidence doctrine). Skills: 130 → 134.
-- **References**: `tech-stack/animejs-4.md`, `workflows/62-localhost-tunnel.md` (cloudflared), `mobbin` MCP registered; `prompt-engineer` upgraded with prompt-master v1.8 delta.
-
----
-
-## What's New in v5.15.0
-
-### Observation Memory + IDE Hooks + External Ecosystem (Sep 2026)
-
-- **Observation memory** (`memory/observations.py`): capture -> compress -> inject loop. IDE lifecycle hooks feed tool events into a crash-safe pending queue; events are deduplicated into compact observations in `state/observations.db`; recent observations are injected as markdown context at prompt time. Failed processing leaves pending events queued for retry.
-- **`aizee hook` command** + `.cursor/hooks.json`: wires `beforeSubmitPrompt` (context inject), `afterFileEdit`/`afterShellExecution`/`afterMCPExecution` (observe), and `stop` (session summary). Reads event JSON on stdin, always exits 0 — never blocks the editor.
-- **`DesignLibrary.import_brand()`**: import external `DESIGN.md` references (e.g. Refero exports) from a file path or raw markdown into `design-library/<brand>/` — name confinement blocks traversal, content structure-validated.
-- **3 new skills**: `skill-finder` (vet external skills from skills.sh registry), `web-security-checklist` (SSRF/upload/XXE/JWT/mass-assignment/GraphQL checks — adapted from VibeSec-Skill, Apache-2.0), `design-md-lord` (Refero catalog + DESIGN.md workflow). Skills: 127 -> 131.
-- **Refero MCP** registered in `.devin/mcp_config.json` (`https://api.refero.design/mcp`, OAuth/Bearer) — semantic search over 2,000+ real-world style references.
-
----
-
-## What's New in v5.14.2
-
-### Full-Project Audit: 100% Coverage + Bug-Fix Batch (Sep 2026)
-
-- **100% line + branch coverage** (7,456 tests) across `runtime/`, `memory/`, `aizee_mcp/`, `dashboard/`, `eval/` — every remaining gap either tested or marked as verified-unreachable defensive/platform-specific code.
-- **Bug fixes surfaced by the audit**: spec-delta unknown types now rejected at validation (were silently counted as applied), `reasoning_graph` cycle guard (was `RecursionError`), `migrations.peek_version` survives corrupt DBs, `mcp_firewall` dict-spread entries no longer dropped, `supply_chain_guard` poetry deps parsed correctly, `context_tools` changelog section + folder-skill search fixed, `eval/vibe` custom refuse patterns honored.
-- **Coverage gate raised**: `fail_under` 68 → 100 in `pyproject.toml`, `aizee test --full`, and both CI workflows — regressions now fail CI. (`eval/harness.py` keeps a lower floor: it runs a marker-filtered suite that excludes `mcp`/`dashboard`/`integration`/`vector` tests by design.)
-
----
-
-## What's New in v5.14.0
-
-### Tech-Stack + Skills + Personas Modernization (Sep 2026)
-
-- **16 new tech-stack files**: TypeScript 7 (Go compiler), Tailwind 4.3, NestJS 12, Go 1.27 (generic methods, encoding/json/v2, crypto/mldsa), PostgreSQL 19 (beta), Pest 5 (TIA engine), Livewire 4, Kubernetes 1.36, Django 6, Helm 4, ArgoCD 3.5, Flutter 3.47, Kotlin 2.4.20, Swift 6.4 (beta), Redis 8.10, Laravel AI SDK.
-- **4 new lord skills**: `laravel-ai-lord` (Laravel AI SDK, MCP, Boost, HITL), `post-quantum-lord` (ML-DSA, ML-KEM, PQC migration), `gitops-lord` (ArgoCD 3.5, Helm 4, progressive delivery), `llm-evals-lord` (LLM evaluation, prompt regression, agent eval).
-- **5 tech-stack files updated**: OpenAI Agents SDK v0.22, Google ADK v2.7, Transformers v5.16, LangGraph v1.2, Go 1.27 rules.
-- **8 personas updated**: ARCH, SEC, DEVOPS, SRE, ML, QA, MLOPS, API — new lords + keywords.
-- **Speculative labels removed**: PHP 8.5, Laravel 13, MySQL 9.7, Filament 5 — all stable releases.
-- **Counts**: tech-stack 238→252, skills 121→124, workflows 60→74, lord_skills 46→50.
-- **Research**: 5 parallel subagents across PHP/Laravel, JS/TS/Frontend, Mobile/Systems/DB/Cloud, Python/AI-ML, SaaS/Marketing/Auth/Payments. All versions verified against official sources.
-
----
-
-## What's New in v5.11.0
-
-### Security Hardening + Architecture Cleanup + Docs Sync
-- **SSRF protection (A2A adapters):** IPv4 + IPv6 private/reserved IP blocking, DNS resolution re-check, redirect confinement for both `launch()` and `poll()`.
-- **RBAC fail-closed:** `AIZEE_RBAC_STRICT=1` denies admin-required tools when no roles are set (non-admin tools stay allowed).
-- **Audit fail-closed:** `AIZEE_AUDIT_STRICT` defaults to `"1"` (raise on write failure); `=0` for fail-open.
-- **MCP client env allowlist:** `_build_spawn_env()` now uses a default allowlist (essential + AIZEE_* + common API key prefixes); `AIZEE_MCP_ENV_PASSTHROUGH=1` for full inherit.
-- **Supply chain:** all GitHub Actions pinned by 40-char SHA across release/security/supply-chain/validate workflows; pip-audit/bandit/build/twine version-pinned.
-- **Architecture:** `CompiledPipeline` deleted (orphaned), `Kernel`/`KernelBuilder` exported, `KernelBuilder.with_probity()` added, `JsonFileStorage` uses `RLock` + atomic writes, `_BoundedThreadingHTTPServer` for dashboard.
-- **Performance:** telemetry `summary()` tail-read with `deque(maxlen=...)`, metrics `_quantile` accepts pre-sorted values, learning loop batch persist + `flush()`.
-- **Coverage:** `fail_under` raised from 80% → 95% across `pyproject.toml`, CLI, eval harness, and all CI workflows.
-- **Tests:** new `aizee_mcp/tests/` package with MCP command injection tests; 3865 tests total.
-- **Docs:** counts synced (110 modules / 124 skills / 74 workflows / 265 Tech-Stack refs / 3869 tests), stale 80% references fixed, garbled tree characters fixed.
-
-## What's New in v5.10.0
-
-### Dashboard Settings Panel + Schema Migration Framework
-- **New "Settings" tab** in the dashboard — configure aiZee from the browser without editing YAML or env vars. 6 sub-sections: MCP Servers, Budget & Costs, Security & Gates, Injection Defense, Plugins & Persona, Dashboard & System.
-- **6 new API endpoints** (`GET/POST /api/settings`, defaults, reset, mcp-status, restart) with soft-reload kernel support.
-- **`SettingsManager`** (`runtime/settings.py`) — thread-safe, fail-safe, versioned settings persistence with atomic writes + deep merge.
-- **Schema migration framework** — `SETTINGS_VERSION=2` + `_MIGRATIONS` registry + automatic migration on load (backup → migrate → prune orphans → bump version).
-- 39 new tests. ruff/mypy/pytest all green.
-
-## What's New in v5.9.0
-
-### Marketing/Freelance MCP Integration + Runtime Wiring + Plugin Hardening
-- **12 runtime modules wired** to 10 MCP tools (analytics, billing, CRM, drip, experiments, feature flags, funnels, leads, compliance, pipelines).
-- **Plugin system hardening** — lifecycle validation, manifest schema, error recovery.
-- **34 MCP servers** registered across 9 categories (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other).
-
-## What's New in v5.8.0
-
-### Claude Code Skills Import + Design Tooling Stack + Persona Shortcuts
-
-**8 New Skills** (imported from Claude Code ecosystem study):
-- `web-design-guidelines` — 100+ Vercel rules (a11y, forms, dark mode, typography, animation, images, performance, navigation, touch, i18n)
-- `design-taste` — Design DNA extractor via Playwright (4-phase pipeline: capture → measure → extract → write)
-- `image-to-code` — Image-first design-to-code workflow (DESIGN_VARIANCE=8, MOTION_INTENSITY=5, VISUAL_DENSITY=6)
-- `backend-design` — 13 senior backend reflexes (idempotency, migration safety, N+1, observability, boring-by-default)
-- `accessibility-auditor` — 11 WCAG 2.2 AA specialist agents
-- `web-quality` — Lighthouse + Core Web Vitals (LCP <2.5s, INP <200ms, CLS <0.1)
-- `motion-design` — Animation audit from 3 designer perspectives + severity rankings
-- `qa-automation` — 6 Playwright QA agents (smoke, ux, adversarial, performance, mobile, multi-user)
-
-**3 New Runtime Modules:**
-- `design_slop_verifier.py` — AI-slop detection (7 categories: gradient wash, accent-border cards, SVG illustrations, overused fonts, emoji, 3-column grid, AI headlines). Optional injectable vision-model judge.
-- `plugin_system.py` — Plugin registry (discovery, manifest validation, lifecycle management, keyword + persona indexing, hook execution)
-- `design_library.py` — 56 brand design systems catalog (Stripe, Linear, Vercel...). Load single brand, mix 2-3 brands, auto-detect project type.
-
-**Persona Reset + Status Shortcuts (34 commands):**
-- 17 reset triggers (`/reset`, `#reset`, `/انتحل`, `#شخصيات`, `/بدّل`, `/persona`, `#switch`...) — force persona re-detection mid-chat
-- 17 status triggers (`/status`, `#status`, `/حالة`, `#مين`, `/whoami`, `/info`...) — display current personas + skills + lords in formatted Arabic report
-- Works in any chat interface without `fresh_context=True`
-
-**Prompt Injection Defense Stack (from previous session):**
-- 7 modules: `injection_detector`, `defensive_injection`, `tool_output_sanitizer`, `prompt_injection_detector`, `dual_llm`, `agent_baseline`, `prompt_injection_suite`
-- 13-technique deterministic scanner + active counter-injection + indirect-injection defense + dual-LLM isolation + behavioral anomaly detection
-
-**Numbers:**
-- Skills: 72 → **80** | Runtime modules: 85 → **96** | Tests: 3566 → **3680** | Lord skills: 23 → **31**
-- ruff PASS, mypy PASS, pytest 154/154 new tests PASS
-
-## What's New in v5.7.1
-
-### Comprehensive Review (17 fixes across 125 files) + Governance Hardening
-- **3 Critical fixes:** k8s NetworkPolicy egress (`to: []` → allow HTTPS), `memory_decay` missing from schema contract, `mcp_firewall.yaml` default_action silently ignored.
-- **3 High fixes:** missing `runtime/__init__.py` exports (12), probity normalization, constitution regex.
-- **5 Medium fixes:** source length validation, weight validation, LazyImport errors, priority parsing, FTS5 sanitization.
-- **Quality gates:** ruff PASS, mypy PASS (345 files), 3865 tests collected, validate-globals PASS, sync_docs PASS.
-- **Infra fixes (this release):** eval/harness `--fix` side-effect removed + mypy coverage unified, KernelBuilder memory wiring, dashboard X-Forwarded-For + env unification, config project-root shadowing fixed, budget save robustness, memory watch collision fix.
-
-## What's New in v5.7.0 — Implementation Plan Remediation (8 workstreams, 40+ items)
-- **WS-A Security:** dashboard loopback + k8s NetworkPolicy + dashboard robustness
-- **WS-B Gate-Contract:** probity structured denial, normalize_action_type, _MISSING sentinel, priority sorting
-- **WS-D Eval Overhaul:** GateVerdict + real kernel pipeline + 10 assertion kinds + redteam SARIF
-- **WS-E SDD:** task verification + constitution enforcement + drift v2
-- **WS-F Memory:** deterministic IDs + dedup + fact extraction + temporal search + decay + search hardening
-- **WS-H/I/J:** ConfidenceGate + LearningLoop + SkillRouter + Quality helpers
-- **Result:** 200+ new tests, all gates green
-
-## What's New in v5.4.0
-
-### SEO Integration (5 GitHub repos + 5 tools studied → aiZee)
-Deep analysis of top 5 SEO GitHub repositories (claude-seo, open-seo, crawlseo, SEOmator, rustyseo) + 5 SEO building blocks (GSC API, DataForSEO, Playwright, Common Crawl, Lighthouse/PSI) yielded:
-
-- **`seo-lord` skill** (NEW, directory layout): SKILL.md (20 rules) + 7 references (technical-seo, content-eeat, schema-types, geo-aeo, cwv-thresholds, audit-rules 251 rules, health-scoring) + 2 templates (seo-audit-report, content-brief)
-- **`tech-stack/seo-1.md`** (NEW): 35 technical SEO rules
-- **`workflows/27-seo-audit.md`** (NEW): 21-step SEO audit protocol
-- **8 MCP SEO tools** (NEW, stdlib only, free): `seo_audit_page`, `seo_audit_site`, `seo_check_cwv`, `seo_validate_schema`, `seo_analyze_content`, `seo_check_geo`, `seo_get_gsc_data`, `seo_find_opportunities`
-- **`useful-repos.md`**: +10 entries (5 SEO repos + 5 building blocks)
-- **`personas.yaml`**: seo-lord registered (40 keywords incl. Arabic) + linked to ARCH/DEV/UX/DOC personas
-
-### 5-Persona Review (4 rounds: ARCH + DEV + QA + SEC + DOC)
-All critical issues fixed:
-- URL validation: explicit rejection of `javascript:`/`data:`/`file:`/`ftp:`/`mailto:` schemes
-- SSRF protection: private IP blocking + DNS rebinding check + redirect target validation (`_SsrfSafeRedirectHandler`)
-- HTML parser: anchor text capture, tag stack for nested tags, malformed HTML handling
-- `_strip_html`: CDATA + HTML comments + conditional comments handling + compiled regexes
-- `_classify_schema`: `@graph` container support (list + dict + empty)
-- `seo_audit_site`: URL normalization + deque BFS + case-insensitive link filtering
-- `seo_audit_page`: nofollow + viewport meta checks
-- `seo_analyze_content`: paragraph splitting by sentence boundaries
-- `seo_find_opportunities`: empty rows → success, position≤0 skipped, cannibalization dedup
-- Schema contract: `SeoAuditSchema` updated to match actual response
-
-### Tests
-- **132 new SEO tests** added (edge cases, all 8 tools, SSRF, malformed HTML, @graph, URL normalization, paragraph splitting, nofollow/viewport, cannibalization)
-- **893 tests passed**, 97% coverage, 0 failures
-
----
-
-## What's New in v5.3.0
-
-### Laravel/Filament Tech-Stack Enrichment (10 repos studied)
-Deep analysis of 10 leading GitHub repositories (Bagisto, Monica, Krayin, BookStack, Koel, Filament, SuperDuper, Sky, MVPable, Filament-Blog) yielded:
-
-- **7 tech-stack files** (4 updated + 3 new): `laravel-12`, `laravel-13`, `filament-4`, `filament-5`, `laravel-testing` (NEW), `laravel-security` (NEW), `filament-plugins` (NEW)
-- **2 skills updated**: `backend-frameworks-lord` (20 rules), `page-sections-lord` (32 rules)
-- **3 new workflows**: `24-laravel-architecture-setup`, `25-filament-plugin-development`, `26-laravel-api-versioning`
-- **`useful-repos.md`**: 10 new Laravel + Filament repos added
-
-### Runtime Improvements (Filament-inspired patterns)
-- **Two-phase plugin lifecycle**: `register()` + `boot()` (Filament Plugin pattern)
-- **Closure evaluator**: Automatic dependency injection for closures (Filament EvaluatesClosures pattern)
-- **Permission dependencies**: Prerequisite validation in Guardian (Monica BaseService pattern)
-- **MCP response schemas**: JSON_STRUCTURE constants for consistent tool responses (Koel pattern)
-- **`authorize()` auto-validation**: Guardian automatically validates permission dependencies on ALLOW decisions
-
-### Bug Fixes + Lint Cleanup (52 → 0 errors)
-- Fixed 52 ruff errors across `runtime/`, `aizee_mcp/`, `memory/`, `scripts/`, `eval/`
-- Fixed 30 mypy `untyped-decorator` errors via `pyproject.toml` override
-- Fixed `asyncio.TimeoutError` not caught in `adapters.py` (Python 3.10 compat)
-- Fixed mojibake unicode characters in `migrations.py`, `spec_engine.py`, `git_memory.py`
-- Added `UP017` to ruff ignore list (Python 3.10 compat — `datetime.UTC` requires 3.11+)
-
-### Tests
-- **45 new tests** added (closure evaluator, MCP schemas, two-phase lifecycle, permission dependencies)
-- **2773 tests passed**, 97% coverage, 0 failures
-
-### 3-Persona Review
-All changes reviewed by ARCH + DEV + QA-SEC personas — 44/44 points verified.
-
-## What's New in v5.2.0
-
-### Hardening & Polish (P0-P3)
-- **Dockerfile fixed**: `cli.py` → `aizee_cli.py`, Python 3.14
-- **Exception hierarchy unified**: All custom exceptions now inherit from `AizeeError`
-- **Secure-by-default encryption**: Auto-generated key when `AIOS_ENCRYPTION_KEY` not set
-- **Dashboard token hardened**: `chmod 0o600` on token file
-- **Graceful shutdown**: Storage flush + DB close on SIGTERM/SIGINT
-- **Log rotation**: audit.log + telemetry.jsonl rotate at 100MB (5 rotated logs)
-- **CSP strengthened**: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`
-- **.env allowlist**: Only known env vars loaded from `.env` files
-- **Audit redaction**: Key-based redaction (not just value-based)
-- **Plugin sandbox strengthened**: Blocked dangerous builtins, `literal_eval`
-- **Plugin resource-based permissions**: Glob patterns (`Write:/tmp/*`)
-- **MCP tool auto-discovery**: Scans `aizee_mcp/tools/*_tools.py`
-- **Migration rollback**: `MigrationRunner.rollback(version)`
-- **KernelBuilder**: Fluent builder for dependency injection
-- **DB connection pooling**: `BaseRepository` pools SQLite connections
-- **DB backup automation**: `--schedule daily/hourly` + `--verify`
-- **Self-healing integrated**: `AgentManager.check_agents_health()` + `respawn_agent()`
-- **Operational docs**: `docs/OPERATIONS.md`, `docs/DEPLOYMENT.md`, `docs/ONBOARDING_SRE.md`
-- **Test organization**: Tests moved from `tests/runtime/` to `runtime/tests/`
-- **Parametrized tests**: Added more `@pytest.mark.parametrize` coverage
-- **Mock time in tests**: `time.sleep()` is no-op in fast tier
-- **CI matrix**: Python 3.13 + 3.14 added
-- **NumPy range tightened**: `>=1.26.0,<2.0`
-- **API.md version synced**: 5.2.0
-- **K8s secret warning**: Comment added to placeholder
-
-## What's New in v5.0.0
-
-### 18 Original Features
-
-From competitive analysis of AI agent OS and coding governance tools:
-
-| Feature | Module | Purpose |
-| :--- | :--- | :--- |
-| Hash-chained audit log | `runtime/audit.py` | Tamper-evident action trail |
-| Agent benchmark engine | `eval/agent_benchmark.py` | Persona performance scoring |
-| OWASP Agentic Top 10 | `runtime/agentic_security.py` | 10 security controls for agentic systems |
-| Git-backed memory | `memory/git_memory.py` | Versioned memory with git branches per persona |
-| Spec-driven development | `runtime/spec_engine.py` | 4-phase: Specify → Plan → Tasks → Implement |
-
-### 45 New Enhancements (Repo Research Driven)
-
-Deep analysis of 22 GitHub repositories (agent-governance-toolkit, OpenMemory, metis, spec-kit, open-code-review, agent-policy-engine, sol sentinel, caracal, ouroboros, and more) yielded 45 enhancements across 3 phases:
-
-#### Phase 1 — High-Impact, Low-Complexity (12 features)
-
-| Feature | Module | Source |
-| :--- | :--- | :--- |
-| 5-gate evidence-based evaluation | `eval/harness.py` | agentic-os |
-| SimHash deduplication | `memory/simhash.py` | OpenMemory |
-| Heat-based memory prioritization | `memory/heat.py` | MemoryOS |
-| Hash-tracked spec manifests | `runtime/spec_engine.py` | spec-kit |
-| Delta-based specs (ADDED/MODIFIED/REMOVED) | `runtime/spec_engine.py` | OpenSpec |
-
-#### Phase 2 — Medium-Impact, Medium-Complexity (18 features)
-
-| Feature | Module | Source |
-| :--- | :--- | :--- |
-| 3-stage evaluation gate | `eval/stages.py` | ouroboros |
-| Memory consolidation primitives | `memory/consolidation.py` | agent-memory |
-| 5 cognitive sector classification | `memory/sectors.py` | OpenMemory HMD v2 |
-| Temporal knowledge graph | `memory/temporal.py` | OpenMemory |
-| CodeGraph builder (AST-based) | `runtime/codegraph.py` | metis |
-| CodeGraph reachability analysis | `runtime/codegraph.py` | metis |
-| Self-healing runtime (crash recovery) | `runtime/self_healing.py` | sol sentinel |
-
-#### Phase 3 — High-Impact, High-Complexity (15 features)
-
-| Feature | Module | Source |
-| :--- | :--- | :--- |
-| Tree-sitter symbol provider | `runtime/tree_sitter_provider.py` | metis |
-| Memory decay scheduler | `memory/decay_scheduler.py` | OpenMemory |
-| Semantic code search (TF-IDF) | `runtime/semantic_search.py` | metis |
-
-#### Phase 4 — Architecture Patterns from spec-kit + Floci (6 features)
-
-| Feature | Module | Source |
-| :--- | :--- | :--- |
-| Spec-driven templates (spec/plan/tasks/constitution/checklist) | `tech-stack/spec-driven-templates/` | spec-kit |
-| Spec cross-artifact analysis (coverage/ambiguity/constitution) | `runtime/spec_engine.py` | spec-kit |
-| Spec-to-code convergence (gap analysis) | `runtime/spec_engine.py` | spec-kit |
-| Pluggable storage backend abstraction (memory/json/sqlite) | `runtime/storage_backend.py` | Floci |
-| Multi-index service/skill catalog | `runtime/service_catalog.py` | Floci |
-| AizeeError hierarchy + PaginatedResult | `runtime/schemas.py` | Floci |
-
----
-
-## CLI Reference
-
-```bash
-aizee status                         # OS health + counts
-aizee doctor                         # Full diagnostic
-aizee persona detect --multi "task"  # Detect personas for a task
-aizee check edit --args '{"tokens":100}'  # Policy + budget gate
-aizee run 02-execution               # Run a workflow
-aizee memory ingest                  # Rebuild memory index
-aizee memory search "query"          # Search memory
-aizee skill list                     # List available skills
-aizee skill search security          # Search skills by keyword
-aizee mcp context7 resolve-library-id --args '{"library":"fastapi"}'
-aizee graphify                       # Build knowledge graph
-aizee test                           # Fast test tier (~10s)
-aizee test --full                    # Full suite with coverage
-aizee uninstall                      # Interactive uninstall (keeps learned data)
-aizee uninstall --gui                # GUI uninstaller (tkinter)
-aizee perf                           # Performance benchmarks
-```
-
-### One-Click Scripts (Windows .bat)
-
-| Script | Description |
+| Path | Gates applied |
 | :--- | :--- |
-| `install.bat` | GUI installer (double-click) |
-| `update.bat` | Pull latest from GitHub + re-run post-install hooks |
-| `backup.bat` | Backup learned data (memory/state/brain/graph/.env) to timestamped folder |
-| `restore.bat` | Auto-merge learned data from backups (smart checkpoint) |
-| `restore.bat --from PATH` | Full restore from specific backup (overwrite) |
-| `restore.bat --list` | List available backups |
-| `restore.bat --checkpoint` | Show current restore checkpoint |
-| `uninstall.bat` | GUI uninstaller (double-click) |
-
----
-
-## Connect to Your AI Agent
-
-| AI tool | Config file |
-| :--- | :--- |
-| Cursor | `.cursor/rules/aizee.mdc` |
-| Claude Code | `.claude/CLAUDE.md` |
-| Windsurf | `.windsurfrules` |
-| Cline | `.clinerules/aizee.md` |
-| Aider | `.aider.conf.yml` |
-| GitHub Copilot | `.github/copilot-instructions.md` |
-| Devin | `.devin/skills/global-os/SKILL.md` |
-| Any other | Load `AGENTS.md` + `global-roles.md` + `global-workflow.md` |
-
-The installer auto-symlinks these to the correct global locations.
-
----
-
-## MCP Servers
-
-7 MCP servers configured automatically:
-
-| Server | Purpose | Requires |
-| :--- | :--- | :--- |
-| `aizee` | Core OS tools (98 tools) | Python |
-| `graphify` | Codebase knowledge graph | Python + graphify |
-| `context7` | Live library documentation | Node.js 18+ |
-| `upwork` | Upwork job search + proposals | Node.js + OAuth |
-| `freelancer` | Freelancer project bidding | Node.js + OAuth |
-| `fiverr` | Fiverr gig search | uvx |
-| `linkedin` | LinkedIn content automation | Python + OAuth |
-
-Secrets are centralized in `.env` (git-ignored). Copy `.env.example` and fill in credentials.
-
----
-
-## GUI Installer
-
-A full **WPF wizard** with 8 pages, dark theme, live progress, and `.env` secrets management.
-
-**Double-click launch** (Windows): just run `install.bat` — no terminal needed.
-
-**From terminal:**
-```powershell
-.\install.ps1 -Gui                              # Launch wizard
-.\installer\gui_installer.ps1 -Silent           # Silent (no GUI)
-.\installer\gui_installer.ps1 -InstallDir D:\x  # Pre-set location
-```
-
-| Page | What it does |
-| :--- | :--- |
-| Welcome | Version, license, 6-step overview |
-| License | MIT license + accept checkbox |
-| Location | In-place or custom path + disk space |
-| Components | 27 checkboxes across 5 sections |
-| Configuration | Env vars, scope, install options |
-| Pre-flight | 7 system checks + .env secrets check |
-| Progress | Live progress bar + scrolling log |
-| Finish | Summary + launch dashboard / open .env |
+| `Kernel.act()` | Probity → Guardian → Policy → Loop → Budget → Audit + AgentGateway prompt checks |
+| Outbound MCP (`McpClient`, `McpAgent`, `aizee mcp call`) | mcp_firewall → gateway request → execute → gateway response |
+| Inbound MCP (`aizee_mcp` tools) | RBAC + gateway request/response wrap |
+| Chat (`kernel.chat_message`) | prompt_gate → … → `output.pre_send` hooks |
+| Memory writes | `memory.pre_write` hooks (veto/mutate) + HMAC integrity |
+| Code Mode (`aizee codemode`) | AST sandbox scan + restricted builtins + governed `call_tool` |
+| A2A tasks | Bearer auth + governed task handler |
 
 ---
 
@@ -544,17 +232,26 @@ Dark-first command-center UI: command palette (`Ctrl+K`), bento-grid metrics, st
 
 **Tabs:** Overview · Memory Explorer · Policy Sandbox · Workflows · Sagas · Chat · Tech Stack · Telemetry · System Health · Audit Logs · **Settings**
 
-**Settings panel** (new in 5.10.0) — configure aiZee from the browser without editing YAML or env vars:
-- **MCP Servers** — toggle 34 servers on/off, grouped by category (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other). **Check All / Uncheck All** buttons for bulk toggling. Live count summary shows enabled/total.
-- **Budget & Costs** — token/cost/call limits, period, on-exceed action, fallback model (global + session).
-- **Security & Gates** — Guardian, MCP Firewall, Policy engine, Loop Detector.
-- **Injection Defense** — 7 defense module toggles + thresholds.
-- **Plugins & Persona** — plugin enable/disable + default persona.
-- **Dashboard & System** — rate limits, bind host, telemetry, audit retention, memory, design tooling, **Restart aiZee** button.
+> **Important — disable MCP servers you don't use.** Every enabled MCP server consumes memory and may spawn a subprocess on first tool call. After installation, open **Settings → MCP Servers**, uncheck what you don't need (**Uncheck All** then re-check), and **Save Changes**. The kernel auto-reloads on save.
 
-> **Important — disable MCP servers you don't use.** Every enabled MCP server consumes memory and may spawn a subprocess on first tool call. Leaving all 34 servers enabled by default wastes resources and slows startup. After installation, open **Settings → MCP Servers**, uncheck servers you don't need (use **Uncheck All** then re-check only the ones you use), and click **Save Changes**. The kernel auto-reloads on save — no manual restart needed.
+Settings persist to `state/settings.json` (gitignored, survives updates). Schema migrations run automatically — old files are backed up.
 
-Settings persist to `state/settings.json` (gitignored, survives updates). Schema migrations run automatically on update — old files are backed up to `settings.json.v{old}.bak`. All settings are **applied live** — saving changes triggers an automatic kernel reload that applies overrides on top of the canonical config sources (budget.json, guardian.yaml, policies/*.yaml, etc.).
+---
+
+## Key Commands
+
+| Command | Purpose |
+| :--- | :--- |
+| `aizee doctor` | Environment health (46 checks) |
+| `aizee heal [--apply] [-y]` | Diagnose + safe auto-fixes (dry-run default) |
+| `aizee check <action>` | Policy verdict for an action |
+| `aizee memory compact [--apply]` | Compact Memory.md to its line budget |
+| `aizee codemode --code/--file` | Sandboxed snippet calling MCP tools |
+| `aizee task overcheck` | Over-engineering audit of the active plan |
+| `aizee task curriculum --stack …` | Staged learning plan from tech-stack refs |
+| `aizee bootstrap --target DIR` | Materialize an OS root (post-`pip install`) |
+| `aizee ci` | Full CI gates incl. reliability release gate |
+| `aizee security scan <path>` | SAST + external scanner orchestration |
 
 ---
 
@@ -563,11 +260,13 @@ Settings persist to `state/settings.json` (gitignored, survives updates). Schema
 | Gate | Command | Status |
 | :--- | :--- | :--- |
 | Lint | `ruff check .` | 0 warnings |
-| Types | `mypy` | 0 errors (204 files, strict) |
-| Tests (fast) | `aizee test` | 4000+ passed, ~12s |
-| Tests (full) | `aizee test --full` | 4028 passed, 96% coverage, ~275s |
-| Integrity | `scripts/validate-globals.py` | 0 errors |
-| E2E | `python eval/harness.py` | all_pass: true |
+| Types | `mypy` | 0 errors (strict) |
+| Tests (fast) | `aizee test` | fast tier, no coverage |
+| Tests (full) | `aizee test --full` | full suite, coverage floor 100% |
+| Integrity | `scripts/validate-globals.py` | 539 files, 0 errors |
+| Docs sync | `scripts/sync_docs.py --check` | in sync |
+| E2E | `python eval/harness.py` | all gates pass |
+| Release | `python eval/release_gate.py` | reliability ladder over rollout evidence |
 
 ---
 

@@ -4,14 +4,14 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-5.17.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 5.17.0">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-7429%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="7429 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-6.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 6.0.0">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-7653%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="7653 اختبار ناجح">
     <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 100%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 شخصية">
-    <img src="https://img.shields.io/badge/%D%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-139-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="139 مهارة">
+    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-139-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="139 مهارة">
     <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-63-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 سير عمل">
     <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-265-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="265 مرجع تقنية">
   </p>
@@ -27,9 +27,9 @@
 
 ## ما هو aiZee؟
 
-**نظام تشغيل محكم الإصدار** يجلس بينك وب كل مساعد ذكاء اصطناعي — Cursor، Claude، Copilot، Windsurf، Cline، Aider، Devin — ويفرض معايير الهندسة وسياسات الأمان والانضباط المعماري على كل سطر كود مولّد.
+**نظام تشغيل محكم الإصدار** يجلس بينك وبين كل مساعد ذكاء اصطناعي — Cursor، Claude، Copilot، Windsurf، Cline، Aider، Devin — ويفرض معايير الهندسة وسياسات الأمان والانضباط المعماري على كل سطر كود مولّد.
 
-**المشكلة التي يحلها:** المساعدات الذكية تهلوس APIs، تنسى الاتفاقيات، تتجاهل الأمان، وتشحن ديونًا تقنية صامتة. aiZee يجبرها على القراءة من مصدر حقيقة مركزي *قبل* كتابة سطر واحد.
+**المشكلة التي يحلها:** المساعدات الذكية تهلوس APIs، تنسى الاتفاقيات، تتجاهل الأمان، وتشحن ديونًا تقنية صامتة. aiZee يجبرها على القراءة من مصدر حقيقة مركزي *قبل* كتابة سطر واحد — وفي v6 يتحقق من كل إجراء *أثناء* تنفيذه، لا مجرد توثيق بعده.
 
 | بدون aiZee | مع aiZee |
 | :--- | :--- |
@@ -37,7 +37,46 @@
 | حزم قديمة وديون تقنية صامتة | تثبيت إصدار دقيق عبر MCP حي |
 | SQL خام، XSS مفقود، أسرار ضعيفة | OWASP و zero-trust و RBAC مفروضة |
 | إعادة هيكلة عشوائية | تغييرات جراحية عبر بوابات policy + budget + audit |
-| إجابات واحدة-للجميع | 29 شخصية + 80 مهارة تُختار تلقائيًا |
+| حواجز حماية موجودة لكن خارج المسار | **v6: الإنفاذ مربوط بـ `Kernel.act()` وكل استدعاء MCP** |
+
+---
+
+## الجديد في v6.0.0 — Runtime محكوم فعليًا
+
+التغيير الجوهري: **الإنفاذ صار على مسار التنفيذ**. وحدات الحماية التي كانت مستقلة (مختبرة لكن غير مربوطة) تعمل الآن داخل خط الأنابيب الفعلي.
+
+### الإنفاذ على مسار التنفيذ
+
+- **`runtime/enforcement.py`** — مكوّن إنفاذ موحّد: جدار MCP → فحص AgentGateway للطلب → التنفيذ → فحص الاستجابة → التدقيق. مشترك بين كل مسارات الاستدعاء.
+- **`Kernel.act()`** — أحكام AgentGateway (ALLOW / REDACT / BLOCK) تحكم الإجراءات الحقيقية؛ فحوص الحقن وتسريب الأسرار تطبّق على حقول الشكل النصي دون حظر كتابة الملفات العادية.
+- **MCP الصادر** — `McpClient` (متزامن + غير متزامن) و`McpAgent` يشغّلان الجدار والبوابة حول كل استدعاء خارجي.
+- **MCP الوارد** — أدوات aiZee الـ98 تحتفظ بـ RBAC *وتُغلّف* بفحوص البوابة.
+
+### عمق الكشف
+
+- **كاشف الحقن L1→L3** — 13 تقنية بأنماط + طبقة تشابه دلالي (embeddings) + خيار LLM-judge. حتمي بدون نماذج افتراضيًا.
+- **Dual-LLM مقوّى** — مخرجات العامل المعزول مُقيدة بمخطط Pydantic؛ فشل التحليل آمن (fail-safe).
+- **MCP 2026-07-28 عديم الحالة** — تفاوض `protocolVersion` لكل طلب + توجيه بترويسات `Mcp-Method`/`Mcp-Name`.
+
+### عمق الحوكمة
+
+- **أحكام APL** — يمكن للسياسات الآن `modify` (إعادة كتابة الحمولة، مدقّقة) و`observe` (سماح + تسجيل) بجانب allow/ask/deny.
+- **خطافات دورة الحياة** — طورا `output.pre_send` و`memory.pre_write`؛ الخطافات تستطيع النقض أو التعديل.
+- **`aizee heal`** — منسّق إصلاح آمن (dry-run افتراضيًا، `--apply` بتأكيد، تدقيق في `state/heal.log`).
+- **ميزانيات لكل PR** — حدود إنفاق تراكمية بمفتاح PR (`AIZEE_PR_ID`) فوق نوافذ الجلسة/الساعة/اليوم.
+- **بوابة الإصدار** — `eval/release_gate.py` يشغّل سلم الأولويات للموثوقية على rollouts المسجلة؛ مربوط بـ `aizee ci`.
+- **جناح الفوضى** — `eval/chaos.py` سيناريوهات حقن أعطال + حساب موازنات الأخطاء.
+
+### الذاكرة وأسطح البروتوكول
+
+- **ذاكرة ثنائية الزمن** — `store.as_of(as_of=..., valid_at=...)` تفرّق بين "ماذا عرفنا وقتها" و"ما الذي كان صحيحًا وقتها"؛ تثبيت، حذف ناعم بختم زمني، علاقات تناقض.
+- **`aizee memory compact`** — ضغط تلقائي لـ Memory.md (سقف 500 سطر، إنقاذ `[PINNED]`، أرشفة في `memory/archive/`).
+- **Code Mode** — `aizee codemode` ينفّذ مقاطع Python معزولة تستدعي أدوات MCP مباشرة (فحص AST + builtins مقيّدة + جسر محكوم + مهلة).
+- **خادم A2A** — يعرض aiZee كندّ A2A: `/.well-known/agent-card.json` + JSON-RPC `tasks/send|get|cancel` (loopback + bearer).
+- **`aizee bootstrap`** — يبني جذر OS أدنى بعد `pip install aizee` (idempotent، dry-run افتراضيًا).
+- **تدقيقات استشارية** — `aizee task overcheck` (إشارات الهندسة الزائدة من الخطة + الرسم)، `aizee task curriculum` (خطة تعلّم مرحلية من مراجع tech-stack).
+
+التفاصيل الكاملة: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -73,328 +112,147 @@ cd .ai
 bash install.sh
 ```
 
+**PyPI:**
+```bash
+pip install aizee
+aizee bootstrap --target ~/.aizee --yes   # بناء جذر OS أدنى
+export AIZEE_ROOT=~/.aizee
+```
+
 ### التحقق
 
 ```bash
-aizee doctor    # فحص صحة
+aizee doctor    # فحص صحة (46 فحصًا)
+aizee heal      # تشخيص + إصلاح آمن (dry-run؛ --apply للتنفيذ)
 aizee status    # الشخصية، المهارات، الميزانية
+```
+
+---
+
+## المعمارية الأساسية
+
+```
+.ai/                         # الجذر السيادي (يُكتشف عبر AIZEE_ROOT)
+├── AGENTS.md                # البوتلودر المرجعي لكل الأدوات
+├── global-roles.md          # 29 شخصية + قواعد تشغيلية
+├── global-workflow.md       # بروتوكول التحميل المعرفي والتنفيذ
+├── runtime/                 # النواة: policy، budget، audit، 142 وحدة حوكمة
+│   ├── kernel.py            # الواجهة — Probity → Guardian → Policy → Loop → Budget → Audit
+│   ├── enforcement.py       # مكوّن إنفاذ موحّد (firewall + gateway)
+│   ├── agent_gateway.py     # حواجز طلب/استجابة (ALLOW/REDACT/BLOCK)
+│   ├── injection_detector.py# L1 أنماط + L2 دلالي + L3 حكم LLM
+│   ├── codemode/            # تنفيذ code-mode معزول فوق أدوات MCP
+│   ├── a2a_server.py        # كشف كندّ A2A (agent card + tasks)
+│   └── policies/            # YAMLs: default/guardian/probity/mcp_firewall
+├── memory/                  # SQLite + FTS5 + vector، استعلامات ثنائية الزمن
+├── aizee_mcp/               # خادم MCP (98 أداة، 3 موارد)
+├── eval/                    # معايير، فوضى، موثوقية، بوابة إصدار
+├── skills/                  # 139 مهارة شخصية + lord
+├── workflows/               # 63 بروتوكول تنفيذ بالمحفزات
+├── rules/                   # قواعد سلوكية مضغوطة
+├── tech-stack/              # مراجع مثبتة بالإصدار
+├── dashboard/               # لوحة ويب (Python stdlib HTTP)
+├── scripts/                 # مثبتات، مدققون، أغلفة MCP
+└── pyproject.toml           # بيانات الحزمة + إعدادات الجودة
 ```
 
 ---
 
 ## الأعمدة الستة
 
-### 1. الشخصيات + المهارات
-29 شخصية (`ARCH`، `QA`، `SEC`، `DEV`، `SRE`، `DATA`، `ML`، `DEVOPS`، `FREELANCE`، إلخ) مع 29 مهارة lord. تُكتشف تلقائيًا حسب المهمة.
+### 1. تركيب الشخصية + المهارة
+29 شخصية (`ARCH`، `QA`، `SEC`، `DEV`، `SRE`، `DATA`، `ML`، `DEVOPS`، `API`…) مع مهارات lord للمجالات. تُكتشف تلقائيًا لكل مهمة — بلا اختيار يدوي.
 
 ```bash
-aizee persona detect --multi "ابني API آمن مع docker و postgres"
-# ← Primary: ARCH + Secondary: SEC, DEVOPS + Lords: security-lord, cloud-platforms-lord
+aizee persona detect --multi "build a secure docker API with postgres"
+# → Primary: ARCH + Secondary: SEC, DEVOPS + Lords: security-lord, cloud-platforms-lord
 ```
 
-### 2. حوكمة Runtime
-كل إجراء يمر عبر 5 بوابات قبل التنفيذ:
+### 2. حوكمة وقت التشغيل
+كل إجراء يمر بخط البوابات قبل التنفيذ:
 
 ```
-Probity → Guardian → Policy → Budget → Audit
+Probity → Guardian → Policy → Loop Detector → Budget → Audit
+        └─ AgentGateway: أحكام حقن + تسريب أسرار (v6)
 ```
 
-- **محرك السياسات** — قواعد YAML مع تقييم AST آمن
-- **مدير الميزانية** — حدود tokens/تكلفة/استدعاءات لكل جلسة/ساعة/يوم
-- **سجل التدقيق** — سلسلة SHA-256 مقاومة للتلاعب
-- **مشغل سير العمل** — تنفيذ متين مدعوم بـ SQLite + saga
+- **محرك السياسات** — قواعد YAML `allow/ask/deny/modify/observe` بتقييم آمن
+- **جدار MCP** — بوابة قائمة على القواعد لاستدعاءات الأدوات الصادرة
+- **AgentGateway** — حواجز طلب/استجابة على كل مسار مُنفَّذ
+- **مدير الميزانية** — حدود tokens/cost/calls لكل جلسة/ساعة/يوم/أسبوع/شهر **ولكل PR**
+- **سجل التدقيق** — مربوط بتجزئة SHA-256 وموقّع Ed25519، كاشف للعبث
+- **منفّذ سير العمل** — تنفيذ durable مدعوم بـ SQLite مع تعويض saga
 
-### 3. مصدر الحقيقة الحي
-Context7 MCP يجلب توثيق المكتبات الحالي قبل التنفيذ. Graphify يستبدل `grep` الأعمى للتنقل في الكود.
+### 3. حقيقة أرضية حية
+Context7 MCP يجلب وثائق المكتبات الحالية قبل التنفيذ. رسم المعرفة graphify يحل محل `grep` الأعمى للتنقل في الكود.
 
 ### 4. ذاكرة هجينة
-SQLite + FTS5 + فهرسة متجهة اختيارية. طبقات: عرضية، دلالية، واقعية، إجرائية.
-
-### 5. بوابات الجودة (عيب صفر)
-```bash
-ruff check .          # 0 تحذيرات
-mypy                  # 0 أخطاء (345 ملف، strict)
-pytest -q             # 7456 اختبار، ~100% تغطية
-python eval/harness.py  # E2E: ruff + mypy + pytest + validate-globals
-```
-
-### 6. كفاءة Tokens
-كشف الشخصيات محلي (Python خالص، صفر tokens). فقط أسماء المهارات relevant تُرجع — ليس الملفات كاملة.
-
----
-
-## الجديد في v5.17.0
-
-### طبقة تنفيذ الفحص الأمني (سبتمبر 2026)
-
-- **`aizee security scan <path>`** — فحص SAST حقيقي + تنسيق أدوات خارجية في `runtime/security_scanner.py`: قواعد مدمجة مربوطة بـ OWASP 2025 (أسرار، injection، misconfig، استثناءات، XSS، redirects) + تشغيل تلقائي لـ bandit / ruff-S / pip-audit / npm audit / composer audit / trivy لو مثبتة. `--json` للـ CI، `--no-tools` للأوفلاين، `--limit N`؛ خروج بكود 1 عند وجود blockers.
-- **`tech-stack/appsec-hardening.md`** — ماتريكس ثغرة→دفاع شاملة لكل المجالات مربوطة بـ OWASP Top 10 **2025**.
-- **`skills/production-readiness-lord/`** — بروتوكول مراجعة إنتاج 13 محور بالأدلة + تقرير إجراءات بشرية.
-- لوردات جديدة: `server-ops-lord`، `problem-solving-lord`، `design-innovation-lord`، `python-ui-lord`؛ +11 مرجع tech-stack مقيد بالإصدار؛ ~25 سكيل اتعمّقت.
-
-### سابقاً — v5.16.0: Task Contract + تبنّي المصادر الخارجية (سبتمبر 2026)
-
-- **Task Contract** (`runtime/task_contract/` + `aizee task`): دورة إجبارية `تصنيف → تقسيم → تحقق لكل تاسك → مراجعة نهائية`. كل برومبت بياخد تصنيف مسجّل (trivial/standard/complex)؛ الشغل غير التافه محتاج `.task/plan.json` (deps بدون دورات، سكوب معلن، acceptance checks، عقود `produces:`)؛ «تم» محتاج دليل مسجّل مش ادعاء. الإجبار: rules + IDE hooks، مع `AIZEE_TASK_STRICT=1` للرفض الصلب خارج السكوب.
-- **10 أدوات MCP جديدة** (`task_classify` → `task_scope`) — عدد الأدوات 88 → 98.
-- **تبنّي مصادر خارجية**: `rules/untrusted-content.md`، `aizee skill validate`، `aizee skill install --harness X`، `aizee docs c4` (graphify → توثيق C4)، `AGENT_INSTALL.md`.
-- **4 مهارات جديدة**: `aizee-lite` (انضباط aiZee محمول)، `project-voice`، `browser-automation`، `design-research` (Refero + Mobbin). المهارات: 130 → 134.
-
----
-
-## الجديد في v5.6.0
-
-### إصلاحات أمنية حرجة (3)
-- **ثغرة تصعيد صلاحيات في مُقيِّم السياسات** (`runtime/policy.py`): القيم الحرفية `true`/`false`/`null` كانت تُعامل كأسماء متغيرات → `flag == true` تطابق كل إجراء يفتقد flag (`None == None → True`) → قاعدة `reversible == true → allow` كانت توافق تلقائيًا على كل write/edit. الإصلاح بـ `_yaml_literals` + fail-closed لـ TypeError. 13 اختبار ارتداد.
-- **Guardian fail-closed**: استثناء الـ guardian لم يعد يُبتلع كـ allow — يُنكر مع audit log.
-- **إزالة approve-via-GET**: `GET /api/check?approve=1` يرجع 400، وGET دائمًا `dry_run=True`. أغلق ثغرة CSRF من localhost.
-
-### Dashboard (قرارات تصميمية)
-- **Open-access افتراضي**: التوكن opt-in عبر `AIZEE_DASHBOARD_TOKEN` فقط. الأمان محفوظ بربط 127.0.0.1 + CSRF header على POSTs.
-- **تقديم الـ UI من `_CODE_DIR`** بدلاً من root المُكتشَف — يمنع mismatch بين server جديد وmarkup قديم.
-- **CSP**: أزال `'unsafe-inline'` من script-src — كل JS انتقل لـ `dashboard/app.js` خارجي.
-
-### إعادة هيكلة (Refactors)
-- **`spec_engine.py` (876 سطر) → `runtime/spec/` package** (models/engine/scaffold/analysis/templates) مع facade للتوافق العكسي.
-- **`inject_persona_context()`** — يوحّد 3 كتل مكررة (kernel/workflow_manager/workflow).
-- **`READ_ACTIONS`** مصدر واحد لتصنيف read-only.
-- **`LocalResponder`** (جديد) — يجاوب على intents تشغيلية من حالة kernel الحية بدون LLM tokens.
-
-### تقوية Memory/Adapters
-- `checkpoint.py`: RLock حول اتصال SQLite المشترك.
-- `vector.py`: `blake2b` deterministic بدلاً من `hash()` المملّح.
-- `git_memory.py`: `_safe_component` regex يمنع path traversal.
-- `adapters.py`: SSL context مُ memoized + `verify_ssl=False` فعّال فعليًا + `request_timeout`.
-
-### أدوات + توثيق
-- **`scripts/sync_docs.py`** (جديد): يزامن counts + جدول workflows من filesystem. `--check` مربوط بـ CI.
-- **`CONTRIBUTING.md`** (جديد): معايير الكود + وصفات module/skill/workflow.
-- **CLI**: أخطاء ودودة للـ JSON تالف بدلاً من tracebacks.
-- **Counts مُحدّثة**: 110 runtime modules، 119 skills، 60 workflows، 238 tech-stack refs.
-
----
-
-## الجديد في v5.5.0
-
-### تكامل SEO (دراسة 5 ريوهات + 5 أدوات → aiZee)
-تحليل عميق لأفضل 5 ريوهات SEO على GitHub (claude-seo, open-seo, crawlseo, SEOmator, rustyseo) + 5 أدوات بناء SEO (GSC API, DataForSEO, Playwright, Common Crawl, Lighthouse/PSI):
-
-- **مهارة `seo-lord`** (جديد، هيكل مجلد): SKILL.md (20 قاعدة) + 7 مراجع (technical-seo, content-eeat, schema-types, geo-aeo, cwv-thresholds, audit-rules 251 قاعدة, health-scoring) + 2 قوالب (seo-audit-report, content-brief)
-- **`tech-stack/seo-1.md`** (جديد): 35 قاعدة SEO تقنية
-- **`workflows/27-seo-audit.md`** (جديد): بروتوكول تدقيق SEO من 21 خطوة
-- **8 أدوات MCP SEO** (جديد، stdlib فقط، مجانية): `seo_audit_page`, `seo_audit_site`, `seo_check_cwv`, `seo_validate_schema`, `seo_analyze_content`, `seo_check_geo`, `seo_get_gsc_data`, `seo_find_opportunities`
-- **`useful-repos.md`**: +10 إدخالات (5 ريوهات SEO + 5 أدوات بناء)
-- **`personas.yaml`**: تسجيل seo-lord (40 كلمة مفتاحية بما فيها العربية) + ربط بشخصيات ARCH/DEV/UX/DOC
-
-### مراجعة 5 شخصيات (4 جولات: ARCH + DEV + QA + SEC + DOC)
-إصلاح كل المشاكل الحرجة:
-- التحقق من URL: رفض صريح لمخططات `javascript:`/`data:`/`file:`/`ftp:`/`mailto:`
-- حماية SSRF: حظر IP الخاص + فحص DNS rebinding + التحقق من redirect targets (`_SsrfSafeRedirectHandler`)
-- محلل HTML: التقاط نص الرابط، tag stack للوسوم المتداخلة، معالجة HTML المشوه
-- `_strip_html`: معالجة CDATA + تعليقات HTML + التعليقات الشرطية + regexes مُجمّعة
-- `_classify_schema`: دعم حاويات `@graph` (list + dict + empty)
-- `seo_audit_site`: تطبيع URL + deque BFS + تصفية روابط case-insensitive
-- `seo_audit_page`: فحص nofollow + viewport meta
-- `seo_analyze_content`: تقسيم الفقرات بحدود الجمل
-- `seo_find_opportunities`: empty rows → نجاح، تخطي position≤0، إزالة تكرار cannibalization
-- عقد Schema: تحديث `SeoAuditSchema` لمطابقة الاستجابة الفعلية
-
-### الاختبارات
-- **132 اختبار SEO جديد** (حالات حدية، كل الـ 8 أدوات، SSRF، HTML مشوه، @graph، تطبيع URL، تقسيم فقرات، nofollow/viewport، cannibalization)
-- **982 اختبار ناجح**، تغطية 97%، 0 فشل
-
----
-
-## الجديد في v5.3.0
-
-### إثراء المراجع التقنية لـ Laravel/Filament (دراسة 10 مشاريع)
-تحليل عميق لـ 10 مشاريع GitHub رائدة (Bagisto, Monica, Krayin, BookStack, Koel, Filament, SuperDuper, Sky, MVPable, Filament-Blog):
-
-- **7 ملفات مراجع تقنية** (4 محدّثة + 3 جديدة): `laravel-12`, `laravel-13`, `filament-4`, `filament-5`, `laravel-testing` (جديد), `laravel-security` (جديد), `filament-plugins` (جديد)
-- **2 مهارة محدّثة**: `backend-frameworks-lord` (20 قاعدة), `page-sections-lord` (32 قاعدة)
-- **3 سير عمل جديد**: `24-laravel-architecture-setup`, `25-filament-plugin-development`, `26-laravel-api-versioning`
-- **`useful-repos.md`**: 10 مشاريع Laravel + Filament جديدة
-
-### تحسينات Runtime (أنماط مستوحاة من Filament)
-- **دورة حياة البلوجين ذات الطورين**: `register()` + `boot()` (نمط Filament Plugin)
-- **مُقيّم الإغلاقات**: حقن تلقائي لتبعيات الإغلاقات (نمط Filament EvaluatesClosures)
-- **تبعيات الصلاحيات**: التحقق من المتطلبات المسبقة في Guardian (نمط Monica BaseService)
-- **مخططات استجابة MCP**: ثوابت JSON_STRUCTURE لاستجابات أدوات متناسقة (نمط Koel)
-- **التحقق التلقائي في authorize()**: Guardian يتحقق تلقائياً من تبعيات الصلاحيات عند ALLOW
-
-### إصلاحات الأخطاء + تنظيف Lint (52 → 0 خطأ)
-- إصلاح 52 خطأ ruff عبر `runtime/`, `aizee_mcp/`, `memory/`, `scripts/`, `eval/`
-- إصلاح 30 خطأ mypy `untyped-decorator` عبر `pyproject.toml` override
-- إصلاح `asyncio.TimeoutError` غير مُلتقط في `adapters.py` (توافق Python 3.10)
-- إصلاح أحرف unicode مشوهة في `migrations.py`, `spec_engine.py`, `git_memory.py`
-- إضافة `UP017` لقائمة تجاهل ruff (توافق Python 3.10 — `datetime.UTC` يتطلب 3.11+)
-
-### الاختبارات
-- **45 اختبار جديد** (مُقيّم الإغلاقات، مخططات MCP، دورة حياة الطورين، تبعيات الصلاحيات)
-- **2773 اختبار ناجح**، تغطية 97%، 0 فشل
-
-### مراجعة 3 شخصيات
-كل التغييرات تمت مراجعتها بواسطة شخصيات ARCH + DEV + QA-SEC — 44/44 نقطة مُتحققة.
-
-## الجديد في v5.2.0
-
-### تقوية وتلميع (P0-P3)
-- **إصلاح Dockerfile**: `cli.py` → `aizee_cli.py`، Python 3.14
-- **توحيد هرم الاستثناءات**: كل الاستثناءات ترث من `AizeeError`
-- **تشفير آمن افتراضياً**: توليد مفتاح تلقائي عند عدم وجود `AIOS_ENCRYPTION_KEY`
-- **تقوية token الداشبورد**: `chmod 0o600` على ملف الـ token
-- **إيقاف آمن**: flush التخزين + إغلاق DB عند SIGTERM/SIGINT
-- **تدوير السجلات**: audit.log + telemetry.jsonl يتدورون عند 100MB
-- **تقوية CSP**: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`
-- **قائمة بيضاء لـ .env**: فقط المتغيرات المعروفة تُحمّل
-- **تنقيح audit**: تنقيح يعتمد على اسم المفتاح وليس القيمة فقط
-- **تقوية sandbox الإضافات**: حظر builtins خطرة، `literal_eval`
-- **صلاحيات الإضافات قائمة على الموارد**: أنماط glob (`Write:/tmp/*`)
-- **اكتشاف تلقائي لأدوات MCP**: مسح `aizee_mcp/tools/*_tools.py`
-- **rollback للهجرات**: `MigrationRunner.rollback(version)`
-- **KernelBuilder**: builder fluent لحقن التبعيات
-- **تجميع اتصالات DB**: `BaseRepository` يجمع اتصالات SQLite
-- **أتمتة نسخ DB احتياطية**: `--schedule daily/hourly` + `--verify`
-- **تكامل Self-healing**: `AgentManager.check_agents_health()` + `respawn_agent()`
-- **وثائق تشغيلية**: `docs/OPERATIONS.md`, `docs/DEPLOYMENT.md`, `docs/ONBOARDING_SRE.md`
-- **تنظيم الاختبارات**: نقل من `tests/runtime/` إلى `runtime/tests/`
-- **اختبارات parameterized**: المزيد من `@pytest.mark.parametrize`
-- **mock time في الاختبارات**: `time.sleep()` no-op في الطبقة السريعة
-- **مصفوفة CI**: Python 3.13 + 3.14
-- **تضييق NumPy**: `>=1.26.0,<2.0`
-- **مزامنة API.md**: 5.2.0
-- **تحذير K8s secret**: تعليق على placeholder
-
-## الجديد في v5.0.0
-
-### 18 ميزة أصلية
-
-من تحليل تنافسي شامل لأدوات حوكمة الوكلاء الذكيين:
-
-| الميزة | الوحدة | الغرض |
-| :--- | :--- | :--- |
-| سجل تدقيق بسلسلة hash | `runtime/audit.py` | مسار إجراءات مقاوم للتلاعب |
-| محرك تقييم الوكلاء | `eval/agent_benchmark.py` | قياس أداء الشخصيات |
-| OWASP Agentic Top 10 | `runtime/agentic_security.py` | 10 ضوابط أمان للأنظمة الوكلاء |
-| ذاكرة مدعومة بـ git | `memory/git_memory.py` | ذاكرة بإصدارات git لكل شخصية |
-| تطوير بمواصفات | `runtime/spec_engine.py` | 4 مراحل: Specify → Plan → Tasks → Implement |
-
-### 45 تحسين جديد (من تحليل المستودعات)
-
-تحليل عميق لـ 22 مستودع GitHub (agent-governance-toolkit، OpenMemory، metis، spec-kit، open-code-review، agent-policy-engine، sol sentinel، caracal، ouroboros، وغيرها) أنتج 45 تحسينًا في 3 مراحل:
-
-#### المرحلة 1 — تأثير عالي، تعقيد منخفض (12 ميزة)
-
-| الميزة | الوحدة | المصدر |
-| :--- | :--- | :--- |
-| 5 بوابات تقييم بالأدلة | `eval/harness.py` | agentic-os |
-| SimHash لإزالة التكرار | `memory/simhash.py` | OpenMemory |
-| ترتيب الذاكرة بالحرارة | `memory/heat.py` | MemoryOS |
-| manifests بمواصفات متتبعة بـ hash | `runtime/spec_engine.py` | spec-kit |
-| مواصفات delta (ADDED/MODIFIED/REMOVED) | `runtime/spec_engine.py` | OpenSpec |
-
-#### المرحلة 2 — تأثير متوسط، تعقيد متوسط (18 ميزة)
-
-| الميزة | الوحدة | المصدر |
-| :--- | :--- | :--- |
-| بوابة تقييم 3-مراحل | `eval/stages.py` | ouroboros |
-| primitives توحيد الذاكرة | `memory/consolidation.py` | agent-memory |
-| تصنيف 5 قطاعات معرفية | `memory/sectors.py` | OpenMemory HMD v2 |
-| رسم زمني للمعرفة | `memory/temporal.py` | OpenMemory |
-| بناء CodeGraph (AST) | `runtime/codegraph.py` | metis |
-| تحليل قابلية الوصول في CodeGraph | `runtime/codegraph.py` | metis |
-| runtime ذاتي الشفاء | `runtime/self_healing.py` | sol sentinel |
-
-#### المرحلة 3 — تأثير عالي، تعقيد عالي (15 ميزة)
-
-| الميزة | الوحدة | المصدر |
-| :--- | :--- | :--- |
-| مزود رموز tree-sitter | `runtime/tree_sitter_provider.py` | metis |
-| مجدول اضمحلال الذاكرة | `memory/decay_scheduler.py` | OpenMemory |
-| بحث دلالي في الكود (TF-IDF) | `runtime/semantic_search.py` | metis |
-
-#### المرحلة 4 — أنماط معمارية من spec-kit + Floci (6 ميزات)
-
-| الميزة | الوحدة | المصدر |
-| :--- | :--- | :--- |
-| قوالب SDD (spec/plan/tasks/constitution/checklist) | `tech-stack/spec-driven-templates/` | spec-kit |
-| تحليل اتساق المواصفات (تغطية/غموض/دستور) | `runtime/spec_engine.py` | spec-kit |
-| تقارب المواصفات مع الكود (تحليل الفجوات) | `runtime/spec_engine.py` | spec-kit |
-| تجريد تخزين قابل للتبديل (memory/json/sqlite) | `runtime/storage_backend.py` | Floci |
-| فهرس متعدد الخدمات/المهارات | `runtime/service_catalog.py` | Floci |
-| هرم AizeeError + PaginatedResult | `runtime/schemas.py` | Floci |
-
-راجع [CHANGELOG.md](CHANGELOG.md) للتفاصيل الكاملة.
-
----
-
-## مرجع CLI
+SQLite + FTS5 بحث نصي كامل + فهرس vector اختياري (SentenceTransformers). طبقات episodic وsemantic وfactual وprocedural — الآن مع تثبيت، حذف ناعم، روابط تناقض، سلامة HMAC، واستعلامات `as_of` ثنائية الزمن.
 
 ```bash
-aizee status                         # صحة + إحصائات
-aizee doctor                         # تشخيص كامل
-aizee persona detect --multi "مهمة"  # كشف الشخصيات
-aizee check edit --args '{"tokens":100}'  # بوابة policy + budget
-aizee run 02-execution               # تشغيل سير عمل
-aizee memory ingest                  # إعادة بناء الفهرس
-aizee memory search "استعلام"        # بحث في الذاكرة
-aizee skill list                     # قائمة المهارات
-aizee test --full                    # اختبارات كاملة مع تغطية
+aizee memory ingest                # إعادة بناء الفهرس بعد التغييرات
+aizee memory search "docker"       # بحث نصي + دلالي
+aizee memory compact               # إبقاء Memory.md ضمن سقف الأسطر
 ```
+
+### 5. بوابات الجودة (صفر عيوب)
+```bash
+ruff check .                 # 0 تحذيرات
+mypy                         # كتابة صارمة
+aizee test --full            # المجموعة الكاملة + التغطية (fail-under=100)
+python eval/harness.py       # تقييم E2E: ruff + mypy + pytest + validate-globals
+```
+
+### 6. كفاءة الرموز
+كشف الشخصيات محلي (Python خالص، صفر tokens LLM). Code Mode يستبدل ذهاب-إياب JSON لاستدعاء الأدوات بمقاطع معزولة تستدعي الأدوات مباشرة — tokens تنسيقية أقل بشكل ملموس في مهام الأدوات المتعددة.
 
 ---
 
-## الاتصال بمساعدك الذكي
+## خريطة الإنفاذ في وقت التشغيل
 
-| الأداة | ملف الإعداد |
+| المسار | البوابات المطبقة |
 | :--- | :--- |
-| Cursor | `.cursor/rules/aizee.mdc` |
-| Claude Code | `.claude/CLAUDE.md` |
-| Windsurf | `.windsurfrules` |
-| Cline | `.clinerules/aizee.md` |
-| Aider | `.aider.conf.yml` |
-| GitHub Copilot | `.github/copilot-instructions.md` |
-| Devin | `.devin/skills/global-os/SKILL.md` |
-
-المثبّت يربط هذه تلقائيًا بالمواقع الصحيحة.
+| `Kernel.act()` | Probity → Guardian → Policy → Loop → Budget → Audit + فحوص prompt لـ AgentGateway |
+| MCP الصادر (`McpClient`، `McpAgent`، `aizee mcp call`) | mcp_firewall → طلب البوابة → تنفيذ → استجابة البوابة |
+| MCP الوارد (أدوات `aizee_mcp`) | RBAC + تغليف طلب/استجابة بالبوابة |
+| الدردشة (`kernel.chat_message`) | prompt_gate → … → خطافات `output.pre_send` |
+| كتابات الذاكرة | خطافات `memory.pre_write` (نقض/تعديل) + سلامة HMAC |
+| Code Mode (`aizee codemode`) | فحص AST + builtins مقيّدة + `call_tool` محكوم |
+| مهام A2A | Bearer auth + معالج مهام محكوم |
 
 ---
 
-## المثبّت الرسومي
-
-واجهة **WPF كاملة** بـ 8 صفحات، ثيم داكن، تقدم حي، وإدارة أسرار `.env`.
-
-**تشغيل بـ double-click** (Windows): شغّل `install.bat` — لا حاجة لطرفية.
-
-**من الطرفية:**
-```powershell
-.\install.ps1 -Gui                    # تشغيل الواجهة
-.\installer\gui_installer.ps1 -Silent # تثبيت صامت
-```
-
----
-
-## لوحة التحكم
+## لوحة القيادة
 
 ```bash
 python dashboard/server.py 8080
-# ← http://127.0.0.1:8080
+# → http://127.0.0.1:8080
 ```
 
-واجهة command-center داكنة: لوحة أوامر (`Ctrl+K`)، بطاقات مقاييس، حبوب حالة. مصادقة Bearer اختيارية عبر `AIZEE_DASHBOARD_TOKEN`.
+واجهة مركز قيادة داكنة أولًا: لوحة أوامر (`Ctrl+K`)، مقاييس bento، حبوب حالة، ألواح زجاجية. مصادقة Bearer اختيارية عبر `AIZEE_DASHBOARD_TOKEN`.
 
-**الأقسام:** نظرة عامة · مستكشف الذاكرة · sandbox السياسات · سير العمل · Sagas · محادثة · Tech Stack · القياسات · صحة النظام · سجلات التدقيق · **الإعدادات**
+**التبويبات:** نظرة عامة · مستكشف الذاكرة · رمل السياسات · سير العمل · Sagas · دردشة · Tech Stack · قياسات · صحة النظام · سجلات التدقيق · **الإعدادات**
 
-**لوحة الإعدادات** (جديد في 5.10.0) — اضبط aiZee من المتصفح بدون تعديل YAML أو env vars:
-- **خوادم MCP** — تفعيل/تعطيل 34 خادم، مجمّعة حسب الفئة (Core/Freelance/Marketing/Social/Ads/Analytics/CRM/Billing/Other). أزرار **تحديد الكل / إلغاء تحديد الكل** للتحكم الجماعي. عدّاد مباشر يعرض المفعّل/الإجمالي.
-- **الميزانية والتكاليف** — حدود tokens/cost/calls، الفترة، إجراء تجاوز الميزانية، fallback model (عالمي + جلسة).
-- **الأمان والبوابات** — Guardian، MCP Firewall، محرك السياسات، Loop Detector.
-- **دفاع الحقن** — 7 مفاتيح toggle لوحدات الدفاع + العتبات.
-- **الإضافات والشخصية** — تفعيل/تعطيل الإضافات + الشخصية الافتراضية.
-- **النظام** — rate limits، bind host، القياسات، احتفاظ التدقيق، الذاكرة، أدوات التصميم، زر **إعادة تشغيل aiZee**.
+> **مهم — عطّل خوادم MCP التي لا تستخدمها.** كل خادم مفعّل يستهلك ذاكرة وقد يولّد عملية فرعية عند أول استدعاء. بعد التثبيت، افتح **Settings → MCP Servers**، ألغِ ما لا تحتاجه (**Uncheck All** ثم أعد تحديد المطلوب)، واضغط **Save Changes**. النواة تعيد التحميل تلقائيًا عند الحفظ.
 
-> **مهم — عطّل خوادم MCP التي لا تستخدمها.** كل خادم MCP مفعّل يستهلك ذاكرة وقد يبدأ subprocess عند أول استدعاء لأداة. ترك كل 34 خادم مفعّل افتراضياً يهدر الموارد ويبطئ الإقلاع. بعد التثبيت، افتح **الإعدادات → خوادم MCP**، ألغِ تحديد الخوادم التي لا تحتاجها (استخدم **إلغاء تحديد الكل** ثم أعد تحديد ما تستخدمه فقط)، واضغط **حفظ التغييرات**. الـ kernel يعيد التحميل تلقائياً عند الحفظ — لا حاجة لإعادة تشغيل يدوي.
+الإعدادات تُحفظ في `state/settings.json` (gitignored، تنجو من التحديثات). ترحيلات المخطط تعمل تلقائيًا — النسخ القديمة تُحفظ كنسخة احتياطية.
 
-تُحفظ الإعدادات في `state/settings.json` (gitignored، ينجو من التحديثات). تعمل migrations الـ schema تلقائياً عند التحديث — الملفات القديمة تُنسخ احتياطياً إلى `settings.json.v{old}.bak`. جميع الإعدادات **تُطبّق فورياً** — حفظ التغييرات يشغل إعادة تحميل تلقائية للـ kernel تطبّق الـ overrides فوق المصادر الكنسية للإعدادات (budget.json، guardian.yaml، policies/*.yaml، إلخ).
+---
+
+## الأوامر الرئيسية
+
+| الأمر | الوظيفة |
+| :--- | :--- |
+| `aizee doctor` | صحة البيئة (46 فحصًا) |
+| `aizee heal [--apply] [-y]` | تشخيص + إصلاحات آمنة (dry-run افتراضيًا) |
+| `aizee check <action>` | حكم السياسة على إجراء |
+| `aizee memory compact [--apply]` | ضغط Memory.md إلى سقف الأسطر |
+| `aizee codemode --code/--file` | مقطع معزول يستدعي أدوات MCP |
+| `aizee task overcheck` | تدقيق الهندسة الزائدة للخطة النشطة |
+| `aizee task curriculum --stack …` | خطة تعلم مرحلية من مراجع tech-stack |
+| `aizee bootstrap --target DIR` | بناء جذر OS (بعد `pip install`) |
+| `aizee ci` | بوابات CI كاملة تشمل بوابة موثوقية الإصدار |
+| `aizee security scan <path>` | SAST + تنسيق الماسحات الخارجية |
 
 ---
 
@@ -403,22 +261,45 @@ python dashboard/server.py 8080
 | البوابة | الأمر | الحالة |
 | :--- | :--- | :--- |
 | Lint | `ruff check .` | 0 تحذيرات |
-| الأنواع | `mypy` | 0 أخطاء (90+ ملف) |
-| الاختبارات | `pytest -q` | 4028 ناجح، 96% تغطية |
-| السلامة | `validate-globals.py` | 0 أخطاء |
-| E2E | `eval/harness.py` | all_pass: true |
+| Types | `mypy` | 0 أخطاء (صارم) |
+| Tests (سريعة) | `aizee test` | طبقة سريعة بدون تغطية |
+| Tests (كاملة) | `aizee test --full` | المجموعة الكاملة، تغطية بحد أدنى 100% |
+| السلامة | `scripts/validate-globals.py` | 539 ملفًا، 0 أخطاء |
+| مزامنة الوثائق | `scripts/sync_docs.py --check` | متزامنة |
+| E2E | `python eval/harness.py` | كل البوابات تنجح |
+| الإصدار | `python eval/release_gate.py` | سلم موثوقية على أدلة rollouts |
+
+---
+
+## حزمة التقنيات
+
+- **النواة:** Python خالص 3.10+ (لا حاجة لـ Node.js لنواة OS)
+- **الذاكرة:** SQLite + FTS5 + vectors اختيارية بـ SentenceTransformers
+- **MCP:** خادم FastMCP بـ 98 أداة
+- **لوحة القيادة:** خادم HTTP من stdlib + SQLite
+- **رسم المعرفة:** graphify (اختياري)
+- **التبعيات:** pyyaml، pydantic، rich، cryptography، numpy، turbovec
+
+---
+
+## المساهمة
+
+1. Fork ← فرع feature (`feature/*`)
+2. اكتب الاختبارات أولًا (نمط AAA، سلوك واحد لكل اختبار)
+3. شغّل `ruff check . && mypy && pytest -q && python eval/harness.py`
+4. كل البوابات يجب أن تنجح — لا PR بدون أخضر
+5. Commits اتفاقية: `type(scope): subject`
+6. PR ≤ 400 سطر، اختبارات مستهدفة فقط
 
 ---
 
 ## الرخصة
 
-MIT — راجع [LICENSE](LICENSE).
+MIT — انظر [LICENSE](LICENSE).
 
 ---
 
-</div>
-
-<div align="center">
-  <p dir="rtl"><strong>aiZee</strong> — توقف عن السماح للذكاء الاصطناعي بكتابة كود فوضوي. حوّله إلى مهندسك الرئيسي.</p>
-  <p>بناه <a href="https://linkedin.com/in/moataz-ahmed">معتز أحمد</a></p>
+<div align="center" dir="ltr">
+  <p><strong>aiZee</strong> — The policy layer for AI coding.</p>
+  <p>Built by <a href="https://linkedin.com/in/moataz-ahmed">Moataz Ahmed</a></p>
 </div>

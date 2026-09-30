@@ -248,9 +248,11 @@ class PolicyRuleSchema(BaseModel):
 
     name: str = Field(..., min_length=1)
     condition: str = Field(..., min_length=1)
-    action: str = Field(..., pattern="^(allow|ask|deny)$")
+    action: str = Field(..., pattern="^(allow|ask|deny|modify|observe)$")
     description: str = ""
     approvers: list[str] = Field(default_factory=list)
+    # Payload rewrite applied when action == "modify" (YAML `set:` map).
+    set: dict[str, Any] = Field(default_factory=dict)
 
 
 class PolicyFileSchema(BaseModel):

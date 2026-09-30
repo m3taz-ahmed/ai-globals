@@ -31,12 +31,16 @@ class SagaStatus(str, Enum):
 class Decision(str, Enum):
     """Policy decision values returned by PolicyEngine.evaluate().
 
-    Matches the ``Action`` Literal in policy.py ("allow", "ask", "deny").
+    Matches the ``Action`` Literal in policy.py. ``MODIFY`` rewrites the
+    action payload and proceeds; ``OBSERVE`` allows while emitting an
+    audit event (log-only monitoring mode).
     """
 
     ALLOW = "allow"
     ASK = "ask"
     DENY = "deny"
+    MODIFY = "modify"
+    OBSERVE = "observe"
 
 
 class ActionResultStatus(str, Enum):

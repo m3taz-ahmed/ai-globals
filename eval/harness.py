@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -168,24 +170,29 @@ class EvalHarness:
         )
         # Hermetic pytest: skip environment-dependent markers and close the
         # coverage blind spot by including plugins/ and eval/ (TEST-3/TEST-4).
-        results["pytest"] = self._run(
+        pytest_cmd = [
+            py,
+            "-m",
             "pytest",
-            [
-                py,
-                "-m",
-                "pytest",
-                "-q",
-                "-m",
-                "not integration and not mcp and not dashboard and not vector",
-                "--cov=runtime",
-                "--cov=memory",
-                "--cov=aizee_mcp",
-                "--cov=plugins",
-                "--cov=eval",
-                "--cov-report=term-missing",
-                "--cov-fail-under=68",
-            ],
-        )
+            "-q",
+            "-m",
+            "not integration and not mcp and not dashboard and not vector",
+            # Path-form sources: see aizee_cli.py cmd_test — dotted names
+            # import runtime/__init__ via find_spec and break PyO3
+            # extensions (cryptography) with double-initialization.
+            "--cov=runtime/",
+            "--cov=memory/",
+            "--cov=aizee_mcp/",
+            "--cov=plugins/",
+            "--cov=eval/",
+            "--cov-report=term-missing",
+            "--cov-fail-under=68",
+        ]
+        # Parallel workers when pytest-xdist is installed; pytest-cov merges
+        # per-worker coverage data automatically.
+        if importlib.util.find_spec("xdist") is not None:
+            pytest_cmd += ["-n", str(max(2, min(os.cpu_count() or 4, 12)))]
+        results["pytest"] = self._run("pytest", pytest_cmd)
         # Supply-chain step: generate_sbom.py can be run beforehand to emit
         # state/sbom.json (CycloneDX) covering OWASP LLM03; check_sbom.py then
         # validates it against state/deny_list.txt. Logic below is unchanged.

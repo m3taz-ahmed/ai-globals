@@ -143,13 +143,75 @@ def _get_tool_fn(name: str) -> Any:
 _GUARDED_TOOL_NAMES: set[str] = set()
 
 
+def _gateway_pre_check(tool_name: str, kwargs: dict[str, Any]) -> str | None:
+    """Run AgentGateway PRE_LLM guardrails on inbound tool arguments.
+
+    Returns a JSON error string on BLOCK, else None. Gateway failures are
+    fail-closed for guardrail execution errors (the gateway itself returns
+    BLOCK on internal guardrail errors); a wholesale gateway/kernel failure
+    degrades to allow with a warning so an offline control plane cannot
+    wedge the whole server.
+    """
+    try:
+        k = kernel()
+    except Exception as exc:
+        logger.warning("agent gateway unavailable (degraded): %s", exc)
+        return None
+    try:
+        from runtime.agent_gateway import GuardrailContext, Verdict
+
+        ctx = GuardrailContext(
+            prompt=json.dumps(kwargs, default=str),
+            tool_name=tool_name,
+            tool_payload=kwargs,
+        )
+        verdict, results = k.agent_gateway.check_request(ctx)
+    except Exception as exc:
+        logger.warning("agent gateway pre-check error (degraded): %s", exc)
+        return None
+    if verdict is Verdict.BLOCK:
+        blocking = next((r for r in results if r.verdict is Verdict.BLOCK), None)
+        reason = blocking.reason if blocking else "blocked"
+        return json.dumps({"ok": False, "error": f"blocked by agent_gateway: {reason}", "gate": "agent_gateway"})
+    return None
+
+
+def _gateway_post_check(tool_name: str, result: Any) -> Any:
+    """Run AgentGateway POST_EXECUTION guardrails on a tool result.
+
+    Scans the serialized result for injection + secrets. BLOCK converts the
+    result to a JSON error; REDACT returns the secret-stripped text.
+    """
+    if result is None:
+        return result
+    text = result if isinstance(result, str) else None
+    if text is None:
+        try:
+            text = json.dumps(result, default=str)
+        except (TypeError, ValueError):
+            return result
+    try:
+        k = kernel()
+        ok, out = k.check_tool_result("aizee", tool_name, text)
+    except Exception as exc:
+        logger.warning("agent gateway post-check error (degraded): %s", exc)
+        return result
+    if not ok:
+        return json.dumps({"ok": False, "error": f"result blocked by agent_gateway: {out}", "gate": "agent_gateway"})
+    if out != text and isinstance(result, str):
+        return out
+    return result
+
+
 def _wrap_tool_with_rbac(tool: Any) -> None:
-    """Wrap a registered tool's callable with an RBAC permission guard.
+    """Wrap a registered tool's callable with RBAC + agent-gateway guards.
 
     The original function's signature/schema (used for argument validation by
     FastMCP) is left untouched; only the callable executed at call time is
     replaced. The permission check is fail-closed (default-deny): if it raises,
     the call is denied so a corrupted RBAC config cannot silently bypass gates.
+    The gateway applies PRE_LLM (args) and POST_EXECUTION (result) guardrails -
+    the unified enforcement path for inbound MCP traffic (UEP).
     Already-guarded tools are skipped (tracked in ``_GUARDED_TOOL_NAMES``).
     """
     tool_name = str(getattr(tool, "name", "?"))
@@ -170,7 +232,10 @@ def _wrap_tool_with_rbac(tool: Any) -> None:
             except Exception as exc:
                 logger.warning("RBAC check failed for %s (fail-closed): %s", tool_name, exc)
                 return _denied()
-            return await original_fn(*args, **kwargs)
+            gate_err = _gateway_pre_check(tool_name, kwargs)
+            if gate_err is not None:
+                return gate_err
+            return _gateway_post_check(tool_name, await original_fn(*args, **kwargs))
         guarded: Any = _guarded_async
     else:
         @functools.wraps(original_fn)
@@ -181,7 +246,10 @@ def _wrap_tool_with_rbac(tool: Any) -> None:
             except Exception as exc:
                 logger.warning("RBAC check failed for %s (fail-closed): %s", tool_name, exc)
                 return _denied()
-            return original_fn(*args, **kwargs)
+            gate_err = _gateway_pre_check(tool_name, kwargs)
+            if gate_err is not None:
+                return gate_err
+            return _gateway_post_check(tool_name, original_fn(*args, **kwargs))
         guarded = _guarded_sync
 
     tool.fn = guarded

@@ -2,6 +2,129 @@
 
 ## [Unreleased]
 
+### Performance — test suite
+
+- `memory/vector.py`: `sentence_transformers` import moved behind a lazy
+  `_resolve_sentence_transformer()` (`_ST_UNSET` sentinel keeps the module
+  attribute patchable). Module import no longer pulls transformers+torch
+  (~7.6s per process, and per pytest-xdist worker).
+- `conftest.py`: GC boot window — `gc.disable()` during collection, then
+  `gc.freeze()` + sparse thresholds (50k/20/20) in
+  `pytest_collection_modifyitems`; per-test `gc.collect()` amortized to every
+  64 tests (was ~0.1s each on a large heap).
+- `aizee test` fast tier: `--ignore=` for tests/{mcp,dashboard,e2e} and
+  memory/tests/test_vector.py — `-m` deselection still paid their import cost.
+- Measured: fast tier 6,712 tests in ~67s with `-n 12` on Windows (was
+  15min+); `memory.store` import 8.6s→0.58s; 153-test subset 25s→2.1s.
+- `eval/harness.py`: pytest leg now runs with `-n` workers when pytest-xdist
+  is installed (pytest-cov merges per-worker coverage automatically).
+
+### Fixed
+
+- `runtime/tests/test_tracing_otel.py::test_noop_without_sdk` — failed when
+  `opentelemetry-api` was present as a transitive dep; now simulates absence
+  via `sys.modules` + resets the warn-once flag. Removed a stale
+  `# type: ignore` in `runtime/tracing_otel.py`.
+- `aizee_mcp/agent.py`: `tool.inputSchema` → `tool.input_schema` — the MCP
+  SDK model is snake_case; the camelCase attribute would raise
+  `AttributeError` at runtime when listing tools.
+- `runtime/tests/test_codemode.py`: tool-caller stub now returns
+  `dict[str, Any]` to match the `ToolCaller` contract (mypy).
+- Ruff cleanup of pre-existing v6 issues: duplicate `CrossToolTaintTracker`
+  export, unsorted imports, unused imports/variables in v6 test files.
+
+## [6.0.0] - 2026-09-29 (Governed Runtime — enforcement on the action path)
+
+The v6 milestone: governance controls that existed as standalone modules
+are now enforced on the actual execution paths (Kernel.act, inbound MCP
+tool dispatch, outbound MCP calls), plus the reliability/memory/tooling
+roadmap from the full-project architecture review.
+
+### Added — enforcement on the action path (P0)
+
+- `runtime/enforcement.py` — unified enforcement helper: shared-kernel
+  lookup, MCP firewall check, AgentGateway request/response verdicts,
+  approval resolution, audit logging, strict/degrade modes.
+- `Kernel.act()` now runs AgentGateway checks after Probity — prompt
+  injection and secret-leak gates apply to real actions (prompt-like
+  fields only; file/doc payloads unaffected).
+- `runtime/mcp_client.py` — outbound MCP calls (sync + async) run the
+  firewall + gateway pre-call and gateway post-result; `enforce=False`
+  opt-out for isolated transports/tests.
+- `aizee_mcp/aizee_server.py` — inbound tool dispatch keeps RBAC and is
+  additionally wrapped by AgentGateway request/response checks.
+- `aizee_mcp/agent.py` — `McpAgent` multi-server path wired the same way.
+
+### Added — detection & protocol (P0)
+
+- `runtime/injection_detector.py` — L2 semantic (embedding-similarity)
+  layer + L3 optional LLM-judge hook layered over the 13-technique L1
+  detector; structured verdict metadata; deterministic by default.
+- `runtime/dual_llm.py` — Pydantic schema for quarantined worker output;
+  schema parse failure is fail-safe (validator path unaffected).
+- `runtime/mcp_protocol.py` — MCP 2026-07-28 stateless support:
+  per-request `protocolVersion` negotiation, dual-era handling,
+  `Mcp-Method`/`Mcp-Name` header routing helpers.
+- `.env` decoding hardened — `errors="replace"` in secret loading; a
+  malformed byte can no longer crash MCP startup.
+
+### Added — governance depth (P1)
+
+- APL verdicts: policy actions `modify` (payload rewrite, audited) and
+  `observe` (allow + observe metadata) alongside allow/ask/deny.
+- `runtime/hook_lifecycle.py` — new phases `output.pre_send` and
+  `memory.pre_write`; `Kernel.chat_message` runs output hooks,
+  `MemoryStore.add_batch` runs pre-write hooks (veto via context stop).
+- `eval/chaos.py` — fault-injection scenarios (latency, exception,
+  timeout, rate-limit, partial-data, crash) + error-budget math + report.
+- `memory/store.py` — memory lifecycle: `pinned`, `deleted_at`
+  soft-delete, `contradiction_of` relations + resolve, additive schema
+  migration, HMAC integrity preserved, soft-deleted rows excluded from
+  FTS/vector/hybrid/temporal/list/relations paths.
+- `runtime/heal.py` + `aizee heal` — safe autofix orchestrator: dry-run
+  default, `--apply` with per-fix confirmation (`-y` non-interactive),
+  audits to `state/heal.log`. Fixes missing dirs, `.env` encoding,
+  version marker, memory schema drift, global MCP config.
+- Per-PR spend limits — `Budget` at scope `"pr"` + `check_pr()`; usage
+  keyed `pr:<id>` persists across sessions; wired via `pr`/`pr_id` action
+  arg or `AIZEE_PR_ID`.
+- `eval/release_gate.py` — reliability release gate: priority-ladder
+  verdicts over `state/release_rollouts.jsonl`, skips without evidence,
+  wired into `aizee ci` (`CIPipeline`).
+
+### Added — v6 strategic (P2)
+
+- `runtime/codemode/` — Code Mode: sandboxed Python snippets that call
+  MCP tools via `call_tool()`; AST scan (plugin sandbox reuse) +
+  restricted builtins + governed tool bridge + wall-clock timeout;
+  `aizee codemode --code/--file`.
+- `runtime/a2a_server.py` — A2A server-side exposure: agent card at
+  `/.well-known/agent-card.json`, JSON-RPC `tasks/send|get|cancel`,
+  task store with JSONL persistence, loopback bind + bearer token
+  (SEC-14), task handler routes through the governed kernel.
+- `memory/store.py::as_of()` — bi-temporal point-in-time queries:
+  transaction time (`created_at`/`deleted_at`) + valid time
+  (`valid_from`/`valid_to`).
+- `memory/compactor.py` + `aizee memory compact` — Memory.md
+  auto-compaction: 500-line budget, newest `[UPDATED]` sections kept,
+  `[PINNED]` bullets rescued, dropped sections archived under
+  `memory/archive/`, atomic rewrite, dry-run default.
+- `runtime/bootstrap.py` + `aizee bootstrap` — PyPI bootstrap path:
+  materializes a minimal OS root (dirs + policies + version marker +
+  .env.example + optional MCP sync), idempotent, dry-run default.
+- `runtime/overengineering.py` — advisory gold-plating audit over the
+  active task plan + graphify graph (`aizee task overcheck`).
+- `runtime/curriculum.py` — staged curriculum synthesis from
+  `tech-stack/` refs (`aizee task curriculum --stack ... [--plan]`).
+
+### Fixed
+
+- `memory/schema_contract.py` — canonical contract updated for
+  `pinned`/`deleted_at` (schema-drift verifier false-positive).
+- pytest/pytest-cov/graphifyy pin bounds reconciled with installed
+  versions; `spec.md` module-count drift corrected.
+- `.env` Windows-1252 byte repaired; repo `.env` is valid UTF-8.
+
 ## [5.17.0] - 2026-09-25 (Security Scan Execution Layer)
 
 ### Added

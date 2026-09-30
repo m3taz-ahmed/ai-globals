@@ -12,6 +12,7 @@ from typing import Any, ClassVar
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.types import TextContent
 
 
 @dataclass
@@ -44,10 +45,12 @@ class McpAgent:
     # Whitelist of safe commands for server registration
     _SAFE_COMMANDS: ClassVar[set[str]] = {"python", "npx", "uvx", "node"}
 
-    def __init__(self, name: str = "aios-agent") -> None:
+    def __init__(self, name: str = "aios-agent", enforce: bool = True) -> None:
         self.name = name
         self.servers: dict[str, StdioServerParameters] = {}
         self._tools: list[Tool] = []
+        # Unified Enforcement Path: set False only in tests.
+        self._enforce = enforce
         self._history: list[ToolCall] = []
         self.allowed_tools: set[str] | None = None  # None = all allowed (no whitelist)
 
@@ -84,7 +87,9 @@ class McpAgent:
                             name=tool.name,
                             server=server_name,
                             description=tool.description or "",
-                            input_schema=tool.inputSchema or {},
+                            # mcp SDK renamed the field across versions
+                            # (1.x inputSchema -> 2.x input_schema).
+                            input_schema=getattr(tool, "input_schema", None) or getattr(tool, "inputSchema", None) or {},
                         )
                     )
         self._tools = tools
@@ -121,16 +126,74 @@ class McpAgent:
             return call
 
         params = self.servers[tool.server]
+        gated = self._enforce_call(tool.server, name, arguments)
+        if gated is not None:
+            self._history.append(gated)
+            return gated
         async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool(name, arguments=arguments)
+            texts = [c.text for c in result.content if isinstance(c, TextContent)] if result.content else None
+            texts = self._enforce_result(tool.server, name, texts)
             call = ToolCall(
                 tool=name,
                 arguments=arguments,
-                result=[c.text for c in result.content if hasattr(c, "text")] if result.content else None,
+                result=texts,
             )
             self._history.append(call)
             return call
+
+    def _enforce_call(
+        self, server: str, name: str, arguments: dict[str, Any]
+    ) -> ToolCall | None:
+        """UEP: firewall + agent-gateway pre-check on outbound calls."""
+        if not self._enforce:
+            return None
+        try:
+            import config
+            from runtime.enforcement import enforce_tool_call_root
+
+            decision = enforce_tool_call_root(config.discover_root(), server, name, arguments)
+        except Exception as exc:  # pragma: no cover - degrade, never wedge
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "MCP enforcement error (degraded): %s", exc, exc_info=True
+            )
+            return None
+        if decision is None:
+            return None
+        return ToolCall(
+            tool=name,
+            arguments=arguments,
+            error=f"[{decision.get('decision','deny')}] {decision.get('reason','blocked')}",
+        )
+
+    def _enforce_result(
+        self, server: str, name: str, texts: list[str] | None
+    ) -> list[str] | None:
+        """UEP: post-execution gateway check on tool result content."""
+        if not texts or not self._enforce:
+            return texts
+        try:
+            import config
+            from runtime.enforcement import enforce_tool_result_root
+
+            root = config.discover_root()
+            out: list[str] = []
+            for text in texts:
+                ok, checked = enforce_tool_result_root(root, server, name, text)
+                if not ok:
+                    return [f"Result blocked by agent_gateway: {checked}"]
+                out.append(checked)
+            return out
+        except Exception as exc:  # pragma: no cover
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "MCP result enforcement error (degraded): %s", exc, exc_info=True
+            )
+            return texts
 
     async def run_task(self, task: str, steps: int = 10) -> list[ToolCall]:
         """Run a simple task loop (placeholder; real driver is an LLM planner)."""

@@ -23,20 +23,36 @@ import config
 
 logger = logging.getLogger(__name__)
 
-SentenceTransformer: Any = None
+_ST_UNSET: Any = object()
+SentenceTransformer: Any = _ST_UNSET
 IdMapIndex: Any = None
-
-try:
-    from sentence_transformers import SentenceTransformer as _SentenceTransformer
-    SentenceTransformer = _SentenceTransformer
-except ImportError:  # pragma: no cover
-    pass
 
 try:
     from turbovec import IdMapIndex as _IdMapIndex
     IdMapIndex = _IdMapIndex
 except ImportError:  # pragma: no cover
     pass
+
+
+def _resolve_sentence_transformer() -> None:
+    """Resolve the ``SentenceTransformer`` class on first use.
+
+    Importing ``sentence_transformers`` pulls in ``transformers`` + ``torch``
+    (~7s cold on Windows), so it must not run at module import time — the root
+    ``conftest.py`` imports :mod:`memory.store` (hence this module) on every
+    pytest invocation. ``_ST_UNSET`` marks "not attempted"; ``None`` means the
+    optional dependency is absent or was patched off by tests.
+    """
+    global SentenceTransformer
+    if SentenceTransformer is not _ST_UNSET:
+        return
+    try:
+        from sentence_transformers import SentenceTransformer as _SentenceTransformer
+    except Exception as exc:  # absent or broken optional dependency
+        logger.info("sentence_transformers unavailable: %s", exc)
+        SentenceTransformer = None
+    else:
+        SentenceTransformer = _SentenceTransformer
 
 
 def _mem_id_to_uint64(mem_id: str) -> int:
@@ -72,6 +88,7 @@ class Embedder:
         """Load the SentenceTransformer model on first use (lazy)."""
         if self.model is not None:
             return
+        _resolve_sentence_transformer()
         if SentenceTransformer is None:
             return
         # Reuse the singleton if the model name matches
@@ -91,7 +108,8 @@ class Embedder:
         raise RuntimeError("SentenceTransformer model is not available.")
 
     def is_available(self) -> bool:
-        # Check without triggering a load: True only if the library is importable.
+        # Check without loading the model: resolves the optional import once.
+        _resolve_sentence_transformer()
         return SentenceTransformer is not None
 
     @classmethod
@@ -119,12 +137,23 @@ class VectorMemory:
 
     def _load_or_create(self) -> None:
         if self.index_path.exists():
-            self.index = IdMapIndex.load(str(self.index_path))
+            try:
+                self.index = IdMapIndex.load(str(self.index_path))
+            except (OSError, ValueError, RuntimeError) as exc:
+                # turbovec major upgrades can drop older index formats; the
+                # index is derived data — rebuild empty and let ingest refill.
+                logger.warning("Vector index incompatible (%s); rebuilding empty index", exc)
+                self.index = IdMapIndex(dim=self.dim, bit_width=4)
+                return
         else:
             self.index = IdMapIndex(dim=self.dim, bit_width=4)
         if self.map_path.exists():
-            with self.map_path.open("r", encoding="utf-8") as f:
-                self.id_map = json.load(f)
+            try:
+                with self.map_path.open("r", encoding="utf-8") as f:
+                    self.id_map = json.load(f)
+            except (OSError, json.JSONDecodeError) as exc:
+                logger.warning("Vector id-map unreadable (%s); starting empty", exc)
+                self.id_map = {}
 
     def _save_map(self) -> None:
         # Atomic write: a crash mid-write must not corrupt vector_id_map.json.

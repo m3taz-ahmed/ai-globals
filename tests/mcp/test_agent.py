@@ -7,6 +7,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from mcp.types import TextContent
 
 from aizee_mcp.agent import McpAgent, Tool, ToolCall
 
@@ -18,13 +19,13 @@ pytestmark = pytest.mark.mcp
 
 
 def test_agent_registers_servers():
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("mock", "python", args=["-m", "mock_server"])
     assert "mock" in agent.servers
 
 
 def test_agent_starts_empty():
-    agent = McpAgent()
+    agent = McpAgent(enforce=False)
     assert agent.list_tools() == []
     assert agent.find_tool("missing") is None
 
@@ -73,14 +74,14 @@ def _make_mock_session(tools=None, call_result=None):
 
 def test_register_server_unsafe_command_raises():
     """Cover line 64: command not in safe whitelist raises ValueError."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     with pytest.raises(ValueError, match="not in the safe-command whitelist"):
         agent.register_server("evil", "/bin/rm", args=["-rf", "/"])
 
 
 def test_register_server_with_env():
     """Cover register_server with env parameter."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("mock", "python", args=["-m", "server"], env={"API_KEY": "secret"})
     assert "mock" in agent.servers
     assert agent.servers["mock"].env == {"API_KEY": "secret"}
@@ -88,7 +89,7 @@ def test_register_server_with_env():
 
 def test_register_server_node_command():
     """Cover register_server with node command (in safe whitelist)."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("node-server", "node", args=["server.js"])
     assert "node-server" in agent.servers
 
@@ -100,7 +101,7 @@ def test_register_server_node_command():
 
 def test_discover_tools_finds_tools():
     """Cover lines 76-91: discover_tools returns tools from registered servers."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("mock", "python", args=["-m", "mock_server"])
 
     mock_tool = MagicMock()
@@ -127,7 +128,7 @@ def test_discover_tools_finds_tools():
 
 def test_discover_tools_empty_server():
     """Cover lines 76-91: discover_tools with no tools returned."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("mock", "python", args=["-m", "mock_server"])
 
     session = _make_mock_session(tools=[])
@@ -143,7 +144,7 @@ def test_discover_tools_empty_server():
 
 def test_discover_tools_multiple_servers():
     """Cover lines 76-91: discover_tools from multiple servers."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("server1", "python", args=["-m", "s1"])
     agent.register_server("server2", "node", args=["s2.js"])
 
@@ -183,7 +184,7 @@ def test_discover_tools_multiple_servers():
 
 def test_find_tool_existing():
     """Cover lines 98-99: find_tool returns the matching tool."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     tool = Tool(name="read", server="mock", description="read file")
     agent._tools = [tool]
     found = agent.find_tool("read")
@@ -192,7 +193,7 @@ def test_find_tool_existing():
 
 def test_find_tool_missing():
     """Cover lines 98-99: find_tool returns None for missing tool."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent._tools = [Tool(name="read", server="mock")]
     found = agent.find_tool("write")
     assert found is None
@@ -205,7 +206,7 @@ def test_find_tool_missing():
 
 def test_call_tool_whitelist_rejects():
     """Cover lines 108-115: tool not in allowed_tools whitelist."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.allowed_tools = {"read"}
     agent._tools = [Tool(name="read", server="mock")]
 
@@ -217,7 +218,7 @@ def test_call_tool_whitelist_rejects():
 
 def test_call_tool_not_found():
     """Cover lines 117-121: tool not found in registered tools."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent._tools = []
 
     call = asyncio.run(agent.call_tool("missing_tool", {"arg": "val"}))
@@ -228,15 +229,13 @@ def test_call_tool_not_found():
 
 def test_call_tool_success():
     """Cover lines 123-133: successful tool call returns result."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("mock", "python", args=["-m", "mock_server"])
     agent._tools = [Tool(name="read", server="mock")]
 
     # Mock the call_tool response
-    mock_content = MagicMock()
-    mock_content.text = "file contents here"
     mock_result = MagicMock()
-    mock_result.content = [mock_content]
+    mock_result.content = [TextContent(type="text", text="file contents here")]
 
     session = _make_mock_session(call_result=mock_result)
     stdio_mock = _mock_stdio_client()
@@ -254,7 +253,7 @@ def test_call_tool_success():
 
 def test_call_tool_success_no_content():
     """Cover line 130: result with no content returns None."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.register_server("mock", "python", args=["-m", "mock_server"])
     agent._tools = [Tool(name="read", server="mock")]
 
@@ -275,15 +274,13 @@ def test_call_tool_success_no_content():
 
 def test_call_tool_whitelist_allows():
     """Cover lines 108-115: tool in allowed_tools whitelist is allowed."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent.allowed_tools = {"read"}
     agent.register_server("mock", "python", args=["-m", "mock_server"])
     agent._tools = [Tool(name="read", server="mock")]
 
-    mock_content = MagicMock()
-    mock_content.text = "ok"
     mock_result = MagicMock()
-    mock_result.content = [mock_content]
+    mock_result.content = [TextContent(type="text", text="ok")]
 
     session = _make_mock_session(call_result=mock_result)
     stdio_mock = _mock_stdio_client()
@@ -304,14 +301,14 @@ def test_call_tool_whitelist_allows():
 
 def test_run_task_no_tools_breaks_immediately():
     """Cover lines 137-145: run_task breaks when no tools registered."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     calls = asyncio.run(agent.run_task("do something"))
     assert calls == []
 
 
 def test_run_task_success_first_call():
     """Cover lines 137-145: run_task succeeds on first call (no error)."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent._tools = [Tool(name="read", server="mock")]
 
     with patch.object(agent, "call_tool", AsyncMock(return_value=ToolCall(tool="read", result="ok"))):
@@ -323,7 +320,7 @@ def test_run_task_success_first_call():
 
 def test_run_task_retries_on_error():
     """Cover lines 137-145: run_task retries when call has error."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent._tools = [Tool(name="read", server="mock")]
 
     error_call = ToolCall(tool="read", error="failed")
@@ -338,7 +335,7 @@ def test_run_task_retries_on_error():
 
 def test_run_task_exhausts_steps():
     """Cover lines 137-145: run_task exhausts all steps on persistent error."""
-    agent = McpAgent("test")
+    agent = McpAgent("test", enforce=False)
     agent._tools = [Tool(name="read", server="mock")]
 
     error_call = ToolCall(tool="read", error="always fails")
@@ -347,3 +344,48 @@ def test_run_task_exhausts_steps():
         calls = asyncio.run(agent.run_task("do something", steps=3))
         assert len(calls) == 3
         assert all(c.error == "always fails" for c in calls)
+
+
+def test_call_tool_gated_by_enforcement():
+    """Cover agent.py 129-130: enforce=True + deny decision short-circuits."""
+    agent = McpAgent("test", enforce=True)
+    agent.register_server("mock", "python", args=["-m", "mock_server"])
+    agent._tools = [Tool(name="wipe", server="mock")]
+
+    with patch(
+        "runtime.enforcement.enforce_tool_call_root",
+        return_value={"decision": "deny", "reason": "destructive"},
+    ):
+        call = asyncio.run(agent.call_tool("wipe", {}))
+    assert "deny" in call.error and agent._history[-1] is call
+
+
+def test_enforce_call_allow_returns_none():
+    """Cover agent.py 150-163: enforcement ran, decision None -> proceed."""
+    agent = McpAgent("test", enforce=True)
+    with patch("runtime.enforcement.enforce_tool_call_root", return_value=None):
+        assert agent._enforce_call("srv", "read", {}) is None
+
+
+def test_enforce_result_filters_and_blocks():
+    """Cover agent.py 176-187: result enforcement maps/blocks text."""
+    agent = McpAgent("test", enforce=True)
+
+    with patch(
+        "runtime.enforcement.enforce_tool_result_root",
+        side_effect=lambda root, s, n, t: (True, t.upper()),
+    ):
+        assert agent._enforce_result("s", "t", ["abc"]) == ["ABC"]
+
+    with patch(
+        "runtime.enforcement.enforce_tool_result_root",
+        return_value=(False, "secret detected"),
+    ):
+        out = agent._enforce_result("s", "t", ["x"])
+        assert out is not None and "blocked" in out[0].lower()
+
+
+def test_enforce_disabled_passthrough():
+    agent = McpAgent("test", enforce=False)
+    assert agent._enforce_call("s", "t", {}) is None
+    assert agent._enforce_result("s", "t", ["x"]) == ["x"]

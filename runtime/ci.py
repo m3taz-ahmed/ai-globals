@@ -44,6 +44,9 @@ class CIPipeline:
         if not skip_pytest:
             checks.append(("pytest", [sys.executable, "-m", "pytest", "-q"]))
         checks.append(("eval/harness", [sys.executable, "eval/harness.py"]))
+        # P1.7: reliability release gate — skips cleanly when no rollout
+        # evidence exists, fails on KILL/INSUFFICIENT ladder verdicts.
+        checks.append(("release-gate", [sys.executable, "eval/release_gate.py", "--project", str(self.root)]))
 
         for name, cmd in checks:
             code, output = run_command(cmd, self.root)

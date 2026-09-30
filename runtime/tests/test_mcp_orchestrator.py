@@ -166,3 +166,135 @@ def test_deep_get_unsupported_type():
 
     obj = "just a string"
     assert _deep_get(obj, "some.attr") is None
+
+
+class _CaptureAgent:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+
+    async def call_tool(self, name: str, arguments: dict[str, Any]) -> object:
+        from aizee_mcp.agent import ToolCall
+
+        self.calls.append((name, arguments))
+        return ToolCall(tool=name, arguments=arguments, result={"ok": True})
+
+
+def test_resolve_ref_without_dot(tmp_path):
+    agent = _CaptureAgent()
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
+    plan = Plan(id="p", steps=[Step(id="a", tool="t", arguments={"x": "${literal}"})])
+    out = asyncio.run(orch.execute(plan))
+    assert out["a"].status == StepStatus.COMPLETED
+    assert agent.calls[0][1]["x"] == "${literal}"
+
+
+def test_resolve_ref_missing_step(tmp_path):
+    agent = _CaptureAgent()
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
+    plan = Plan(id="p", steps=[Step(id="a", tool="t", arguments={"x": "${ghost.out}"})])
+    out = asyncio.run(orch.execute(plan))
+    assert out["a"].status == StepStatus.COMPLETED
+    assert agent.calls[0][1]["x"] == "${ghost.out}"
+
+
+def test_execute_async_alias():
+    agent = _FakeAgent({"t": {"v": 1}})
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
+    plan = Plan(id="p", steps=[Step(id="a", tool="t")])
+    out = asyncio.run(orch.execute_async(plan))
+    assert out["a"].status == StepStatus.COMPLETED
+
+
+def test_unsatisfiable_dep_fails_loudly():
+    agent = _FakeAgent()
+    orch = McpOrchestrator(agent)  # type: ignore[arg-type]
+    plan = Plan(id="p", steps=[Step(id="a", tool="t", depends_on=["ghost"])])
+    out = asyncio.run(orch.execute(plan))
+    assert out["a"].status == StepStatus.FAILED
+    assert "unsatisfiable" in out["a"].error
+
+
+def test_failed_chain_dangling_and_shared_deps():
+    # 'b' depends on a real step plus a dangling id (not in plan) and shares
+    # dep 'a' with 'c' -> _failed_chain hits step-is-None + seen-skip arcs.
+    orch = McpOrchestrator(_FakeAgent())  # type: ignore[arg-type]
+    plan = Plan(
+        id="p",
+        steps=[
+            Step(id="a", tool="ok", depends_on=["root"]),
+            Step(id="root", tool="ok"),
+            Step(id="b", tool="fail", depends_on=["a", "ghost"]),
+            Step(id="c", tool="ok", depends_on=["a", "root"]),
+        ],
+    )
+    chain = orch._failed_chain(plan, "b")
+    ids = [s.id for s in chain]
+    assert "a" in ids and "root" in ids and "ghost" not in ids
+
+
+def test_rollback_skips_ancestor_without_tool():
+    # Ancestor completed but has no rollback_tool -> condition false arc.
+    class FailAgent:
+        async def call_tool(self, tool, args):
+            if tool == "fail":
+                raise RuntimeError("boom")
+            return type("R", (), {"error": "", "result": {"ok": 1}})()
+
+    orch = McpOrchestrator(FailAgent())  # type: ignore[arg-type]
+    plan = Plan(
+        id="p",
+        steps=[
+            Step(id="a", tool="ok"),  # no rollback_tool
+            Step(id="b", tool="fail", depends_on=["a"]),
+        ],
+    )
+    out = asyncio.run(orch.execute(plan))
+    assert out["a"].status == StepStatus.COMPLETED and out["b"].status == StepStatus.FAILED
+
+
+def test_deadlock_marks_all_pending_failed():
+    # a <-> b circular deps: both stay pending, deadlock marks each FAILED.
+    orch = McpOrchestrator(_FakeAgent())  # type: ignore[arg-type]
+    plan = Plan(
+        id="p",
+        steps=[
+            Step(id="a", tool="t", depends_on=["b"]),
+            Step(id="b", tool="t", depends_on=["a"]),
+        ],
+    )
+    out = asyncio.run(orch.execute(plan))
+    assert out["a"].status == StepStatus.FAILED and out["b"].status == StepStatus.FAILED
+
+
+def test_deadlock_skips_completed_steps():
+    # 'ok' completes, then a<->b deadlock marks only pending steps; the
+    # non-pending iteration covers the false arc of `step.id in pending`.
+    orch = McpOrchestrator(_FakeAgent({"t": 1}))  # type: ignore[arg-type]
+    plan = Plan(
+        id="p",
+        steps=[
+            Step(id="ok", tool="t"),
+            Step(id="a", tool="t", depends_on=["b"]),
+            Step(id="b", tool="t", depends_on=["a"]),
+        ],
+    )
+    out = asyncio.run(orch.execute(plan))
+    assert out["ok"].status == StepStatus.COMPLETED
+    assert out["a"].status == StepStatus.FAILED and out["b"].status == StepStatus.FAILED
+
+
+def test_failed_chain_shared_dep_seen_skip():
+    # x and y both depend on 'shared' -> second visit hits `dep in seen`.
+    orch = McpOrchestrator(_FakeAgent())  # type: ignore[arg-type]
+    plan = Plan(
+        id="p",
+        steps=[
+            Step(id="shared", tool="t"),
+            Step(id="x", tool="t", depends_on=["shared"]),
+            Step(id="y", tool="t", depends_on=["shared"]),
+            Step(id="b", tool="fail", depends_on=["x", "y"]),
+        ],
+    )
+    chain = orch._failed_chain(plan, "b")
+    ids = [s.id for s in chain]
+    assert ids == ["y", "x", "shared"]  # reverse plan order

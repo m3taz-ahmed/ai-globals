@@ -88,6 +88,10 @@ def _init_core_services(kernel: Kernel) -> None:
     kernel.tracer = kernel._build_tracer()
     kernel.governance = GovernanceHooks(kernel.audit, kernel.telemetry)
     kernel.mcp_firewall = kernel._build_mcp_firewall()
+    kernel.agent_gateway = kernel._build_agent_gateway()
+    from runtime.hook_lifecycle import HookRegistry
+
+    kernel.hook_registry = HookRegistry()
     kernel.loop_detector = LoopDetector(window=20, threshold=5)
     # -- Modernization v5.13: advanced governance services --
     # MCP security: deterministic auditor + manifest lock + cross-tool taint
@@ -292,6 +296,67 @@ def _run_guardian_gate(
     return None
 
 
+_PROMPT_FIELD_KEYS = ("message", "prompt", "query", "request", "task")
+
+
+def _run_agent_gateway_gate(
+    kernel: Kernel, action_type: str, action_data: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Run the agent gateway PRE_LLM phase on act() input (UEP).
+
+    Only prompt-carrying fields (message/prompt/query/request/task) are
+    scanned - file contents and commands stay with Probity/Guardian, which
+    carry the correct deny/ask semantics for local actions. A REDACT
+    verdict cannot be applied to structured kwargs, so it is logged and
+    treated as a warning (allow) - secrets in prompts still BLOCK.
+    """
+    from runtime.agent_gateway import GuardrailContext, Verdict
+
+    prompt = "\n".join(
+        str(action_data[k]) for k in _PROMPT_FIELD_KEYS if action_data.get(k)
+    )
+    if not prompt:
+        return None
+    ctx = GuardrailContext(
+        prompt=prompt,
+        tool_name=action_type,
+        tool_payload=action_data,
+    )
+    try:
+        verdict, results = kernel.agent_gateway.check_request(ctx)
+    except Exception as exc:
+        # Fail-closed: a broken gateway must not silently allow prompts.
+        kernel.audit.log("agent_gateway.error", {"action": action_type, "error": str(exc)})
+        return {
+            "ok": False,
+            "decision": Decision.DENY.value,
+            "reason": f"agent_gateway error: {exc}",
+            "gate": "agent_gateway",
+        }
+    if verdict is Verdict.BLOCK:
+        blocking = next((r for r in results if r.verdict is Verdict.BLOCK), None)
+        rule = blocking.guardrail_name if blocking else "agent_gateway"
+        reason = blocking.reason if blocking else "blocked"
+        kernel._actions_total.labels(action=action_type, decision=Decision.DENY.value).inc()
+        kernel.audit.log(
+            "agent_gateway.deny",
+            {"action": action_type, "rule": rule, "reason": reason},
+        )
+        return {
+            "ok": False,
+            "decision": Decision.DENY.value,
+            "reason": f"agent_gateway: {reason}",
+            "gate": "agent_gateway",
+            "rule": rule,
+        }
+    if verdict is Verdict.REDACT:
+        kernel.audit.log(
+            "agent_gateway.redact",
+            {"action": action_type, "results": [r.to_dict() for r in results]},
+        )
+    return None
+
+
 def _run_policy_gate(
     kernel: Kernel,
     action_type: str,
@@ -307,6 +372,26 @@ def _run_policy_gate(
     if decision["decision"] == Decision.ASK.value and not kernel.policy_mgr.resolve_approval(action_data, dry_run):
         kernel._actions_total.labels(action=action_type, decision=Decision.ASK.value).inc()
         return kernel.policy_mgr.handle_policy_ask(action_data, kwargs, decision, dry_run, kernel.telemetry)
+    if decision["decision"] == Decision.MODIFY.value:
+        # APL modify verdict: rewrite payload fields via the rule's `set`
+        # map, then continue. The rewrite is audited with the key list so
+        # a modified action can be reconstructed from the ledger.
+        mods = decision.get("modifications") or {}
+        action_data.update(mods)
+        kwargs.update(mods)
+        kernel.audit.log(
+            "policy.modify",
+            {"action": action_type, "rule": decision.get("rule"), "keys": sorted(mods)},
+        )
+        kernel._actions_total.labels(action=action_type, decision=Decision.MODIFY.value).inc()
+        return None
+    if decision["decision"] == Decision.OBSERVE.value:
+        # APL observe verdict: log-only monitoring - allow + audit.
+        kernel.audit.log(
+            "policy.observe",
+            {"action": action_type, "rule": decision.get("rule")},
+        )
+        return None
     return None
 
 
@@ -421,6 +506,8 @@ class Kernel:
     tracer: TracerProvider
     governance: GovernanceHooks
     mcp_firewall: McpFirewall
+    agent_gateway: Any
+    hook_registry: Any
     loop_detector: LoopDetector
     settings_manager: SettingsManager
     # Modernization v5.13: advanced governance services
@@ -530,6 +617,36 @@ class Kernel:
             for rule in McpFirewall.from_yaml(project_rules).rules:
                 fw.add_rule(rule)
         return fw
+
+    def _build_agent_gateway(self) -> Any:
+        """Build the agent gateway (pre-LLM + post-execution guardrails).
+
+        The gateway is wired into the unified enforcement path
+        (``runtime.enforcement``) and the act() pre-LLM gate.
+        """
+        from runtime.agent_gateway import (
+            AgentGateway,
+            GuardrailPhase,
+            secret_leak_guardrail,
+        )
+
+        gw = AgentGateway()
+        # The built-in secret guardrail is PRE_LLM-only (blocks secrets in
+        # prompts). Register a POST_EXECUTION copy so tool results get the
+        # REDACT treatment through check_response() as well (UEP).
+        gw.register(
+            "secret_leak_responses", GuardrailPhase.POST_EXECUTION, secret_leak_guardrail
+        )
+        # Injection guardrail normally runs POST_EXECUTION (tool results).
+        # Register a PRE_LLM copy so user/agent prompts are scanned too.
+        from runtime.agent_gateway import prompt_injection_guardrail
+
+        gw.register(
+            "prompt_injection_requests",
+            GuardrailPhase.PRE_LLM,
+            prompt_injection_guardrail,
+        )
+        return gw
 
     # -- Modernization v5.13: builder methods for new governance services --
 
@@ -711,6 +828,9 @@ class Kernel:
         probity_result = _run_probity_gate(self, action_type, action_data)
         if probity_result is not None:
             return probity_result
+        gateway_result = _run_agent_gateway_gate(self, action_type, action_data)
+        if gateway_result is not None:
+            return gateway_result
         if fresh_context:
             self.loop_detector.reset()
         guardian_result = _run_guardian_gate(self, action_type, action_data)
@@ -767,7 +887,22 @@ class Kernel:
     def chat_message(
         self, message: str, session_id: str | None = None, fresh_context: bool = False
     ) -> dict[str, Any]:
-        return self.chat_mgr.chat_message(message, session_id, fresh_context, self.act)
+        result = self.chat_mgr.chat_message(message, session_id, fresh_context, self.act)
+        # output.pre_send hooks (UEP): can veto or annotate the outgoing
+        # response before it reaches the caller. A stopped context denies.
+        from runtime.hook_lifecycle import HookContext, HookPhase
+
+        ctx = HookContext(action="chat_message", attributes={"response": result})
+        self.hook_registry.run_phase(HookPhase.OUTPUT_PRE_SEND, ctx)
+        if ctx.stopped:
+            self.audit.log("output.pre_send.veto", {"action": "chat_message"})
+            return {
+                "ok": False,
+                "decision": Decision.DENY.value,
+                "reason": "output vetoed by output.pre_send hook",
+                "gate": "hook",
+            }
+        return result
 
     # --- Saga (delegates to WorkflowManager) ---
     def run_saga(
@@ -823,6 +958,41 @@ class Kernel:
         """
         return self.mcp_firewall.check(tool_name, args)
 
+    def check_tool_call(
+        self,
+        server: str,
+        tool_name: str,
+        args: dict[str, Any],
+        **ids: Any,
+    ) -> dict[str, Any] | None:
+        """Unified pre-call gate for MCP tool calls (UEP).
+
+        Runs the MCP firewall (allow/ask/deny) then the AgentGateway
+        PRE_LLM guardrails. Returns ``None`` when the call may proceed,
+        else a decision dict (``decision`` deny or ask +
+        ``requires_approval``).
+        """
+        from runtime.enforcement import enforce_tool_call
+
+        return enforce_tool_call(self, server, tool_name, args, **ids)
+
+    def check_tool_result(
+        self,
+        server: str,
+        tool_name: str,
+        result_text: str,
+        **ids: Any,
+    ) -> tuple[bool, str]:
+        """Unified post-call gate for MCP tool results (UEP).
+
+        Runs the AgentGateway POST_EXECUTION guardrails. Returns
+        ``(ok, text)`` - on REDACT the text has secrets stripped, on
+        BLOCK ``ok`` is False and text is the reason.
+        """
+        from runtime.enforcement import enforce_tool_result
+
+        return enforce_tool_result(self, server, tool_name, result_text, **ids)
+
     def status(self) -> dict[str, Any]:
         return {
             "version": config.VERSION,
@@ -840,6 +1010,7 @@ class Kernel:
             "guardian_rules": [r.get("name", "unnamed") for r in self.guardian.rules],
             "capabilities": self.capabilities.list(),
             "mcp_firewall_rules": len(self.mcp_firewall.rules),
+            "agent_gateway_guardrails": len(self.agent_gateway.list_guardrails()),
             "loop_detector": self.loop_detector.stats(),
             # Modernization v5.13
             "mcp_auditor": "active",

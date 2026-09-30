@@ -82,9 +82,9 @@ def test_mcp_client_loads_config(tmp_path: Path) -> None:
         json.dumps({"mcpServers": {"graphify": {"command": "echo"}}}),
         encoding="utf-8",
     )
-    client = McpClient("graphify", tmp_path)
+    client = McpClient("graphify", tmp_path, enforce=False)
     assert client.is_configured() is True
-    client = McpClient("missing", tmp_path)
+    client = McpClient("missing", tmp_path, enforce=False)
     assert client.is_configured() is False
 
 
@@ -95,36 +95,36 @@ def test_mcp_client_loads_from_aizee_config(tmp_path: Path) -> None:
         json.dumps({"mcpServers": {"test-server": {"command": "echo", "args": ["hi"]}}}),
         encoding="utf-8",
     )
-    client = McpClient("test-server", tmp_path)
+    client = McpClient("test-server", tmp_path, enforce=False)
     assert client.is_configured() is True
     assert client.config["command"] == "echo"
 
 
 def test_mcp_client_call_tool_not_configured(tmp_path: Path) -> None:
-    client = McpClient("unknown", tmp_path)
+    client = McpClient("unknown", tmp_path, enforce=False)
     result = client.call_tool("tool", {"arg": 1})
     assert result["ok"] is False
     assert "not configured" in result["error"]
 
 
 def test_mcp_client_close_no_op(tmp_path: Path) -> None:
-    client = McpClient("any", tmp_path)
+    client = McpClient("any", tmp_path, enforce=False)
     client.close()
 
 
 def test_mcp_client_release_locked_no_process(tmp_path: Path) -> None:
-    client = McpClient("any", tmp_path)
+    client = McpClient("any", tmp_path, enforce=False)
     client._release_locked()
 
 
 def test_mcp_client_spawn_raises_when_not_configured(tmp_path: Path) -> None:
-    client = McpClient("missing", tmp_path)
+    client = McpClient("missing", tmp_path, enforce=False)
     with pytest.raises(RuntimeError, match="not configured"):
         client._spawn()
 
 
 def test_mcp_client_key_is_tuple(tmp_path: Path) -> None:
-    client = McpClient("server", tmp_path)
+    client = McpClient("server", tmp_path, enforce=False)
     assert client._key == ("server", tmp_path)
 
 
@@ -256,7 +256,7 @@ def test_terminate_pool_terminates_and_kills() -> None:
 
 def test_spawn_calls_popen(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = MagicMock(spec=subprocess.Popen)
     with patch("subprocess.Popen", return_value=mock_proc) as mock_popen:
         with patch("shutil.which", return_value="/resolved/echo"):
@@ -274,7 +274,7 @@ def test_spawn_calls_popen(tmp_path: Path) -> None:
 
 def test_spawn_no_resolution_when_which_returns_none(tmp_path: Path) -> None:
     _make_config_dir(tmp_path, command="custom-cmd")
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = MagicMock(spec=subprocess.Popen)
     with patch("subprocess.Popen", return_value=mock_proc):
         with patch("shutil.which", return_value=None):
@@ -300,7 +300,7 @@ def _mock_proc_with_io(response: str) -> MagicMock:
 
 def test_send_success(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _mock_proc_with_io('{"jsonrpc":"2.0","result":{}}\n')
     result = client._send(proc, {"method": "test"})
     assert result["result"] == {}
@@ -308,7 +308,7 @@ def test_send_success(tmp_path: Path) -> None:
 
 def test_send_no_pipes_raises(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = MagicMock(spec=subprocess.Popen)
     proc.stdin = None
     proc.stdout = None
@@ -318,7 +318,7 @@ def test_send_no_pipes_raises(tmp_path: Path) -> None:
 
 def test_send_timeout(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = MagicMock(spec=subprocess.Popen)
     proc.stdin = MagicMock()
     proc.stdout = MagicMock()
@@ -333,7 +333,7 @@ def test_send_timeout(tmp_path: Path) -> None:
 
 def test_send_reader_exception(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = MagicMock(spec=subprocess.Popen)
     proc.stdin = MagicMock()
     proc.stdout = MagicMock()
@@ -344,7 +344,7 @@ def test_send_reader_exception(tmp_path: Path) -> None:
 
 def test_send_empty_result_raises(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _mock_proc_with_io("")
     with pytest.raises(RuntimeError, match="closed stdout"):
         client._send(proc, {"method": "test"})
@@ -357,7 +357,7 @@ def test_send_empty_result_raises(tmp_path: Path) -> None:
 
 def test_ensure_process_spawns_and_initializes(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","result":{}}\n')
     with patch("subprocess.Popen", return_value=mock_proc):
         with patch("shutil.which", return_value=None):
@@ -373,7 +373,7 @@ def test_ensure_process_spawns_and_initializes(tmp_path: Path) -> None:
 
 def test_ensure_process_reap_dead_process(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     dead_proc = MagicMock(spec=subprocess.Popen)
     dead_proc.poll.return_value = 1  # dead
     dead_proc.wait.return_value = 0
@@ -390,7 +390,7 @@ def test_ensure_process_reap_dead_process(tmp_path: Path) -> None:
 
 def test_ensure_process_dead_proc_wait_timeout(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     dead_proc = MagicMock(spec=subprocess.Popen)
     dead_proc.poll.return_value = 1
     dead_proc.wait.side_effect = subprocess.TimeoutExpired("cmd", 1)
@@ -408,7 +408,7 @@ def test_ensure_process_dead_proc_wait_timeout(tmp_path: Path) -> None:
 
 def test_ensure_process_init_error_releases(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","error":"init failed"}\n')
     with patch("subprocess.Popen", return_value=mock_proc):
         with patch("shutil.which", return_value=None):
@@ -423,7 +423,7 @@ def test_ensure_process_init_error_releases(tmp_path: Path) -> None:
 
 def test_release_locked_with_process(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = MagicMock(spec=subprocess.Popen)
     proc.wait.return_value = 0
     mcp_client._PROC_POOL[client._key] = proc
@@ -437,7 +437,7 @@ def test_release_locked_with_process(tmp_path: Path) -> None:
 def test_release_locked_wait_timeout_kills(tmp_path: Path) -> None:
     proc = MagicMock(spec=subprocess.Popen)
     proc.wait.side_effect = subprocess.TimeoutExpired("cmd", 2)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     client._release_locked(proc)
     proc.kill.assert_called_once()
 
@@ -450,7 +450,7 @@ def test_release_locked_wait_timeout_kills(tmp_path: Path) -> None:
 def test_call_tool_success(tmp_path: Path) -> None:
     """_call_tool_sync returns success result from MCP server."""
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","result":{"output":"ok"}}\n')
     with patch("subprocess.Popen", return_value=mock_proc):
         with patch("shutil.which", return_value=None):
@@ -464,7 +464,7 @@ def test_call_tool_success(tmp_path: Path) -> None:
 def test_call_tool_response_error(tmp_path: Path) -> None:
     """_call_tool_sync returns error when MCP response contains 'error'."""
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","error":"tool failed"}\n')
     with patch("subprocess.Popen", return_value=mock_proc):
         with patch("shutil.which", return_value=None):
@@ -478,7 +478,7 @@ def test_call_tool_response_error(tmp_path: Path) -> None:
 def test_call_tool_exception_releases_pool(tmp_path: Path) -> None:
     """_call_tool_sync releases pool and returns error on exception."""
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = MagicMock(spec=subprocess.Popen)
     mock_proc.stdin = None
     mock_proc.stdout = None
@@ -495,7 +495,7 @@ def test_call_tool_exception_releases_pool(tmp_path: Path) -> None:
 def test_call_tool_delegates_to_async(tmp_path: Path) -> None:
     """call_tool delegates to async_call_tool via asyncio.run when no loop is running."""
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     expected = {"ok": True, "result": {"data": "value"}}
     with patch.object(client, "async_call_tool", new_callable=AsyncMock, return_value=expected) as mock_async:
         result = client.call_tool("my_tool", {"x": 1})
@@ -506,7 +506,7 @@ def test_call_tool_delegates_to_async(tmp_path: Path) -> None:
 def test_call_tool_falls_back_to_sync_in_async_context(tmp_path: Path) -> None:
     """call_tool falls back to _call_tool_sync when already inside a running event loop."""
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     mock_proc = _mock_proc_with_io('{"jsonrpc":"2.0","result":{"output":"ok"}}\n')
     with patch("subprocess.Popen", return_value=mock_proc):
         with patch("shutil.which", return_value=None):
@@ -537,7 +537,7 @@ def _make_async_proc(init_resp: bytes | None, call_resp: bytes | None):
 
 def test_async_call_tool_success(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(
         b'{"jsonrpc":"2.0","result":{}}',
         b'{"jsonrpc":"2.0","result":{"data":"ok"}}',
@@ -551,7 +551,7 @@ def test_async_call_tool_success(tmp_path: Path) -> None:
 
 
 def test_async_call_tool_not_configured(tmp_path: Path) -> None:
-    client = McpClient("missing", tmp_path)
+    client = McpClient("missing", tmp_path, enforce=False)
     result = asyncio.run(client.async_call_tool("tool", {}))
     assert result["ok"] is False
     assert "not configured" in result["error"]
@@ -559,7 +559,7 @@ def test_async_call_tool_not_configured(tmp_path: Path) -> None:
 
 def test_async_call_tool_spawn_failure(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     with patch("asyncio.create_subprocess_exec", side_effect=OSError("nope")):
         with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
             with patch("runtime.mcp_client._user_site_dirs", return_value=[]):
@@ -570,7 +570,7 @@ def test_async_call_tool_spawn_failure(tmp_path: Path) -> None:
 
 def test_async_call_tool_init_closed_stdout(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(b"", b'{"jsonrpc":"2.0","result":{}}')
     with patch("asyncio.create_subprocess_exec", return_value=proc):
         with patch("runtime.mcp_client._user_script_dirs", return_value=[]):
@@ -582,7 +582,7 @@ def test_async_call_tool_init_closed_stdout(tmp_path: Path) -> None:
 
 def test_async_call_tool_init_error(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(
         b'{"jsonrpc":"2.0","error":"bad init"}',
         b'{"jsonrpc":"2.0","result":{}}',
@@ -597,7 +597,7 @@ def test_async_call_tool_init_error(tmp_path: Path) -> None:
 
 def test_async_call_tool_call_closed_stdout(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(
         b'{"jsonrpc":"2.0","result":{}}',
         b"",
@@ -612,7 +612,7 @@ def test_async_call_tool_call_closed_stdout(tmp_path: Path) -> None:
 
 def test_async_call_tool_timeout(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(b'{"jsonrpc":"2.0","result":{}}', b'{"jsonrpc":"2.0","result":{}}')
     proc.stdout.readline.side_effect = TimeoutError()
 
@@ -630,7 +630,7 @@ def test_async_call_tool_timeout(tmp_path: Path) -> None:
 
 def test_async_call_tool_response_error(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(
         b'{"jsonrpc":"2.0","result":{}}',
         b'{"jsonrpc":"2.0","error":"call failed"}',
@@ -645,7 +645,7 @@ def test_async_call_tool_response_error(tmp_path: Path) -> None:
 
 def test_async_call_tool_generic_exception(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(b'{"jsonrpc":"2.0","result":{}}', b'{"jsonrpc":"2.0","result":{}}')
     proc.stdout.readline.side_effect = ValueError("parse error")
 
@@ -663,7 +663,7 @@ def test_async_call_tool_generic_exception(tmp_path: Path) -> None:
 
 def test_async_call_tool_wait_timeout_kills(tmp_path: Path) -> None:
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = _make_async_proc(
         b'{"jsonrpc":"2.0","result":{}}',
         b'{"jsonrpc":"2.0","result":{"data":"ok"}}',
@@ -716,7 +716,7 @@ def test_user_script_dirs_userbase_dir_exists(tmp_path: Path) -> None:
 def test_call_tool_response_error_after_successful_init(tmp_path: Path) -> None:
     """Cover: _call_tool_sync returns error when response has 'error' after successful init."""
     _make_config_dir(tmp_path)
-    client = McpClient("test", tmp_path)
+    client = McpClient("test", tmp_path, enforce=False)
     proc = MagicMock(spec=subprocess.Popen)
     proc.stdin = MagicMock()
     proc.stdout = MagicMock()

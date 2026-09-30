@@ -94,6 +94,10 @@ class TestRecordSpan:
 
     def test_noop_without_sdk(self, monkeypatch, capsys):
         monkeypatch.setenv("AIZEE_OTEL_ENDPOINT", "http://x")
+        # opentelemetry-api may be installed as a transitive dep; simulate the
+        # package being absent so record_span takes the warn-once path.
+        monkeypatch.setitem(sys.modules, "opentelemetry", None)
+        monkeypatch.setattr(tracing_otel, "_warned", False)
         tracing_otel.record_span("s")
         assert "WARNING" in capsys.readouterr().out
 

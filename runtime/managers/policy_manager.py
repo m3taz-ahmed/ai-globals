@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -276,6 +277,9 @@ class PolicyManager:
         budget_kwargs: dict[str, Any] = {}
         if "rollout_id" in action_data:
             budget_kwargs["rollout_id"] = action_data["rollout_id"]
+        pr_id = action_data.get("pr") or action_data.get("pr_id") or os.environ.get("AIZEE_PR_ID")
+        if pr_id:
+            budget_kwargs["pr_id"] = str(pr_id)
         if "token_weight" in action_data:
             budget_kwargs["token_weight"] = action_data["token_weight"]
         if "input_tokens" in action_data and "output_tokens" in action_data:

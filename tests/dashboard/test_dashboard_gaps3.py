@@ -253,3 +253,74 @@ class TestHttpRemaining:
             mem.close.assert_called_once()
         finally:
             server.shutdown()
+
+
+def test_settings_restart_flushes_caches():
+    """server.py 964-971 arcs: populated kernel/memory caches get flushed."""
+    import aizee_mcp._compat  # noqa  (env parity)
+    from dashboard import server as dash_server
+
+    h = dash_server.DashboardHandler.__new__(dash_server.DashboardHandler)
+    sent = []
+    h._send = lambda code, body, *a, **k: sent.append((code, body))
+    kc = MagicMock()
+    mc = MagicMock()
+    dash_server._kernel_cache = (Path("."), kc)
+    dash_server._memory_cache = (Path("."), mc)
+    try:
+        h._send_settings_restart()
+    finally:
+        dash_server._kernel_cache = None
+        dash_server._memory_cache = None
+    kc.save.assert_called_once()
+    mc.close.assert_called_once()
+    assert sent and sent[0][0] == 200
+
+
+def test_sse_loop_exhaustion():
+    """server.py 1097->1115 arc: full 120-iteration SSE loop exits cleanly."""
+    from dashboard.server import DashboardHandler
+
+    h = DashboardHandler.__new__(DashboardHandler)
+    h.send_response = lambda *a, **k: None
+    h.send_header = lambda *a, **k: None
+    h.end_headers = lambda: None
+    h.wfile = MagicMock()
+    h.wfile.write.return_value = None
+    h.headers = {}
+    h.kernel = MagicMock()
+    h.kernel.status.return_value = {}
+    h._origin = MagicMock(return_value="")
+    DashboardHandler._sse_clients = 0
+    with patch("time.sleep", lambda s: None):
+        h._send_sse_events()
+    assert DashboardHandler._sse_clients == 0
+
+
+def test_settings_restart_no_caches():
+    """server.py 964->967, 968->971 arcs: caches absent -> skip flush."""
+    from dashboard import server as dash_server
+
+    h = dash_server.DashboardHandler.__new__(dash_server.DashboardHandler)
+    sent = []
+    h._send = lambda code, body, *a, **k: sent.append((code, body))
+    dash_server._kernel_cache = None
+    dash_server._memory_cache = None
+    h._send_settings_restart()
+    assert sent and sent[0][0] == 200
+
+
+def test_stale_cleanup_insufficient_falls_to_lru(monkeypatch):
+    """server.py 282->285: stale pop leaves count > 90% -> LRU eviction."""
+    monkeypatch.setattr(srv, "_rate_max_entries", 10)
+    srv._rate_state.clear()
+    try:
+        now = time.time()
+        srv._rate_state["old"] = (1, now - 99999)
+        for i in range(10):
+            srv._rate_state[f"fresh{i}"] = (1, now)
+        _evict_stale_entries(now)
+        assert "old" not in srv._rate_state
+        assert len(srv._rate_state) <= 9
+    finally:
+        srv._rate_state.clear()

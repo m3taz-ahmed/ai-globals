@@ -192,6 +192,13 @@ def cmd_memory(args: argparse.Namespace) -> int:
                     time.sleep(2)
             except KeyboardInterrupt:
                 console.print("[cyan]Stopped watching.[/cyan]")
+    elif args.subcommand == "compact":
+        from memory.compactor import compact_memory
+
+        target = _root(args) / "Memory.md"
+        res = compact_memory(target, max_lines=args.max_lines, dry_run=not args.apply)
+        console.print_json(json.dumps(res.to_dict(), indent=2))
+        return 0 if res.ok else 1
     return 0
 
 
@@ -523,6 +530,24 @@ def cmd_task(args: argparse.Namespace) -> int:
         result = mgr.scope_check(args.path)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0 if result["allowed"] else 1
+
+    if action == "overcheck":
+        from runtime.overengineering import detect_overengineering
+
+        oe_report = detect_overengineering(_root(args), _project_root(args))
+        print(json.dumps(oe_report.to_dict(), indent=2, ensure_ascii=False))
+        return 0
+
+    if action == "curriculum":
+        from runtime.curriculum import synthesize_curriculum
+
+        targets = [t.strip() for t in args.stack.split(",") if t.strip()]
+        cur = synthesize_curriculum(_root(args), targets)
+        if args.plan:
+            print(json.dumps(cur.to_plan_tasks(), indent=2, ensure_ascii=False))
+        else:
+            print(json.dumps(cur.to_dict(), indent=2, ensure_ascii=False))
+        return 0
 
     return 0
 
@@ -980,6 +1005,82 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0 if all(checks.values()) else 1
 
 
+def cmd_heal(args: argparse.Namespace) -> int:
+    """Diagnose the install; with --apply, run safe auto-fixes (else dry-run)."""
+    from runtime.heal import Healer, HealStatus, Severity
+
+    healer = Healer(_root(args), _project_root(args))
+    findings = healer.scan()
+    if not args.apply:
+        table = Table(title="aiZee Heal (dry-run)")
+        table.add_column("ID", style="cyan")
+        table.add_column("Severity")
+        table.add_column("Finding")
+        table.add_column("Auto-fix")
+        for f in findings:
+            if f.severity == Severity.INFO:
+                continue
+            sev = {"warn": "yellow", "error": "red"}.get(f.severity.value, "white")
+            table.add_row(f.id, f"[{sev}]{f.severity.value}[/{sev}]", f.description, f.fix_hint or "-")
+        console.print(table)
+        actionable = [f for f in findings if f.severity != Severity.INFO]
+        if actionable:
+            console.print("[dim]Dry-run only — re-run with --apply to fix auto-fixable items.[/dim]")
+            return 1
+        console.print("[green]No findings — install is healthy.[/green]")
+        return 0
+
+    results = healer.apply(findings, assume_yes=args.yes)
+    table = Table(title="aiZee Heal — applied")
+    table.add_column("ID", style="cyan")
+    table.add_column("Status")
+    table.add_column("Detail")
+    for r in results:
+        color = {
+            HealStatus.APPLIED: "green",
+            HealStatus.SKIPPED: "dim",
+            HealStatus.FAILED: "red",
+            HealStatus.MANUAL: "yellow",
+        }[r.status]
+        table.add_row(r.finding.id, f"[{color}]{r.status.value}[/{color}]", r.detail or r.finding.fix_hint)
+    console.print(table)
+    return 1 if any(r.status == HealStatus.FAILED for r in results) else 0
+
+
+def cmd_codemode(args: argparse.Namespace) -> int:
+    """Run a sandboxed Code Mode snippet that calls MCP tools."""
+    from runtime.codemode import CodeModeExecutor
+
+    source = args.code
+    if args.file:
+        source = Path(args.file).read_text(encoding="utf-8")
+    if not source:
+        console.print("[red]Provide --code or --file[/red]")
+        return 1
+    executor = CodeModeExecutor(_root(args), timeout_s=args.timeout)
+    result = executor.execute(source)
+    print(json.dumps(result.to_dict(), indent=2, default=str))
+    return 0 if result.ok else 1
+
+
+def cmd_bootstrap(args: argparse.Namespace) -> int:
+    """Materialize a minimal working aiZee OS root (post-`pip install aizee`)."""
+    from runtime.bootstrap import bootstrap
+
+    target = Path(args.target).expanduser().resolve() if args.target else _root(args)
+    res = bootstrap(
+        target,
+        source_root=_root(args),
+        force=args.force,
+        mcp_sync=not args.no_mcp,
+        dry_run=not args.yes,
+    )
+    console.print_json(json.dumps(res.to_dict(), indent=2))
+    if not args.yes:
+        console.print("[dim]Dry-run — re-run with --yes to write.[/dim]")
+    return 0 if res.ok else 1
+
+
 def cmd_uninstall(args: argparse.Namespace) -> int:
     """Interactive uninstaller with selective keep/backup.
 
@@ -1056,34 +1157,58 @@ def cmd_test(args: argparse.Namespace) -> int:
     """Run pytest with configurable speed tiers.
 
     Tiers:
-      aizee test           -> fast (default): skip slow/mcp/dashboard/vector, no coverage, ~12s
-      aizee test --full    -> full: all tests + coverage, ~35s
+      aizee test           -> fast (default): skip slow/mcp/dashboard/vector, no coverage
+      aizee test --full    -> full: all tests + coverage
       aizee test --verbose -> verbose output
-      aizee test --xdist   -> parallel execution (faster on Linux/macOS, slower on Windows)
+      aizee test --xdist   -> parallel (default for fast tier; opt-in for --full)
+      aizee test --no-xdist-> force sequential fast-tier run
     """
     if args.full:
         pytest_args = [
             sys.executable, "-m", "pytest",
             "--tb=short", "-p", "no:warnings",
-            "--cov=runtime", "--cov=memory", "--cov=aizee_mcp",
+            # Path-form sources: dotted names make coverage resolve them via
+            # importlib.find_spec, which imports runtime/__init__ during plugin
+            # init and breaks PyO3 extensions (cryptography) with a
+            # double-initialization error.
+            "--cov=runtime/", "--cov=memory/", "--cov=aizee_mcp/",
             "--cov-report=term-missing",
             "--cov-fail-under=100",
         ]
         console.print("[cyan]Running FULL test suite (all tests + coverage)...[/]")
     else:
-        # Default / --fast: skip slow tests, no coverage
+        # Default / --fast: skip slow tests, no coverage.
+        # --ignore keeps these modules out of collection entirely; -m deselect
+        # still pays their import cost during collection.
         pytest_args = [
             sys.executable, "-m", "pytest",
             "-m", "not slow and not mcp and not dashboard and not vector",
+            "--ignore=tests/mcp",
+            "--ignore=tests/dashboard",
+            "--ignore=tests/e2e",
+            "--ignore=memory/tests/test_vector.py",
             "--no-cov", "--tb=short", "-p", "no:warnings",
         ]
         console.print("[cyan]Running FAST tests (unit only, no slow/coverage)...[/]")
 
     if args.verbose:
         pytest_args.append("-v")
-    if hasattr(args, "xdist") and args.xdist:
+
+    # Fast tier parallelizes by default when pytest-xdist is installed —
+    # each worker is a spawned process, so this only pays off now that module
+    # imports are cheap (see tech-stack/pytest-8.md rule 30). --no-xdist and
+    # the --full tier keep sequential as the opt-in/opt-out boundaries.
+    import importlib.util
+
+    if args.full:
+        parallel = bool(getattr(args, "xdist", False))
+    else:
+        parallel = importlib.util.find_spec("xdist") is not None and not getattr(
+            args, "no_xdist", False
+        )
+    if parallel:
         import os
-        workers = max(2, min(os.cpu_count() or 4, 8))
+        workers = max(2, min(os.cpu_count() or 4, 12))
         pytest_args.extend(["-n", str(workers)])
 
     result = subprocess.run(pytest_args, cwd=str(_root(args)))
@@ -1118,8 +1243,10 @@ def main(argv: list[str] | None = None) -> int:
     p_query.add_argument("--explain", action="store_true")
 
     p_mem = sub.add_parser("memory", help="Memory commands")
-    p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest"])
+    p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest", "compact"])
     p_mem.add_argument("--query", default="")
+    p_mem.add_argument("--apply", action="store_true", help="compact: apply (default is dry-run)")
+    p_mem.add_argument("--max-lines", type=int, default=500, help="compact: target line budget (default 500)")
     p_mem.add_argument("--kind", default=None)
     p_mem.add_argument("--content", default="")
     p_mem.add_argument("--source", default="")
@@ -1203,6 +1330,12 @@ def main(argv: list[str] | None = None) -> int:
     p_task_scope = sp_task.add_parser("scope", help="Check a path against the active task's declared scope")
     p_task_scope.add_argument("path", help="Relative path to check")
 
+    sp_task.add_parser("overcheck", help="Advisory over-engineering audit of the active plan")
+
+    p_task_curr = sp_task.add_parser("curriculum", help="Synthesize a staged curriculum from tech-stack refs")
+    p_task_curr.add_argument("--stack", required=True, help="Comma-separated stack names (e.g. laravel-11,react-19)")
+    p_task_curr.add_argument("--plan", action="store_true", help="Emit a task-contract --tasks JSON fragment")
+
     sp_task.add_parser("context", help="Print the hook-injected contract block")
 
     p_spec = sub.add_parser("spec", help="Spec-driven development commands")
@@ -1229,14 +1362,30 @@ def main(argv: list[str] | None = None) -> int:
     p_ci = sub.add_parser("ci", help="Run CI quality gates")
     p_ci.add_argument("--skip-pytest", action="store_true", help="Skip pytest to save time")
 
+    p_heal = sub.add_parser("heal", help="Diagnose + safe auto-fix (dry-run default)")
+    p_heal.add_argument("--apply", action="store_true", help="Apply auto-fixable repairs (prompts per fix in TTY)")
+    p_heal.add_argument("--yes", "-y", action="store_true", help="Skip per-fix confirmation (non-interactive apply)")
+
+    p_codemode = sub.add_parser("codemode", help="Run a sandboxed Code Mode snippet over MCP tools")
+    p_codemode.add_argument("--code", default="", help="Inline Python snippet")
+    p_codemode.add_argument("--file", default="", help="Path to a snippet file")
+    p_codemode.add_argument("--timeout", type=float, default=15.0, help="Wall-clock timeout (seconds)")
+
+    p_bootstrap = sub.add_parser("bootstrap", help="Materialize a minimal aiZee OS root (dry-run default)")
+    p_bootstrap.add_argument("--target", default="", help="Target dir (default: current AIZEE_ROOT)")
+    p_bootstrap.add_argument("--yes", "-y", action="store_true", help="Apply (default: dry-run report)")
+    p_bootstrap.add_argument("--force", action="store_true", help="Overwrite existing files")
+    p_bootstrap.add_argument("--no-mcp", action="store_true", help="Skip global MCP config sync")
+
     p_uninstall = sub.add_parser("uninstall", help="Interactive uninstall with selective keep/backup")
     p_uninstall.add_argument("--yes", "-y", action="store_true", help="Skip confirmation (use defaults: keep learned, delete OS)")
     p_uninstall.add_argument("--gui", action="store_true", help="Launch tkinter GUI uninstaller")
 
-    p_test = sub.add_parser("test", help="Run tests (fast tier ~12s, --full: all tests with coverage ~35s)")
+    p_test = sub.add_parser("test", help="Run tests (fast tier, parallel by default; --full: all tests with coverage)")
     p_test.add_argument("--full", action="store_true", help="Full tier: all tests + coverage")
     p_test.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    p_test.add_argument("--xdist", action="store_true", help="Parallel execution (faster on Linux/macOS)")
+    p_test.add_argument("--xdist", action="store_true", help="Parallel via pytest-xdist (default for fast tier; opt-in for --full)")
+    p_test.add_argument("--no-xdist", action="store_true", help="Force sequential fast-tier run")
 
     # --- daemon ---
     p_daemon = sub.add_parser("daemon", help="Background settings-sync daemon")
@@ -1382,6 +1531,9 @@ def main(argv: list[str] | None = None) -> int:
         "graphify": cmd_graphify,
         "version": cmd_version,
         "doctor": cmd_doctor,
+        "heal": cmd_heal,
+        "codemode": cmd_codemode,
+        "bootstrap": cmd_bootstrap,
         "uninstall": cmd_uninstall,
         "daemon": cmd_daemon,
     }

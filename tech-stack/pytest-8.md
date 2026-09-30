@@ -25,6 +25,15 @@
 22. [PROHIBIT] Hardcoded paths/dates (`[TEST-03]`). Use fixtures/factories.
 23. [PROHIBIT] Empty `except`. Use `pytest.raises` or assert on outcome.
 24. [PROHIBIT] `pytest.config` global (removed in 8.x). Use `request.config` or `pytest.Config`.
+25. [REQ] `--cov` sources MUST be path-form (`--cov=src/`), never dotted module names (`--cov=src`). Dotted names make coverage resolve them via `importlib.util.find_spec`, which executes the parent package `__init__.py` during `pytest_load_initial_conftests`. Package init chains that import PyO3 extensions (e.g. `cryptography` `_rust`) fail with "PyO3 modules ... may only be initialized once per interpreter process" inside that reentrant import context, poisoning every later crypto import in the session. Path-form sources skip module resolution entirely.
+26. [REQ] Optional heavy deps (sentence_transformers/torch, transformers) MUST be lazy-imported inside the function that uses them — never module-level try/except. Root `conftest.py` imports `memory.store` on every run; a module-level ST import cost ~7.6s cold per process (and per xdist worker). Keep a patchable module attribute + `_UNSET` sentinel so tests can still `patch.object(mod, "Dep", None)`.
+27. [REQ] NEVER run `gc.collect()` in a per-test autouse fixture — a full collect costs ~0.1s+ on a large heap (~11 min across a 6.7k-test suite). Amortize (every N tests) or rely on refcounting; cyclic garbage tolerates delay.
+28. [REQ] GC boot window for large suites (PostHog/Instagram pattern): `gc.disable()` at conftest import, then in `pytest_collection_modifyitems` run `gc.freeze(); gc.set_threshold(50_000, 20, 20); gc.enable()`. Freezes permanent collection-time objects so later sweeps skip them.
+29. [REQ] Use `--ignore=<dir>` for whole-dir exclusions; `-m` deselect still imports the modules (module-level code runs at collection). aiZee fast tier ignores `tests/mcp`, `tests/dashboard`, `tests/e2e`, `memory/tests/test_vector.py`.
+30. [REQ] pytest-xdist `-n` IS a win on Windows for large suites once heavy imports are lazy (measured: 6.7k tests in ~83s at `-n 12`). Each worker re-pays import cost via spawn — keep module imports cheap. `-n logical` uses logical cores when psutil is installed.
+31. [REQ] `pytest-testmon` (`--testmon`) selects only tests affected by changed code via a coverage-derived dependency DB — ideal for FAST tier on large suites. Requires one baseline run to build `.testmondata`.
+32. [REQ] `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` + explicit `-p xdist -p timeout` trims startup ~40% for single-test invocations (auto-loaded plugins: cov, anyio, xdist, timeout...).
+33. [REQ] Never assume an optional dep is absent in tests — transitive deps (e.g. `opentelemetry-api` via litellm) may install the API surface without the SDK. Simulate absence with `monkeypatch.setitem(sys.modules, "pkg", None)` and reset warn-once globals.
 [COMPAT]
 - v8.4: current installed. `--strict-markers` enforced. `pytest-asyncio` auto mode supported.
 - Plugins: `pytest-asyncio` (0.24+, auto mode), `pytest-xdist`, `pytest-timeout`, `pytest-cov`.

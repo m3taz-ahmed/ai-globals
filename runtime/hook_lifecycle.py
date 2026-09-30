@@ -18,13 +18,21 @@ _logger = logging.getLogger(__name__)
 
 
 class HookPhase(str, Enum):
-    """Ordered phases in the action lifecycle."""
+    """Ordered phases in the action lifecycle.
+
+    ``OUTPUT_PRE_SEND`` and ``MEMORY_PRE_WRITE`` are domain integration
+    points (dot-namespaced): they are not part of the linear
+    ``_NORMAL_PHASES`` pipeline - callers invoke them explicitly via
+    :meth:`HookRegistry.run_phase` at the send/write boundary.
+    """
 
     PRE_RECEIVE = "pre_receive"
     PRE_VALIDATION = "pre_validation"
     PRE_HANDLER = "pre_handler"
     POST_HANDLER = "post_handler"
     POST_RESPONSE = "post_response"
+    OUTPUT_PRE_SEND = "output.pre_send"
+    MEMORY_PRE_WRITE = "memory.pre_write"
     ON_ERROR = "on_error"
 
 

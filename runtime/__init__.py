@@ -347,7 +347,6 @@ __all__ = [
     "CostProvider",
     "CostRecord",
     "CrossToolTaintTracker",
-    "CrossToolTaintTracker",
     "DataClassification",
     "DecisionDelta",
     "DeclaredDependency",

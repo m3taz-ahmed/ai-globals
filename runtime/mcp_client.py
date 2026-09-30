@@ -96,7 +96,7 @@ def _load_secrets_once() -> None:
         env_file = Path(__file__).resolve().parent.parent / ".env"
     if not env_file.is_file():
         return
-    for line in env_file.read_text(encoding="utf-8").splitlines():
+    for line in env_file.read_text(encoding="utf-8", errors="replace").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -251,11 +251,17 @@ class McpClient:
         server_name: str,
         os_root: Path,
         settings_manager: _SettingsLike | None = None,
+        enforce: bool = True,
     ) -> None:
         self.server_name = server_name
         self.os_root = os_root
         self.config = self._load_config()
         self._key = (server_name, os_root)
+        # Unified Enforcement Path (UEP): every outbound call traverses the
+        # MCP firewall + agent gateway. Set enforce=False only in tests.
+        self._enforce = enforce
+        # Protocol version negotiated during initialize (see mcp_protocol).
+        self._negotiated_version: str | None = None
         # Resolve the shared settings manager (process-wide cache) so the
         # dashboard toggle is honored without callers having to inject it.
         if settings_manager is None:
@@ -281,6 +287,56 @@ class McpClient:
     def is_enabled(self) -> bool:
         """Public check: is this MCP server enabled in dashboard settings?"""
         return self._is_enabled()
+
+    def _enforce_call(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any] | None:
+        """Run the outbound enforcement stack (firewall + gateway).
+
+        Returns a decision dict when the call is denied/needs approval,
+        or ``None`` when it may proceed. Enforcement-init failure degrades
+        to allow unless ``AIZEE_ENFORCE_STRICT=1``.
+        """
+        if not self._enforce:
+            return None
+        from runtime.enforcement import enforce_tool_call_root
+
+        try:
+            return enforce_tool_call_root(
+                self.os_root, self.server_name, tool_name, arguments
+            )
+        except Exception as exc:  # pragma: no cover - enforcement must not crash calls
+            _logger.warning("MCP enforcement error (degraded): %s", exc, exc_info=True)
+            return None
+
+    def _enforce_result(
+        self, tool_name: str, result: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Run post-execution guardrails on a successful tool result.
+
+        BLOCK -> convert to an error dict. REDACT -> secrets stripped from
+        the serialized result payload.
+        """
+        if not self._enforce or not result.get("ok"):
+            return result
+        payload = result.get("result")
+        try:
+            text = payload if isinstance(payload, str) else json.dumps(payload, default=str)
+        except (TypeError, ValueError):  # pragma: no cover - default=str covers most
+            return result
+        if not text:
+            return result
+        from runtime.enforcement import enforce_tool_result_root
+
+        try:
+            ok, out = enforce_tool_result_root(self.os_root, self.server_name, tool_name, text)
+        except Exception as exc:  # pragma: no cover
+            _logger.warning("MCP result enforcement error (degraded): %s", exc, exc_info=True)
+            return result
+        if not ok:
+            return {"ok": False, "error": f"Result blocked by agent_gateway: {out}", "gated": True}
+        if out != text:
+            result = dict(result)
+            result["result"] = out
+        return result
 
     def _load_config(self) -> dict[str, Any]:
         for settings_path in [self.os_root / ".claude" / "settings.json", self.os_root / "aizee_mcp" / "config.json"]:
@@ -435,15 +491,28 @@ class McpClient:
 
     def _init_server(self, proc: subprocess.Popen[str]) -> None:
         """Send initialize request to the MCP server."""
+        from runtime.mcp_protocol import (
+            DEFAULT_CLIENT_VERSION,
+            McpProtocolError,
+            extract_protocol_version,
+            negotiate,
+        )
+
         init_id = str(uuid.uuid4())
         init_resp = self._send(proc, {
             "jsonrpc": "2.0", "id": init_id, "method": "initialize",
-            "params": {"protocolVersion": "2024-11-05", "capabilities": {},
-                       "clientInfo": {"name": "aizee", "version": "4.22.1"}},
+            "params": {"protocolVersion": DEFAULT_CLIENT_VERSION, "capabilities": {},
+                       "clientInfo": {"name": "aizee", "version": "6.0.0"}},
         })
         if "error" in init_resp:
             self._release_locked(proc)
             raise RuntimeError(init_resp["error"])
+        try:
+            # Fail-closed: an unsupported negotiated version aborts init.
+            self._negotiated_version = negotiate(extract_protocol_version(init_resp))
+        except McpProtocolError as exc:
+            self._release_locked(proc)
+            raise RuntimeError(str(exc)) from exc
         _PROC_INIT[self._key] = True
 
     def _release_locked(self, proc: subprocess.Popen[str] | None = None) -> None:
@@ -481,6 +550,9 @@ class McpClient:
             return _disabled_result(self.server_name)
         if not self.config:
             return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
+        gated = self._enforce_call(tool_name, arguments)
+        if gated is not None:
+            return gated
         try:
             proc = self._ensure_process()
             call_id = str(uuid.uuid4())
@@ -502,7 +574,7 @@ class McpClient:
             return {"ok": False, "error": str(exc)}
         if "error" in resp:
             return {"ok": False, "error": resp["error"]}
-        return {"ok": True, "result": resp.get("result")}
+        return self._enforce_result(tool_name, {"ok": True, "result": resp.get("result")})
 
     def close(self) -> None:
         """Release the cached process for this server/root."""
@@ -516,6 +588,9 @@ class McpClient:
             return _disabled_result(self.server_name)
         if not self.config:
             return {"ok": False, "error": f"MCP server '{self.server_name}' not configured"}
+        gated = self._enforce_call(tool_name, arguments)
+        if gated is not None:
+            return gated
         proc = await self._async_spawn()
         if isinstance(proc, dict):
             return proc
@@ -533,7 +608,7 @@ class McpClient:
             await self._async_terminate(proc)
         if "error" in resp:
             return {"ok": False, "error": resp["error"]}
-        return {"ok": True, "result": resp.get("result")}
+        return self._enforce_result(tool_name, {"ok": True, "result": resp.get("result")})
 
     async def _async_spawn(self) -> asyncio.subprocess.Process | dict[str, Any]:
         """Spawn async subprocess. Returns process or error dict."""
@@ -562,9 +637,16 @@ class McpClient:
 
     async def _async_init(self, proc: asyncio.subprocess.Process) -> dict[str, Any] | None:
         """Send initialize request. Returns error dict or None on success."""
+        from runtime.mcp_protocol import (
+            DEFAULT_CLIENT_VERSION,
+            McpProtocolError,
+            extract_protocol_version,
+            negotiate,
+        )
+
         init_req = json.dumps({"jsonrpc": "2.0", "id": str(uuid.uuid4()),
-            "method": "initialize", "params": {"protocolVersion": "2024-11-05",
-            "capabilities": {}, "clientInfo": {"name": "aizee", "version": "4.22.1"}}}) + "\n"
+            "method": "initialize", "params": {"protocolVersion": DEFAULT_CLIENT_VERSION,
+            "capabilities": {}, "clientInfo": {"name": "aizee", "version": "6.0.0"}}}) + "\n"
         assert proc.stdin is not None
         proc.stdin.write(init_req.encode())
         await proc.stdin.drain()
@@ -575,6 +657,10 @@ class McpClient:
         init_resp = json.loads(init_line.decode())
         if "error" in init_resp:
             return {"ok": False, "error": init_resp["error"]}
+        try:
+            self._negotiated_version = negotiate(extract_protocol_version(init_resp))
+        except McpProtocolError as exc:
+            return {"ok": False, "error": str(exc)}
         return None
 
     async def _async_call(self, proc: asyncio.subprocess.Process, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:

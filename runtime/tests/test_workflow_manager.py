@@ -131,3 +131,16 @@ class TestRunSaga:
         steps = [{"action": "Read"}]
         mgr.run_saga("test-saga", steps, {"message": "test"}, act_fn, telemetry=telemetry)
         telemetry.record.assert_called_once()
+
+
+def test_list_workflows(tmp_path: Path) -> None:
+    mgr = _make_manager(tmp_path)
+    assert "test" in mgr.list_workflows()
+
+
+def test_run_workflow_persona_detector(tmp_path: Path) -> None:
+    """run_workflow with explicit persona_detector exercises inject path."""
+    mgr = _make_manager(tmp_path)
+    act_fn = MagicMock(return_value={"ok": True, "decision": {"decision": "allow"}})
+    result = mgr.run_workflow("test", {"message": "hello"}, act_fn, persona_detector=PersonaDetector())
+    assert result["ok"] is True

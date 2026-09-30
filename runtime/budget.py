@@ -595,6 +595,7 @@ class BudgetManager:
         calls: int = 0,
         dry_run: bool = False,
         rollout_id: str | None = None,
+        pr_id: str | None = None,
         token_weight: float | None = None,
         input_tokens: int | None = None,
         output_tokens: int | None = None,
@@ -662,6 +663,17 @@ class BudgetManager:
                     }
                 return {"ok": False, "reason": f"Budget exceeded: {exceeded}", "action": "block"}
 
+            pr_result: dict[str, Any] | None = None
+            if pr_id:
+                pr_result = self.check_pr(pr_id, effective_tokens, cost, calls, dry_run)
+                if not pr_result["ok"]:
+                    return {
+                        "ok": False,
+                        "reason": pr_result["reason"],
+                        "action": pr_result["action"],
+                        "pr": pr_result,
+                    }
+
             rollout_result: dict[str, Any] | None = None
             if rollout_id:
                 rollout_result = self.check_rollout(rollout_id, effective_tokens, cost, dry_run, budget)
@@ -690,7 +702,64 @@ class BudgetManager:
             if rollout_id and rollout_result is not None:
                 result["rollout"] = rollout_result
                 result["reminder"] = rollout_result["reminder"]
+            if pr_result is not None:
+                result["pr"] = pr_result
             return result
+
+    def check_pr(
+        self,
+        pr_id: str,
+        tokens: int = 0,
+        cost: float = 0.0,
+        calls: int = 0,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """Enforce a cumulative per-PR spend limit (agent-governance rule 25).
+
+        A ``Budget`` stored at scope ``"pr"`` acts as the template; usage is
+        accumulated under ``usage["pr:<pr_id>"]`` and keyed by the PR id, so
+        spend persists across sessions/processes for the lifetime of the PR.
+        """
+        with self._lock:
+            budget = self.budgets.get("pr")
+            if not budget:
+                return {"ok": True, "reason": None, "action": "allow", "pr_id": pr_id}
+            key = f"pr:{pr_id}"
+            u = self.usage.setdefault(
+                key,
+                {"tokens": 0, "cost": 0, "calls": 0, "period_key": pr_id, "process_id": os.getpid()},
+            )
+            projected = {"tokens": u["tokens"] + tokens, "cost": u["cost"] + cost, "calls": u["calls"] + calls}
+            exceeded = []
+            if budget.max_tokens is not None and projected["tokens"] >= budget.max_tokens:
+                exceeded.append("tokens")
+            if budget.max_cost_usd is not None and projected["cost"] >= budget.max_cost_usd:
+                exceeded.append("cost")
+            if budget.max_calls is not None and projected["calls"] >= budget.max_calls:
+                exceeded.append("calls")
+            if exceeded:
+                if budget.on_exceed in {"warn", "fallback"}:
+                    if not dry_run:
+                        u.update(projected)
+                        self._dirty = True
+                    return {
+                        "ok": True,
+                        "reason": f"PR budget exceeded: {exceeded}",
+                        "action": budget.on_exceed,
+                        "pr_id": pr_id,
+                        "exceeded": exceeded,
+                    }
+                return {
+                    "ok": False,
+                    "reason": f"PR budget exceeded: {exceeded}",
+                    "action": "block",
+                    "pr_id": pr_id,
+                    "exceeded": exceeded,
+                }
+            if not dry_run:
+                u.update(projected)
+                self._dirty = True
+            return {"ok": True, "reason": None, "action": "allow", "pr_id": pr_id}
 
     def would_exceed(
         self,

@@ -15,7 +15,10 @@ from typing import Any, ClassVar, Literal, cast
 
 import yaml
 
-Action = Literal["allow", "ask", "deny"]
+# APL verdicts: ``modify`` rewrites the action payload via the rule's
+# ``set`` map and proceeds; ``observe`` allows while emitting an audit
+# event (log-only monitoring). Both are non-blocking by definition.
+Action = Literal["allow", "ask", "deny", "modify", "observe"]
 
 # Action-type classification for smart fallback when no explicit rule matches.
 # This prevents read-only operations from hitting the blanket "ask" default
@@ -66,6 +69,8 @@ class PolicyRule:
     description: str = ""
     approvers: list[str] = field(default_factory=list)
     priority: int = 0  # Higher priority wins; tie -> file order (GATE-B3)
+    # Payload rewrite applied when action == "modify" (YAML `set:` map).
+    modifications: dict[str, Any] = field(default_factory=dict)
     # Pre-parsed condition AST (compiled once at load, not per evaluation).
     _tree: ast.Expression | None = field(default=None, repr=False, compare=False)
 
@@ -302,7 +307,7 @@ class PolicyEngine:
             if not isinstance(r, dict):
                 warnings.warn(f"Invalid rule in {path}: {r}", stacklevel=2)
                 continue
-            if r.get("action") not in ("allow", "ask", "deny"):
+            if r.get("action") not in ("allow", "ask", "deny", "modify", "observe"):
                 warnings.warn(f"Skipping rule with invalid action in {path}: {r.get('action')}", stacklevel=2)
                 continue
             try:
@@ -323,6 +328,7 @@ class PolicyEngine:
                     description=validated.description,
                     approvers=validated.approvers,
                     priority=_safe_priority(r.get("priority", 0)),
+                    modifications=validated.set if validated.action == "modify" else {},
                     _tree=tree,
                 )
             )
@@ -347,13 +353,16 @@ class PolicyEngine:
             ordered = self._ordered
         for rule in ordered:
             if _SafeEvaluator(action).evaluate(rule.condition, rule._tree):
-                return {
+                result = {
                     "decision": rule.action,
                     "rule": rule.name,
                     "description": rule.description,
                     "approvers": rule.approvers,
                     "requires_approval": rule.action == "ask",
                 }
+                if rule.action == "modify":
+                    result["modifications"] = dict(rule.modifications)
+                return result
         # Smart fallback: classify by action type instead of blanket default.
         # The YAML `default_action` is the final fallback for unclassified types.
         action_type = str(action.get("type", ""))

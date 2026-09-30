@@ -149,6 +149,8 @@ class Memory:
     valid_to: str | None
     integrity_sig: str | None = None  # HMAC-SHA256 over canonical content
     integrity: str = "unsigned"  # ok | tampered | unsigned
+    pinned: bool = False  # pinned entries are exempt from decay/purge
+    deleted_at: str | None = None  # soft-delete tombstone (ISO-8601)
 
 
 class _DecayHelper:
@@ -270,7 +272,8 @@ class _SearchHelper:
                     JOIN memories_fts fts ON m.rowid = fts.rowid
                     WHERE m.kind = ? AND memories_fts MATCH ?
                         AND (m.valid_to IS NULL OR m.valid_to > ?)
-                    ORDER BY rank
+                        AND m.deleted_at IS NULL
+                    ORDER BY m.pinned DESC, rank
                     LIMIT ?
                     """,
                     (kind, q, now, limit),
@@ -282,7 +285,8 @@ class _SearchHelper:
                     JOIN memories_fts fts ON m.rowid = fts.rowid
                     WHERE memories_fts MATCH ?
                         AND (m.valid_to IS NULL OR m.valid_to > ?)
-                    ORDER BY rank
+                        AND m.deleted_at IS NULL
+                    ORDER BY m.pinned DESC, rank
                     LIMIT ?
                     """,
                     (q, now, limit),
@@ -298,7 +302,7 @@ class _SearchHelper:
         ids: list[str] | None = None
         if kind or source:
             now = datetime.now(timezone.utc).isoformat()
-            conditions: list[str] = ["(valid_to IS NULL OR valid_to > ?)"]
+            conditions: list[str] = ["(valid_to IS NULL OR valid_to > ?)", "deleted_at IS NULL"]
             params: list[Any] = [now]
             if kind:
                 conditions.append("kind = ?")
@@ -344,6 +348,7 @@ class _SearchHelper:
                 "WHERE valid_from >= ? AND valid_from <= ? "
                 "AND kind = ? "
                 "AND (valid_to IS NULL OR valid_to > ?) "
+                "AND deleted_at IS NULL "
                 "ORDER BY valid_from DESC LIMIT ?"
             )
             return sql, [start, end, kind, now, limit]
@@ -351,6 +356,7 @@ class _SearchHelper:
             "SELECT * FROM memories "
             "WHERE valid_from >= ? AND valid_from <= ? "
             "AND (valid_to IS NULL OR valid_to > ?) "
+            "AND deleted_at IS NULL "
             "ORDER BY valid_from DESC LIMIT ?"
         )
         return sql, [start, end, now, limit]
@@ -372,6 +378,53 @@ class _SearchHelper:
             rows = conn.execute(sql, params).fetchall()
         return [self._store._row_to_memory(row) for row in rows]
 
+    def search_as_of(
+        self,
+        as_of: str | None = None,
+        valid_at: str | None = None,
+        kind: str | None = None,
+        limit: int = 100,
+    ) -> list[Memory]:
+        """Bi-temporal point-in-time query (P2.3).
+
+        Two clocks:
+
+        - **transaction time** (``as_of``): rows entered at or before the
+          instant — ``created_at <= as_of`` — and not yet tombstoned at
+          that instant — ``deleted_at IS NULL OR deleted_at > as_of``.
+        - **valid time** (``valid_at``): rows whose validity interval
+          covers the instant — ``valid_from <= valid_at AND
+          (valid_to IS NULL OR valid_to > valid_at)``.
+
+        Omitting a clock means "no bound" on that axis, so
+        ``as_of(now)`` reproduces the normal live view.
+        """
+        conditions: list[str] = []
+        params: list[Any] = []
+        if as_of:
+            conditions.append("created_at <= ?")
+            params.append(as_of)
+            conditions.append("(deleted_at IS NULL OR deleted_at > ?)")
+            params.append(as_of)
+        else:
+            conditions.append("deleted_at IS NULL")
+        if valid_at:
+            conditions.append("valid_from <= ?")
+            params.append(valid_at)
+            conditions.append("(valid_to IS NULL OR valid_to > ?)")
+            params.append(valid_at)
+        if kind:
+            conditions.append("kind = ?")
+            params.append(kind)
+        where = " AND ".join(conditions)
+        with self._store._conn() as conn:
+            rows = conn.execute(
+                f"SELECT * FROM memories WHERE {where} "
+                "ORDER BY pinned DESC, created_at DESC LIMIT ?",
+                (*params, limit),
+            ).fetchall()
+        return [self._store._row_to_memory(row) for row in rows]
+
     def search_safe(
         self, query: str, kind: str | None = None, limit: int = 10
     ) -> list[Memory]:
@@ -390,23 +443,37 @@ class _SearchHelper:
         limit = min(limit, 100)
         return self.search(query, kind=kind, limit=limit)
 
-    def count(self) -> int:
-        """Return total number of memories (including invalidated)."""
+    def count(self, include_deleted: bool = False) -> int:
+        """Return number of memories (soft-deleted excluded by default)."""
+        sql = "SELECT COUNT(*) as cnt FROM memories"
+        if not include_deleted:
+            sql += " WHERE deleted_at IS NULL"
         with self._store._conn() as conn:
-            row = conn.execute("SELECT COUNT(*) as cnt FROM memories").fetchone()
+            row = conn.execute(sql).fetchone()
         return int(row["cnt"]) if row else 0
 
-    def list_all(self, kind: str | None = None, limit: int = 1000) -> list[Memory]:
-        """List memories, optionally filtered by kind, most recent first."""
+    def list_all(
+        self, kind: str | None = None, limit: int = 1000, *, include_deleted: bool = False
+    ) -> list[Memory]:
+        """List memories, optionally filtered by kind, most recent first.
+
+        Soft-deleted memories are hidden unless ``include_deleted=True``;
+        pinned entries sort first.
+        """
+        alive = "" if include_deleted else "deleted_at IS NULL"
         with self._store._conn() as conn:
             if kind:
+                where = "kind = ?" + (" AND " + alive if alive else "")
                 rows = conn.execute(
-                    "SELECT * FROM memories WHERE kind = ? ORDER BY created_at DESC LIMIT ?",
+                    f"SELECT * FROM memories WHERE {where} "
+                    "ORDER BY pinned DESC, created_at DESC LIMIT ?",
                     (kind, limit),
                 ).fetchall()
             else:
+                where = f"WHERE {alive}" if alive else ""
                 rows = conn.execute(
-                    "SELECT * FROM memories ORDER BY created_at DESC LIMIT ?",
+                    f"SELECT * FROM memories {where} "
+                    "ORDER BY pinned DESC, created_at DESC LIMIT ?",
                     (limit,),
                 ).fetchall()
         return [self._store._row_to_memory(row) for row in rows]
@@ -430,12 +497,12 @@ class _RelationHelper:
         with self._store._conn() as conn:
             if relation:
                 rows = conn.execute(
-                    "SELECT m.*, r.relation FROM relations r JOIN memories m ON m.id = r.target_id WHERE r.source_id = ? AND r.relation = ?",
+                    "SELECT m.*, r.relation FROM relations r JOIN memories m ON m.id = r.target_id WHERE r.source_id = ? AND r.relation = ? AND m.deleted_at IS NULL",
                     (mem_id, relation),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT m.*, r.relation FROM relations r JOIN memories m ON m.id = r.target_id WHERE r.source_id = ?",
+                    "SELECT m.*, r.relation FROM relations r JOIN memories m ON m.id = r.target_id WHERE r.source_id = ? AND m.deleted_at IS NULL",
                     (mem_id,),
                 ).fetchall()
         return [(self.row_to_memory(row), row["relation"]) for row in rows]
@@ -458,11 +525,20 @@ class _RelationHelper:
                 content, kind, source, meta, created_at, self._store._integrity_key
             )
             integrity = "ok" if hmac.compare_digest(expected, sig) else "tampered"
+        try:
+            pinned = bool(row["pinned"])
+        except IndexError:
+            pinned = False
+        try:
+            deleted_at = row["deleted_at"]
+        except IndexError:
+            deleted_at = None
         return Memory(
             id=row["id"], kind=kind, content=content,
             source=source, meta=row["meta"], created_at=created_at,
             valid_from=row["valid_from"], valid_to=row["valid_to"],
             integrity_sig=sig, integrity=integrity,
+            pinned=pinned, deleted_at=deleted_at,
         )
 
 
@@ -480,7 +556,9 @@ class MemoryStore(BaseRepository):
             created_at TEXT NOT NULL,
             valid_from TEXT NOT NULL,
             valid_to TEXT,
-            integrity_sig TEXT
+            integrity_sig TEXT,
+            pinned INTEGER NOT NULL DEFAULT 0,
+            deleted_at TEXT
         )
         """,
         """
@@ -537,8 +615,18 @@ class MemoryStore(BaseRepository):
         "CREATE INDEX IF NOT EXISTS idx_decay_last_accessed ON memory_decay(last_accessed)",
     ]
 
-    def __init__(self, root: Path | None = None, db_path: Path | None = None, enable_vector: bool = True) -> None:
+    def __init__(
+        self,
+        root: Path | None = None,
+        db_path: Path | None = None,
+        enable_vector: bool = True,
+        hooks: Any = None,
+    ) -> None:
         self.root = root or config.discover_root()
+        # Optional HookRegistry - ``memory.pre_write`` hooks can veto a
+        # write by stopping the context (fail-closed; hook exceptions
+        # propagate as HookError).
+        self._hooks = hooks
         self.vector = VectorMemory(self.root) if enable_vector else None
         super().__init__(db_path or self.root / "brain" / "memory.db")
         self._decay = _DecayHelper(self)
@@ -550,6 +638,8 @@ class MemoryStore(BaseRepository):
         self._migrate_decay_table()
         # Additive migration: ensure the integrity_sig column exists on old DBs.
         self._ensure_integrity_column()
+        # Additive migration: pinned / deleted_at lifecycle columns (P1.4).
+        self._ensure_lifecycle_columns()
         # Additive schema-integrity check: warn on drift, never block init.
         self._verify_schema()
 
@@ -605,6 +695,17 @@ class MemoryStore(BaseRepository):
             # Column already exists - safe to ignore (SQLite ALTER has no IF NOT EXISTS).
             pass
 
+    def _ensure_lifecycle_columns(self) -> None:
+        """Additively add ``pinned`` and ``deleted_at`` columns on old DBs."""
+        with self._conn() as conn:
+            for ddl in (
+                "ALTER TABLE memories ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
+                "ALTER TABLE memories ADD COLUMN deleted_at TEXT",
+            ):
+                # Column already exists - safe to ignore.
+                with contextlib.suppress(sqlite3.OperationalError):
+                    conn.execute(ddl)
+
     def _migrate_decay_table(self) -> None:
         """Migrate legacy memory_decay table to add ON DELETE CASCADE if missing."""
         try:
@@ -659,13 +760,47 @@ class MemoryStore(BaseRepository):
             exists, returns the existing one instead of creating a duplicate.
         """
         mem_id = _deterministic_id(content, kind, source, user_id, agent_id, session_id)
-        existing = self.get(mem_id)
+        existing = self.get(mem_id, include_deleted=True)
         if existing is not None:
+            if existing.deleted_at is not None:
+                # Re-adding a tombstoned memory resurrects it (dedup by
+                # content hash means the row already exists).
+                self.restore(mem_id)
             return existing
         safe_meta = self._build_safe_meta(meta, user_id, agent_id, session_id, content)
         mem = self._build_memory(mem_id, kind, content, source, safe_meta, valid_to)
-        self.add_batch([mem])
+        persisted = self.add_batch([mem])
+        if not persisted:
+            from runtime.hook_lifecycle import HookError, HookPhase
+
+            raise HookError(
+                HookPhase.MEMORY_PRE_WRITE.value,
+                "memory write vetoed by memory.pre_write hook",
+                {"kind": kind, "mem_id": mem_id},
+            )
         return mem
+
+    def set_hooks(self, hooks: Any) -> None:
+        """Attach (or replace) the HookRegistry used for memory.pre_write."""
+        self._hooks = hooks
+
+    def _vetoed_by_hooks(self, mem: Memory) -> bool:
+        """Run ``memory.pre_write`` hooks; True means the write is vetoed."""
+        if self._hooks is None:
+            return False
+        from runtime.hook_lifecycle import HookContext, HookPhase
+
+        ctx = HookContext(
+            action="memory.write",
+            attributes={
+                "id": mem.id,
+                "kind": mem.kind,
+                "content": mem.content,
+                "source": mem.source,
+            },
+        )
+        self._hooks.run_phase(HookPhase.MEMORY_PRE_WRITE, ctx)
+        return ctx.stopped
 
     def _build_safe_meta(
         self,
@@ -717,7 +852,13 @@ class MemoryStore(BaseRepository):
         )
 
     def add_batch(self, memories: list[Memory]) -> list[Memory]:
-        """Insert a batch of memories in a single SQLite transaction and vector index write."""
+        """Insert a batch of memories in a single SQLite transaction and vector index write.
+
+        ``memory.pre_write`` hooks run per memory; vetoed entries are
+        dropped and the returned list contains only persisted memories.
+        """
+        if self._hooks is not None:
+            memories = [m for m in memories if not self._vetoed_by_hooks(m)]
         if not memories:
             return []
         rows = []
@@ -774,9 +915,12 @@ class MemoryStore(BaseRepository):
     def search(self, query: str, kind: str | None = None, limit: int = 10) -> list[Memory]:
         return self._search.search(query, kind=kind, limit=limit)
 
-    def get(self, mem_id: str) -> Memory | None:
+    def get(self, mem_id: str, *, include_deleted: bool = False) -> Memory | None:
+        sql = "SELECT * FROM memories WHERE id = ?"
+        if not include_deleted:
+            sql += " AND deleted_at IS NULL"
         with self._conn() as conn:
-            row = conn.execute("SELECT * FROM memories WHERE id = ?", (mem_id,)).fetchone()
+            row = conn.execute(sql, (mem_id,)).fetchone()
         return self._row_to_memory(row) if row else None
 
     def search_vector(
@@ -842,11 +986,185 @@ class MemoryStore(BaseRepository):
         if self.vector and self.vector.is_available():
             self.vector.remove(mem_id)
 
-    def count(self) -> int:
-        return self._search.count()
+    def count(self, include_deleted: bool = False) -> int:
+        return self._search.count(include_deleted=include_deleted)
 
-    def list_all(self, kind: str | None = None, limit: int = 1000) -> list[Memory]:
-        return self._search.list_all(kind=kind, limit=limit)
+    def list_all(
+        self, kind: str | None = None, limit: int = 1000, *, include_deleted: bool = False
+    ) -> list[Memory]:
+        return self._search.list_all(kind=kind, limit=limit, include_deleted=include_deleted)
+
+    # --- P1.4: pin / soft-delete / contradiction resolution ---------------
+
+    def pin(self, mem_id: str, pinned: bool = True) -> bool:
+        """Pin (or unpin) a memory. Pinned entries are exempt from decay and
+        deletion sweeps, and sort first in reads. Returns False if missing."""
+        with self._conn() as conn:
+            cur = conn.execute(
+                "UPDATE memories SET pinned = ? WHERE id = ? AND deleted_at IS NULL",
+                (1 if pinned else 0, mem_id),
+            )
+            return cur.rowcount > 0
+
+    def unpin(self, mem_id: str) -> bool:
+        return self.pin(mem_id, pinned=False)
+
+    def list_pinned(self, limit: int = 100) -> list[Memory]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM memories WHERE pinned = 1 AND deleted_at IS NULL "
+                "ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [self._row_to_memory(r) for r in rows]
+
+    def soft_delete(self, mem_id: str) -> bool:
+        """Tombstone a memory: hidden from reads, row + signature preserved
+        for audit/restore. Pinned memories refuse soft-delete."""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._conn() as conn:
+            cur = conn.execute(
+                "UPDATE memories SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL AND pinned = 0",
+                (now, mem_id),
+            )
+            deleted = cur.rowcount > 0
+        if deleted and self.vector and self.vector.is_available():
+            self.vector.remove(mem_id)
+        return deleted
+
+    def restore(self, mem_id: str) -> bool:
+        """Un-tombstone a soft-deleted memory."""
+        with self._conn() as conn:
+            cur = conn.execute(
+                "UPDATE memories SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL",
+                (mem_id,),
+            )
+            restored = cur.rowcount > 0
+        if restored:
+            mem = self.get(mem_id)
+            if mem is not None and self.vector and self.vector.is_available():
+                self.vector.add(mem.id, mem.content)
+        return restored
+
+    def purge_deleted(self) -> int:
+        """Hard-delete every tombstoned memory (irreversible)."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT id FROM memories WHERE deleted_at IS NOT NULL"
+            ).fetchall()
+            ids = [r["id"] for r in rows]
+            for chunk in (ids[i:i + 500] for i in range(0, len(ids), 500)):
+                ph = ",".join("?" * len(chunk))
+                conn.execute(
+                    f"DELETE FROM relations WHERE source_id IN ({ph}) OR target_id IN ({ph})",
+                    chunk + chunk,
+                )
+                conn.execute(f"DELETE FROM memory_decay WHERE mem_id IN ({ph})", chunk)
+            conn.execute("DELETE FROM memories WHERE deleted_at IS NOT NULL")
+        return len(ids)
+
+    # --- Contradiction resolution (P1.4) -----------------------------------
+    # Strategies: latest_wins | source_priority | confidence | merge.
+    # Losers are soft-deleted (recoverable), never hard-deleted.
+
+    def detect_contradictions(self) -> list[list[str]]:
+        """Group alive memories that share a ``meta.subject`` + ``kind`` -
+        same subject, differing content = a contradiction candidate set."""
+        groups: dict[tuple[str, str], list[str]] = {}
+        for m in self.list_all(limit=10_000):
+            try:
+                subject = json.loads(m.meta).get("subject") if m.meta else None
+            except (json.JSONDecodeError, TypeError):
+                subject = None
+            if not subject:
+                continue
+            groups.setdefault((m.kind, str(subject)), []).append(m.id)
+        return [ids for ids in groups.values() if len(ids) > 1]
+
+    def resolve_contradictions(
+        self,
+        mem_ids: list[str],
+        strategy: str = "latest_wins",
+        source_priority: list[str] | None = None,
+    ) -> Memory | None:
+        """Resolve a conflicting set to one survivor; losers are soft-deleted.
+
+        - ``latest_wins``: newest ``created_at`` wins.
+        - ``source_priority``: first source in ``source_priority`` wins
+          (unlisted sources rank after listed ones, newest tiebreak).
+        - ``confidence``: highest ``meta.confidence`` wins (default 0.5).
+        - ``merge``: contents are line-merged into a fresh memory; all
+          inputs are tombstoned and the merged entry is returned.
+        """
+        mems = [m for m in (self.get(i) for i in mem_ids) if m is not None]
+        if not mems:
+            return None
+        if strategy == "merge":
+            merged_content = self._merge_contents([m.content for m in mems])
+            merged = self.add(
+                kind=mems[0].kind,
+                content=merged_content,
+                source="contradiction-merge",
+                meta={"merged_from": [m.id for m in mems]},
+            )
+            for m in mems:
+                if m.id != merged.id:
+                    self.soft_delete(m.id)
+            return merged
+        winner = self._pick_winner(mems, strategy, source_priority or [])
+        for m in mems:
+            if m.id != winner.id:
+                self.soft_delete(m.id)
+        return winner
+
+    def _rowids_for(self, mem_ids: list[str]) -> dict[str, int]:
+        if not mem_ids:
+            return {}
+        placeholders = ",".join("?" for _ in mem_ids)
+        with self._conn() as conn:
+            rows = conn.execute(
+                f"SELECT id, rowid FROM memories WHERE id IN ({placeholders})",
+                mem_ids,
+            ).fetchall()
+        return {r["id"]: r["rowid"] for r in rows}
+
+    def _pick_winner(
+        self, mems: list[Memory], strategy: str, source_priority: list[str]
+    ) -> Memory:
+        # created_at has ~15 ms granularity on some platforms - ties are real.
+        # rowid is monotonic with insertion order, so it is the deterministic
+        # "which is actually newest" tiebreak.
+        seq = self._rowids_for([m.id for m in mems])
+        if strategy == "source_priority":
+            rank = {s: i for i, s in enumerate(source_priority)}
+            # Newest-first order before min() => equal ranks pick the newest
+            # (min is stable and returns the first minimum encountered).
+            ordered = sorted(
+                mems, key=lambda m: (m.created_at, seq.get(m.id, 0)), reverse=True
+            )
+            return min(ordered, key=lambda m: rank.get(m.source, len(rank)))
+        if strategy == "confidence":
+            def _conf(m: Memory) -> float:
+                try:
+                    return float(json.loads(m.meta).get("confidence", 0.5))
+                except (json.JSONDecodeError, TypeError, ValueError, AttributeError):
+                    return 0.5
+            return max(mems, key=lambda m: (_conf(m), m.created_at, seq.get(m.id, 0)))
+        # default: latest_wins
+        return max(mems, key=lambda m: (m.created_at, seq.get(m.id, 0)))
+
+    @staticmethod
+    def _merge_contents(contents: list[str]) -> str:
+        """Line-level merge of conflicting contents (dedup, order kept)."""
+        seen: set[str] = set()
+        lines: list[str] = []
+        for c in contents:
+            for line in c.splitlines():
+                norm = line.strip()
+                if norm and norm not in seen:
+                    seen.add(norm)
+                    lines.append(norm)
+        return "\n".join(lines)
 
     def delete_hard(self, mem_id: str) -> bool:
         """Hard-delete a memory by ID (removes row + vector). Returns True if existed."""
@@ -869,6 +1187,17 @@ class MemoryStore(BaseRepository):
         limit: int = 50,
     ) -> list[Memory]:
         return self._search.search_temporal(start, end, kind=kind, limit=limit)
+
+    def as_of(
+        self,
+        as_of: str | None = None,
+        valid_at: str | None = None,
+        kind: str | None = None,
+        limit: int = 100,
+    ) -> list[Memory]:
+        """Bi-temporal query: state of memory at transaction time ``as_of``
+        and/or valid time ``valid_at`` (ISO-8601 strings)."""
+        return self._search.search_as_of(as_of=as_of, valid_at=valid_at, kind=kind, limit=limit)
 
     # --- WS-F W5: Decay persistence --------------------------------------
 

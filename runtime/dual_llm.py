@@ -45,11 +45,66 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
+from pydantic import BaseModel, Field, ValidationError
+
 from runtime.injection_detector import InjectionDetector, InjectionVerdict
 from runtime.schemas import AizeeError, ErrorSeverity
 
 # Type aliases
 LLMFn = Callable[[str], str]  # takes a prompt, returns a response
+
+
+class QuarantinedOutput(BaseModel):
+    """Schema-enforced output contract for the quarantined worker LLM.
+
+    The quarantined model may only return this structured shape - free-form
+    text (which could carry re-armed injection) is rejected and replaced
+    with a safe fallback. Field bounds keep a hostile worker from flooding
+    the privileged model's context.
+    """
+
+    summary: str = Field(max_length=4000)
+    suspicious: bool = False
+    injection_notes: str = Field(default="", max_length=2000)
+
+    def serialize(self) -> str:
+        """Canonical wire form consumed by the privileged model."""
+        return (
+            f"SUMMARY: {self.summary}\n"
+            f"SUSPICIOUS: {'yes' if self.suspicious else 'no'}\n"
+            f"INJECTION_NOTES: {self.injection_notes or 'none'}"
+        )
+
+
+_FIELD_RE = re.compile(
+    r"SUMMARY:\s*(?P<summary>.*?)"
+    r"(?:SUSPICIOUS:\s*(?P<suspicious>.*?))?"
+    r"(?:INJECTION_NOTES:\s*(?P<notes>.*))?\s*$",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def _parse_quarantined_output(raw: str) -> QuarantinedOutput | None:
+    """Parse worker output into :class:`QuarantinedOutput`.
+
+    Returns ``None`` when the text does not contain a SUMMARY section or
+    fails schema validation - callers must substitute the safe fallback.
+    """
+    match = _FIELD_RE.search(raw.strip())
+    if match is None or not match.group("summary"):
+        return None
+    suspicious_raw = (match.group("suspicious") or "").strip().lower()
+    suspicious = suspicious_raw.startswith("y") or suspicious_raw in ("true", "1")
+    try:
+        return QuarantinedOutput(
+            summary=_strip_injection_markers(match.group("summary").strip())[:4000],
+            suspicious=suspicious,
+            injection_notes=_strip_injection_markers(
+                (match.group("notes") or "").strip()
+            )[:2000],
+        )
+    except ValidationError:  # pragma: no cover - fields are pre-truncated to schema bounds
+        return None
 
 
 def _strip_injection_markers(text: str) -> str:
@@ -102,6 +157,9 @@ class DualLLMResult:
     tools_available: tuple[str, ...]
     blocked: bool
     reason: str
+    # True when the quarantined worker returned schema-valid output; False
+    # means its raw text was rejected and a safe fallback substituted.
+    worker_schema_valid: bool = True
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -114,6 +172,7 @@ class DualLLMResult:
             "tools_available": list(self.tools_available),
             "blocked": self.blocked,
             "reason": self.reason,
+            "worker_schema_valid": self.worker_schema_valid,
             "injection": self.injection_verdict.to_dict(),
         }
 
@@ -211,8 +270,19 @@ class DualLLMOrchestrator:
         # Step 1: Scan untrusted content with the deterministic detector
         injection_verdict = self._detector.detect(bounded_content)
 
-        # Step 2: Get a structured summary from the quarantined LLM
-        quarantined_summary = self._quarantine_analysis(bounded_content, injection_verdict)
+        # Step 2: Get a structured summary from the quarantined LLM.
+        # The worker's raw output is schema-validated (QuarantinedOutput);
+        # unparseable/hostile output is replaced by a safe fallback.
+        quarantined_summary, worker_schema_valid = self._quarantine_analysis(
+            bounded_content, injection_verdict
+        )
+        if not worker_schema_valid:
+            # A worker that cannot produce the contract is treated as
+            # compromised: mark the verdict suspicious so the privileged
+            # path takes the cautious branch.
+            injection_verdict.total_score = max(
+                injection_verdict.total_score, InjectionDetector.SUSPICIOUS_THRESHOLD
+            )
 
         # Step 3: Check if injection was detected - if so, may block
         if injection_verdict.is_injection:
@@ -230,6 +300,7 @@ class DualLLMOrchestrator:
                 tools_available=tools,
                 blocked=True,
                 reason=f"injection detected in untrusted content: {injection_verdict.reason}",
+                worker_schema_valid=worker_schema_valid,
             )
 
         # Step 4: Privileged LLM decides action based on summary (not raw content)
@@ -246,12 +317,18 @@ class DualLLMOrchestrator:
             tools_available=tools,
             blocked=False,
             reason="task completed via dual-LLM pattern",
+            worker_schema_valid=worker_schema_valid,
         )
 
     def _quarantine_analysis(
         self, content: str, verdict: InjectionVerdict
-    ) -> str:
-        """Get a structured summary from the quarantined LLM."""
+    ) -> tuple[str, bool]:
+        """Get a schema-validated summary from the quarantined LLM.
+
+        Returns ``(canonical_summary, schema_valid)``. Worker output that
+        fails the QuarantinedOutput contract is replaced with a flagged
+        fallback so it cannot smuggle raw injection text downstream.
+        """
         if self._quarantined_fn is None:
             # Model-free fallback: use the injection verdict as the "summary".
             # Fence + sanitize raw content so it cannot re-arm downstream prompts.
@@ -261,10 +338,29 @@ class DualLLMOrchestrator:
                 f"SUMMARY: {_fence(content[:500])}...\n"
                 f"SUSPICIOUS: {suspicious}\n"
                 f"INJECTION_NOTES: {notes} (score {verdict.total_score})"
-            )
+            ), True
 
         prompt = f"{QUARANTINED_SYSTEM_PROMPT}\n\nCONTENT TO ANALYZE:\n{_fence(content)}"
-        return self._quarantined_fn(prompt)
+        raw = self._quarantined_fn(prompt)
+        parsed = _parse_quarantined_output(raw)
+        if parsed is None:
+            fallback = QuarantinedOutput(
+                summary="[worker output rejected: schema violation]",
+                suspicious=True,
+                injection_notes="quarantined worker returned unparseable output",
+            )
+            return fallback.serialize(), False
+        # Even schema-valid output gets a second injection pass - a hostile
+        # worker could embed attack text inside a well-formed SUMMARY field.
+        rescan = self._detector.detect(parsed.summary)
+        if rescan.is_injection:
+            parsed = QuarantinedOutput(
+                summary="[worker summary contained injection markers - suppressed]",
+                suspicious=True,
+                injection_notes=f"rescanned summary flagged: {rescan.reason}",
+            )
+            return parsed.serialize(), False
+        return parsed.serialize(), True
 
     def _privileged_decision(
         self,

@@ -46,10 +46,11 @@ pytest tests/test_learning_loop.py -q --no-cov --tb=short
 pytest memory/tests/test_vector.py -q --no-cov --tb=short
 
 # SMOKE — critical path only
-aizee test  # fast tier, skips slow/mcp/dashboard/vector (~12s)
+aizee test  # fast tier, parallel by default (~67s measured, 6.7k tests)
+aizee test --no-xdist  # force sequential (slow — subprocess-heavy tests dominate)
 
 # FULL — before done
-aizee test --full  # full suite + coverage (~360s, 4028+ tests, 96% coverage)
+aizee test --full  # full suite + coverage (7.4k+ tests)
 
 # VIBE — behavioral evals
 python eval/harness.py  # LLM-graded scenarios

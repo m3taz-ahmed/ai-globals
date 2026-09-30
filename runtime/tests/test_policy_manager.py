@@ -162,3 +162,25 @@ class TestBuildBudgetKwargs:
         mgr = _make_manager(os_root, project_root)
         kwargs = mgr.build_budget_kwargs({}, session_id="sess-123")
         assert kwargs["session_id"] == "sess-123"
+
+
+def test_build_budget_kwargs_pr_from_action(tmp_path: Path):
+    os_root, project_root = _setup_roots(tmp_path)
+    mgr = _make_manager(os_root, project_root)
+    kwargs = mgr.build_budget_kwargs({"pr": 42})
+    assert kwargs["pr_id"] == "42"
+
+
+def test_build_budget_kwargs_pr_id_key(tmp_path: Path):
+    os_root, project_root = _setup_roots(tmp_path)
+    mgr = _make_manager(os_root, project_root)
+    kwargs = mgr.build_budget_kwargs({"pr_id": "abc-7"})
+    assert kwargs["pr_id"] == "abc-7"
+
+
+def test_build_budget_kwargs_pr_from_env(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("AIZEE_PR_ID", "99")
+    os_root, project_root = _setup_roots(tmp_path)
+    mgr = _make_manager(os_root, project_root)
+    kwargs = mgr.build_budget_kwargs({})
+    assert kwargs["pr_id"] == "99"

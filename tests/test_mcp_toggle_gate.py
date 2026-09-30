@@ -70,7 +70,7 @@ class TestMcpClientGate:
     def test_call_tool_blocked_when_disabled(self, tmp_root: Path) -> None:
         sm = _sm(tmp_root)
         _disable(sm, "youtube")
-        client = McpClient("youtube", tmp_root, settings_manager=sm)
+        client = McpClient("youtube", tmp_root, settings_manager=sm, enforce=False)
         # Config exists (command=node) so is_configured() is True, but the
         # gate must still block the call without spawning anything.
         assert client.is_configured() is True
@@ -86,7 +86,7 @@ class TestMcpClientGate:
 
         sm = _sm(tmp_root)
         _disable(sm, "youtube")
-        client = McpClient("youtube", tmp_root, settings_manager=sm)
+        client = McpClient("youtube", tmp_root, settings_manager=sm, enforce=False)
         result = asyncio.run(client.async_call_tool("list_videos", {"channel_id": "x"}))
         assert result["ok"] is False
         assert result.get("disabled") is True
@@ -94,20 +94,20 @@ class TestMcpClientGate:
 
     def test_is_enabled_reflects_toggle(self, tmp_root: Path) -> None:
         sm = _sm(tmp_root)
-        client = McpClient("youtube", tmp_root, settings_manager=sm)
+        client = McpClient("youtube", tmp_root, settings_manager=sm, enforce=False)
         assert client.is_enabled() is True
         _disable(sm, "youtube")
         assert client.is_enabled() is False
 
     def test_unknown_server_defaults_enabled(self, tmp_root: Path) -> None:
         sm = _sm(tmp_root)
-        client = McpClient("does-not-exist", tmp_root, settings_manager=sm)
+        client = McpClient("does-not-exist", tmp_root, settings_manager=sm, enforce=False)
         assert client.is_enabled() is True
 
     def test_call_tool_proceeds_when_enabled(self, tmp_root: Path) -> None:
         """When enabled, call_tool must NOT short-circuit on the disabled gate."""
         sm = _sm(tmp_root)
-        client = McpClient("youtube", tmp_root, settings_manager=sm)
+        client = McpClient("youtube", tmp_root, settings_manager=sm, enforce=False)
         assert client.is_enabled() is True
         # Stub the async path so no real subprocess is spawned. If the gate
         # fired, async_call_tool would never be called and result would be
@@ -120,7 +120,7 @@ class TestMcpClientGate:
     def test_re_enable_after_toggle_restores_calls(self, tmp_root: Path) -> None:
         sm = _sm(tmp_root)
         _disable(sm, "youtube")
-        client = McpClient("youtube", tmp_root, settings_manager=sm)
+        client = McpClient("youtube", tmp_root, settings_manager=sm, enforce=False)
         assert client.call_tool("list_videos", {})["ok"] is False
         # Re-enable
         sm.update_section("mcp_servers", {"youtube": {"enabled": True}})
@@ -153,7 +153,7 @@ class TestSettingsCache:
         shared = get_settings_manager(tmp_root, tmp_root / "aizee_mcp" / "config.json")
         _disable(shared, "youtube")
         # No settings_manager passed - must still pick up the disabled state.
-        client = McpClient("youtube", tmp_root)
+        client = McpClient("youtube", tmp_root, enforce=False)
         assert client.is_enabled() is False
         assert client.call_tool("list_videos", {})["ok"] is False
 

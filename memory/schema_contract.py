@@ -320,7 +320,9 @@ def default_memory_contract() -> SchemaContract:
                 created_at TEXT NOT NULL,
                 valid_from TEXT NOT NULL,
                 valid_to TEXT,
-                integrity_sig TEXT
+                integrity_sig TEXT,
+                pinned INTEGER NOT NULL DEFAULT 0,
+                deleted_at TEXT
             )
         """,
         "relations": """

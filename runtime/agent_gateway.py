@@ -140,6 +140,15 @@ def _redact_secrets(text: str) -> tuple[str, list[str]]:
     return out, matched
 
 
+def redact_secrets(text: str) -> tuple[str, list[str]]:
+    """Public redaction helper for the unified enforcement path (UEP).
+
+    Same engine as :func:`_redact_secrets`; used by ``runtime.enforcement``
+    to apply REDACT verdicts to tool results before they reach the caller.
+    """
+    return _redact_secrets(text)
+
+
 def secret_leak_guardrail(ctx: GuardrailContext) -> GuardrailResult:
     """Block/redact secrets in prompts and responses."""
     text = "\n".join(t for t in (ctx.prompt, ctx.response, ctx.generated_code) if t)
@@ -160,11 +169,62 @@ def secret_leak_guardrail(ctx: GuardrailContext) -> GuardrailResult:
     )
 
 
+_DETECTOR: Any = None
+_DETECTOR_LOCK = threading.Lock()
+
+
+def _shared_injection_detector() -> Any:
+    """Lazy shared InjectionDetector for the gateway (L1 regex stack).
+
+    The L2 semantic layer is opt-in: set ``AIZEE_INJECTION_L2=1`` to enable
+    embedding-similarity matching (requires ``sentence-transformers``). The
+    L3 judge hook is never auto-wired - callers inject it explicitly via
+    ``InjectionDetector(judge_fn=...)`` when an LLM judge is available.
+    """
+    global _DETECTOR
+    with _DETECTOR_LOCK:
+        if _DETECTOR is None:
+            import os
+
+            from runtime.injection_detector import (
+                InjectionDetector,
+                SemanticInjectionLayer,
+            )
+
+            layer = (
+                SemanticInjectionLayer()
+                if os.environ.get("AIZEE_INJECTION_L2") == "1"
+                else None
+            )
+            _DETECTOR = InjectionDetector(semantic_layer=layer)
+        return _DETECTOR
+
+
 def prompt_injection_guardrail(ctx: GuardrailContext) -> GuardrailResult:
-    """Detect common prompt-injection patterns in tool responses."""
-    if not ctx.response:
+    """Detect prompt-injection in prompts and tool responses.
+
+    Uses the shared 13-technique InjectionDetector (L1) plus the legacy
+    fast-path indicator list. BLOCK on ``is_injection``; SUSPICIOUS verdicts
+    still pass (logged) unless the detector escalates them.
+    """
+    text = ctx.response or ctx.prompt
+    if not text:
         return GuardrailResult(Verdict.ALLOW, "prompt_injection")
-    lowered = ctx.response.lower()
+    try:
+        verdict = _shared_injection_detector().detect(text)
+    except Exception as exc:
+        return GuardrailResult(
+            Verdict.BLOCK, "prompt_injection",
+            reason=f"detector error: {exc}",
+            severity=ErrorSeverity.HIGH,
+        )
+    if verdict.is_injection:
+        return GuardrailResult(
+            Verdict.BLOCK, "prompt_injection",
+            reason=verdict.reason,
+            severity=ErrorSeverity.HIGH,
+        )
+    lowered = text.lower()
     indicators = [
         "ignore previous instructions",
         "ignore all previous",
@@ -337,5 +397,6 @@ __all__ = [
     "Verdict",
     "destructive_command_guardrail",
     "prompt_injection_guardrail",
+    "redact_secrets",
     "secret_leak_guardrail",
 ]

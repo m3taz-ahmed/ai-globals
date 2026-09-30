@@ -13,20 +13,20 @@ from runtime.mcp_client import McpClient
 def _client(tmp_path, name: str = "srv") -> McpClient:
     settings = MagicMock()
     settings.is_mcp_enabled.return_value = True
-    return McpClient(name, tmp_path, settings_manager=settings)
+    return McpClient(name, tmp_path, settings_manager=settings, enforce=False)
 
 
 class TestEnabledGate:
     def test_settings_error_fails_closed(self, tmp_path):
         settings = MagicMock()
         settings.is_mcp_enabled.side_effect = RuntimeError("boom")
-        c = McpClient("srv", tmp_path, settings_manager=settings)
+        c = McpClient("srv", tmp_path, settings_manager=settings, enforce=False)
         assert c.is_enabled() is False
 
     def test_disabled_sync_call(self, tmp_path):
         settings = MagicMock()
         settings.is_mcp_enabled.return_value = False
-        c = McpClient("srv", tmp_path, settings_manager=settings)
+        c = McpClient("srv", tmp_path, settings_manager=settings, enforce=False)
         out = c._call_tool_sync("t", {})
         assert out["ok"] is False
 
