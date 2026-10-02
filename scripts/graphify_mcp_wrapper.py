@@ -198,8 +198,8 @@ if __name__ == "__main__":
     try:
         from mcp_secrets_loader import load_env
         load_env()
-    except ImportError:  # aizee-scan: ignore A10-SWALLOW — secrets loader optional
-        pass
+    except Exception as exc:  # secrets are optional — never block server launch
+        print(f"[graphify-mcp-wrapper] secrets load skipped: {exc}", file=sys.stderr)
 
     _install_intercept_pipe()
 

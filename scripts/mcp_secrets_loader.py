@@ -83,7 +83,11 @@ def load_env(env_path: Path | None = None, overwrite: bool = False) -> dict[str,
         return {}
 
     injected: dict[str, str] = {}
-    for line in env_path.read_text(encoding="utf-8").splitlines():
+    try:
+        text = env_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        text = env_path.read_text(encoding="cp1252")
+    for line in text.splitlines():
         parsed = parse_env_line(line)
         if parsed is None:
             continue

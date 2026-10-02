@@ -30,8 +30,8 @@ def main() -> None:
     try:
         from mcp_secrets_loader import load_env
         load_env()
-    except ImportError:  # aizee-scan: ignore A10-SWALLOW — secrets loader optional
-        pass
+    except Exception as exc:  # secrets are optional — never block server launch
+        print(f"[aizee-mcp-wrapper] secrets load skipped: {exc}", file=sys.stderr)
     subprocess.run([sys.executable, "-m", "aizee_mcp.aizee_server"], cwd=root)
 
 

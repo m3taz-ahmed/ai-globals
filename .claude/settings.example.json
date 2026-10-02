@@ -1,49 +1,58 @@
 ﻿{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
-      "view",
       "Read",
-      "read",
-      "grep",
       "Glob",
-      "search",
-      "query",
-      "list",
-      "get",
-      "status",
-      "bash:git status",
-      "bash:git diff",
-      "bash:git log",
-      "bash:ls",
-      "bash:cd",
-      "bash:pwd",
-      "bash:graphify"
+      "Grep",
+      "Bash(pwd)",
+      "Bash(ls)",
+      "Bash(ls:*)",
+      "Bash(cd)",
+      "Bash(cd:*)",
+      "Bash(git status:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git diff)",
+      "Bash(git log:*)",
+      "Bash(git log)",
+      "Bash(graphify:*)",
+      "Bash(aizee:*)",
+      "mcp__context7",
+      "mcp__graphify",
+      "mcp__aizee__query_rules",
+      "mcp__aizee__check_policy",
+      "mcp__aizee__search_memory",
+      "mcp__aizee__search_memory_vector",
+      "mcp__aizee__search_skills",
+      "mcp__aizee__get_changelog",
+      "mcp__aizee__get_active_context"
     ],
     "ask": [
-      "edit",
-      "write",
+      "Edit",
+      "Write",
       "Bash",
-      "bash:rm",
-      "bash:mv",
-      "bash:cp",
-      "mcp_call_tool",
-      "mcp_read_resource"
+      "mcp__aizee"
     ],
     "deny": [
-      "bash:rm -rf",
-      "bash:git reset --hard",
-      "bash:git checkout .",
-      "bash:git clean -fd",
-      "bash:git add -A",
-      "bash:git add .",
-      "bash:git push -f",
-      "bash:git stash",
-      "bash:curl -X POST",
-      "bash:curl -X DELETE",
-      "bash:Invoke-WebRequest -Method Post",
-      "bash:Invoke-WebRequest -Method Delete",
-      "bash:node -e",
-      "bash:python -c"
+      "Bash(rm -rf:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git checkout .)",
+      "Bash(git checkout --:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git add -A:*)",
+      "Bash(git add -A)",
+      "Bash(git add .)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force:*)",
+      "Bash(git stash:*)",
+      "Bash(git stash)",
+      "Bash(curl -X POST:*)",
+      "Bash(curl -X DELETE:*)",
+      "Bash(Invoke-WebRequest -Method Post:*)",
+      "Bash(Invoke-WebRequest -Method Delete:*)",
+      "Bash(node -e:*)",
+      "Bash(python -c:*)"
     ]
   },
   "mcpServers": {
@@ -51,7 +60,8 @@
       "command": "python",
       "args": [
         "scripts/aizee_mcp_wrapper.py"
-      ]
+      ],
+      "env": { "PYTHONIOENCODING": "utf-8" }
     },
     "context7": {
       "command": "npx",
@@ -64,7 +74,8 @@
       "command": "python",
       "args": [
         "scripts/graphify_mcp_wrapper.py"
-      ]
+      ],
+      "env": { "PYTHONIOENCODING": "utf-8" }
     }
   },
   "alwaysAllow": {

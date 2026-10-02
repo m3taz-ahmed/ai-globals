@@ -35,7 +35,11 @@ def _load_env(root: Path) -> None:
     env_file = root / ".env"
     if not env_file.is_file():
         return
-    for line in env_file.read_text(encoding="utf-8").splitlines():
+    try:
+        text = env_file.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        text = env_file.read_text(encoding="cp1252")
+    for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
