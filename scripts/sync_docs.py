@@ -104,7 +104,7 @@ def count_tests(root: Path) -> int | None:
     """
     import ast
 
-    testpaths = ("runtime/tests", "memory/tests", "eval/tests", "aizee_mcp/tests", "tests")
+    testpaths = ("tests",)
     total = 0
     for rel in testpaths:
         base = root / rel

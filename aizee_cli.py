@@ -132,10 +132,25 @@ def cmd_memory(args: argparse.Namespace) -> int:
     if args.subcommand == "search":
         table = Table(title="Memory Search")
         table.add_column("Kind", style="cyan")
+        table.add_column("Bank", style="yellow")
         table.add_column("Content")
-        for mem in store.search(args.query, args.kind, limit=args.limit):
-            table.add_row(mem.kind, mem.content[:120])
+        for mem in store.search(args.query, args.kind, limit=args.limit, bank=args.bank):
+            table.add_row(mem.kind, mem.bank, mem.content[:120])
         console.print(table)
+    elif args.subcommand == "banks":
+        table = Table(title="Memory Banks")
+        table.add_column("Bank", style="cyan")
+        table.add_column("Memories", style="green")
+        for bank_name, cnt in store.banks().items():
+            table.add_row(bank_name, str(cnt))
+        console.print(table)
+    elif args.subcommand == "reflect":
+        result = store.reflect(args.query, bank=args.bank, limit=args.limit)
+        if not result.answer:
+            console.print("[yellow]No supporting memories found.[/yellow]")
+            return 1
+        console.print(result.answer)
+        console.print(f"[dim]({len(result.supporting)} supporting memories, synthesized={result.synthesized})[/dim]")
     elif args.subcommand == "vector":
         table = Table(title="Vector Search")
         table.add_column("ID", style="cyan")
@@ -152,8 +167,8 @@ def cmd_memory(args: argparse.Namespace) -> int:
         if not args.kind or not args.content:
             console.print("[red]--kind and --content are required for 'add'[/red]")
             return 1
-        m = store.add(args.kind, args.content, source=args.source or "cli")
-        console.print(f"[green]Added memory:[/green] {m.id}")
+        m = store.add(args.kind, args.content, source=args.source or "cli", bank=args.bank or "global")
+        console.print(f"[green]Added memory:[/green] {m.id} (bank={m.bank})")
     elif args.subcommand == "ingest":
         from memory.ingest import Ingestor
 
@@ -704,6 +719,8 @@ def cmd_persona(args: argparse.Namespace) -> int:
             result = k.persona.detect_multiple(text, max_personas=args.max_personas, max_lords=args.max_lords)
         else:
             result = k.detect_persona(text)
+        for skill_name in result.get("skills", []):
+            k.skill_lifecycle.record_view(skill_name)
         print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
@@ -719,6 +736,7 @@ def cmd_skill(args: argparse.Namespace) -> int:
         if content is None:
             console.print(f"[red]Skill '{args.name}' not found[/red]")
             return 1
+        k.skill_lifecycle.record_use(args.name)
         console.print(Panel(f"[cyan]{args.name}[/cyan]\n\n{content}", title="Skill"))
     elif args.skill_subcommand == "search":
         query = args.query.lower()
@@ -765,6 +783,46 @@ def cmd_skill(args: argparse.Namespace) -> int:
         else:
             console.print(f"[red]Failed[/red] {r.skill}: {r.error}")
         return 0 if r.ok else 1
+    elif args.skill_subcommand == "lifecycle":
+        return _cmd_skill_lifecycle(k, args)
+    return 0
+
+
+def _cmd_skill_lifecycle(k: Any, args: argparse.Namespace) -> int:
+    """aizee skill lifecycle — deterministic skill-survival management."""
+    mgr = k.skill_lifecycle
+    action = args.lifecycle_action
+    if action == "status":
+        print(json.dumps(mgr.status(), indent=2, ensure_ascii=False))
+        return 0
+    if action == "evaluate":
+        pending = mgr.evaluate(review_suspended=args.review_suspended)
+        print(json.dumps({"archive_pending": pending}, indent=2))
+        return 0
+    if action == "register":
+        m = mgr.register(args.name, origin=args.origin, reason=args.reason or "")
+        print(json.dumps(m.to_dict(), indent=2))
+        return 0
+    if action == "use":
+        mgr.record_use(args.name)
+        return 0
+    if action == "view":
+        mgr.record_view(args.name)
+        return 0
+    if action == "archive":
+        ok = mgr.archive(args.name, reason="manual" if args.manual else "evaluate")
+        if ok:
+            console.print(f"[green]Archived[/green] {args.name}")
+            return 0
+        console.print(f"[yellow]Not archived[/yellow] {args.name} (unmanaged, missing, or not on archive list)")
+        return 1
+    if action == "fold":
+        mgr.fold(args.name, args.loser, reason=args.reason or "")
+        console.print(f"[green]Folded[/green] {args.loser} -> {args.name}")
+        return 0
+    if action == "ledger":
+        print(json.dumps(mgr.ledger(args.name), indent=2, ensure_ascii=False))
+        return 0
     return 0
 
 
@@ -836,6 +894,13 @@ def cmd_hook(args: argparse.Namespace) -> int:
     from memory.observations import handle_hook
 
     out = handle_hook(args.action, _project_root(args), payload, kind=args.kind, event=args.event)
+    if args.action == "inject":
+        try:
+            from runtime.skill_lifecycle import SkillLifecycleManager
+
+            SkillLifecycleManager(Path(config.discover_root())).record_request()
+        except Exception:  # hooks must never block the editor
+            pass
     if out:
         print(out)
     return 0
@@ -1160,8 +1225,8 @@ def cmd_test(args: argparse.Namespace) -> int:
       aizee test           -> fast (default): skip slow/mcp/dashboard/vector, no coverage
       aizee test --full    -> full: all tests + coverage
       aizee test --verbose -> verbose output
-      aizee test --xdist   -> parallel (default for fast tier; opt-in for --full)
-      aizee test --no-xdist-> force sequential fast-tier run
+      aizee test --xdist   -> parallel (default for fast AND full tiers)
+      aizee test --no-xdist-> force sequential run (either tier)
     """
     if args.full:
         pytest_args = [
@@ -1186,7 +1251,7 @@ def cmd_test(args: argparse.Namespace) -> int:
             "--ignore=tests/mcp",
             "--ignore=tests/dashboard",
             "--ignore=tests/e2e",
-            "--ignore=memory/tests/test_vector.py",
+            "--ignore=tests/memory/test_vector.py",
             "--no-cov", "--tb=short", "-p", "no:warnings",
         ]
         console.print("[cyan]Running FAST tests (unit only, no slow/coverage)...[/]")
@@ -1194,21 +1259,21 @@ def cmd_test(args: argparse.Namespace) -> int:
     if args.verbose:
         pytest_args.append("-v")
 
-    # Fast tier parallelizes by default when pytest-xdist is installed —
-    # each worker is a spawned process, so this only pays off now that module
-    # imports are cheap (see tech-stack/pytest-8.md rule 30). --no-xdist and
-    # the --full tier keep sequential as the opt-in/opt-out boundaries.
+    # Both tiers parallelize by default when pytest-xdist is installed — each
+    # worker is a spawned process, so this only pays off now that module
+    # imports are cheap (see tech-stack/pytest-8.md rules 30/34). FULL tier
+    # measured: 7,633 tests + 100% cov in ~127s at -n 12 vs ~10min sequential.
+    # --no-xdist is the opt-out escape hatch for either tier.
     import importlib.util
 
-    if args.full:
-        parallel = bool(getattr(args, "xdist", False))
-    else:
-        parallel = importlib.util.find_spec("xdist") is not None and not getattr(
-            args, "no_xdist", False
-        )
+    parallel = importlib.util.find_spec("xdist") is not None and not getattr(
+        args, "no_xdist", False
+    )
     if parallel:
         import os
-        workers = max(2, min(os.cpu_count() or 4, 12))
+        # Use every core except two — leave the machine just enough to breathe
+        # (per user policy: full-test runs max out the box). Floor at 2.
+        workers = max(2, (os.cpu_count() or 4) - 2)
         pytest_args.extend(["-n", str(workers)])
 
     result = subprocess.run(pytest_args, cwd=str(_root(args)))
@@ -1243,8 +1308,9 @@ def main(argv: list[str] | None = None) -> int:
     p_query.add_argument("--explain", action="store_true")
 
     p_mem = sub.add_parser("memory", help="Memory commands")
-    p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest", "compact"])
+    p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest", "compact", "banks", "reflect"])
     p_mem.add_argument("--query", default="")
+    p_mem.add_argument("--bank", default=None, help="Memory bank namespace (default: all/global)")
     p_mem.add_argument("--apply", action="store_true", help="compact: apply (default is dry-run)")
     p_mem.add_argument("--max-lines", type=int, default=500, help="compact: target line budget (default 500)")
     p_mem.add_argument("--kind", default=None)
@@ -1384,8 +1450,8 @@ def main(argv: list[str] | None = None) -> int:
     p_test = sub.add_parser("test", help="Run tests (fast tier, parallel by default; --full: all tests with coverage)")
     p_test.add_argument("--full", action="store_true", help="Full tier: all tests + coverage")
     p_test.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    p_test.add_argument("--xdist", action="store_true", help="Parallel via pytest-xdist (default for fast tier; opt-in for --full)")
-    p_test.add_argument("--no-xdist", action="store_true", help="Force sequential fast-tier run")
+    p_test.add_argument("--xdist", action="store_true", help="Parallel via pytest-xdist (default for both tiers; kept for explicitness)")
+    p_test.add_argument("--no-xdist", action="store_true", help="Force sequential run (either tier)")
 
     # --- daemon ---
     p_daemon = sub.add_parser("daemon", help="Background settings-sync daemon")
@@ -1430,6 +1496,14 @@ def main(argv: list[str] | None = None) -> int:
     p_skill_validate = sp_skill.add_parser("validate", help="Validate SKILL.md contracts (frontmatter, naming, structure)")
     p_skill_validate.add_argument("--json", action="store_true", help="Machine-readable output")
     p_skill_install = sp_skill.add_parser("install", help="Install a skill into an agent harness (cursor/claude/codex/opencode/project/path)")
+    p_skill_life = sp_skill.add_parser("lifecycle", help="Skill lifecycle: status/evaluate/archive/register/use/view/fold/ledger")
+    p_skill_life.add_argument("lifecycle_action", choices=["status", "evaluate", "archive", "register", "use", "view", "fold", "ledger"])
+    p_skill_life.add_argument("--name", default="")
+    p_skill_life.add_argument("--loser", default="")
+    p_skill_life.add_argument("--origin", default="learned")
+    p_skill_life.add_argument("--reason", default="")
+    p_skill_life.add_argument("--manual", action="store_true")
+    p_skill_life.add_argument("--review-suspended", action="store_true", dest="review_suspended")
     p_skill_install.add_argument("name", help="Skill name to install")
     p_skill_install.add_argument("--harness", default="project", help="Target harness (default: project)")
     p_skill_install.add_argument("--dest", default="", help="Target dir when --harness=path")

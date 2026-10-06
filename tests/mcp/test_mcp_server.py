@@ -67,17 +67,13 @@ class TestToolsList:
             "get_workflow",
             "run_workflow",
             "query_rules",
-            # SEO tools (v5.4.0)
-            "seo_audit_page",
-            "seo_audit_site",
-            "seo_check_cwv",
-            "seo_validate_schema",
-            "seo_analyze_content",
-            "seo_check_geo",
-            "seo_get_gsc_data",
-            "seo_find_opportunities",
+            # Marketing/social/freelance modules are disabled via
+            # aizee_mcp/config.json disabledToolModules (v6.1.0) — their
+            # tools must NOT appear on the registered surface.
         }
         assert expected.issubset(names), f"Missing tools: {expected - names}"
+        marketing = {n for n in names if n.split("_")[0] in ("seo", "ads", "social", "cro")}
+        assert marketing == set(), f"Disabled marketing tools registered: {marketing}"
 
 
 # ---------------------------------------------------------------------------

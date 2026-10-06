@@ -4,14 +4,14 @@
   <p><strong>حول أي مساعد ذكاء اصطناعي إلى مهندسك الرئيسي — سيادة كاملة، جودة صفرية العيوب.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-6.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 6.0.0">
-    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-7653%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="7653 اختبار ناجح">
+    <img src="https://img.shields.io/badge/%D8%A5%D8%B5%D8%AF%D8%A7%D8%B1-6.1.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="الإصدار 6.1.0">
+    <img src="https://img.shields.io/badge/%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1%D8%A7%D8%AA-7469%20%D9%86%D8%A7%D8%AC%D8%AD-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="7469 اختبار ناجح">
     <img src="https://img.shields.io/badge/%D8%AA%D8%BA%D8%B7%D9%8A%D8%A9-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="تغطية 100%">
     <img src="https://img.shields.io/badge/%D8%A7%D9%84%D8%B1%D8%AE%D8%B5%D8%A9-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="الرخصة: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/%D8%B4%D8%AE%D8%B5%D9%8A%D8%A7%D8%AA-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 شخصية">
-    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-139-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="139 مهارة">
+    <img src="https://img.shields.io/badge/%D9%85%D9%87%D8%A7%D8%B1%D8%A7%D8%AA-139-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="140 مهارة">
     <img src="https://img.shields.io/badge/%D8%B3%D9%8A%D8%B1_%D8%A7%D9%84%D8%B9%D9%85%D9%84-63-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 سير عمل">
     <img src="https://img.shields.io/badge/%D9%85%D8%B1%D8%A7%D8%AC%D8%B9_%D8%AA%D9%82%D9%86%D9%8A%D8%A9-265-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="265 مرجع تقنية">
   </p>
@@ -41,16 +41,32 @@
 
 ---
 
-## الجديد في v6.0.0 — Runtime محكوم فعليًا
+## الجديد في v6.1.0 — سطح أخف وأصدق
 
-التغيير الجوهري: **الإنفاذ صار على مسار التنفيذ**. وحدات الحماية التي كانت مستقلة (مختبرة لكن غير مربوطة) تعمل الآن داخل خط الأنابيب الفعلي.
+التغيير الجوهري: **السطح الافتراضي صغير وصادق**. أسطول MCP انخفض لما يُستخدم فعلًا، وحدات أدوات التسويق معطّلة لا محذوفة، الكود الميت أُزيل، والمثبّتات تحذف الملفات المتقاعدة عند الترقية.
 
-### الإنفاذ على مسار التنفيذ
+### افتراضيات أخف
+
+- **3 خوادم MCP افتراضيًا** — `aizee` (الحوكمة)، `graphify`، `context7`. خوادم التسويق/السوشيال/الفريلانس اختفت من كل الإعدادات المشحونة.
+- **43 أداة MCP مفعّلة** — 7 وحدات أدوات تسويقية (ads, analytics, CRO, email, freelance, SEO, social) لا تزال مشحونة لكنها معطّلة عبر `disabledToolModules` في `aizee_mcp/config.json`. أزل الاسم لإعادة تفعيلها.
+- **31 إضافة معطّلة** — `plugins.yaml` يشحنها `enabled: false`؛ والصندوق الرملي يحجب الباقي. `code2video` و`graphify` و`context7` يبقون.
+- **كود ميت أُزيل** — وحدات runtime غير مستخدمة (`a2a_server`, `semantic_search`, `provider_registry`, `sql_injection_guard`, `plugin_system`, …) وتيستاتها حُذفت.
+
+### نظافة الترقية
+
+- **تنظيف الملفات المتقاعدة** — `scripts/stale_files.txt` يسرد المسارات المتقاعدة؛ `install.ps1` و`install.sh` و`scripts/update.py` يحذفونها من التثبيتات القائمة مع الحفاظ على `state/` و`brain/` و`.env`.
+- **شجرة تيست موحّدة** — كل التيستات تحت `tests/{runtime,memory,eval,aizee_mcp,…}`.
+- **مكتبة تصميم مزروعة** — `design-library/` تشحن الآن بذور `DESIGN.md` حقيقية (editorial, midnight, minimal) فلا يعود `DesignLibrary` يحل كتالوجًا فارغًا.
+- **ضغط تلقائي لـ Memory.md** — تُحفظ تحت سقف 500 سطر عبر `aizee memory compact` (الأرشيف في `memory/archive/`).
+
+### خلاصة v6.0.0 — Runtime محكوم فعليًا
+
+انتقل الإنفاذ إلى مسار التنفيذ في v6.0.0:
 
 - **`runtime/enforcement.py`** — مكوّن إنفاذ موحّد: جدار MCP → فحص AgentGateway للطلب → التنفيذ → فحص الاستجابة → التدقيق. مشترك بين كل مسارات الاستدعاء.
 - **`Kernel.act()`** — أحكام AgentGateway (ALLOW / REDACT / BLOCK) تحكم الإجراءات الحقيقية؛ فحوص الحقن وتسريب الأسرار تطبّق على حقول الشكل النصي دون حظر كتابة الملفات العادية.
 - **MCP الصادر** — `McpClient` (متزامن + غير متزامن) و`McpAgent` يشغّلان الجدار والبوابة حول كل استدعاء خارجي.
-- **MCP الوارد** — أدوات aiZee الـ98 تحتفظ بـ RBAC *وتُغلّف* بفحوص البوابة.
+- **MCP الوارد** — أدوات خادم aiZee تحتفظ بـ RBAC *وتُغلّف* بفحوص البوابة.
 
 ### عمق الكشف
 
@@ -72,7 +88,6 @@
 - **ذاكرة ثنائية الزمن** — `store.as_of(as_of=..., valid_at=...)` تفرّق بين "ماذا عرفنا وقتها" و"ما الذي كان صحيحًا وقتها"؛ تثبيت، حذف ناعم بختم زمني، علاقات تناقض.
 - **`aizee memory compact`** — ضغط تلقائي لـ Memory.md (سقف 500 سطر، إنقاذ `[PINNED]`، أرشفة في `memory/archive/`).
 - **Code Mode** — `aizee codemode` ينفّذ مقاطع Python معزولة تستدعي أدوات MCP مباشرة (فحص AST + builtins مقيّدة + جسر محكوم + مهلة).
-- **خادم A2A** — يعرض aiZee كندّ A2A: `/.well-known/agent-card.json` + JSON-RPC `tasks/send|get|cancel` (loopback + bearer).
 - **`aizee bootstrap`** — يبني جذر OS أدنى بعد `pip install aizee` (idempotent، dry-run افتراضيًا).
 - **تدقيقات استشارية** — `aizee task overcheck` (إشارات الهندسة الزائدة من الخطة + الرسم)، `aizee task curriculum` (خطة تعلّم مرحلية من مراجع tech-stack).
 
@@ -136,18 +151,18 @@ aizee status    # الشخصية، المهارات، الميزانية
 ├── AGENTS.md                # البوتلودر المرجعي لكل الأدوات
 ├── global-roles.md          # 29 شخصية + قواعد تشغيلية
 ├── global-workflow.md       # بروتوكول التحميل المعرفي والتنفيذ
-├── runtime/                 # النواة: policy، budget، audit، 142 وحدة حوكمة
+├── runtime/                 # النواة: policy، budget، audit، 129 وحدة حوكمة
 │   ├── kernel.py            # الواجهة — Probity → Guardian → Policy → Loop → Budget → Audit
 │   ├── enforcement.py       # مكوّن إنفاذ موحّد (firewall + gateway)
 │   ├── agent_gateway.py     # حواجز طلب/استجابة (ALLOW/REDACT/BLOCK)
 │   ├── injection_detector.py# L1 أنماط + L2 دلالي + L3 حكم LLM
 │   ├── codemode/            # تنفيذ code-mode معزول فوق أدوات MCP
-│   ├── a2a_server.py        # كشف كندّ A2A (agent card + tasks)
 │   └── policies/            # YAMLs: default/guardian/probity/mcp_firewall
+├── design-library/          # بذور DESIGN.md أصلية (editorial, midnight, minimal)
 ├── memory/                  # SQLite + FTS5 + vector، استعلامات ثنائية الزمن
-├── aizee_mcp/               # خادم MCP (98 أداة، 3 موارد)
+├── aizee_mcp/               # خادم MCP (43 أداة مفعّلة، 3 موارد)
 ├── eval/                    # معايير، فوضى، موثوقية، بوابة إصدار
-├── skills/                  # 139 مهارة شخصية + lord
+├── skills/                  # 140 مهارة شخصية + lord
 ├── workflows/               # 63 بروتوكول تنفيذ بالمحفزات
 ├── rules/                   # قواعد سلوكية مضغوطة
 ├── tech-stack/              # مراجع مثبتة بالإصدار
@@ -218,7 +233,6 @@ python eval/harness.py       # تقييم E2E: ruff + mypy + pytest + validate-g
 | الدردشة (`kernel.chat_message`) | prompt_gate → … → خطافات `output.pre_send` |
 | كتابات الذاكرة | خطافات `memory.pre_write` (نقض/تعديل) + سلامة HMAC |
 | Code Mode (`aizee codemode`) | فحص AST + builtins مقيّدة + `call_tool` محكوم |
-| مهام A2A | Bearer auth + معالج مهام محكوم |
 
 ---
 
@@ -264,7 +278,7 @@ python dashboard/server.py 8080
 | Types | `mypy` | 0 أخطاء (صارم) |
 | Tests (سريعة) | `aizee test` | طبقة سريعة بدون تغطية |
 | Tests (كاملة) | `aizee test --full` | المجموعة الكاملة، تغطية بحد أدنى 100% |
-| السلامة | `scripts/validate-globals.py` | 539 ملفًا، 0 أخطاء |
+| السلامة | `scripts/validate-globals.py` | 540 ملفًا، 0 أخطاء |
 | مزامنة الوثائق | `scripts/sync_docs.py --check` | متزامنة |
 | E2E | `python eval/harness.py` | كل البوابات تنجح |
 | الإصدار | `python eval/release_gate.py` | سلم موثوقية على أدلة rollouts |
@@ -275,7 +289,7 @@ python dashboard/server.py 8080
 
 - **النواة:** Python خالص 3.10+ (لا حاجة لـ Node.js لنواة OS)
 - **الذاكرة:** SQLite + FTS5 + vectors اختيارية بـ SentenceTransformers
-- **MCP:** خادم FastMCP بـ 98 أداة
+- **MCP:** خادم FastMCP — 43 أداة مفعّلة افتراضيًا (7 وحدات تسويقية مشحونة لكن معطّلة عبر `disabledToolModules`)
 - **لوحة القيادة:** خادم HTTP من stdlib + SQLite
 - **رسم المعرفة:** graphify (اختياري)
 - **التبعيات:** pyyaml، pydantic، rich، cryptography، numpy، turbovec

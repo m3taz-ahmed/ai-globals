@@ -495,6 +495,26 @@ if ($CopyMode) {
 }
 
 # ---------------------------------------------------------------------------
+# 4b. Remove files/dirs retired from the repo (stale-path cleanup)
+# ---------------------------------------------------------------------------
+# File copies only add/overwrite — retired modules would linger forever.
+
+$StaleList = Join-Path $Repo "scripts\stale_files.txt"
+if (Test-Path $StaleList) {
+    $StaleRemoved = 0
+    foreach ($line in Get-Content $StaleList) {
+        $rel = $line.Trim()
+        if ($rel -eq "" -or $rel.StartsWith("#")) { continue }
+        $target = Join-Path $Root ($rel -replace '/', '\')
+        if (Test-Path $target) {
+            Remove-IfExists $target
+            $StaleRemoved++
+        }
+    }
+    if ($StaleRemoved -gt 0) { Write-Step "Removed $StaleRemoved stale path(s) retired from the repo" }
+}
+
+# ---------------------------------------------------------------------------
 # 5. Run migrations
 # ---------------------------------------------------------------------------
 
@@ -791,13 +811,9 @@ if (-not $SkipMCP) {
   "mcpServers": {
     "aizee": { "command": "python", "args": ["$AizeeWrapper"] },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
-    "graphify": { "command": "python", "args": ["$GraphifyWrapper"] },
-    "upwork": { "command": "python", "args": ["$EnvWrapper", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
-    "freelancer": { "command": "python", "args": ["$EnvWrapper", "npx", "-y", "freelancer-mcp-server@2.0.0"] },
-    "fiverr": { "command": "python", "args": ["$EnvWrapper", "uvx", "fiverr-mcp-server"] },
-    "linkedin": { "command": "python", "args": ["$EnvWrapper", "octopus-linkedin-mcp"] }
+    "graphify": { "command": "python", "args": ["$GraphifyWrapper"] }
   },
-  "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context","refero_search_styles","refero_search_screens","refero_search_flows","refero_get_style","refero_get_screen","refero_get_flow","refero_get_similar_screens","search_screens","search_flows","search_sections"] }
+  "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context"] }
 }
 "@
     if (-not $WhatIf) {

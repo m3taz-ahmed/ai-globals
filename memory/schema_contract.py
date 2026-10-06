@@ -322,7 +322,8 @@ def default_memory_contract() -> SchemaContract:
                 valid_to TEXT,
                 integrity_sig TEXT,
                 pinned INTEGER NOT NULL DEFAULT 0,
-                deleted_at TEXT
+                deleted_at TEXT,
+                bank TEXT NOT NULL DEFAULT 'global'
             )
         """,
         "relations": """
@@ -350,10 +351,11 @@ def default_memory_contract() -> SchemaContract:
         "idx_mem_valid_to": "CREATE INDEX IF NOT EXISTS idx_mem_valid_to ON memories(valid_to)",
         "idx_mem_valid_from": "CREATE INDEX IF NOT EXISTS idx_mem_valid_from ON memories(valid_from)",
         "idx_mem_created_at": "CREATE INDEX IF NOT EXISTS idx_mem_created_at ON memories(created_at)",
+        "idx_mem_bank": "CREATE INDEX IF NOT EXISTS idx_mem_bank ON memories(bank)",
         "idx_rel_source": "CREATE INDEX IF NOT EXISTS idx_rel_source ON relations(source_id)",
         "idx_rel_target": "CREATE INDEX IF NOT EXISTS idx_rel_target ON relations(target_id)",
         "idx_decay_last_accessed": "CREATE INDEX IF NOT EXISTS idx_decay_last_accessed ON memory_decay(last_accessed)",
     }
-    contract = SchemaContract(tables=tables, indexes=indexes, version="v3")
+    contract = SchemaContract(tables=tables, indexes=indexes, version="v4")
     contract.content_hash = contract.compute_hash()
     return contract

@@ -131,6 +131,10 @@ def _init_core_services(kernel: Kernel) -> None:
     # Task contract: decompose/verify/review enforcement for multi-step work.
     # Constructor is filesystem-light (paths only); state lives in .task/.
     kernel.task_contract = TaskContractManager(kernel.project_root)
+    # Skill lifecycle: probation/graduation/capacity over managed skills.
+    from runtime.skill_lifecycle import SkillLifecycleManager
+
+    kernel.skill_lifecycle = SkillLifecycleManager(kernel.root)
     # Ensure taint guardrail is registered (import triggers auto-registration).
     # A broken import silently disables taint tracking - log a warning so the
     # operator knows defenses are degraded instead of running blind.
@@ -177,22 +181,16 @@ def _init_core_services(kernel: Kernel) -> None:
 
     # Initialize the design tooling stack:
     # - DesignSlopVerifier: AI-slop detection for HTML/UI output
-    # - DesignLibrary: 58 brand design systems catalog
-    # - PluginRegistry: plugin discovery and lifecycle management
+    # - DesignLibrary: brand design systems (seeds + imported DESIGN.md files)
     try:
 
         from runtime.design_library import DesignLibrary
         from runtime.design_slop_verifier import DesignSlopVerifier
-        from runtime.plugin_system import PluginRegistry
 
         kernel.design_slop_verifier = DesignSlopVerifier()  # type: ignore[attr-defined]
         kernel.design_library = DesignLibrary(  # type: ignore[attr-defined]
             library_dir=kernel.root / "design-library",
         )
-        kernel.plugin_registry = PluginRegistry(  # type: ignore[attr-defined]
-            plugins_dir=kernel.root / "plugins",
-        )
-        kernel.plugin_registry.discover()  # type: ignore[attr-defined]
     except Exception as exc:
         _logger.warning("Design tooling stack failed to load - design checks disabled: %s", exc)
 
@@ -534,6 +532,7 @@ class Kernel:
     ui_a11y_checker: Any
     blade_template_linter: Any
     task_contract: TaskContractManager
+    skill_lifecycle: Any
     policy_mgr: PolicyManager
     workflow_mgr: WorkflowManager
     agent_mgr: AgentManager

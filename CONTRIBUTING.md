@@ -33,7 +33,7 @@ python scripts/sync_docs.py --check    # docs must match reality
 
 - **FAST tier (iteration):** run ONLY tests for code you touched,
   ~5s max. Example:
-  `python -m pytest runtime/tests/test_kernel.py -q`
+  `python -m pytest tests/runtime/test_kernel.py -q`
 - **FULL tier (before done):** complete suite + coverage ≥ 95%. Green or
   it doesn't ship. Never run the full suite on every save; never skip it
   at the end.
@@ -53,7 +53,7 @@ python scripts/sync_docs.py --check    # docs must match reality
 ## Adding Things
 
 - **Runtime module:** create `runtime/<name>.py`, wire through a manager,
-  add `runtime/tests/test_<name>.py`, export in `runtime/__init__.py`.
+  add `tests/runtime/test_<name>.py`, export in `runtime/__init__.py`.
 - **Skill:** `skills/<name>/SKILL.md` with frontmatter (`triggers`,
   `personas`, `tech_stack`). Verify with
   `aizee persona detect --multi "<task>"`.

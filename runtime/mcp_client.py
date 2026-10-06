@@ -502,7 +502,7 @@ class McpClient:
         init_resp = self._send(proc, {
             "jsonrpc": "2.0", "id": init_id, "method": "initialize",
             "params": {"protocolVersion": DEFAULT_CLIENT_VERSION, "capabilities": {},
-                       "clientInfo": {"name": "aizee", "version": "6.0.0"}},
+                       "clientInfo": {"name": "aizee", "version": "6.1.0"}},
         })
         if "error" in init_resp:
             self._release_locked(proc)
@@ -646,7 +646,7 @@ class McpClient:
 
         init_req = json.dumps({"jsonrpc": "2.0", "id": str(uuid.uuid4()),
             "method": "initialize", "params": {"protocolVersion": DEFAULT_CLIENT_VERSION,
-            "capabilities": {}, "clientInfo": {"name": "aizee", "version": "6.0.0"}}}) + "\n"
+            "capabilities": {}, "clientInfo": {"name": "aizee", "version": "6.1.0"}}}) + "\n"
         assert proc.stdin is not None
         proc.stdin.write(init_req.encode())
         await proc.stdin.drain()

@@ -12,7 +12,8 @@ import re
 import secrets
 import sqlite3
 import uuid
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
@@ -92,14 +93,18 @@ def _deterministic_id(
     user_id: str | None = None,
     agent_id: str | None = None,
     session_id: str | None = None,
+    bank: str = "global",
 ) -> str:
     """WS-F W1: Generate a deterministic ID from content hash.
 
-    Uses SHA-256 of (kind, source, tenant ids, content) to produce a stable
-    ID. Tenant ids are part of the hash so user B re-adding user A's content
-    gets a distinct row (no cross-tenant collision / stale valid_to return).
+    Uses SHA-256 of (kind, source, tenant ids, bank, content) to produce a
+    stable ID. Tenant ids are part of the hash so user B re-adding user A's
+    content gets a distinct row (no cross-tenant collision / stale valid_to
+    return). The default ``global`` bank is hashed as empty so pre-bank IDs
+    stay stable.
     """
-    h = sha256(f"{kind}|{source}|{user_id or ''}|{agent_id or ''}|{session_id or ''}|{content}".encode()).hexdigest()[:16]
+    bank_key = "" if bank == "global" else bank
+    h = sha256(f"{kind}|{source}|{user_id or ''}|{agent_id or ''}|{session_id or ''}|{bank_key}|{content}".encode()).hexdigest()[:16]
     return f"mem_{h}"
 
 
@@ -151,6 +156,27 @@ class Memory:
     integrity: str = "unsigned"  # ok | tampered | unsigned
     pinned: bool = False  # pinned entries are exempt from decay/purge
     deleted_at: str | None = None  # soft-delete tombstone (ISO-8601)
+    bank: str = "global"  # memory bank namespace (hindsight-style isolation)
+
+
+@dataclass
+class ReflectResult:
+    """Outcome of ``MemoryStore.reflect`` — hindsight-style synthesized recall.
+
+    Attributes:
+        query: The question asked.
+        bank: Bank scope the reflect ran against (None = all banks).
+        answer: Synthesized answer text (extractive or LLM-generated).
+        supporting: Ranked memories the answer was built from.
+        synthesized: True when an ``llm_fn`` produced the answer; False for
+            the deterministic extractive fallback.
+    """
+
+    query: str
+    bank: str | None
+    answer: str
+    supporting: list[Memory] = field(default_factory=list)
+    synthesized: bool = False
 
 
 class _DecayHelper:
@@ -258,39 +284,42 @@ class _SearchHelper:
                 sanitized.append(f'"{token}"')
         return " ".join(sanitized)
 
-    def search(self, query: str, kind: str | None = None, limit: int = 10) -> list[Memory]:
-        """Search memory using FTS5 and optional kind filter; excludes invalidated memories."""
+    def search(
+        self,
+        query: str,
+        kind: str | None = None,
+        limit: int = 10,
+        bank: str | None = None,
+    ) -> list[Memory]:
+        """Search memory using FTS5 and optional kind/bank filter; excludes invalidated memories."""
         q = self._fts_query(query)
         if not q:
             return []
         now = datetime.now(timezone.utc).isoformat()
+        conditions = [
+            "memories_fts MATCH ?",
+            "(m.valid_to IS NULL OR m.valid_to > ?)",
+            "m.deleted_at IS NULL",
+        ]
+        params: list[Any] = [q, now]
+        if kind:
+            conditions.append("m.kind = ?")
+            params.append(kind)
+        if bank:
+            conditions.append("m.bank = ?")
+            params.append(bank)
+        where = " AND ".join(conditions)
         with self._store._conn() as conn:
-            if kind:
-                rows = conn.execute(
-                    """
-                    SELECT m.* FROM memories m
-                    JOIN memories_fts fts ON m.rowid = fts.rowid
-                    WHERE m.kind = ? AND memories_fts MATCH ?
-                        AND (m.valid_to IS NULL OR m.valid_to > ?)
-                        AND m.deleted_at IS NULL
-                    ORDER BY m.pinned DESC, rank
-                    LIMIT ?
-                    """,
-                    (kind, q, now, limit),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    """
-                    SELECT m.* FROM memories m
-                    JOIN memories_fts fts ON m.rowid = fts.rowid
-                    WHERE memories_fts MATCH ?
-                        AND (m.valid_to IS NULL OR m.valid_to > ?)
-                        AND m.deleted_at IS NULL
-                    ORDER BY m.pinned DESC, rank
-                    LIMIT ?
-                    """,
-                    (q, now, limit),
-                ).fetchall()
+            rows = conn.execute(
+                f"""
+                SELECT m.* FROM memories m
+                JOIN memories_fts fts ON m.rowid = fts.rowid
+                WHERE {where}
+                ORDER BY m.pinned DESC, rank
+                LIMIT ?
+                """,
+                (*params, limit),
+            ).fetchall()
         return [self._store._row_to_memory(row) for row in rows]
 
     def search_vector(
@@ -338,28 +367,27 @@ class _SearchHelper:
             query, k=k, kind=kind, source=source, explain=explain)
 
     def _temporal_sql(
-        self, start: str, end: str, kind: str | None, limit: int
+        self, start: str, end: str, kind: str | None, limit: int,
+        bank: str | None = None,
     ) -> tuple[str, list[Any]]:
         """Build the SQL query and params for temporal range search."""
         now = datetime.now(timezone.utc).isoformat()
-        if kind:
-            sql = (
-                "SELECT * FROM memories "
-                "WHERE valid_from >= ? AND valid_from <= ? "
-                "AND kind = ? "
-                "AND (valid_to IS NULL OR valid_to > ?) "
-                "AND deleted_at IS NULL "
-                "ORDER BY valid_from DESC LIMIT ?"
-            )
-            return sql, [start, end, kind, now, limit]
         sql = (
             "SELECT * FROM memories "
             "WHERE valid_from >= ? AND valid_from <= ? "
             "AND (valid_to IS NULL OR valid_to > ?) "
-            "AND deleted_at IS NULL "
-            "ORDER BY valid_from DESC LIMIT ?"
+            "AND deleted_at IS NULL"
         )
-        return sql, [start, end, now, limit]
+        params: list[Any] = [start, end, now]
+        if kind:
+            sql += " AND kind = ?"
+            params.append(kind)
+        if bank:
+            sql += " AND bank = ?"
+            params.append(bank)
+        sql += " ORDER BY valid_from DESC LIMIT ?"
+        params.append(limit)
+        return sql, params
 
     def search_temporal(
         self,
@@ -367,13 +395,14 @@ class _SearchHelper:
         end: str,
         kind: str | None = None,
         limit: int = 50,
+        bank: str | None = None,
     ) -> list[Memory]:
         """WS-F W4: Search memories by temporal range.
 
         Returns memories whose valid_from falls within [start, end].
         Both bounds are ISO-8601 strings.
         """
-        sql, params = self._temporal_sql(start, end, kind, limit)
+        sql, params = self._temporal_sql(start, end, kind, limit, bank)
         with self._store._conn() as conn:
             rows = conn.execute(sql, params).fetchall()
         return [self._store._row_to_memory(row) for row in rows]
@@ -384,6 +413,7 @@ class _SearchHelper:
         valid_at: str | None = None,
         kind: str | None = None,
         limit: int = 100,
+        bank: str | None = None,
     ) -> list[Memory]:
         """Bi-temporal point-in-time query (P2.3).
 
@@ -416,6 +446,9 @@ class _SearchHelper:
         if kind:
             conditions.append("kind = ?")
             params.append(kind)
+        if bank:
+            conditions.append("bank = ?")
+            params.append(bank)
         where = " AND ".join(conditions)
         with self._store._conn() as conn:
             rows = conn.execute(
@@ -426,7 +459,8 @@ class _SearchHelper:
         return [self._store._row_to_memory(row) for row in rows]
 
     def search_safe(
-        self, query: str, kind: str | None = None, limit: int = 10
+        self, query: str, kind: str | None = None, limit: int = 10,
+        bank: str | None = None,
     ) -> list[Memory]:
         """WS-F W6: Hardened search with additional sanitization.
 
@@ -441,41 +475,55 @@ class _SearchHelper:
         query = re.sub(r"[\x00-\x1f]", "", query)
         query = re.sub(r"\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|EXEC)\b", "", query, flags=re.IGNORECASE)
         limit = min(limit, 100)
-        return self.search(query, kind=kind, limit=limit)
+        return self.search(query, kind=kind, limit=limit, bank=bank)
 
-    def count(self, include_deleted: bool = False) -> int:
+    def count(self, include_deleted: bool = False, bank: str | None = None) -> int:
         """Return number of memories (soft-deleted excluded by default)."""
-        sql = "SELECT COUNT(*) as cnt FROM memories"
+        conditions: list[str] = []
+        params: list[Any] = []
         if not include_deleted:
-            sql += " WHERE deleted_at IS NULL"
+            conditions.append("deleted_at IS NULL")
+        if bank:
+            conditions.append("bank = ?")
+            params.append(bank)
+        sql = "SELECT COUNT(*) as cnt FROM memories"
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
         with self._store._conn() as conn:
-            row = conn.execute(sql).fetchone()
+            row = conn.execute(sql, params).fetchone()
         return int(row["cnt"]) if row else 0
 
     def list_all(
-        self, kind: str | None = None, limit: int = 1000, *, include_deleted: bool = False
+        self,
+        kind: str | None = None,
+        limit: int = 1000,
+        *,
+        include_deleted: bool = False,
+        bank: str | None = None,
     ) -> list[Memory]:
-        """List memories, optionally filtered by kind, most recent first.
+        """List memories, optionally filtered by kind/bank, most recent first.
 
         Soft-deleted memories are hidden unless ``include_deleted=True``;
         pinned entries sort first.
         """
-        alive = "" if include_deleted else "deleted_at IS NULL"
+        conditions: list[str] = []
+        params: list[Any] = []
+        if kind:
+            conditions.append("kind = ?")
+            params.append(kind)
+        if bank:
+            conditions.append("bank = ?")
+            params.append(bank)
+        if not include_deleted:
+            conditions.append("deleted_at IS NULL")
+        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        params.append(limit)
         with self._store._conn() as conn:
-            if kind:
-                where = "kind = ?" + (" AND " + alive if alive else "")
-                rows = conn.execute(
-                    f"SELECT * FROM memories WHERE {where} "
-                    "ORDER BY pinned DESC, created_at DESC LIMIT ?",
-                    (kind, limit),
-                ).fetchall()
-            else:
-                where = f"WHERE {alive}" if alive else ""
-                rows = conn.execute(
-                    f"SELECT * FROM memories {where} "
-                    "ORDER BY pinned DESC, created_at DESC LIMIT ?",
-                    (limit,),
-                ).fetchall()
+            rows = conn.execute(
+                f"SELECT * FROM memories {where} "
+                "ORDER BY pinned DESC, created_at DESC LIMIT ?",
+                params,
+            ).fetchall()
         return [self._store._row_to_memory(row) for row in rows]
 
 
@@ -533,12 +581,16 @@ class _RelationHelper:
             deleted_at = row["deleted_at"]
         except IndexError:
             deleted_at = None
+        try:
+            bank = row["bank"] or "global"
+        except IndexError:
+            bank = "global"
         return Memory(
             id=row["id"], kind=kind, content=content,
             source=source, meta=row["meta"], created_at=created_at,
             valid_from=row["valid_from"], valid_to=row["valid_to"],
             integrity_sig=sig, integrity=integrity,
-            pinned=pinned, deleted_at=deleted_at,
+            pinned=pinned, deleted_at=deleted_at, bank=bank,
         )
 
 
@@ -558,7 +610,8 @@ class MemoryStore(BaseRepository):
             valid_to TEXT,
             integrity_sig TEXT,
             pinned INTEGER NOT NULL DEFAULT 0,
-            deleted_at TEXT
+            deleted_at TEXT,
+            bank TEXT NOT NULL DEFAULT 'global'
         )
         """,
         """
@@ -640,6 +693,8 @@ class MemoryStore(BaseRepository):
         self._ensure_integrity_column()
         # Additive migration: pinned / deleted_at lifecycle columns (P1.4).
         self._ensure_lifecycle_columns()
+        # Additive migration: bank namespace column.
+        self._ensure_bank_column()
         # Additive schema-integrity check: warn on drift, never block init.
         self._verify_schema()
 
@@ -706,6 +761,17 @@ class MemoryStore(BaseRepository):
                 with contextlib.suppress(sqlite3.OperationalError):
                     conn.execute(ddl)
 
+    def _ensure_bank_column(self) -> None:
+        """Additively add the ``bank`` namespace column on old DBs."""
+        with self._conn() as conn:
+            with contextlib.suppress(sqlite3.OperationalError):
+                conn.execute(
+                    "ALTER TABLE memories ADD COLUMN bank TEXT NOT NULL DEFAULT 'global'"
+                )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mem_bank ON memories(bank)"
+            )
+
     def _migrate_decay_table(self) -> None:
         """Migrate legacy memory_decay table to add ON DELETE CASCADE if missing."""
         try:
@@ -748,6 +814,7 @@ class MemoryStore(BaseRepository):
         user_id: str | None = None,
         agent_id: str | None = None,
         session_id: str | None = None,
+        bank: str = "global",
     ) -> Memory:
         """Add a memory with optional identity scoping.
 
@@ -759,7 +826,7 @@ class MemoryStore(BaseRepository):
         WS-F W2: Deduplicates - if a memory with the same content already
             exists, returns the existing one instead of creating a duplicate.
         """
-        mem_id = _deterministic_id(content, kind, source, user_id, agent_id, session_id)
+        mem_id = _deterministic_id(content, kind, source, user_id, agent_id, session_id, bank)
         existing = self.get(mem_id, include_deleted=True)
         if existing is not None:
             if existing.deleted_at is not None:
@@ -768,7 +835,7 @@ class MemoryStore(BaseRepository):
                 self.restore(mem_id)
             return existing
         safe_meta = self._build_safe_meta(meta, user_id, agent_id, session_id, content)
-        mem = self._build_memory(mem_id, kind, content, source, safe_meta, valid_to)
+        mem = self._build_memory(mem_id, kind, content, source, safe_meta, valid_to, bank)
         persisted = self.add_batch([mem])
         if not persisted:
             from runtime.hook_lifecycle import HookError, HookPhase
@@ -831,6 +898,7 @@ class MemoryStore(BaseRepository):
         source: str,
         safe_meta: dict[str, Any],
         valid_to: str | None,
+        bank: str = "global",
     ) -> Memory:
         """Construct a Memory object from the given parameters."""
         now = datetime.now(timezone.utc).isoformat()
@@ -849,6 +917,7 @@ class MemoryStore(BaseRepository):
             valid_to=valid_to,
             integrity_sig=integrity_sig,
             integrity="ok",
+            bank=bank,
         )
 
     def add_batch(self, memories: list[Memory]) -> list[Memory]:
@@ -871,7 +940,7 @@ class MemoryStore(BaseRepository):
                 )
             rows.append(
                 (m.id, m.kind, m.content, m.source, m.meta, m.created_at,
-                 m.valid_from, m.valid_to, sig)
+                 m.valid_from, m.valid_to, sig, m.bank)
             )
         with self._conn() as conn:
             # Check which IDs already exist BEFORE inserting.
@@ -891,8 +960,8 @@ class MemoryStore(BaseRepository):
             # IntegrityError crash.
             conn.executemany(
                 """
-                INSERT OR IGNORE INTO memories (id, kind, content, source, meta, created_at, valid_from, valid_to, integrity_sig)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO memories (id, kind, content, source, meta, created_at, valid_from, valid_to, integrity_sig, bank)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 rows,
             )
@@ -912,8 +981,14 @@ class MemoryStore(BaseRepository):
     def _fts_query(self, query: str) -> str:
         return self._search._fts_query(query)
 
-    def search(self, query: str, kind: str | None = None, limit: int = 10) -> list[Memory]:
-        return self._search.search(query, kind=kind, limit=limit)
+    def search(
+        self,
+        query: str,
+        kind: str | None = None,
+        limit: int = 10,
+        bank: str | None = None,
+    ) -> list[Memory]:
+        return self._search.search(query, kind=kind, limit=limit, bank=bank)
 
     def get(self, mem_id: str, *, include_deleted: bool = False) -> Memory | None:
         sql = "SELECT * FROM memories WHERE id = ?"
@@ -986,13 +1061,20 @@ class MemoryStore(BaseRepository):
         if self.vector and self.vector.is_available():
             self.vector.remove(mem_id)
 
-    def count(self, include_deleted: bool = False) -> int:
-        return self._search.count(include_deleted=include_deleted)
+    def count(self, include_deleted: bool = False, bank: str | None = None) -> int:
+        return self._search.count(include_deleted=include_deleted, bank=bank)
 
     def list_all(
-        self, kind: str | None = None, limit: int = 1000, *, include_deleted: bool = False
+        self,
+        kind: str | None = None,
+        limit: int = 1000,
+        *,
+        include_deleted: bool = False,
+        bank: str | None = None,
     ) -> list[Memory]:
-        return self._search.list_all(kind=kind, limit=limit, include_deleted=include_deleted)
+        return self._search.list_all(
+            kind=kind, limit=limit, include_deleted=include_deleted, bank=bank
+        )
 
     # --- P1.4: pin / soft-delete / contradiction resolution ---------------
 
@@ -1185,8 +1267,9 @@ class MemoryStore(BaseRepository):
         end: str,
         kind: str | None = None,
         limit: int = 50,
+        bank: str | None = None,
     ) -> list[Memory]:
-        return self._search.search_temporal(start, end, kind=kind, limit=limit)
+        return self._search.search_temporal(start, end, kind=kind, limit=limit, bank=bank)
 
     def as_of(
         self,
@@ -1194,10 +1277,13 @@ class MemoryStore(BaseRepository):
         valid_at: str | None = None,
         kind: str | None = None,
         limit: int = 100,
+        bank: str | None = None,
     ) -> list[Memory]:
         """Bi-temporal query: state of memory at transaction time ``as_of``
         and/or valid time ``valid_at`` (ISO-8601 strings)."""
-        return self._search.search_as_of(as_of=as_of, valid_at=valid_at, kind=kind, limit=limit)
+        return self._search.search_as_of(
+            as_of=as_of, valid_at=valid_at, kind=kind, limit=limit, bank=bank
+        )
 
     # --- WS-F W5: Decay persistence --------------------------------------
 
@@ -1213,6 +1299,60 @@ class MemoryStore(BaseRepository):
     # --- WS-F W6: Search hardening ---------------------------------------
 
     def search_safe(
-        self, query: str, kind: str | None = None, limit: int = 10
+        self, query: str, kind: str | None = None, limit: int = 10,
+        bank: str | None = None,
     ) -> list[Memory]:
-        return self._search.search_safe(query, kind=kind, limit=limit)
+        return self._search.search_safe(query, kind=kind, limit=limit, bank=bank)
+
+    # --- Memory banks + reflect -------------------------------------------
+
+    def banks(self) -> dict[str, int]:
+        """Return ``{bank: live_memory_count}`` for all banks in the store."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT bank, COUNT(*) AS cnt FROM memories "
+                "WHERE deleted_at IS NULL GROUP BY bank ORDER BY cnt DESC"
+            ).fetchall()
+        return {str(row["bank"]): int(row["cnt"]) for row in rows}
+
+    def reflect(
+        self,
+        query: str,
+        bank: str | None = None,
+        limit: int = 8,
+        llm_fn: Callable[[str], str] | None = None,
+    ) -> ReflectResult:
+        """Synthesize an answer from memory — hindsight's ``reflect`` op.
+
+        Retrieval: FTS5-ranked recall scoped to ``bank`` (all banks when
+        None). Synthesis: when ``llm_fn`` (a ``Callable[[str], str]``) is
+        supplied the ranked context is passed through it; otherwise a
+        deterministic extractive answer is built from the top supporting
+        memories — deduped, pinned first.
+        """
+        hits = self.search(query, limit=limit, bank=bank)
+        if not hits:
+            hits = self.list_all(limit=limit, bank=bank)
+        seen: set[str] = set()
+        supporting: list[Memory] = []
+        for mem in hits:
+            key = mem.content.strip().lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            supporting.append(mem)
+        if llm_fn is not None and supporting:
+            context = "\n".join(f"- {m.content}" for m in supporting)
+            answer = str(llm_fn(
+                f"Question: {query}\n\nRelevant memories:\n{context}\n\nAnswer:"
+            ))
+            return ReflectResult(
+                query=query, bank=bank, answer=answer,
+                supporting=supporting, synthesized=True,
+            )
+        if not supporting:
+            return ReflectResult(query=query, bank=bank, answer="", supporting=[])
+        bullets = "\n".join(f"- {m.content}" for m in supporting[:limit])
+        return ReflectResult(
+            query=query, bank=bank, answer=bullets, supporting=supporting,
+        )

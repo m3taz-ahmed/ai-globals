@@ -105,7 +105,10 @@ class Code2VideoPlugin(AIOSPlugin):
         for key in common_map.get(provider, []):
             os_key = f"CODE2VIDEO_{key}"
             if os_key in os.environ and key not in env:
-                env[key] = os.environ[os_key]
+                # Unreachable in practice: the CODE2VIDEO_* sweep above already
+                # strips every matching env var into `env` — kept as a guard
+                # against future reordering.
+                env[key] = os.environ[os_key]  # pragma: no cover
 
         if "ICONFINDER_API_KEY" in os.environ:
             env["ICONFINDER_API_KEY"] = os.environ["ICONFINDER_API_KEY"]

@@ -104,7 +104,9 @@ def test_discover_tools_finds_tools():
     agent = McpAgent("test", enforce=False)
     agent.register_server("mock", "python", args=["-m", "mock_server"])
 
-    mock_tool = MagicMock()
+    # spec= keeps .input_schema absent so the 2.x->1.x getattr fallback
+    # reaches .inputSchema (a bare MagicMock would auto-vivify it).
+    mock_tool = MagicMock(spec=["name", "description", "inputSchema"])
     mock_tool.name = "read_file"
     mock_tool.description = "Read a file"
     mock_tool.inputSchema = {"type": "object", "properties": {"path": {"type": "string"}}}
@@ -113,8 +115,10 @@ def test_discover_tools_finds_tools():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
-         patch("aizee_mcp.agent.ClientSession", session_mock):
+    with (
+        patch("aizee_mcp.agent.stdio_client", stdio_mock),
+        patch("aizee_mcp.agent.ClientSession", session_mock),
+    ):
         tools = asyncio.run(agent.discover_tools())
 
     assert len(tools) == 1
@@ -135,8 +139,10 @@ def test_discover_tools_empty_server():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
-         patch("aizee_mcp.agent.ClientSession", session_mock):
+    with (
+        patch("aizee_mcp.agent.stdio_client", stdio_mock),
+        patch("aizee_mcp.agent.ClientSession", session_mock),
+    ):
         tools = asyncio.run(agent.discover_tools())
 
     assert tools == []
@@ -168,8 +174,10 @@ def test_discover_tools_multiple_servers():
 
     stdio_mock = _mock_stdio_client()
 
-    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
-         patch("aizee_mcp.agent.ClientSession", session_mock):
+    with (
+        patch("aizee_mcp.agent.stdio_client", stdio_mock),
+        patch("aizee_mcp.agent.ClientSession", session_mock),
+    ):
         tools = asyncio.run(agent.discover_tools())
 
     assert len(tools) == 2
@@ -241,8 +249,10 @@ def test_call_tool_success():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
-         patch("aizee_mcp.agent.ClientSession", session_mock):
+    with (
+        patch("aizee_mcp.agent.stdio_client", stdio_mock),
+        patch("aizee_mcp.agent.ClientSession", session_mock),
+    ):
         call = asyncio.run(agent.call_tool("read", {"path": "/tmp/test.txt"}))
 
     assert call.tool == "read"
@@ -264,8 +274,10 @@ def test_call_tool_success_no_content():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
-         patch("aizee_mcp.agent.ClientSession", session_mock):
+    with (
+        patch("aizee_mcp.agent.stdio_client", stdio_mock),
+        patch("aizee_mcp.agent.ClientSession", session_mock),
+    ):
         call = asyncio.run(agent.call_tool("read", {"path": "/tmp/test.txt"}))
 
     assert call.tool == "read"
@@ -286,8 +298,10 @@ def test_call_tool_whitelist_allows():
     stdio_mock = _mock_stdio_client()
     session_mock = _mock_client_session(session)
 
-    with patch("aizee_mcp.agent.stdio_client", stdio_mock), \
-         patch("aizee_mcp.agent.ClientSession", session_mock):
+    with (
+        patch("aizee_mcp.agent.stdio_client", stdio_mock),
+        patch("aizee_mcp.agent.ClientSession", session_mock),
+    ):
         call = asyncio.run(agent.call_tool("read", {}))
 
     assert call.error == ""
@@ -311,7 +325,9 @@ def test_run_task_success_first_call():
     agent = McpAgent("test", enforce=False)
     agent._tools = [Tool(name="read", server="mock")]
 
-    with patch.object(agent, "call_tool", AsyncMock(return_value=ToolCall(tool="read", result="ok"))):
+    with patch.object(
+        agent, "call_tool", AsyncMock(return_value=ToolCall(tool="read", result="ok"))
+    ):
         calls = asyncio.run(agent.run_task("do something"))
         assert len(calls) == 1
         assert calls[0].tool == "read"

@@ -1,8 +1,9 @@
 """Root conftest.py - shared pytest fixtures and auto-marking for the entire aiZee test suite.
 
 This file lives at the repository root and is automatically discovered by
-pytest for **all** test directories (tests/, runtime/tests/, memory/tests/,
-eval/tests/, ...).  The per-directory conftest.py duplicates have been removed
+pytest for **all** of the unified test tree (tests/, including the layer
+subdirs tests/{runtime,memory,eval,aizee_mcp}/ consolidated in v6.1.0).
+The per-directory conftest.py duplicates have been removed
 in favour of this single source of truth (P3.3 / I12-Q4).
 """
 
@@ -37,14 +38,14 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     - tests/mcp/            -> marked as 'mcp'       (slow: spins up MCP server)
     - tests/dashboard/      -> marked as 'dashboard' (slow: starts server)
     - tests/e2e/            -> marked as 'slow'      (end-to-end)
-    - memory/tests/test_vector.py -> marked as 'vector' (slow: loads model)
+    - tests/memory/test_vector.py -> marked as 'vector' (slow: loads model)
     - Everything else       -> marked as 'fast'
     """
     slow_markers = {
         "tests/mcp/": "mcp",
         "tests/dashboard/": "dashboard",
         "tests/e2e/": "slow",
-        "memory/tests/test_vector.py": "vector",
+        "tests/memory/test_vector.py": "vector",
     }
 
     for item in items:

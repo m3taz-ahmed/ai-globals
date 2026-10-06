@@ -12,6 +12,7 @@ import importlib
 import json
 import logging
 import pkgutil
+from pathlib import Path
 from typing import Any
 
 from aizee_mcp._compat import FastMCP
@@ -51,19 +52,40 @@ def _register_plugins() -> None:
         mcp.add_resource(resource)
 
 
+def _disabled_tool_modules() -> set[str]:
+    """Return tool-module names disabled via ``aizee_mcp/config.json``.
+
+    The ``disabledToolModules`` list keeps marketing/social/freelance tool
+    modules out of the registered surface without deleting their code —
+    remove a name there to re-enable it. Missing/corrupt config disables
+    nothing (fail-open to the previous behavior).
+    """
+    config_path = Path(__file__).resolve().parent / "config.json"
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    disabled = data.get("disabledToolModules", [])
+    if not isinstance(disabled, list):
+        return set()
+    return {str(name) for name in disabled}
+
+
 def _auto_discover_tools() -> bool:
     """Scan ``aizee_mcp/tools/`` for ``*_tools.py`` modules and register them.
 
     Each module must expose a ``register`` callable (or a ``register_*_tools``
-    function) that accepts the FastMCP instance. Returns True if at least one
+    function) that accepts the FastMCP instance. Modules listed in
+    ``disabledToolModules`` are skipped. Returns True if at least one
     module was registered successfully, False otherwise.
     """
     import aizee_mcp.tools as tools_pkg
 
+    disabled = _disabled_tool_modules()
     registered = 0
     for module_info in pkgutil.iter_modules(tools_pkg.__path__):
         name = module_info.name
-        if not name.endswith("_tools"):
+        if not name.endswith("_tools") or name in disabled:
             continue
         try:
             mod = importlib.import_module(f"aizee_mcp.tools.{name}")
@@ -94,6 +116,7 @@ def _auto_discover_tools() -> bool:
 
 def _register_tools_fallback() -> None:
     """Manual registration fallback when auto-discovery fails."""
+    disabled = _disabled_tool_modules()
     for register_fn in (
         register_memory_tools,
         register_workflow_tools,
@@ -108,6 +131,9 @@ def _register_tools_fallback() -> None:
         register_social_tools,
     ):
         if register_fn is None:
+            continue
+        module_name = str(getattr(register_fn, "__module__", "")).rsplit(".", 1)[-1]
+        if module_name in disabled:
             continue
         try:
             register_fn(mcp)

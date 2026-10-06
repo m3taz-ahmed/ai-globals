@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "6.0.0"
+version = "6.1.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}
@@ -68,7 +68,7 @@ py-modules = ["aizee_cli", "config"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["runtime*", "memory*", "aizee_mcp*", "plugins*", "eval*"]
-exclude = ["runtime.tests*", "memory.tests*", "aizee_mcp.tests*", "eval.tests*", "tests*"]
+exclude = ["tests*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml", "*.yml", "*.json", "*.md"]
@@ -100,10 +100,6 @@ ignore = ["E501", "UP042", "UP046", "UP017"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
-"runtime/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
-"memory/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
-"eval/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
-"aizee_mcp/tests/**/*.py" = ["SIM117", "E701", "RUF043", "B017", "SIM102", "RUF001", "RUF003"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -179,7 +175,7 @@ disallow_untyped_defs = false
 warn_return_any = false
 
 [tool.pytest.ini_options]
-testpaths = ["runtime/tests", "memory/tests", "eval/tests", "aizee_mcp/tests", "tests"]
+testpaths = ["tests"]
 python_files = "test_*.py"
 pythonpath = ["."]
 # Thread-based timeout (signal-based does not work on Windows); guards CI
@@ -209,6 +205,40 @@ omit = [
     "*/tests/*",
     "*/__init__.py",
     "*/conftest.py",
+    # Plugins disabled in plugins.yaml are config-dead code: the kernel never
+    # loads them and the sandbox blocks their imports, so they can never accrue
+    # coverage. Re-measure a plugin here when it is re-enabled.
+    "plugins/upwork/*",
+    "plugins/freelancer/*",
+    "plugins/fiverr/*",
+    "plugins/linkedin/*",
+    "plugins/brevo/*",
+    "plugins/listmonk/*",
+    "plugins/documenso/*",
+    "plugins/postiz/*",
+    "plugins/twitter/*",
+    "plugins/youtube/*",
+    "plugins/mostaql/*",
+    "plugins/khamsat/*",
+    "plugins/google_ads/*",
+    "plugins/meta_ads/*",
+    "plugins/tiktok_ads/*",
+    "plugins/linkedin_ads/*",
+    "plugins/posthog/*",
+    "plugins/n8n/*",
+    "plugins/twenty/*",
+    "plugins/hubspot/*",
+    "plugins/chatwoot/*",
+    "plugins/formbricks/*",
+    "plugins/openreplay/*",
+    "plugins/growthbook/*",
+    "plugins/flagsmith/*",
+    "plugins/lago/*",
+    "plugins/erpnext/*",
+    "plugins/sendgrid/*",
+    "plugins/kit/*",
+    "plugins/klaviyo/*",
+    "plugins/automatisch/*",
 ]
 
 [tool.coverage.report]

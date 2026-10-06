@@ -37,18 +37,63 @@ def register_memory_tools(mcp: FastMCP) -> None:
     """Register all memory-related MCP tools."""
 
     @mcp.tool()
-    def search_memory(query: str, kind: str | None = None, limit: int = 20) -> str:
-        """Search memory store by keyword and optional kind."""
+    def search_memory(
+        query: str,
+        kind: str | None = None,
+        limit: int = 20,
+        bank: str | None = None,
+    ) -> str:
+        """Search memory store by keyword and optional kind/bank."""
         err = validate_query(query)
         if err:
             return err
         err = validate_kind(kind)
         if err:
             return err
+        if bank is not None and not is_safe_name(bank):
+            return json.dumps({"ok": False, "error": "Invalid bank"})
         limit = _coerce_limit(limit)
-        results = memory().search(query, kind, limit=limit)
+        results = memory().search(query, kind, limit=limit, bank=bank)
         return json.dumps(
-            [{"id": r.id, "kind": r.kind, "source": r.source, "content": truncate(r.content)} for r in results],
+            [{"id": r.id, "kind": r.kind, "bank": r.bank, "source": r.source, "content": truncate(r.content)} for r in results],
+            indent=2,
+        )
+
+    @mcp.tool()
+    def list_memory_banks() -> str:
+        """List memory banks (namespaces) with live memory counts."""
+        return json.dumps(memory().banks(), indent=2)
+
+    @mcp.tool()
+    def reflect_memory(
+        query: str,
+        bank: str | None = None,
+        limit: int = 8,
+    ) -> str:
+        """Synthesize an answer from memory — hindsight-style reflect.
+
+        Returns a deterministic extractive answer built from FTS-ranked,
+        bank-scoped memories, plus the supporting memory IDs.
+        """
+        err = validate_query(query)
+        if err:
+            return err
+        if bank is not None and not is_safe_name(bank):
+            return json.dumps({"ok": False, "error": "Invalid bank"})
+        result = memory().reflect(
+            query, bank=bank, limit=_coerce_limit(limit, default=8)
+        )
+        return json.dumps(
+            {
+                "query": result.query,
+                "bank": result.bank,
+                "answer": result.answer,
+                "synthesized": result.synthesized,
+                "supporting": [
+                    {"id": m.id, "kind": m.kind, "bank": m.bank}
+                    for m in result.supporting
+                ],
+            },
             indent=2,
         )
 
@@ -146,16 +191,18 @@ def register_memory_tools(mcp: FastMCP) -> None:
         )
 
     @mcp.tool()
-    def add_memory(kind: str, content: str, source: str) -> str:
-        """Add a new memory to the store."""
+    def add_memory(kind: str, content: str, source: str, bank: str = "global") -> str:
+        """Add a new memory to the store, optionally into a named bank."""
         if kind not in ["factual", "semantic", "episodic"]:
             return json.dumps({"ok": False, "error": "Invalid kind. Must be factual, semantic, or episodic."})
         if not isinstance(content, str) or not content or len(content) > _MAX_INPUT_LENGTH:
             return json.dumps({"ok": False, "error": "Invalid content"})
         if not isinstance(source, str) or not source or len(source) > 1024:
             return json.dumps({"ok": False, "error": "Invalid source"})
-        mem = memory().add(kind, content, source=source)
-        return json.dumps({"ok": True, "id": mem.id})
+        if not is_safe_name(bank):
+            return json.dumps({"ok": False, "error": "Invalid bank"})
+        mem = memory().add(kind, content, source=source, bank=bank)
+        return json.dumps({"ok": True, "id": mem.id, "bank": mem.bank})
 
     @mcp.tool()
     def invalidate_memory(id: str) -> str:

@@ -222,3 +222,12 @@ def test_register_mcp_tools(tmp_path):
     assert len(tools) == 2
     assert plugin.query_graphify in tools
     assert plugin.sync_graph_to_memory in tools
+
+
+def test_community_summaries_non_int_community(tmp_path):
+    """Cover the non-int community branch in _community_summaries."""
+    _graph_fixture(tmp_path)
+    kernel = Kernel(tmp_path)
+    plugin = GraphifyPlugin(kernel, None)
+    node = {"source_file": "pkg/mod.py", "label": "mod.py", "community": "n/a"}
+    assert plugin._community_summaries({"n": node}) == []

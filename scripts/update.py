@@ -19,6 +19,7 @@ and never touched by git pull.
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -180,9 +181,43 @@ def _get_changed_files(root: Path, old_head: str, new_head: str) -> list[str]:
     return []
 
 
+def _remove_stale_files(root: Path) -> int:
+    """Delete paths listed in scripts/stale_files.txt. Returns count removed.
+
+    File copies and ``git pull`` only add/overwrite — retired modules and
+    moved directories would linger forever without this cleanup.
+    """
+    stale_list = root / "scripts" / "stale_files.txt"
+    if not stale_list.exists():
+        return 0
+    removed = 0
+    for raw in stale_list.read_text(encoding="utf-8").splitlines():
+        rel = raw.strip()
+        if not rel or rel.startswith("#"):
+            continue
+        target = root / rel
+        try:
+            resolved = target.resolve()
+            if root.resolve() not in resolved.parents and resolved != root.resolve():
+                continue  # refuse paths escaping root
+            if target.is_dir():
+                shutil.rmtree(target, ignore_errors=True)
+                removed += 1
+            elif target.exists():
+                target.unlink()
+                removed += 1
+        except OSError:
+            continue
+    return removed
+
+
 def _post_install_hooks(root: Path) -> list[str]:
     """Re-run post-install steps. Returns list of actions taken."""
     actions: list[str] = []
+
+    # 0. Remove files/dirs retired from the repo (stale-path cleanup)
+    removed = _remove_stale_files(root)
+    actions.append(f"stale cleanup: {removed} path(s) removed")
 
     # 1. pip install -e . (refresh package + CLI shim)
     rc, _out, _ = _run(
@@ -385,8 +420,8 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
             cfg = _json.loads(config_file.read_text(encoding="utf-8"))
             n_servers = len(cfg.get("mcpServers", {}))
             print(f"    MCP servers configured: {n_servers}")
-            if n_servers < 7:
-                print("    [WARN] Expected at least 7 MCP servers")
+            if n_servers < 3:
+                print("    [WARN] Expected at least 3 MCP servers (aizee, graphify, context7)")
                 verify_ok = False
         except (OSError, ValueError):
             print("    [WARN] config.json is invalid JSON")
@@ -467,8 +502,8 @@ def _run_post_install_only(root: Path) -> int:
             cfg = _json.loads(config_file.read_text(encoding="utf-8"))
             n_servers = len(cfg.get("mcpServers", {}))
             print(f"    MCP servers configured: {n_servers}")
-            if n_servers < 7:
-                print("    [WARN] Expected at least 7 MCP servers")
+            if n_servers < 3:
+                print("    [WARN] Expected at least 3 MCP servers (aizee, graphify, context7)")
                 verify_ok = False
         except (OSError, ValueError):
             print("    [WARN] config.json is invalid JSON")

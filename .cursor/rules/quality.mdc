@@ -24,3 +24,4 @@ alwaysApply: true
 15. [PROHIBIT] No inline imports (`await import()`). No downgrade deps for type errors.
 16. [PROHIBIT] No `TODO`/`FIXME` without ticket tag.
 17. [PROHIBIT] No full test suite on every change (use FAST tier). No skipping FULL tier before done.
+18. [REQ] `[TEST-11]` FULL tier maxes machine resources by default — `aizee test --full` runs all cores minus 2 via xdist; `--no-xdist` is the escape hatch. GPU only when tests run real GPU-bound code — mocked-model suites gain nothing and pay CUDA-context overhead (measured 151s vs 127s). Verify with `nvidia-smi` util, not process listing.

@@ -9,6 +9,11 @@ one is found.
 Design goals:
 - Be extremely conservative: only very explicit, well-known injection
   phrases trip the wire. Plain natural language never does.
+
+This is NOT a second detector: ``runtime.injection_detector`` (13-technique
+scoring) and ``runtime.prompt_injection_detector`` (two-stage wrapper) run
+inside the agent-gateway/defensive paths. This guardrail only guards the
+input phase with a deliberately tiny, near-zero-false-positive pattern set.
 - Never change the behavior of other gates; we only add a guardrail to
   the existing registry and run it for text-carrying (read-only) actions
   that would otherwise skip the guardian gate.

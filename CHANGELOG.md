@@ -1,6 +1,90 @@
 # Changelog
 
-## [Unreleased]
+## [6.1.0] - 2026-10-06 (Lean Surface — fewer MCPs, dead code out, upgrade hygiene)
+
+The v6.1 milestone: the default surface is reduced to what is actually
+used. Marketing/social/freelance integrations are gated off (code kept),
+dead runtime modules are deleted, and installs/updates remove retired
+files from existing setups while preserving `state/`, `brain/`, `.env`.
+
+### Added — external-repo adoptions
+
+- **Memory banks + reflect** (from `vectorize-io/hindsight`): `MemoryStore`
+  gained a `bank` namespace column (additive migration, `NOT NULL DEFAULT
+  'global'` + `idx_mem_bank`), bank filtering on `search` / `list_all` /
+  `count` / `search_as_of` / `search_temporal` / `search_safe`, a `banks()`
+  listing, and `reflect()` — deterministic extractive answer synthesis over
+  bank-scoped FTS recall, with optional `llm_fn` for real LLM synthesis.
+  MCP surface: `search_memory`/`add_memory` accept `bank`; new
+  `list_memory_banks` + `reflect_memory` tools. CLI: `aizee memory banks`,
+  `aizee memory reflect`, `--bank` flag. Schema contract bumped to `v4`.
+- **Skill lifecycle engine** (from `tigerless-labs/autoharness`):
+  `runtime/skill_lifecycle.py` — `SkillLifecycleManager` with typed
+  lifecycle states, request/view/invoke signals, capacity caps, and
+  fold-merge of redundant skill entries; wired into the kernel
+  (`kernel.skill_lifecycle`) and `aizee skill lifecycle` CLI.
+- **`cli-first-access` skill** (from `Panniantong/agent-reach`): prefer
+  native CLIs + real health-probes over standing up MCP servers; the
+  documented replacement path for the disabled external integrations.
+
+### Changed — MCP surface slimmed to core
+
+- Canonical registry `aizee_mcp/config.json` reduced to **3 servers**
+  (`aizee`, `graphify`, `context7`); all external/social/marketing
+  servers removed from the spawn registry.
+- `.devin/mcp_config.json` trimmed to the same 3 (dropped
+  upwork/freelancer/fiverr/linkedin/refero/mobbin).
+- `plugins.yaml`: 31 external-MCP plugins set `enabled: false`;
+  only `code2video`, `graphify`, `context7` remain enabled.
+- `install.ps1` / `install.sh` generated `.claude/settings.json`
+  template trimmed to core servers (no more upwork/freelancer/
+  fiverr/linkedin or refero/mobbin alwaysAllow entries).
+- Global `%APPDATA%\devin\mcp_config.json` regenerated to match.
+- `aizee_mcp/config.json` gained `disabledToolModules` — 7 marketing-domain
+  tool modules (`ads_tools`, `analytics_tools`, `cro_tools`, `email_tools`,
+  `freelance_tools`, `seo_tools`, `social_tools`) are skipped at both
+  auto-discovery and fallback registration. Registered tools: ~102 → 43.
+  The modules still ship; remove a name to re-enable it.
+
+### Changed — repository cleanup
+
+- Dead runtime modules deleted (with their tests): `a2a_server`,
+  `agentic_security`, `audit_workflow`, `codegraph`, `error_classifier`,
+  `provider_registry`, `sarif_emitter`, `semantic_search`, `skill_eval`,
+  `sql_injection_guard`, `text_sanitize`, `tool_output_bounder`,
+  `tree_sitter_provider`, `plugin_system` (no `plugin.json` manifests
+  existed; `runtime/plugin.py` remains the active plugin manager).
+- Test tree consolidated: `runtime/tests`, `memory/tests`, `eval/tests`,
+  `aizee_mcp/tests` moved under `tests/{runtime,memory,eval,aizee_mcp}/`;
+  `pyproject.toml` testpaths, `conftest.py` markers, `sync_docs.py`
+  counters, and per-file-ignores updated to match.
+- `design-library/` shipped: README + 3 original seed `DESIGN.md` systems
+  (editorial, midnight, minimal). `DesignLibrary` no longer silently
+  resolves an empty catalog.
+- `Memory.md` compacted to 145 lines via `aizee memory compact`
+  (older sections archived under `memory/archive/`).
+- Version bumped to 6.1.0 everywhere: `pyproject.toml`, `config.py`
+  fallback, `manifest.json`, `.aizee-version`, `runtime/mcp_client.py`
+  `clientInfo`, `scripts/validate-globals.py`, both READMEs.
+
+### Added — upgrade hygiene
+
+- `scripts/stale_files.txt` — explicit manifest of retired repo paths.
+- `install.ps1`, `install.sh`, `scripts/update.py` consume it: install
+  and update now delete retired files from existing installs (conservative
+  — only listed paths, never user files). `state/`, `brain/`, `.env`,
+  `backups/` are always preserved.
+- `scripts/update.py` gained `clean_stale_files(root)` — refuses
+  path-escaping entries (`..`, absolute paths).
+
+### Fixed
+
+- **MCP disable name-mismatch leak**: `.devin/mcp_config.local.json`
+  and `state/settings.json` disabled `google-ads`, `meta-ads`,
+  `tiktok-ads`, `linkedin-ads` (hyphens) while servers are registered
+  as `google_ads` etc. (underscores) — the toggles never matched, so
+  the 4 ads servers stayed live in every IDE session. Renamed to
+  underscore form.
 
 ### Performance — test suite
 

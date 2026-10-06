@@ -220,3 +220,62 @@ class TestResourceFallbacks:
 
     def test_workflow_missing(self):
         assert srv.get_workflow_resource("definitely-not-a-workflow-xyz") == ""
+
+
+class TestDisabledToolModules:
+    def test_reads_config_list(self):
+        assert "ads_tools" in srv._disabled_tool_modules()
+        assert "seo_tools" in srv._disabled_tool_modules()
+
+    def test_missing_file_returns_empty(self):
+        from pathlib import Path
+
+        with patch.object(Path, "read_text", side_effect=OSError("gone")):
+            assert srv._disabled_tool_modules() == set()
+
+    def test_corrupt_json_returns_empty(self):
+        with patch("aizee_mcp.aizee_server.json.loads", side_effect=ValueError("bad")):
+            assert srv._disabled_tool_modules() == set()
+
+    def test_non_list_returns_empty(self):
+        with patch(
+            "aizee_mcp.aizee_server.json.loads",
+            return_value={"disabledToolModules": "not-a-list"},
+        ):
+            assert srv._disabled_tool_modules() == set()
+
+    def test_discovery_skips_disabled(self):
+        info = SimpleNamespace(name="skip_tools")
+        with patch.object(srv, "_disabled_tool_modules", return_value={"skip_tools"}), \
+             patch("pkgutil.iter_modules", return_value=[info]):
+            assert srv._auto_discover_tools() is False
+
+    def test_fallback_skips_disabled_module(self):
+        called: list = []
+
+        def spy(m):
+            called.append(m)
+
+        spy.__module__ = "aizee_mcp.tools.memory_tools"  # type: ignore[attr-defined]
+
+        def noop(m):
+            return None
+
+        noop.__module__ = "aizee_mcp.tools.misc"  # type: ignore[attr-defined]
+        with patch.object(srv, "_disabled_tool_modules", return_value={"memory_tools"}), \
+             patch.multiple(
+                 srv,
+                 register_memory_tools=spy,
+                 register_workflow_tools=noop,
+                 register_policy_tools=noop,
+                 register_context_tools=noop,
+                 register_seo_tools=noop,
+                 register_ads_tools=noop,
+                 register_analytics_tools=noop,
+                 register_cro_tools=noop,
+                 register_email_tools=noop,
+                 register_freelance_tools=noop,
+                 register_social_tools=noop,
+             ):
+            srv._register_tools_fallback()
+        assert called == []

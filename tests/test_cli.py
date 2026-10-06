@@ -19,6 +19,7 @@ from runtime.kernel import Kernel
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _tmp_root(with_vector: bool = False) -> Path:
     tmp = Path(tempfile.mkdtemp(prefix="aizee_cli_test_"))
     for sub in ("runtime/policies", "workflows", "rules", "tech-stack", "state", "brain"):
@@ -38,6 +39,7 @@ def _tmp_root(with_vector: bool = False) -> Path:
 # status
 # ---------------------------------------------------------------------------
 
+
 class TestCliStatus:
     def test_status_returns_zero(self, capsys):
         tmp = _tmp_root()
@@ -53,6 +55,7 @@ class TestCliStatus:
 # ---------------------------------------------------------------------------
 # version
 # ---------------------------------------------------------------------------
+
 
 class TestCliVersion:
     def test_version_output(self, capsys):
@@ -70,6 +73,7 @@ class TestCliVersion:
 # doctor
 # ---------------------------------------------------------------------------
 
+
 class TestCliDoctor:
     def test_doctor_ok(self, capsys):
         tmp = _tmp_root()
@@ -84,6 +88,7 @@ class TestCliDoctor:
 # ---------------------------------------------------------------------------
 # check
 # ---------------------------------------------------------------------------
+
 
 class TestCliCheck:
     def test_check_allowed(self, capsys):
@@ -155,6 +160,7 @@ class TestCliInvalidJsonArgs:
 # run (workflow)
 # ---------------------------------------------------------------------------
 
+
 class TestCliRun:
     def test_run_workflow(self, capsys):
         tmp = _tmp_root()
@@ -178,6 +184,7 @@ class TestCliRun:
 # memory search
 # ---------------------------------------------------------------------------
 
+
 class TestCliMemorySearch:
     def test_memory_search_empty(self, capsys):
         tmp = _tmp_root()
@@ -192,7 +199,9 @@ class TestCliMemorySearch:
     def test_memory_search_with_kind(self, capsys):
         tmp = _tmp_root()
         try:
-            rc = main(["--root", str(tmp), "memory", "search", "--query", "rules", "--kind", "semantic"])
+            rc = main(
+                ["--root", str(tmp), "memory", "search", "--query", "rules", "--kind", "semantic"]
+            )
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -201,6 +210,7 @@ class TestCliMemorySearch:
 # ---------------------------------------------------------------------------
 # memory vector
 # ---------------------------------------------------------------------------
+
 
 class TestCliMemoryVector:
     def test_memory_vector_no_results(self, capsys):
@@ -216,7 +226,9 @@ class TestCliMemoryVector:
     def test_memory_vector_with_kind(self, capsys):
         tmp = _tmp_root()
         try:
-            rc = main(["--root", str(tmp), "memory", "vector", "--query", "test", "--kind", "factual"])
+            rc = main(
+                ["--root", str(tmp), "memory", "vector", "--query", "test", "--kind", "factual"]
+            )
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -226,16 +238,25 @@ class TestCliMemoryVector:
 # memory add
 # ---------------------------------------------------------------------------
 
+
 class TestCliMemoryAdd:
     def test_memory_add(self, capsys):
         tmp = _tmp_root()
         try:
-            rc = main([
-                "--root", str(tmp), "memory", "add",
-                "--kind", "episodic",
-                "--content", "Test memory content",
-                "--source", "test-source",
-            ])
+            rc = main(
+                [
+                    "--root",
+                    str(tmp),
+                    "memory",
+                    "add",
+                    "--kind",
+                    "episodic",
+                    "--content",
+                    "Test memory content",
+                    "--source",
+                    "test-source",
+                ]
+            )
             captured = capsys.readouterr()
             assert rc == 0
             assert "Added memory" in captured.out
@@ -255,6 +276,7 @@ class TestCliMemoryAdd:
 # memory ingest
 # ---------------------------------------------------------------------------
 
+
 class TestCliMemoryIngest:
     def test_memory_ingest(self, capsys):
         tmp = _tmp_root()
@@ -270,6 +292,7 @@ class TestCliMemoryIngest:
 # ---------------------------------------------------------------------------
 # query (hybrid search)
 # ---------------------------------------------------------------------------
+
 
 class TestCliQuery:
     def test_query_returns_table(self, capsys):
@@ -303,6 +326,7 @@ class TestCliQuery:
 # policy
 # ---------------------------------------------------------------------------
 
+
 class TestCliPolicy:
     def test_policy_test_dry_run(self, capsys):
         tmp = _tmp_root()
@@ -319,6 +343,7 @@ class TestCliPolicy:
 # budget
 # ---------------------------------------------------------------------------
 
+
 class TestCliBudget:
     def test_budget_list(self, capsys):
         tmp = _tmp_root()
@@ -333,11 +358,20 @@ class TestCliBudget:
     def test_budget_set(self, capsys):
         tmp = _tmp_root()
         try:
-            rc = main([
-                "--root", str(tmp), "budget", "set",
-                "--scope", "test", "--max-tokens", "1000",
-                "--period", "daily",
-            ])
+            rc = main(
+                [
+                    "--root",
+                    str(tmp),
+                    "budget",
+                    "set",
+                    "--scope",
+                    "test",
+                    "--max-tokens",
+                    "1000",
+                    "--period",
+                    "daily",
+                ]
+            )
             assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -346,6 +380,7 @@ class TestCliBudget:
 # ---------------------------------------------------------------------------
 # project
 # ---------------------------------------------------------------------------
+
 
 class TestCliProject:
     def test_project_init(self):
@@ -363,6 +398,7 @@ class TestCliProject:
 # no command -> help
 # ---------------------------------------------------------------------------
 
+
 class TestCliNoCommand:
     def test_no_command_returns_1(self):
         rc = main([])
@@ -372,6 +408,7 @@ class TestCliNoCommand:
 # ---------------------------------------------------------------------------
 # check - blocked action (line 67)
 # ---------------------------------------------------------------------------
+
 
 class TestCliCheckBlocked:
     def test_check_blocked_action(self, capsys):
@@ -389,6 +426,7 @@ class TestCliCheckBlocked:
 # _project_root with Path arg (line 32)
 # ---------------------------------------------------------------------------
 
+
 class TestCliProjectRootPath:
     def test_project_root_with_path_arg(self, capsys):
         tmp = _tmp_root()
@@ -402,6 +440,7 @@ class TestCliProjectRootPath:
 # ---------------------------------------------------------------------------
 # sync (lines 135-137)
 # ---------------------------------------------------------------------------
+
 
 class TestCliSync:
     def test_sync_runs_subprocess(self, capsys):
@@ -432,6 +471,7 @@ class TestCliSync:
 # graphify (lines 141-142)
 # ---------------------------------------------------------------------------
 
+
 class TestCliGraphify:
     def test_graphify_runs_subprocess(self, capsys):
         tmp = _tmp_root()
@@ -461,6 +501,7 @@ class TestCliGraphify:
 # budget usage (lines 176-190)
 # ---------------------------------------------------------------------------
 
+
 class TestCliBudgetUsage:
     def test_budget_usage(self, capsys):
         tmp = _tmp_root()
@@ -476,6 +517,7 @@ class TestCliBudgetUsage:
 # ---------------------------------------------------------------------------
 # saga (lines 224-229)
 # ---------------------------------------------------------------------------
+
 
 class TestCliSaga:
     def test_saga_run(self, capsys):
@@ -500,6 +542,7 @@ class TestCliSaga:
 # ---------------------------------------------------------------------------
 # telemetry (lines 233-243)
 # ---------------------------------------------------------------------------
+
 
 class TestCliTelemetry:
     def test_telemetry_summary(self, capsys):
@@ -534,6 +577,7 @@ class TestCliTelemetry:
 # stack (lines 247-259)
 # ---------------------------------------------------------------------------
 
+
 class TestCliStack:
     def test_stack_detect(self, capsys):
         tmp = _tmp_root()
@@ -558,6 +602,7 @@ class TestCliStack:
 # linkedin (lines 264-291)
 # ---------------------------------------------------------------------------
 
+
 class TestCliLinkedin:
     def _make_args(self, tmp, action, **kwargs):
         """Create a mock args namespace with all linkedin attributes."""
@@ -581,6 +626,7 @@ class TestCliLinkedin:
                 mock_client.is_configured.return_value = False
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "profile"))
                 captured = capsys.readouterr()
                 assert rc == 1
@@ -597,6 +643,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"name": "John"}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "profile"))
                 assert rc == 0
         finally:
@@ -611,6 +658,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "post", text="Hello LinkedIn"))
                 assert rc == 0
         finally:
@@ -625,6 +673,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"draft_id": "d1"}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "draft", text="Draft text"))
                 assert rc == 0
         finally:
@@ -639,6 +688,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"drafts": []}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "drafts"))
                 assert rc == 0
         finally:
@@ -653,6 +703,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "approve", draft_id="d1"))
                 assert rc == 0
         finally:
@@ -667,6 +718,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "publish", draft_id="d1"))
                 assert rc == 0
         finally:
@@ -681,7 +733,10 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
-                rc = cmd_linkedin(self._make_args(tmp, "schedule", draft_id="d1", when="2026-07-02T09:00:00Z"))
+
+                rc = cmd_linkedin(
+                    self._make_args(tmp, "schedule", draft_id="d1", when="2026-07-02T09:00:00Z")
+                )
                 assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -695,6 +750,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"likes": 10}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "stats", urn="urn:li:post:123"))
                 assert rc == 0
         finally:
@@ -709,6 +765,7 @@ class TestCliLinkedin:
                 mock_client.call_tool.return_value = {"ok": True}
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 rc = cmd_linkedin(self._make_args(tmp, "delete", urn="urn:li:post:123"))
                 assert rc == 0
         finally:
@@ -718,6 +775,7 @@ class TestCliLinkedin:
 # ---------------------------------------------------------------------------
 # mcp (lines 295-317)
 # ---------------------------------------------------------------------------
+
 
 class TestCliMcp:
     def test_mcp_no_args(self, capsys):
@@ -752,7 +810,17 @@ class TestCliMcp:
                 mock_client.is_configured.return_value = True
                 mock_client.call_tool.return_value = {"ok": True, "result": "data"}
                 mock_cls.return_value = mock_client
-                rc = main(["--root", str(tmp), "mcp", "test-server", "test-tool", "--args", '{"key": "val"}'])
+                rc = main(
+                    [
+                        "--root",
+                        str(tmp),
+                        "mcp",
+                        "test-server",
+                        "test-tool",
+                        "--args",
+                        '{"key": "val"}',
+                    ]
+                )
                 assert rc == 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -797,6 +865,7 @@ class TestCliMcp:
 # chat (lines 321-336)
 # ---------------------------------------------------------------------------
 
+
 class TestCliChat:
     def test_chat_with_message(self, capsys):
         tmp = _tmp_root()
@@ -832,6 +901,7 @@ class TestCliChat:
 # ci (lines 340-347)
 # ---------------------------------------------------------------------------
 
+
 class TestCliCi:
     def test_ci_run(self, capsys):
         tmp = _tmp_root()
@@ -839,7 +909,10 @@ class TestCliCi:
             with patch("runtime.ci.CIPipeline") as mock_pipeline_cls:
                 mock_pipeline = MagicMock()
                 mock_pipeline.run.return_value = 0
-                mock_pipeline.results = [{"name": "ruff", "ok": True}, {"name": "mypy", "ok": False}]
+                mock_pipeline.results = [
+                    {"name": "ruff", "ok": True},
+                    {"name": "mypy", "ok": False},
+                ]
                 mock_pipeline_cls.return_value = mock_pipeline
                 rc = main(["--root", str(tmp), "ci"])
                 captured = capsys.readouterr()
@@ -868,12 +941,15 @@ class TestCliCi:
 # agent (lines 351-365)
 # ---------------------------------------------------------------------------
 
+
 class TestCliAgent:
     def test_agent_spawn(self, capsys):
         tmp = _tmp_root()
         try:
             with patch.object(Kernel, "spawn_agent", return_value={"ok": True}):
-                rc = main(["--root", str(tmp), "agent", "spawn", "--agent-id", "a1", "--persona", "ARCH"])
+                rc = main(
+                    ["--root", str(tmp), "agent", "spawn", "--agent-id", "a1", "--persona", "ARCH"]
+                )
                 capsys.readouterr()
                 assert rc == 0
         finally:
@@ -883,7 +959,18 @@ class TestCliAgent:
         tmp = _tmp_root()
         try:
             with patch.object(Kernel, "delegate", return_value={"ok": True}):
-                rc = main(["--root", str(tmp), "agent", "delegate", "--agent-id", "a1", "--action", "Read"])
+                rc = main(
+                    [
+                        "--root",
+                        str(tmp),
+                        "agent",
+                        "delegate",
+                        "--agent-id",
+                        "a1",
+                        "--action",
+                        "Read",
+                    ]
+                )
                 capsys.readouterr()
                 assert rc == 0
         finally:
@@ -912,6 +999,7 @@ class TestCliAgent:
 # persona (lines 369-382)
 # ---------------------------------------------------------------------------
 
+
 class TestCliPersona:
     def test_persona_list(self, capsys):
         tmp = _tmp_root()
@@ -925,7 +1013,18 @@ class TestCliPersona:
     def test_persona_detect_multi(self, capsys):
         tmp = _tmp_root()
         try:
-            rc = main(["--root", str(tmp), "persona", "detect", "Design", "a", "microservices", "architecture"])
+            rc = main(
+                [
+                    "--root",
+                    str(tmp),
+                    "persona",
+                    "detect",
+                    "Design",
+                    "a",
+                    "microservices",
+                    "architecture",
+                ]
+            )
             capsys.readouterr()
             assert rc == 0
         finally:
@@ -934,7 +1033,19 @@ class TestCliPersona:
     def test_persona_detect_single(self, capsys):
         tmp = _tmp_root()
         try:
-            rc = main(["--root", str(tmp), "persona", "detect", "--single", "Audit", "for", "SQL", "injection"])
+            rc = main(
+                [
+                    "--root",
+                    str(tmp),
+                    "persona",
+                    "detect",
+                    "--single",
+                    "Audit",
+                    "for",
+                    "SQL",
+                    "injection",
+                ]
+            )
             capsys.readouterr()
             assert rc == 0
         finally:
@@ -957,6 +1068,7 @@ class TestCliPersona:
 # ---------------------------------------------------------------------------
 # skill (lines 386-402)
 # ---------------------------------------------------------------------------
+
 
 class TestCliSkill:
     def test_skill_list(self, capsys):
@@ -993,6 +1105,7 @@ class TestCliSkill:
 # (lines 432-433, 442-445, 448-449, 456-457, 464-465, 472, 479-481)
 # ---------------------------------------------------------------------------
 
+
 class TestCliDoctorExtended:
     def test_doctor_with_version_file(self, capsys):
         tmp = _tmp_root()
@@ -1020,6 +1133,7 @@ class TestCliDoctorExtended:
 # ---------------------------------------------------------------------------
 # test command (lines 501-530)
 # ---------------------------------------------------------------------------
+
 
 class TestCliTest:
     def test_test_fast(self, capsys):
@@ -1061,22 +1175,30 @@ class TestCliTest:
 # __main__ block (line 710)
 # ---------------------------------------------------------------------------
 
+
 class TestCliMain:
     def test_main_block_raises_system_exit(self):
         """Line 710: __main__ block raises SystemExit."""
         import subprocess
         import sys
+
         tmp = _tmp_root()
         try:
             env = dict(os.environ)
-            env.update({
-                "AIZEE_ROOT": str(tmp),
-                "PYTHONIOENCODING": "utf-8",
-                "PYTHONHASHSEED": "0",
-                "PYTHONPATH": str(Path(__file__).resolve().parent.parent),
-            })
+            env.update(
+                {
+                    "AIZEE_ROOT": str(tmp),
+                    "PYTHONIOENCODING": "utf-8",
+                    "PYTHONHASHSEED": "0",
+                    "PYTHONPATH": str(Path(__file__).resolve().parent.parent),
+                }
+            )
             result = subprocess.run(
-                [sys.executable, str(Path(__file__).resolve().parent.parent / "aizee_cli.py"), "version"],
+                [
+                    sys.executable,
+                    str(Path(__file__).resolve().parent.parent / "aizee_cli.py"),
+                    "version",
+                ],
                 env=env,
                 capture_output=True,
                 text=True,
@@ -1093,12 +1215,14 @@ class TestCliMain:
 # memory search with results (line 106)
 # ---------------------------------------------------------------------------
 
+
 class TestCliMemorySearchWithResults:
     def test_memory_search_with_results(self, capsys):
         tmp = _tmp_root()
         try:
             mock_mem = MagicMock()
             mock_mem.kind = "semantic"
+            mock_mem.bank = "global"
             mock_mem.content = "Test memory content for search"
             with patch.object(MemoryStore, "search", return_value=[mock_mem]):
                 rc = main(["--root", str(tmp), "memory", "search", "--query", "test"])
@@ -1113,17 +1237,21 @@ class TestCliMemorySearchWithResults:
 # memory vector with results (lines 115-118)
 # ---------------------------------------------------------------------------
 
+
 class TestCliMemoryVectorWithResults:
     def test_memory_vector_with_results(self, capsys):
         from memory.store import MemoryStore
+
         tmp = _tmp_root()
         try:
             mock_vr = {"id": 1, "score": 0.95}
             mock_fetched = MagicMock()
             mock_fetched.kind = "factual"
             mock_fetched.source = "test-source"
-            with patch.object(MemoryStore, "search_vector", return_value=[mock_vr]), \
-                 patch.object(MemoryStore, "get", return_value=mock_fetched):
+            with (
+                patch.object(MemoryStore, "search_vector", return_value=[mock_vr]),
+                patch.object(MemoryStore, "get", return_value=mock_fetched),
+            ):
                 rc = main(["--root", str(tmp), "memory", "vector", "--query", "test"])
                 captured = capsys.readouterr()
                 assert rc == 0
@@ -1133,11 +1261,14 @@ class TestCliMemoryVectorWithResults:
 
     def test_memory_vector_results_no_fetched(self, capsys):
         from memory.store import MemoryStore
+
         tmp = _tmp_root()
         try:
             mock_vr = {"id": 1, "score": 0.95}
-            with patch.object(MemoryStore, "search_vector", return_value=[mock_vr]), \
-                 patch.object(MemoryStore, "get", return_value=None):
+            with (
+                patch.object(MemoryStore, "search_vector", return_value=[mock_vr]),
+                patch.object(MemoryStore, "get", return_value=None),
+            ):
                 rc = main(["--root", str(tmp), "memory", "vector", "--query", "test"])
                 assert rc == 0
         finally:
@@ -1148,12 +1279,15 @@ class TestCliMemoryVectorWithResults:
 # stack show with docs (lines 256-258)
 # ---------------------------------------------------------------------------
 
+
 class TestCliStackShowWithDocs:
     def test_stack_show_with_docs(self, capsys):
         tmp = _tmp_root()
         try:
-            with patch("runtime.tech_stack.load_stack_docs",
-                       return_value={"react.md": "React framework content here"}):
+            with patch(
+                "runtime.tech_stack.load_stack_docs",
+                return_value={"react.md": "React framework content here"},
+            ):
                 rc = main(["--root", str(tmp), "stack", "show"])
                 captured = capsys.readouterr()
                 assert rc == 0
@@ -1166,6 +1300,7 @@ class TestCliStackShowWithDocs:
 # linkedin unknown action (lines 285-286)
 # ---------------------------------------------------------------------------
 
+
 class TestCliLinkedinUnknownAction:
     def test_linkedin_unknown_action(self, capsys):
         tmp = _tmp_root()
@@ -1175,6 +1310,7 @@ class TestCliLinkedinUnknownAction:
                 mock_client.is_configured.return_value = True
                 mock_cls.return_value = mock_client
                 from aizee_cli import cmd_linkedin
+
                 args = MagicMock()
                 args.root = tmp
                 args.project = None
@@ -1197,6 +1333,7 @@ class TestCliLinkedinUnknownAction:
 # chat REPL with actual message (lines 334-335)
 # ---------------------------------------------------------------------------
 
+
 class TestCliChatReplWithMessage:
     def test_chat_repl_with_message_then_exit(self, capsys, monkeypatch):
         tmp = _tmp_root()
@@ -1212,6 +1349,7 @@ class TestCliChatReplWithMessage:
 # ---------------------------------------------------------------------------
 # skill list with skills (line 390)
 # ---------------------------------------------------------------------------
+
 
 class TestCliSkillListWithSkills:
     def test_skill_list_with_skills(self, capsys):
@@ -1234,6 +1372,7 @@ class TestCliSkillListWithSkills:
 # skill invoke with existing skill (line 396)
 # ---------------------------------------------------------------------------
 
+
 class TestCliSkillInvokeFound:
     def test_skill_invoke_found(self, capsys):
         tmp = _tmp_root()
@@ -1252,6 +1391,7 @@ class TestCliSkillInvokeFound:
 # ---------------------------------------------------------------------------
 # skill search with matching skills (lines 400-401)
 # ---------------------------------------------------------------------------
+
 
 class TestCliSkillSearchWithMatch:
     def test_skill_search_with_match(self, capsys):
@@ -1274,6 +1414,7 @@ class TestCliSkillSearchWithMatch:
 # ---------------------------------------------------------------------------
 # doctor - pip import failure (line 457)
 # ---------------------------------------------------------------------------
+
 
 class TestCliDoctorPipFailure:
     def test_doctor_pip_import_failure(self, capsys):
@@ -1298,6 +1439,7 @@ class TestCliDoctorPipFailure:
 # doctor - vector index exception (lines 464-465)
 # ---------------------------------------------------------------------------
 
+
 class TestCliDoctorVectorException:
     def test_doctor_vector_exception(self, capsys):
         tmp = _tmp_root()
@@ -1314,6 +1456,7 @@ class TestCliDoctorVectorException:
 # doctor - non-Windows os.name path (line 472)
 # ---------------------------------------------------------------------------
 
+
 class TestCliDoctorNonWindows:
     def test_doctor_non_windows_path(self, capsys):
         """Line 472: non-Windows os.name path in global mcp config check."""
@@ -1324,6 +1467,7 @@ class TestCliDoctorNonWindows:
             args.project = tmp
             with patch("os.name", "posix"):
                 from aizee_cli import cmd_doctor
+
                 rc = cmd_doctor(args)
                 assert rc in (0, 1)
         finally:
@@ -1333,6 +1477,7 @@ class TestCliDoctorNonWindows:
 # ---------------------------------------------------------------------------
 # doctor - global mcp config not found (line 479) and exception (lines 480-481)
 # ---------------------------------------------------------------------------
+
 
 class TestCliDoctorGlobalMcp:
     def test_doctor_global_mcp_not_found(self, capsys):
@@ -1369,6 +1514,7 @@ class TestCliDoctorGlobalMcp:
 # test --xdist (lines 525-527)
 # ---------------------------------------------------------------------------
 
+
 class TestCliTestXdist:
     def test_test_xdist(self, capsys):
         tmp = _tmp_root()
@@ -1388,10 +1534,12 @@ class TestCliTestXdist:
 # __main__ block - in-process (line 710)
 # ---------------------------------------------------------------------------
 
+
 class TestCliMainBlockInProcess:
     def test_main_block_in_process(self, monkeypatch):
         """Line 710: __main__ block raises SystemExit in-process."""
         import runpy
+
         tmp = _tmp_root()
         try:
             monkeypatch.setattr(sys, "argv", ["aizee_cli.py", "--root", str(tmp), "version"])

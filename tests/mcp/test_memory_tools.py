@@ -65,7 +65,9 @@ class TestSearchMemory:
 
     def test_successful_search(self):
         """Cover normal search path with mocked store."""
-        mock_mem = MagicMock(id="m1", kind="semantic", source="rules/core.md", content="test content")
+        mock_mem = MagicMock(
+            id="m1", kind="semantic", bank="global", source="rules/core.md", content="test content"
+        )
         mock_store = _mock_memory()
         mock_store.search.return_value = [mock_mem]
         with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
@@ -73,6 +75,49 @@ class TestSearchMemory:
             data = json.loads(result)
             assert len(data) == 1
             assert data[0]["id"] == "m1"
+
+    def test_invalid_bank(self):
+        result = _call("search_memory", {"query": "test", "bank": "../bad"})
+        data = json.loads(result)
+        assert data["ok"] is False
+        assert "Invalid bank" in data["error"]
+
+
+class TestListMemoryBanks:
+    def test_lists_banks(self):
+        mock_store = _mock_memory()
+        mock_store.banks.return_value = {"global": 3, "alpha": 1}
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
+            data = json.loads(_call("list_memory_banks", {}))
+        assert data == {"global": 3, "alpha": 1}
+
+
+class TestReflectMemory:
+    def test_invalid_query(self):
+        data = json.loads(_call("reflect_memory", {"query": ""}))
+        assert data["ok"] is False
+
+    def test_invalid_bank(self):
+        data = json.loads(_call("reflect_memory", {"query": "q", "bank": "../bad"}))
+        assert data["ok"] is False
+        assert "Invalid bank" in data["error"]
+
+    def test_successful_reflect(self):
+        from memory.store import ReflectResult
+
+        mock_store = _mock_memory()
+        mock_store.reflect.return_value = ReflectResult(
+            query="q",
+            bank="alpha",
+            answer="- a fact",
+            supporting=[MagicMock(id="m1", kind="factual", bank="alpha")],
+            synthesized=False,
+        )
+        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
+            data = json.loads(_call("reflect_memory", {"query": "q", "bank": "alpha"}))
+        assert data["bank"] == "alpha"
+        assert data["answer"] == "- a fact"
+        assert data["supporting"][0]["id"] == "m1"
 
 
 class TestSearchMemoryVector:
@@ -133,7 +178,9 @@ class TestQueryContext:
             {"id": "m1", "score": 0.95},  # overlaps with FTS
             {"id": "m2", "score": 0.85},  # new
         ]
-        new_mem = MagicMock(id="m2", kind="factual", source="tech-stack/x.md", content="vector content")
+        new_mem = MagicMock(
+            id="m2", kind="factual", source="tech-stack/x.md", content="vector content"
+        )
         mock_store.get.side_effect = lambda mid: new_mem if mid == "m2" else None
         with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
             result = _call("query_context", {"query": "test"})
@@ -217,11 +264,21 @@ class TestAddMemory:
         data = json.loads(result)
         assert data["ok"] is False
 
+    def test_invalid_bank(self):
+        result = _call(
+            "add_memory", {"kind": "factual", "content": "test", "source": "s", "bank": "../bad"}
+        )
+        data = json.loads(result)
+        assert data["ok"] is False
+        assert "Invalid bank" in data["error"]
+
     def test_successful_add(self):
         mock_store = _mock_memory()
-        mock_store.add.return_value = MagicMock(id="new-mem-456")
+        mock_store.add.return_value = MagicMock(id="new-mem-456", bank="global")
         with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store):
-            result = _call("add_memory", {"kind": "factual", "content": "test content", "source": "test"})
+            result = _call(
+                "add_memory", {"kind": "factual", "content": "test content", "source": "test"}
+            )
             data = json.loads(result)
             assert data["ok"] is True
             assert data["id"] == "new-mem-456"
@@ -264,8 +321,10 @@ class TestInvalidateMemory:
 class TestIngestMemory:
     def test_successful_ingest(self):
         mock_store = _mock_memory()
-        with patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store), \
-             patch("aizee_mcp.tools.memory_tools.Ingestor") as mock_ingestor_cls:
+        with (
+            patch("aizee_mcp.tools.memory_tools.memory", return_value=mock_store),
+            patch("aizee_mcp.tools.memory_tools.Ingestor") as mock_ingestor_cls,
+        ):
             mock_ingestor = MagicMock()
             mock_ingestor.ingest_all.return_value = ["id1", "id2", "id3"]
             mock_ingestor_cls.return_value = mock_ingestor

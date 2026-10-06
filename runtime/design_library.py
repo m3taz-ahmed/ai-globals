@@ -1,10 +1,11 @@
-"""Design Library - 56 brand design systems loaded on demand.
+"""Design Library - brand design systems loaded on demand.
 
-Inspired by zeta92/design-library-plugin. Provides a catalog of real-world
-brand design systems (Stripe, Linear, Vercel, Figma, etc.) that can be loaded
-and applied to UI work. Each brand is stored as a ``DESIGN.md`` file with
-tokens (colors, typography, spacing, radii, shadows, grid) and design
-principles.
+Inspired by zeta92/design-library-plugin. Brand systems live as
+``design-library/<brand>/DESIGN.md`` files with tokens (colors, typography,
+spacing, radii, shadows, grid) and design principles. ``CATALOG`` lists
+well-known brand names as reference suggestions; only brands with a real
+file on disk (bundled seeds or imported via :meth:`DesignLibrary.import_brand`)
+can be loaded and mixed.
 
 The library supports:
 - **Single brand** - load one brand's full design system

@@ -4,14 +4,14 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-6.0.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 6.0.0">
-    <img src="https://img.shields.io/badge/Tests-7653%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7653 passed">
+    <img src="https://img.shields.io/badge/Version-6.1.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 6.1.0">
+    <img src="https://img.shields.io/badge/Tests-7469%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7469 passed">
     <img src="https://img.shields.io/badge/Coverage-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 100%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
   <p>
     <img src="https://img.shields.io/badge/Personas-29-EC4899?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="29 Personas">
-    <img src="https://img.shields.io/badge/Skills-139-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="139 Skills">
+    <img src="https://img.shields.io/badge/Skills-140-10B981?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="140 Skills">
     <img src="https://img.shields.io/badge/Workflows-63-0EA5E9?style=for-the-badge&logo=checkmarx&logoColor=white&labelColor=1a1a2e" alt="63 Workflows">
     <img src="https://img.shields.io/badge/Tech--Stack-265-F59E0B?style=for-the-badge&logo=sparkles&logoColor=white&labelColor=1a1a2e" alt="265 Tech-Stack refs">
   </p>
@@ -39,16 +39,32 @@ A **zero-compromise, version-controlled operating system** that sits between you
 
 ---
 
-## What's New in v6.0.0 — Governed Runtime
+## What's New in v6.1.0 — Lean Surface
 
-The headline change: **enforcement is on the execution path**. Guardrail modules that previously existed as standalone, tested-but-unwired units now run inside the action pipeline.
+The headline change: **the default surface is small and honest**. The MCP fleet is reduced to what is actually used, marketing tool modules are gated off instead of deleted, dead code is gone, and installers remove retired files on upgrade.
 
-### Enforcement on the action path
+### Lean defaults
+
+- **3 MCP servers by default** — `aizee` (governance), `graphify`, `context7`. The marketing/social/freelance MCP servers are gone from every shipped config.
+- **43 MCP tools enabled** — 7 marketing-domain tool modules (ads, analytics, CRO, email, freelance, SEO, social) still ship but are disabled via `disabledToolModules` in `aizee_mcp/config.json`. Remove a name to re-enable it.
+- **31 plugins disabled** — `plugins.yaml` ships them `enabled: false`; the sandbox blocks the rest. `code2video`, `graphify`, `context7` stay on.
+- **Dead code removed** — unused runtime modules (`a2a_server`, `semantic_search`, `provider_registry`, `sql_injection_guard`, `plugin_system`, …) and their tests deleted.
+
+### Upgrade hygiene
+
+- **Stale-file cleanup** — `scripts/stale_files.txt` lists retired paths; `install.ps1`, `install.sh`, and `scripts/update.py` delete them from existing installs while preserving `state/`, `brain/`, and `.env`.
+- **Unified test tree** — all tests live under `tests/{runtime,memory,eval,aizee_mcp,…}`.
+- **Design library seeded** — `design-library/` now ships real `DESIGN.md` seeds (editorial, midnight, minimal) so `DesignLibrary` no longer resolves an empty catalog.
+- **`Memory.md` self-compaction** — kept under its 500-line budget via `aizee memory compact` (archive in `memory/archive/`).
+
+### v6.0.0 recap — Governed Runtime
+
+Enforcement moved onto the execution path in v6.0.0:
 
 - **`runtime/enforcement.py`** — unified helper: MCP firewall → AgentGateway request checks → execution → gateway response checks → audit. Shared by every call path.
 - **`Kernel.act()`** — AgentGateway verdicts (ALLOW / REDACT / BLOCK) now gate real actions; prompt-injection and secret-leak checks apply to prompt-like fields without blocking ordinary file writes.
 - **Outbound MCP** — `McpClient` (sync + async) and `McpAgent` run the firewall and gateway around every external tool call.
-- **Inbound MCP** — the aiZee server's 98 tools keep RBAC *and* get gateway wrapping.
+- **Inbound MCP** — the aiZee server's tools keep RBAC *and* get gateway wrapping.
 
 ### Detection depth
 
@@ -70,7 +86,6 @@ The headline change: **enforcement is on the execution path**. Guardrail modules
 - **Bi-temporal memory** — `store.as_of(as_of=..., valid_at=...)` answers "what did we know then" and "what was true then" separately; `pinned`, soft-delete with tombstone-time queries, contradiction relations.
 - **`aizee memory compact`** — `Memory.md` auto-compaction (500-line budget, `[PINNED]` rescue, archive under `memory/archive/`).
 - **Code Mode** — `aizee codemode` executes sandboxed Python snippets that call MCP tools directly (AST scan + restricted builtins + governed bridge + timeout).
-- **A2A server** — expose aiZee as an A2A peer: `/.well-known/agent-card.json` + JSON-RPC `tasks/send|get|cancel` (loopback + bearer token).
 - **`aizee bootstrap`** — materialize a minimal OS root after `pip install aizee` (idempotent, dry-run default).
 - **Advisory audits** — `aizee task overcheck` (over-engineering signals from plan + graph), `aizee task curriculum` (staged learning plan from tech-stack refs).
 
@@ -117,6 +132,18 @@ aizee bootstrap --target ~/.aizee --yes   # materialize a minimal OS root
 export AIZEE_ROOT=~/.aizee
 ```
 
+**Installer map** — the `.bat` files are thin launchers, not separate installers:
+
+| Entrypoint | Real implementation | Preserves `state/`/`brain/` |
+| :--- | :--- | :--- |
+| `install.ps1` / `install.sh` | The actual installers (copy + in-place modes) | Yes |
+| `install.bat` | → `installer/gui_installer.ps1` | Yes |
+| `update.bat` | → `scripts/update.py` (git pull + post-install) | Yes |
+| `uninstall.bat` | → `runtime/uninstaller_gui.py` (fallback: `aizee uninstall`) | n/a |
+| `backup.bat` / `restore.bat` | → `scripts/backup_brain.py` / `restore_brain.py` | n/a |
+
+Both install and update run the `scripts/stale_files.txt` retirement list, so files removed from the repo are deleted from existing installs too.
+
 ### Verify
 
 ```bash
@@ -134,18 +161,17 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 142 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 129 governance modules
 │   ├── kernel.py            # Facade — Probity → Guardian → Policy → Loop → Budget → Audit
 │   ├── enforcement.py       # Unified firewall+gateway enforcement helper
 │   ├── agent_gateway.py     # Request/response guardrails (ALLOW/REDACT/BLOCK)
 │   ├── injection_detector.py# L1 regex + L2 embeddings + L3 LLM-judge
 │   ├── codemode/            # Sandboxed code-mode tool execution
-│   ├── a2a_server.py        # A2A peer exposure (agent card + tasks)
 │   └── policies/            # default/guardian/probity/mcp_firewall YAMLs
 ├── memory/                  # SQLite + FTS5 + vector, bi-temporal queries
-├── aizee_mcp/               # MCP server (98 tools, 3 resources)
+├── aizee_mcp/               # MCP server (43 tools enabled, 3 resources)
 ├── eval/                    # Benchmarks, chaos, reliability, release gate
-├── skills/                  # 139 persona + lord skills
+├── skills/                  # 140 persona + lord skills
 ├── workflows/               # 63 trigger-based execution protocols
 ├── rules/                   # Compressed behavioral rules
 ├── tech-stack/              # Version-locked stack references
@@ -217,7 +243,6 @@ Persona detection is local (pure Python, zero LLM tokens). Code Mode replaces to
 | Chat (`kernel.chat_message`) | prompt_gate → … → `output.pre_send` hooks |
 | Memory writes | `memory.pre_write` hooks (veto/mutate) + HMAC integrity |
 | Code Mode (`aizee codemode`) | AST sandbox scan + restricted builtins + governed `call_tool` |
-| A2A tasks | Bearer auth + governed task handler |
 
 ---
 
@@ -263,7 +288,7 @@ Settings persist to `state/settings.json` (gitignored, survives updates). Schema
 | Types | `mypy` | 0 errors (strict) |
 | Tests (fast) | `aizee test` | fast tier, no coverage |
 | Tests (full) | `aizee test --full` | full suite, coverage floor 100% |
-| Integrity | `scripts/validate-globals.py` | 539 files, 0 errors |
+| Integrity | `scripts/validate-globals.py` | 540 files, 0 errors |
 | Docs sync | `scripts/sync_docs.py --check` | in sync |
 | E2E | `python eval/harness.py` | all gates pass |
 | Release | `python eval/release_gate.py` | reliability ladder over rollout evidence |
@@ -274,7 +299,7 @@ Settings persist to `state/settings.json` (gitignored, survives updates). Schema
 
 - **Core:** Pure Python 3.10+ (no Node.js required for core OS)
 - **Memory:** SQLite + FTS5 + optional SentenceTransformers vectors
-- **MCP:** FastMCP server with 98 tools
+- **MCP:** FastMCP server, 43 tools enabled by default (7 marketing tool modules ship gated via `disabledToolModules`)
 - **Dashboard:** Python stdlib HTTP server + SQLite
 - **Knowledge graph:** graphify (optional)
 - **Dependencies:** pyyaml, pydantic, rich, cryptography, numpy, turbovec

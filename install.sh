@@ -329,6 +329,30 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 4b. Remove files/dirs retired from the repo (stale-path cleanup)
+# ---------------------------------------------------------------------------
+# File copies only add/overwrite — retired modules would linger forever.
+
+STALE_LIST="$REPO/scripts/stale_files.txt"
+if [[ -f "$STALE_LIST" ]]; then
+    stale_removed=0
+    while IFS= read -r rel; do
+        rel="${rel%%#*}"
+        rel="${rel%"${rel##*[![:space:]]}"}"
+        [[ -z "$rel" ]] && continue
+        if [[ -e "$ROOT/$rel" ]]; then
+            if $WHATIF; then
+                echo "WhatIf: rm -rf $ROOT/$rel"
+            else
+                rm -rf "${ROOT:?}/${rel}"
+            fi
+            stale_removed=$((stale_removed + 1))
+        fi
+    done < "$STALE_LIST"
+    (( stale_removed > 0 )) && step "Removed $stale_removed stale path(s) retired from the repo"
+fi
+
+# ---------------------------------------------------------------------------
 # 5. Run migrations
 # ---------------------------------------------------------------------------
 
@@ -530,11 +554,7 @@ if ! $SKIP_MCP; then
   "mcpServers": {
     "aizee": { "command": "python", "args": ["scripts/aizee_mcp_wrapper.py"] },
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp@3.1.0"] },
-    "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] },
-    "upwork": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"] },
-    "freelancer": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "freelancer-mcp-server@2.0.0"] },
-    "fiverr": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "uvx", "fiverr-mcp-server"] },
-    "linkedin": { "command": "python", "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"] }
+    "graphify": { "command": "python", "args": ["scripts/graphify_mcp_wrapper.py"] }
   },
   "alwaysAllow": { "tools": ["Read","read","grep","Glob","view","search","query"], "mcpTools": ["context7-resolve-library-id","context7-get-library-docs","graphify-query","query_rules","check_policy","search_memory","search_memory_vector","search_skills","get_changelog","get_active_context"] }
 }

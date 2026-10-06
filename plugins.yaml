@@ -6,7 +6,7 @@ plugins:
   context7:
     enabled: true
   upwork:
-    enabled: true
+    enabled: false
     permissions:
     - search_jobs
     - get_job_details
@@ -17,7 +17,7 @@ plugins:
     - save_job
     - get_proposal_stats
   freelancer:
-    enabled: true
+    enabled: false
     permissions:
     - freelancer_search_projects
     - freelancer_get_project
@@ -31,7 +31,7 @@ plugins:
     - freelancer_get_self
     - freelancer_list_accounts
   fiverr:
-    enabled: true
+    enabled: false
     permissions:
     - fiverr_search_gigs
     - fiverr_get_gig_details
@@ -39,7 +39,7 @@ plugins:
     - fiverr_get_gig_reviews
     - fiverr_list_categories
   linkedin:
-    enabled: true
+    enabled: false
     permissions:
     - linkedin_get_profile
     - linkedin_create_post
@@ -60,56 +60,56 @@ plugins:
     - linkedin_reply_comment
     - linkedin_get_post_stats
   brevo:
-    enabled: true
+    enabled: false
   listmonk:
-    enabled: true
+    enabled: false
   documenso:
-    enabled: true
+    enabled: false
   postiz:
-    enabled: true
+    enabled: false
   twitter:
-    enabled: true
+    enabled: false
   youtube:
-    enabled: true
+    enabled: false
   mostaql:
-    enabled: true
+    enabled: false
   khamsat:
-    enabled: true
+    enabled: false
   google_ads:
-    enabled: true
+    enabled: false
   meta_ads:
-    enabled: true
+    enabled: false
   tiktok_ads:
-    enabled: true
+    enabled: false
   linkedin_ads:
-    enabled: true
+    enabled: false
   posthog:
-    enabled: true
+    enabled: false
   n8n:
-    enabled: true
+    enabled: false
   twenty:
-    enabled: true
+    enabled: false
   hubspot:
-    enabled: true
+    enabled: false
   chatwoot:
-    enabled: true
+    enabled: false
   formbricks:
-    enabled: true
+    enabled: false
   openreplay:
-    enabled: true
+    enabled: false
   growthbook:
-    enabled: true
+    enabled: false
   flagsmith:
-    enabled: true
+    enabled: false
   lago:
-    enabled: true
+    enabled: false
   erpnext:
-    enabled: true
+    enabled: false
   sendgrid:
-    enabled: true
+    enabled: false
   kit:
-    enabled: true
+    enabled: false
   klaviyo:
-    enabled: true
+    enabled: false
   automatisch:
-    enabled: true
+    enabled: false

@@ -51,6 +51,7 @@
 [TEST-08]: Per-stack commands: PHP `artisan test --filter=` / `artisan test`; JS `vitest run <file>` / `vitest run --coverage`; Python `pytest <file> --no-cov` / `pytest --cov`; Go `go test <pkg> -short` / `go test ./... -cover`.
 [TEST-09]: If no test framework exists in the project, write the first test for touched code before declaring done.
 [TEST-10]: Mark slow tests (E2E, integration, model-loading, server-startup) with framework skip/group mechanism. Fast tier stays under 5s.
+[TEST-11]: FULL tier maxes machine resources — parallel runner at cpu_count-2 workers, leave the OS breathing room. GPU only for real GPU-bound test code (verify nvidia-smi util).
 
 [GIT]
 [GIT-01]: Conventional atomic commits.

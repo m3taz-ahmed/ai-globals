@@ -25,10 +25,10 @@ Every project under aiZee follows four tiers:
 
 ```bash
 # FAST — targeted (after editing runtime/budget.py)
-pytest runtime/tests/test_budget.py -q --no-cov --tb=short
+pytest tests/runtime/test_budget.py -q --no-cov --tb=short
 
 # FAST — targeted (after editing memory/store.py)
-pytest memory/tests/test_store.py -q --no-cov --tb=short
+pytest tests/memory/test_store.py -q --no-cov --tb=short
 
 # FAST — targeted (after editing runtime/taint.py)
 pytest tests/test_taint.py -q --no-cov --tb=short
@@ -43,14 +43,15 @@ pytest tests/test_confidence_gate.py -q --no-cov --tb=short
 pytest tests/test_learning_loop.py -q --no-cov --tb=short
 
 # FAST — targeted (after editing memory/vector.py)
-pytest memory/tests/test_vector.py -q --no-cov --tb=short
+pytest tests/memory/test_vector.py -q --no-cov --tb=short
 
 # SMOKE — critical path only
 aizee test  # fast tier, parallel by default (~67s measured, 6.7k tests)
 aizee test --no-xdist  # force sequential (slow — subprocess-heavy tests dominate)
 
 # FULL — before done
-aizee test --full  # full suite + coverage (7.4k+ tests)
+aizee test --full          # full suite + coverage, parallel by default (~127s on 16-core)
+aizee test --full --no-xdist  # force sequential (escape hatch only)
 
 # VIBE — behavioral evals
 python eval/harness.py  # LLM-graded scenarios
@@ -208,3 +209,4 @@ npx jest --coverage --coverageThreshold='{"global":{"lines":80}}'
 4. **Slow tests must be marked.** Use the framework's group/skip/标记 mechanism so fast tier stays under 5s.
 5. **If no test framework exists** in the project, write the first test for the touched code before declaring done.
 6. **E2E tests are always FULL tier.** Never run Playwright/Cypress during fast iteration.
+7. **Max-out resources on FULL tier.** Parallel runners are the default everywhere (`aizee test --full` uses all cores minus 2; `vitest --maxWorkers`, `artisan test --parallel` for JS/PHP). Leave the OS just enough to breathe — never 100% of resources. A GPU only helps when tests execute real GPU-bound code (un-mocked torch/TF/transformers) — verify with `nvidia-smi` during the run; a mocked suite pays CUDA-context overhead for zero gain (measured: 151s CUDA vs 127s CPU on aiZee). See `tech-stack/pytest-8.md` rules 34-36.

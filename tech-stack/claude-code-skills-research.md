@@ -138,7 +138,7 @@ metadata:
 | النمط | كيف نستلهمه | الأثر |
 |-------|------------|------|
 | **Design Library Plugin** | بناء `skills/design-library/` فيه 58 نظام تصميم. `/design <brand>` يحمّل نظام كامل. | عالي جدًا |
-| **Plugin System** | aiZee لديه skills لكن ليس plugins (حزم تجمع skills+agents+hooks+MCP). إضافة `runtime/plugin_system.py`. | عالي |
+| **Plugin System** | aiZee لديه `runtime/plugin.py` (plugins.yaml + sandbox) كنظام plugins الفعلي. `runtime/plugin_system.py` أُزيل في v6.1.0 — لم يكن له أي plugin.json manifest. | عالي |
 | **Hooks System** | aiZee لديه `hook_lifecycle.py` لكن محدود. توسيعه لـ `PreToolUse`/`PostToolUse`/`UserPromptSubmit`. | متوسط |
 | **AI-Slop Verifier** | subagent يراجع الـ screenshot ضد checklist من 7 فئات. إضافة `runtime/design_verifier.py`. | متوسط |
 | **Progressive Loading** | aiZee يعمل به بالفعل لكن يمكن تحسينه: split SKILL.md لـ frontmatter + body + references. | صغير |

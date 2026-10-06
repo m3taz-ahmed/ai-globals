@@ -1,0 +1,43 @@
+# Stale files/directories removed from the repo.
+#
+# Consumed by install.ps1, install.sh, and scripts/update.py: after copying
+# (or pulling) the new tree, each listed path is deleted from the install root
+# if present. This is how retired modules and moved directories disappear on
+# update even though the copy step only adds/overwrites files.
+#
+# Format: one repo-relative path per line (forward slashes). Directories are
+# removed recursively. Lines starting with '#' and blank lines are skipped.
+# Add an entry here whenever a tracked file/directory is deleted.
+
+# --- 6.1.0: dead runtime modules removed (dead-code audit) ---
+runtime/a2a_server.py
+runtime/agentic_security.py
+runtime/audit_workflow.py
+runtime/codegraph.py
+runtime/error_classifier.py
+runtime/provider_registry.py
+runtime/sarif_emitter.py
+runtime/semantic_search.py
+runtime/skill_eval.py
+runtime/sql_injection_guard.py
+runtime/text_sanitize.py
+runtime/tool_output_bounder.py
+runtime/tree_sitter_provider.py
+runtime/plugin_system.py
+
+# --- 6.1.0: tests consolidated into tests/<layer>/ ---
+runtime/tests/
+memory/tests/
+eval/tests/
+aizee_mcp/tests/
+
+# --- 6.1.0: dead-module tests removed ---
+tests/test_audit_workflow.py
+tests/test_error_classifier.py
+tests/test_provider_registry.py
+tests/test_sarif_emitter.py
+tests/test_skill_eval.py
+tests/test_sql_injection_guard.py
+tests/test_text_sanitize.py
+tests/test_tool_output_bounder.py
+tests/test_plugin_system.py

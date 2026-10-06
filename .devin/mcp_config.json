@@ -8,33 +8,9 @@
       "command": "python",
       "args": ["scripts/graphify_mcp_wrapper.py"]
     },
-    "upwork": {
-      "command": "python",
-      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "@furkankoykiran/upwork-mcp@1.2.2"]
-    },
-    "freelancer": {
-      "command": "python",
-      "args": ["scripts/mcp_env_wrapper.py", "npx", "-y", "freelancer-mcp-server@2.0.0"]
-    },
-    "fiverr": {
-      "command": "python",
-      "args": ["scripts/mcp_env_wrapper.py", "uvx", "fiverr-mcp-server"]
-    },
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@3.1.0"]
-    },
-    "linkedin": {
-      "command": "python",
-      "args": ["scripts/mcp_env_wrapper.py", "octopus-linkedin-mcp"]
-    },
-    "refero": {
-      "url": "https://api.refero.design/mcp",
-      "disabled": true
-    },
-    "mobbin": {
-      "url": "https://api.mobbin.com/mcp",
-      "disabled": true
     }
   }
 }

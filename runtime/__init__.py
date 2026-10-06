@@ -9,7 +9,7 @@ telemetry, tracing, metrics, middleware, mcp_firewall, mcp_client, tech_stack,
 settings, skill_resolver, sovereign, design_library, design_slop_verifier,
 agent_baseline, agent_discovery, local_responder, chat, preloop, approval_cache,
 approval_service, defensive_injection, injection_detector, taint,
-tool_output_sanitizer, plugin_system, spec_engine, spec/*, guardrails/*,
+tool_output_sanitizer, spec_engine, spec/*, guardrails/*,
 uninstaller, uninstaller_gui, ci, astryx, governance, enums, schemas,
 storage_backend, service_catalog, rule_compiler, rule_frontmatter,
 mcp_orchestrator, tracing_otel, attribution_model, billing_ledger,
@@ -213,15 +213,10 @@ from runtime.plan_diff_validator import Finding as Finding
 from runtime.plan_diff_validator import PlanDiffValidator as PlanDiffValidator
 from runtime.plan_diff_validator import ValidationLevel as ValidationLevel
 from runtime.plan_diff_validator import ValidationResult as ValidationResult
-from runtime.plugin_system import Plugin as Plugin
-from runtime.plugin_system import PluginError as PluginError
-from runtime.plugin_system import PluginManifest as PluginManifest
-from runtime.plugin_system import PluginRegistry as PluginRegistry
-from runtime.plugin_system import PluginStatus as PluginStatus
-from runtime.plugin_system import PluginType as PluginType
 from runtime.policy_lint import LintFinding as LintFinding
 from runtime.policy_lint import LintSeverity as LintSeverity
 from runtime.policy_lint import PolicyLinter as PolicyLinter
+from runtime.post_queue import PostQueue as PostQueue
 from runtime.prompt_gate import PromptGate as PromptGate
 from runtime.prompt_injection_detector import DetectionLevel as DetectionLevel
 from runtime.prompt_injection_detector import PromptInjectionDetector as PromptInjectionDetector
@@ -249,6 +244,10 @@ from runtime.security_scanner import ScanReport as ScanReport
 from runtime.security_scanner import ScanSeverity as ScanSeverity
 from runtime.security_scanner import SecurityScanner as SecurityScanner
 from runtime.security_scanner import scan_project as scan_project
+from runtime.skill_lifecycle import LedgerEvent as LedgerEvent
+from runtime.skill_lifecycle import SkillLifecycleManager as SkillLifecycleManager
+from runtime.skill_lifecycle import SkillMember as SkillMember
+from runtime.skill_lifecycle import evaluate as evaluate_skill_lifecycle
 from runtime.skill_routing import PersonaDetectionResult as PersonaDetectionResult
 from runtime.skill_routing import PersonaDetectorV2 as PersonaDetectorV2
 from runtime.skill_routing import SkillRouter as SkillRouter
@@ -407,6 +406,7 @@ __all__ = [
     "LayerManifest",
     "LazyImport",
     "LearningLoop",
+    "LedgerEvent",
     "LintFinding",
     "LintSeverity",
     "LlmAttestor",
@@ -441,13 +441,8 @@ __all__ = [
     "PersonaDetectionResult",
     "PersonaDetectorV2",
     "PlanDiffValidator",
-    "Plugin",
-    "PluginError",
-    "PluginManifest",
-    "PluginRegistry",
-    "PluginStatus",
-    "PluginType",
     "PolicyLinter",
+    "PostQueue",
     "Principal",
     "PrincipalRole",
     "PrivacyMode",
@@ -480,6 +475,8 @@ __all__ = [
     "SignatureResult",
     "SignatureScheme",
     "SkillFinding",
+    "SkillLifecycleManager",
+    "SkillMember",
     "SkillReport",
     "SkillRouter",
     "SkillScanner",
@@ -528,6 +525,7 @@ __all__ = [
     "classify_taint_source",
     "emit_contract",
     "emit_contracts",
+    "evaluate_skill_lifecycle",
     "harnesses",
     "install_skill",
     "scan_project",
