@@ -75,12 +75,54 @@ class ActionSchema(BaseModel):
 
 # --- Module-level kernel helpers ---
 
+# Services that are constructed on the kernel and reported by status(), but
+# have no production call site (gate, CLI, MCP tool, manager, dashboard).
+# Single source of truth for status() and `aizee doctor` wiring checks
+# (AUDIT_REPORT H1/H5). Remove a name here when it gains a real caller.
+CONSTRUCTED_ONLY_SERVICES: tuple[str, ...] = (
+    "mcp_auditor", "mcp_manifest_lock", "cross_tool_taint",
+    "budget_advanced", "approval_sla", "agent_sli",
+    "circuit_breaker", "durable_executor", "llm_attestor",
+    "blast_radius", "hallucination_detector", "stale_api_detector",
+    "model_router", "fairness_detector", "laravel_policy_linter",
+    "filament_access_auditor", "db_migration_safety",
+    "ui_a11y_checker", "blade_template_linter",
+    "design_library", "design_slop_verifier",
+)
+
+# Orphan runtime modules: exported and tested, but never invoked from any
+# production path (AUDIT_REPORT H2). Reported by `aizee doctor` so the file
+# checks below are no longer mistaken for health signals.
+ORPHAN_MODULES: tuple[str, ...] = (
+    "admission", "approval_channels", "agent_catalog", "budget_escalation",
+    "closure_evaluator", "commands", "composite_identity", "confidence_gate",
+    "context_manager", "contract_emitter", "cost_attribution", "dual_llm",
+    "layers", "learning_loop", "mcp_securable", "mobile_patterns",
+    "output_gate", "quality", "reasoning_graph", "scoped_manager",
+    "service_catalog", "skill_routing", "skill_scanner", "supply_chain_guard",
+    "trajectory",
+)
+
+
+def _security_strict() -> bool:
+    """Return True when security-stack load failures must be fatal.
+
+    ``AIZEE_SECURITY_STRICT=1`` switches the init guards below from
+    fail-open (warn and continue with the control disabled) to fail-closed
+    (raise during kernel construction). Governance planes that cannot
+    tolerate a silently degraded injection detector should set it.
+    """
+    import os
+
+    return os.environ.get("AIZEE_SECURITY_STRICT", "0") == "1"
+
 
 def _init_core_services(kernel: Kernel) -> None:
     """Initialize core runtime services (budget, telemetry, audit, etc.)."""
     kernel.budget = BudgetManager(kernel.project_root)
     kernel.telemetry = kernel._build_telemetry_collector()
-    kernel.audit = AuditLogger(kernel.project_root)
+    kernel.audit_signer = kernel._build_audit_signer()
+    kernel.audit = AuditLogger(kernel.project_root, signer=kernel.audit_signer)
     kernel.approval_cache = ApprovalCache()
     kernel.preloop = FeedbackLoop()
     kernel.capabilities = AgentCapabilities()
@@ -100,9 +142,8 @@ def _init_core_services(kernel: Kernel) -> None:
     kernel.cross_tool_taint = kernel._build_cross_tool_taint()
     # Budget: progressive throttling + reserve/settle + burn forecast + anomaly
     kernel.budget_advanced = kernel._build_budget_advanced()
-    # HITL: SLA manager + audit signer
+    # HITL: SLA manager (audit_signer is built earlier and wired into audit)
     kernel.approval_sla = kernel._build_approval_sla()
-    kernel.audit_signer = kernel._build_audit_signer()
     # Observability: agent SLIs + semantic circuit breaker
     kernel.agent_sli = kernel._build_agent_sli()
     kernel.circuit_breaker = kernel._build_circuit_breaker()
@@ -144,16 +185,22 @@ def _init_core_services(kernel: Kernel) -> None:
 
         kernel.taint_tracker = get_default_tracker()  # type: ignore[attr-defined]
     except Exception as exc:
+        kernel.disabled_defenses.append("taint_tracker")
         _logger.warning("Taint tracker module failed to load - taint tracking disabled: %s", exc)
+        if _security_strict():
+            raise
     # Ensure the prompt-injection input guardrail is registered (import
     # triggers auto-registration into the default GuardrailRegistry).
     try:
         import runtime.guardrails.prompt_injection  # noqa: F401
     except Exception as exc:
+        kernel.disabled_defenses.append("prompt_injection_guardrail")
         _logger.warning(
             "Prompt-injection guardrail module failed to load - input guardrail disabled: %s",
             exc,
         )
+        if _security_strict():
+            raise
 
     # Initialize the comprehensive injection defense stack:
     # - InjectionDetector: 13-technique deterministic scanner
@@ -174,10 +221,13 @@ def _init_core_services(kernel: Kernel) -> None:
         )
         kernel.baseline_registry = BaselineRegistry()  # type: ignore[attr-defined]
     except Exception as exc:
+        kernel.disabled_defenses.append("injection_stack")
         _logger.warning(
             "Injection defense stack failed to load - injection detection disabled: %s",
             exc,
         )
+        if _security_strict():
+            raise
 
     # Initialize the design tooling stack:
     # - DesignSlopVerifier: AI-slop detection for HTML/UI output
@@ -192,7 +242,10 @@ def _init_core_services(kernel: Kernel) -> None:
             library_dir=kernel.root / "design-library",
         )
     except Exception as exc:
+        kernel.disabled_defenses.append("design_stack")
         _logger.warning("Design tooling stack failed to load - design checks disabled: %s", exc)
+        if _security_strict():
+            raise
 
     # Initialize freelance + marketing/emarkeitng runtime modules (lazy).
     # These are stateless helpers (functions/small classes); import the
@@ -224,6 +277,7 @@ def _init_core_services(kernel: Kernel) -> None:
         kernel.post_queue = _queue  # type: ignore[attr-defined]
         kernel.pricing_calculator = _pricing  # type: ignore[attr-defined]
     except Exception as exc:
+        kernel.disabled_defenses.append("marketing_modules")
         _logger.warning("Marketing/freelance modules failed to load (non-critical): %s", exc)
 
 
@@ -544,6 +598,7 @@ class Kernel:
     saga: SagaOrchestrator
     pool: AgentPool
     chat: ChatSession
+    disabled_defenses: list[str]
 
     def __init__(
         self,
@@ -554,6 +609,10 @@ class Kernel:
     ) -> None:
         self.root = root or config.discover_root()
         self.project_root = project_root or root or config.discover_project_root()
+        # Names of defense stacks that fail to load during init (H3):
+        # surfaced by status() and `aizee doctor` so degraded mode is
+        # visible, not just log noise.
+        self.disabled_defenses = []
         self.skill_resolver = skill_resolver or SkillResolver(self.root, self.project_root)
         self.persona = persona_detector or PersonaDetector(skill_resolver=self.skill_resolver)
         _init_core_services(self)
@@ -823,6 +882,7 @@ class Kernel:
         try:
             action_data = ActionSchema(type=action_type, **kwargs).model_dump()
         except ValidationError as e:
+            self.audit.log("action.invalid_arguments", {"action": action_type, "error": str(e)})
             return {"ok": False, "error": f"Invalid action arguments: {e!s}"}
         probity_result = _run_probity_gate(self, action_type, action_data)
         if probity_result is not None:
@@ -1011,26 +1071,36 @@ class Kernel:
             "mcp_firewall_rules": len(self.mcp_firewall.rules),
             "agent_gateway_guardrails": len(self.agent_gateway.list_guardrails()),
             "loop_detector": self.loop_detector.stats(),
-            # Modernization v5.13
-            "mcp_auditor": "active",
+            # Modernization v5.13 — labels report construction truth (H1/P0.3):
+            # these services are built and healthy, but constructed-only means
+            # no production call site invokes them (gate, CLI, MCP, manager).
+            "mcp_auditor": "constructed",
             "mcp_manifest_locks": self.mcp_manifest_lock.list_locks(),
             "cross_tool_taint": self.cross_tool_taint.stats(),
             "circuit_breaker": self.circuit_breaker.stats(),
             "agent_sli": self.agent_sli.summary(),
             "blast_radius": self.blast_radius.stats(),
-            "model_router": "active",
-            "fairness_detector": "active",
-            "policy_linter": "active",
-            "hallucination_detector": "active",
-            "stale_api_detector": "active",
+            "model_router": "constructed",
+            "fairness_detector": "constructed",
+            "policy_linter": "cli-wired",
+            "hallucination_detector": "constructed",
+            "stale_api_detector": "constructed",
             "durable_workflows": self.durable_executor.list_workflows(),
             "llm_attestations": len(self.llm_attestor.list_attestations()),
             # v5.14 Laravel/Filament/UI governance
-            "laravel_policy_linter": "active",
-            "filament_access_auditor": "active",
-            "db_migration_safety": "active",
-            "ui_a11y_checker": "active",
-            "blade_template_linter": "active",
+            "laravel_policy_linter": "constructed",
+            "filament_access_auditor": "constructed",
+            "db_migration_safety": "constructed",
+            "ui_a11y_checker": "constructed",
+            "blade_template_linter": "constructed",
+            # Machine-readable list of constructed-but-uncalled services
+            # (wire-or-delete candidates, see docs/AUDIT_REPORT.md H1/H2).
+            "constructed_only_services": sorted(CONSTRUCTED_ONLY_SERVICES),
+            # Loud signal when budget state was quarantined (H4).
+            "budget_state_quarantined": bool(getattr(self.budget, "state_quarantined", False)),
+            # Defense stacks that failed to load (H3). Empty = all green;
+            # non-empty means the kernel is running degraded.
+            "disabled_defenses": list(getattr(self, "disabled_defenses", [])),
         }
 
 

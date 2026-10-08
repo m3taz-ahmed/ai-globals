@@ -219,5 +219,11 @@ class EvalHarness:
 
 
 if __name__ == "__main__":
-    h = EvalHarness(config.discover_root())
+    # Evaluate the tree containing this harness, not the ambient AIZEE_ROOT —
+    # running dev's harness must measure dev's code (same C2 footgun as
+    # aizee_cli.cmd_test). Installed copies without a repo tree fall back to
+    # discovery.
+    code_tree = Path(__file__).resolve().parent.parent
+    root = code_tree if (code_tree / "pyproject.toml").exists() else config.discover_root()
+    h = EvalHarness(root)
     print(json.dumps(h.run(), indent=2))

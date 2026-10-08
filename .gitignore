@@ -66,3 +66,7 @@ scripts/ingest-community-skill.ps1
 
 # Task-contract working state (per project)
 .task/
+DEEP_AUDIT_PROMPT.md
+docs/AUDIT_REPORT.md
+docs/CAPABILITIES.md
+docs/WORLD_CLASS_GAP.md

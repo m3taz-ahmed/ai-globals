@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -105,6 +106,17 @@ class TestCheckGuardian:
         assert result is not None
         assert result["ok"] is False
         assert result["requires_approval"] is True
+        # Check that an audit log entry was written
+        audit_log = mgr.audit.log_file
+        assert audit_log.exists()
+        lines = audit_log.read_text(encoding="utf-8").strip().splitlines()
+        assert lines, "audit log should have at least one entry"
+        last_line = lines[-1]
+        entry = json.loads(last_line)
+        assert entry["type"] == "guardian.require_approval"
+        assert entry["details"]["action"] == "write"
+        assert entry["details"]["rule"] == "approval-rule"
+        assert entry["details"]["reason"] == "needs review"
 
 
 class TestCheckProbity:

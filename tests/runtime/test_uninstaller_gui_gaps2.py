@@ -24,15 +24,28 @@ def _make_tmp_root(tmp_path: Path) -> Path:
     return tmp_path
 
 
-@pytest.fixture
-def gui(tmp_path):
-    root = _make_tmp_root(tmp_path)
+def _gui_or_skip(root: Path):
+    """Construct UninstallerGUI with one retry — Tk root creation is
+    intermittently resource-limited under xdist workers; a persistent
+    failure still skips."""
+    import time
+
     from runtime.uninstaller_gui import UninstallerGUI
 
     try:
-        g = UninstallerGUI(root)
+        return UninstallerGUI(root)
     except Exception:
-        pytest.skip("tkinter not functional")
+        time.sleep(0.2)
+        try:
+            return UninstallerGUI(root)
+        except Exception:
+            pytest.skip("tkinter not functional")
+
+
+@pytest.fixture
+def gui(tmp_path):
+    root = _make_tmp_root(tmp_path)
+    g = _gui_or_skip(root)
     yield g
     with contextlib.suppress(Exception):
         g.win.destroy()
@@ -44,12 +57,7 @@ def test_empty_categories_destroys(tmp_path: Path) -> None:
         patch("runtime.uninstaller_gui._build_categories", return_value=[]),
         patch("runtime.uninstaller_gui.messagebox", MagicMock()),
     ):
-        from runtime.uninstaller_gui import UninstallerGUI
-
-        try:
-            g = UninstallerGUI(root)
-        except Exception:
-            pytest.skip("tkinter not functional")
+        g = _gui_or_skip(root)
         assert g.categories == []
 
 

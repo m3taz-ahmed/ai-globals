@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# aiZee Validation Script (Python) v6.1.0
+# aiZee Validation Script (Python) v6.2.0
 # Source of truth validator - PowerShell wrapper delegates to this script.
 
 import argparse
@@ -293,6 +293,7 @@ IGNORED_FILE_REFS = {
     # project-specific placeholder files (referenced conceptually, not tracked)
     'spec.md', 'plan.md', 'implementation_plan.md', 'tasks.md', 'pxx-name.md',
     'research.md', 'data-model.md', 'quickstart.md',
+    'audit_report.md', 'capabilities.md', 'world_class_gap.md',
     # external/generated files (agent config, graphify output, ponytail ledger)
     'claude.md', 'agents.md', 'graph_report.md', 'ponytail-debt.md',
     # GitHub-specific adapters not copied by install.ps1
@@ -306,7 +307,7 @@ IGNORED_FILE_REFS = {
     # Laravel Boost context files (live in client project's .ai/ dir, not aiZee)
     'laravel.md', 'filament.md', 'project.md',
     # project-voice GENERATED artifacts (produced into the client project's
-    # .ai/ dir by the skill at runtime — not tracked aiZee inputs)
+    # .ai/ dir by the skill at runtime â€” not tracked aiZee inputs)
     'about-me.md', 'voice.md', 'newsletter-voice.md',
     # rules_materializer OUTPUT targets (descriptive refs to what the tool emits,
     # not tracked input files): Aider reads CONVENTIONS.md, Devin reads .devin/rules/aizee.md
@@ -321,7 +322,7 @@ IGNORED_FILE_REFS = {
     # illustrative cross-reference example in workflow 59 (react-19.md is used
     # as a hypothetical pairing with nextjs-16.md, not an actual tracked file)
     'react-19.md',
-    # working-root-only artifacts referenced from Memory.md audit entries —
+    # working-root-only artifacts referenced from Memory.md audit entries â€”
     # temp/ and nested .ai/ dirs are not synced to the deployment mirror
     'temp\\competitor-study-v3\\analysis.md', '.ai\\repos-report.md',
 }
@@ -441,7 +442,7 @@ def run_pass1(rule_files: list[str], global_path: str, manifest: dict[str, str],
     return file_data
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="aiZee Validation v6.1.0")
+    p = argparse.ArgumentParser(description="aiZee Validation v6.2.0")
     p.add_argument("--dry-run",            action="store_true", help="Scan without writing")
     p.add_argument("--generate-manifest",  action="store_true", help="Force regenerate manifest")
     p.add_argument("--force",              action="store_true", help="Bypass manifest cache")
@@ -482,7 +483,7 @@ def main() -> None:
         cprint(f"MISCONFIG: rules/vocabulary.md not found at {vocab_path}", Colors.RED)
         sys.exit(2)
 
-    cprint(f"aiZee Validation v6.1.0 [Fix: {'ON' if args.fix else 'OFF'}]", Colors.CYAN)
+    cprint(f"aiZee Validation v6.2.0 [Fix: {'ON' if args.fix else 'OFF'}]", Colors.CYAN)
 
     rule_files = collect_rule_files(global_path)
     manifest_path = os.path.join(global_path, "integrity.manifest")
@@ -530,3 +531,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

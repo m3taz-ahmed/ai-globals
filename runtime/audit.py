@@ -154,8 +154,9 @@ class AuditLogger:
     _MAX_ROTATED = 5
     _DEFAULT_RETENTION_DAYS = 183  # ~6 months (EU AI Act minimum post-deployment)
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, signer: Any | None = None) -> None:
         self.root = root
+        self.signer = signer
         self.log_file = root / "state" / "audit.log"
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
@@ -322,10 +323,37 @@ class AuditLogger:
         Uses a secret key (from ``_get_audit_key``) so that an attacker who
         can read the log but not the key cannot forge a valid chain link.
         """
-        payload = {k: v for k, v in entry.items() if k != "hash"}
+        payload = {
+            k: v for k, v in entry.items()
+            if k not in ("hash", "sig", "sig_alg", "sig_ts", "sig_pub")
+        }
         canonical = json.dumps(payload, sort_keys=True, default=str)
         key = _get_audit_key()
         return hmac.new(key, canonical.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def _sign_entry(self, entry: dict[str, Any]) -> None:
+        """Attach an asymmetric signature over the entry's chain hash (P1.2).
+
+        Signs ``entry["hash"]`` so each link is authenticated by the signing
+        key, on top of the symmetric HMAC chain. Signature fields are added
+        after hashing and are excluded from ``_compute_hash`` so the chain
+        math is unchanged. Signing failures degrade to an unsigned entry —
+        never block the audit write.
+        """
+        if self.signer is None:
+            return
+        try:
+            result = self.signer.sign(str(entry["hash"]).encode("utf-8"))
+        except Exception as exc:
+            _logger.warning("audit entry signing failed (entry left unsigned): %s", exc)
+            return
+        if not result.signature:
+            return
+        entry["sig"] = result.signature.hex()
+        entry["sig_alg"] = result.scheme.value
+        entry["sig_ts"] = str(result.timestamp)
+        if result.public_key is not None:
+            entry["sig_pub"] = result.public_key.hex()
 
     def log(self, event_type: str, details: dict[str, Any]) -> None:
         """Append a new hash-chained entry to the audit log.
@@ -348,6 +376,7 @@ class AuditLogger:
                     "prev_hash": prev_hash,
                 }
                 entry["hash"] = self._compute_hash(entry)
+                self._sign_entry(entry)
                 with self.log_file.open("a", encoding="utf-8") as f:
                     f.write(json.dumps(entry, default=str) + "\n")
                     f.flush()
@@ -424,13 +453,35 @@ class AuditLogger:
 
         Returns a dict with ``valid`` (bool), ``entries_checked`` (int),
         and ``broken_at`` (int | None, the 0-based index of the first
-        broken link, or ``None`` if the chain is intact).
+        broken link, or ``None`` if the chain is intact), plus signature
+        counters: ``signatures_checked``, ``signatures_failed``, and
+        ``unsigned_entries`` (entries written before signing was wired or
+        with signing degraded are counted, not treated as failures), and
+        ``legacy_entries`` — a leading run of entries written before hash
+        chaining shipped (no ``prev_hash``/``hash`` fields). A legacy
+        prefix is reported honestly (those entries are unverifiable by
+        design); an unchained entry *after* the chain has started is a
+        hole and still breaks verification.
+        ``valid`` is False when the chain is broken OR any checked
+        signature fails to verify.
         """
         if not self.log_file.exists():
-            return {"valid": True, "entries_checked": 0, "broken_at": None}
+            return {
+                "valid": True, "entries_checked": 0, "broken_at": None,
+                "signatures_checked": 0, "signatures_failed": 0,
+                "signatures_unchecked": 0, "unsigned_entries": 0,
+                "legacy_entries": 0,
+            }
         expected_prev = _GENESIS_HASH
         idx = 0
+        checked = 0
         broken_at: int | None = None
+        signatures_checked = 0
+        signatures_failed = 0
+        signatures_unchecked = 0
+        unsigned_entries = 0
+        legacy_entries = 0
+        chain_started = False
         try:
             with self.log_file.open("r", encoding="utf-8") as f:
                 for line in f:
@@ -446,6 +497,19 @@ class AuditLogger:
                         )
                         broken_at = broken_at if broken_at is not None else idx
                         break
+                    if "hash" not in entry or "prev_hash" not in entry:
+                        if chain_started:
+                            _logger.error(
+                                "Audit chain broken at entry %d: missing chain "
+                                "fields after chain start (tamper or truncated write)",
+                                idx,
+                            )
+                            broken_at = broken_at if broken_at is not None else idx
+                            break
+                        legacy_entries += 1
+                        idx += 1
+                        continue
+                    chain_started = True
                     # Check prev_hash linkage
                     if entry.get("prev_hash") != expected_prev:
                         _logger.error(
@@ -465,23 +529,79 @@ class AuditLogger:
                         )
                         broken_at = broken_at if broken_at is not None else idx
                         break
+                    sig_status = self._verify_entry_signature(entry)
+                    if sig_status == "ok":
+                        signatures_checked += 1
+                    elif sig_status == "fail":
+                        signatures_failed += 1
+                        _logger.error("Audit signature invalid at entry %d", idx)
+                    elif sig_status == "unchecked":
+                        signatures_unchecked += 1
+                    else:
+                        unsigned_entries += 1
                     expected_prev = str(entry.get("hash", ""))
                     idx += 1
+                    checked += 1
         except OSError as exc:
             _logger.error("Audit chain verification failed (I/O error): %s", exc)
-            return {"valid": False, "entries_checked": idx, "broken_at": broken_at}
+            return {
+                "valid": False, "entries_checked": checked, "broken_at": broken_at,
+                "signatures_checked": signatures_checked,
+                "signatures_failed": signatures_failed,
+                "signatures_unchecked": signatures_unchecked,
+                "unsigned_entries": unsigned_entries,
+                "legacy_entries": legacy_entries,
+            }
         if broken_at is not None:
             _logger.warning(
                 "Audit chain integrity check FAILED at entry %d (%d entries checked)",
-                broken_at, idx,
+                broken_at, checked,
             )
         else:
-            _logger.info("Audit chain integrity OK (%d entries checked)", idx)
+            _logger.info("Audit chain integrity OK (%d entries checked)", checked)
+        if signatures_failed:
+            _logger.warning("Audit signature check FAILED (%d invalid signatures)", signatures_failed)
         return {
-            "valid": broken_at is None,
-            "entries_checked": idx,
+            "valid": broken_at is None and signatures_failed == 0,
+            "entries_checked": checked,
             "broken_at": broken_at,
+            "signatures_checked": signatures_checked,
+            "signatures_failed": signatures_failed,
+            "signatures_unchecked": signatures_unchecked,
+            "unsigned_entries": unsigned_entries,
+            "legacy_entries": legacy_entries,
         }
+
+    def _verify_entry_signature(self, entry: dict[str, Any]) -> str:
+        """Verify an entry's asymmetric signature.
+
+        Returns ``"ok"``, ``"fail"``, or ``"unsigned"`` (no signature
+        attached). Ed25519 entries verify against the public key embedded
+        in the entry — no private-key access needed. ``hmac_sha512``
+        entries need the symmetric key, so they verify only when this
+        logger was constructed with a signer; otherwise ``"unchecked"``.
+        """
+        sig = entry.get("sig")
+        if not sig:
+            return "unsigned"
+        alg = entry.get("sig_alg")
+        try:
+            payload = str(entry["hash"]).encode("utf-8") + b"|" + str(entry["sig_ts"]).encode("utf-8")
+            if alg == "ed25519":
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+                Ed25519PublicKey.from_public_bytes(bytes.fromhex(str(entry["sig_pub"]))).verify(
+                    bytes.fromhex(str(sig)), payload
+                )
+                return "ok"
+            if alg == "hmac_sha512":
+                if self.signer is None:
+                    return "unchecked"
+                ok = bool(self.signer.verify(payload, bytes.fromhex(str(sig)), None))
+                return "ok" if ok else "fail"
+            return "unchecked"
+        except Exception:
+            return "fail"
 
     def read_entries(
         self,

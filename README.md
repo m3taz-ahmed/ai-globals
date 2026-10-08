@@ -4,8 +4,8 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-6.1.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 6.1.0">
-    <img src="https://img.shields.io/badge/Tests-7469%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7469 passed">
+    <img src="https://img.shields.io/badge/Version-6.2.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 6.2.0">
+    <img src="https://img.shields.io/badge/Tests-7559%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7559 passed">
     <img src="https://img.shields.io/badge/Coverage-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 100%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
@@ -46,7 +46,7 @@ The headline change: **the default surface is small and honest**. The MCP fleet 
 ### Lean defaults
 
 - **3 MCP servers by default** — `aizee` (governance), `graphify`, `context7`. The marketing/social/freelance MCP servers are gone from every shipped config.
-- **43 MCP tools enabled** — 7 marketing-domain tool modules (ads, analytics, CRO, email, freelance, SEO, social) still ship but are disabled via `disabledToolModules` in `aizee_mcp/config.json`. Remove a name to re-enable it.
+- **39 MCP tools enabled** — 7 marketing-domain tool modules (ads, analytics, CRO, email, freelance, SEO, social) still ship but are disabled via `disabledToolModules` in `aizee_mcp/config.json`. Remove a name to re-enable it.
 - **31 plugins disabled** — `plugins.yaml` ships them `enabled: false`; the sandbox blocks the rest. `code2video`, `graphify`, `context7` stay on.
 - **Dead code removed** — unused runtime modules (`a2a_server`, `semantic_search`, `provider_registry`, `sql_injection_guard`, `plugin_system`, …) and their tests deleted.
 
@@ -169,7 +169,7 @@ aizee status    # Current persona, skills, budget
 │   ├── codemode/            # Sandboxed code-mode tool execution
 │   └── policies/            # default/guardian/probity/mcp_firewall YAMLs
 ├── memory/                  # SQLite + FTS5 + vector, bi-temporal queries
-├── aizee_mcp/               # MCP server (43 tools enabled, 3 resources)
+├── aizee_mcp/               # MCP server (39 tools enabled, 3 resources)
 ├── eval/                    # Benchmarks, chaos, reliability, release gate
 ├── skills/                  # 140 persona + lord skills
 ├── workflows/               # 63 trigger-based execution protocols
@@ -299,7 +299,7 @@ Settings persist to `state/settings.json` (gitignored, survives updates). Schema
 
 - **Core:** Pure Python 3.10+ (no Node.js required for core OS)
 - **Memory:** SQLite + FTS5 + optional SentenceTransformers vectors
-- **MCP:** FastMCP server, 43 tools enabled by default (7 marketing tool modules ship gated via `disabledToolModules`)
+- **MCP:** FastMCP server, 39 tools enabled by default (7 marketing tool modules ship gated via `disabledToolModules`)
 - **Dashboard:** Python stdlib HTTP server + SQLite
 - **Knowledge graph:** graphify (optional)
 - **Dependencies:** pyyaml, pydantic, rich, cryptography, numpy, turbovec

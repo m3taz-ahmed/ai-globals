@@ -11,12 +11,21 @@ from __future__ import annotations
 
 import gc
 import itertools
+import os
 import shutil
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+
+# Hermeticity pin (C2 / P0.1): the test suite must always resolve the aiZee
+# root to THIS repository, never the ambient AIZEE_ROOT env var (which in a
+# deployed setup points at the read-only mirror). Subsystems that read
+# AIZEE_ROOT directly (crypto keys, plugin discovery, dashboard token) follow
+# this pin as well. Set before any project imports so module-level reads see
+# the pinned value.
+os.environ["AIZEE_ROOT"] = str(Path(__file__).resolve().parent)
 
 from memory.store import MemoryStore
 from runtime.kernel import Kernel

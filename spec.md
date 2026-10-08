@@ -31,7 +31,7 @@ aizee/                         # Sovereign root (discovered via AIZEE_ROOT)
 │   ├── managers/              # PolicyManager, WorkflowManager, AgentManager, ChatManager
 │   ├── uninstaller.py         # Interactive uninstaller with backup
 │   └── ...                    # 129 governance modules
-├── aizee_mcp/                 # MCP server (43 tools enabled, 3 resources)
+├── aizee_mcp/                 # MCP server (39 tools enabled, 3 resources)
 │   ├── aizee_server.py        # FastMCP server
 │   └── tools/                 # Tool modules by responsibility
 ├── memory/                    # SQLite + FTS5 + vector memory
@@ -60,10 +60,10 @@ aizee uninstall       # Interactive uninstall with backup
 | Gate | Command | Requirement |
 |------|---------|-------------|
 | Lint | `ruff check .` | 0 warnings |
-| Types | `mypy` | 0 errors (strict, 345 files) |
+| Types | `mypy` | 0 errors (strict, 201 files) |
 | Tests (targeted) | `pytest path/to/test_file.py -q` | ~5s max, during iteration |
 | Tests (fast) | `aizee test` | ~60-120s Linux / ~180s Windows, no cov |
-| Tests (full) | `aizee test --full` | 3888 tests, ~69% coverage (floor 68%), ~180-300s |
+| Tests (full) | `aizee test --full` | 7637 tests, 100% coverage (enforced via `--cov-fail-under=100`) |
 | E2E | `python eval/harness.py` | all_pass: true (read-only) |
 
 ## Non-Goals

@@ -1462,6 +1462,13 @@ class TestCliDoctorNonWindows:
         """Line 472: non-Windows os.name path in global mcp config check."""
         tmp = _tmp_root()
         try:
+            # Pre-warm the dep-check imports: __import__("mcp") inside doctor
+            # cold-loads anyio, and pytest's import machinery instantiates
+            # Path() — PosixPath under the os.name patch — which crashes on
+            # Windows regardless of what doctor does. Warm sys.modules first
+            # so the patch only affects the code path under test.
+            import mcp  # noqa: F401
+
             args = MagicMock()
             args.root = tmp
             args.project = tmp

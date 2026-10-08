@@ -18,6 +18,24 @@ pytest.importorskip("tkinter")
 import tkinter as tk
 
 
+def _gui_or_skip(root: Path):
+    """Construct UninstallerGUI with one retry — Tk root creation is
+    intermittently resource-limited under xdist workers; a persistent
+    failure still skips."""
+    import time
+
+    from runtime.uninstaller_gui import UninstallerGUI
+
+    try:
+        return UninstallerGUI(root)
+    except Exception:
+        time.sleep(0.2)
+        try:
+            return UninstallerGUI(root)
+        except Exception:
+            pytest.skip("tkinter not fully functional in this environment")
+
+
 def _make_tmp_root(tmp_path: Path) -> Path:
     """Create a minimal aiZee root for testing."""
     (tmp_path / "pyproject.toml").write_text("[project]\nname='aizee'\n", encoding="utf-8")
@@ -53,12 +71,8 @@ class TestUninstallerGUI:
         except Exception:
             pytest.skip("tkinter not fully functional in this environment")
 
-        from runtime.uninstaller_gui import UninstallerGUI
 
-        try:
-            gui = UninstallerGUI(root)
-        except Exception:
-            pytest.skip("tkinter not fully functional in this environment")
+        gui = _gui_or_skip(root)
         try:
             assert len(gui.categories) > 0
             # Should have at least package, memory, state categories
@@ -80,12 +94,8 @@ class TestUninstallerGUI:
             pytest.skip("tkinter not fully functional in this environment")
 
         from runtime.uninstaller import CategoryAction
-        from runtime.uninstaller_gui import UninstallerGUI
 
-        try:
-            gui = UninstallerGUI(root)
-        except Exception:
-            pytest.skip("tkinter not fully functional in this environment")
+        gui = _gui_or_skip(root)
         try:
             # Find the package category (default DELETE)
             pkg_cat = next(c for c in gui.categories if c.key == "package")
@@ -116,12 +126,8 @@ class TestUninstallerGUI:
             pytest.skip("tkinter not fully functional in this environment")
 
         from runtime.uninstaller import CategoryAction
-        from runtime.uninstaller_gui import UninstallerGUI
 
-        try:
-            gui = UninstallerGUI(root)
-        except Exception:
-            pytest.skip("tkinter not fully functional in this environment")
+        gui = _gui_or_skip(root)
         try:
             # Force all to DELETE first
             for c in gui.categories:
@@ -146,12 +152,8 @@ class TestUninstallerGUI:
             pytest.skip("tkinter not fully functional in this environment")
 
         from runtime.uninstaller import CategoryAction
-        from runtime.uninstaller_gui import UninstallerGUI
 
-        try:
-            gui = UninstallerGUI(root)
-        except Exception:
-            pytest.skip("tkinter not fully functional in this environment")
+        gui = _gui_or_skip(root)
         try:
             gui._delete_all()
             for c in gui.categories:
@@ -169,12 +171,8 @@ class TestUninstallerGUI:
         except Exception:
             pytest.skip("tkinter not fully functional in this environment")
 
-        from runtime.uninstaller_gui import UninstallerGUI
 
-        try:
-            gui = UninstallerGUI(root)
-        except Exception:
-            pytest.skip("tkinter not fully functional in this environment")
+        gui = _gui_or_skip(root)
         try:
             # Uncheck backup
             gui.backup_var.set(False)
@@ -207,12 +205,7 @@ class TestExecuteDeletionsCoverage:
         log-only no-op — safe to trigger)."""
         (tmp_path / ".aizee-version").write_text("test", encoding="utf-8")
         from runtime.uninstaller import CategoryAction, UninstallCategory
-        from runtime.uninstaller_gui import UninstallerGUI
-
-        try:
-            gui = UninstallerGUI(tmp_path)
-        except Exception:
-            pytest.skip("tkinter not fully functional in this environment")
+        gui = _gui_or_skip(tmp_path)
         try:
             gui.categories = [
                 UninstallCategory(key="symlinks", label="Symlinks", paths=[]),
@@ -227,12 +220,7 @@ class TestExecuteDeletionsCoverage:
     def test_load_categories_clears_existing_tree_items(self, tmp_path: Path) -> None:
         """Cover the tree-clear loop on reload (line ~263)."""
         (tmp_path / ".aizee-version").write_text("test", encoding="utf-8")
-        from runtime.uninstaller_gui import UninstallerGUI
-
-        try:
-            gui = UninstallerGUI(tmp_path)
-        except Exception:
-            pytest.skip("tkinter not fully functional in this environment")
+        gui = _gui_or_skip(tmp_path)
         try:
             gui.tree.insert("", "end", values=("ghost", "", "", ""))
             gui._load_categories()

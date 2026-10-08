@@ -112,6 +112,8 @@ class PolicyLinter:
         """PL002: conditions that can never match.
 
         Detects contradictions like ``action.type == 'read' and action.type == 'write'``.
+        Equalities on the same field joined by ``or`` (e.g.
+        ``type == 'a' or type == 'b'``) are disjunctions, not contradictions.
         """
         findings: list[LintFinding] = []
         for i, rule in enumerate(rules):
@@ -125,7 +127,7 @@ class PolicyLinter:
             for field, value in eq_pairs:
                 field_values.setdefault(field, set()).add(value)
             for field, values in field_values.items():
-                if len(values) > 1:
+                if len(values) > 1 and self._and_joined(condition, field):
                     findings.append(LintFinding(
                         rule_id="PL002",
                         severity=LintSeverity.ERROR,
@@ -134,6 +136,19 @@ class PolicyLinter:
                         fix=f"Remove the contradiction on '{field}' — it can never match",
                     ))
         return findings
+
+    @staticmethod
+    def _and_joined(condition: str, field: str) -> bool:
+        """True when *field*'s equalities are joined only by ``and``.
+
+        If any gap between two ``field ==`` comparisons contains an ``or``,
+        the comparisons form a disjunction and can match — not contradictory.
+        """
+        spans = list(re.finditer(rf"{re.escape(field)}\s*==", condition))
+        return not any(
+            re.search(r"\bor\b", condition[spans[j].end():spans[j + 1].start()])
+            for j in range(len(spans) - 1)
+        )
 
     def _check_redos(self, rules: list[dict[str, Any]]) -> list[LintFinding]:
         """PL003: regex patterns vulnerable to ReDoS."""

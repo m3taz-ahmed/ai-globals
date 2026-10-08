@@ -254,11 +254,48 @@ def cmd_version(args: argparse.Namespace) -> int:
 
 
 def cmd_policy(args: argparse.Namespace) -> int:
+    if args.subcommand == "lint":
+        return _policy_lint(args)
     k = _kernel(args)
     if args.subcommand == "test":
+        if not args.action:
+            console.print("[red]action argument required for 'policy test'[/red]")
+            return 1
         action_args = _load_json(args.args, "--args")
         result = k.act(args.action, dry_run=True, **action_args)
         print(json.dumps(result, indent=2, default=str))
+    return 0
+
+
+def _policy_lint(args: argparse.Namespace) -> int:
+    """Static-lint policy rule files (wires the PolicyLinter into the CLI)."""
+    import yaml
+
+    from runtime.policy_lint import LintSeverity, PolicyLinter
+
+    target = Path(args.path) if args.path else _root(args) / "runtime" / "policies"
+    files = [target] if target.is_file() else sorted(target.glob("*.yaml"))
+    if not files:
+        console.print(f"[yellow]No policy files found at {target}[/yellow]")
+        return 0
+    linter = PolicyLinter()
+    errors = 0
+    table = Table(title=f"Policy Lint ({len(files)} file(s))")
+    for col in ("File", "ID", "Severity", "Rule", "Finding"):
+        table.add_column(col, style="cyan" if col == "File" else None)
+    for path in files:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        rules = data.get("rules", []) if isinstance(data, dict) else []
+        for f in linter.lint(rules):
+            if f.severity is LintSeverity.ERROR:
+                errors += 1
+            sev = {"error": "red", "warning": "yellow", "info": "dim"}.get(f.severity.value, "white")
+            table.add_row(path.name, f.rule_id, f"[{sev}]{f.severity.value}[/{sev}]", f.rule_name, f.message)
+    console.print(table)
+    if errors:
+        console.print(f"[red]{errors} error-level finding(s)[/red]")
+        return 1
+    console.print("[green]No error-level findings[/green]")
     return 0
 
 
@@ -354,7 +391,15 @@ def cmd_audit(args: argparse.Namespace) -> int:
     from runtime.audit import AuditLogger
 
     root = _root(args)
-    logger = AuditLogger(root)
+    # Attach the signer only when a key already exists — constructing one
+    # here must not generate a key as a side effect of a verify command.
+    signer = None
+    key_file = root / "state" / "audit_signing.key"
+    if key_file.exists():
+        from runtime.audit_signing import AuditSigner
+
+        signer = AuditSigner(key_path=key_file)
+    logger = AuditLogger(root, signer=signer)
 
     if args.subcommand == "show":
         entries = logger.read_entries(
@@ -376,10 +421,21 @@ def cmd_audit(args: argparse.Namespace) -> int:
         console.print(table)
     elif args.subcommand == "verify":
         result = logger.verify_chain()
+        sig_note = (
+            f" | sigs: {result.get('signatures_checked', 0)} ok, "
+            f"{result.get('signatures_failed', 0)} bad, "
+            f"{result.get('signatures_unchecked', 0)} unchecked, "
+            f"{result.get('unsigned_entries', 0)} unsigned"
+        )
+        legacy = result.get("legacy_entries", 0)
+        if legacy:
+            sig_note += f" | legacy: {legacy} pre-chain entries (unverifiable)"
         if result["valid"]:
-            console.print(f"[green]Chain valid - {result['entries_checked']} entries checked[/green]")
+            console.print(f"[green]Chain valid - {result['entries_checked']} entries checked{sig_note}[/green]")
+        elif result["broken_at"] is not None:
+            console.print(f"[red]Chain BROKEN at entry {result['broken_at']}{sig_note}[/red]")
         else:
-            console.print(f"[red]Chain BROKEN at entry {result['broken_at']}[/red]")
+            console.print(f"[red]Signature verification FAILED{sig_note}[/red]")
         return 0 if result["valid"] else 1
     return 0
 
@@ -1042,6 +1098,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         checks["capabilities"] = False
 
     # --- Tech stack detection check ---
+    k = None
     try:
         from runtime.kernel import Kernel
         k = Kernel(os_root, project_root)
@@ -1067,6 +1124,50 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     for name, ok in checks.items():
         table.add_row(name, "ok" if ok else "missing")
     console.print(table)
+
+    # --- Wiring truth table (H5): file existence is not a health signal.
+    # Reports which governance modules actually have production callers
+    # versus which are constructed-but-dead or orphans. Informational —
+    # does not affect the exit code.
+    from runtime.kernel import CONSTRUCTED_ONLY_SERVICES, ORPHAN_MODULES
+
+    wiring = Table(title="Module wiring (call-site truth)")
+    wiring.add_column("Module", style="cyan")
+    wiring.add_column("Wiring", style="green")
+    for name in sorted(ORPHAN_MODULES):
+        present = (os_root / "runtime" / f"{name}.py").exists()
+        wiring.add_row(name, "orphan (no callers)" if present else "[dim]absent[/dim]")
+    for name in sorted(CONSTRUCTED_ONLY_SERVICES):
+        wiring.add_row(name, "constructed only (no callers)")
+    console.print(wiring)
+
+    # Degraded defenses (H3) and quarantined budget state (H4) are loud
+    # operator signals — surface them here, not only in status()/logs.
+    degraded = getattr(k, "disabled_defenses", []) if k is not None else []
+    if degraded:
+        console.print(
+            f"[red]DEGRADED: {len(degraded)} defense stack(s) disabled: "
+            f"{', '.join(degraded)}. Set AIZEE_SECURITY_STRICT=1 to fail closed.[/red]"
+        )
+    if k is not None and getattr(k.budget, "state_quarantined", False):
+        console.print(
+            "[red]WARNING: budget state was quarantined (unreadable/corrupt) — "
+            "limits reset to defaults. Check AIOS_ENCRYPTION_KEY and "
+            "state/.encryption_key (docs/AUDIT_REPORT.md H4).[/red]"
+        )
+
+    # Root-source note: a dev checkout whose AIZEE_ROOT points at the
+    # deployment mirror is the C2 footgun — surface it, don't hide it.
+    # type(os_root) keeps the concrete Path flavour — a bare Path() here
+    # crashes under tests that patch os.name (PosixPath on Windows).
+    code_root = type(os_root)(__file__).resolve().parent
+    if code_root != os_root.resolve():
+        src = "env AIZEE_ROOT" if os.environ.get("AIZEE_ROOT") else "script dir"
+        console.print(
+            f"[yellow]Note: os root ({os_root}, via {src}) diverges from code "
+            f"root ({code_root}) — dev/deploy boundary, see docs/AUDIT_REPORT.md C2[/yellow]"
+        )
+
     return 0 if all(checks.values()) else 1
 
 
@@ -1228,6 +1329,20 @@ def cmd_test(args: argparse.Namespace) -> int:
       aizee test --xdist   -> parallel (default for fast AND full tiers)
       aizee test --no-xdist-> force sequential run (either tier)
     """
+    # The tree under test is the one containing this aizee_cli.py — never the
+    # AIZEE_ROOT env root. With AIZEE_ROOT pointed at a deployed copy, running
+    # `aizee test` from a dev checkout would otherwise execute the deployment's
+    # suite (the C2 footgun, observed live). An explicit --root still wins;
+    # installs without a tests/ dir (pip site-packages) fall back to the
+    # discovered root.
+    invoked_tree = Path(__file__).resolve().parent
+    if args.root:
+        test_cwd = Path(args.root)
+    elif (invoked_tree / "tests").is_dir():
+        test_cwd = invoked_tree
+    else:
+        test_cwd = _root(args)
+
     if args.full:
         pytest_args = [
             sys.executable, "-m", "pytest",
@@ -1276,7 +1391,7 @@ def cmd_test(args: argparse.Namespace) -> int:
         workers = max(2, (os.cpu_count() or 4) - 2)
         pytest_args.extend(["-n", str(workers)])
 
-    result = subprocess.run(pytest_args, cwd=str(_root(args)))
+    result = subprocess.run(pytest_args, cwd=str(test_cwd))
     return result.returncode
 
 
@@ -1320,9 +1435,10 @@ def main(argv: list[str] | None = None) -> int:
     p_mem.add_argument("--watch", action="store_true", help="Auto re-ingest on tech-stack/rules/workflows changes")
 
     p_policy = sub.add_parser("policy", help="Policy commands")
-    p_policy.add_argument("subcommand", choices=["test"])
-    p_policy.add_argument("action")
+    p_policy.add_argument("subcommand", choices=["test", "lint"])
+    p_policy.add_argument("action", nargs="?", default="", help="Action type (for 'test')")
     p_policy.add_argument("--args", default="", help="JSON action args")
+    p_policy.add_argument("--path", default="", help="Policy file or directory (for 'lint')")
 
     p_budget = sub.add_parser("budget", help="Budget commands")
     p_budget.add_argument("subcommand", choices=["list", "usage", "set"])

@@ -142,6 +142,7 @@ class PolicyManager:
                 "decision": {"rule": decision.rule_name, "reason": decision.reason},
             }
         if decision.status == DecisionStatus.REQUIRE_APPROVAL:
+            self.audit.log("guardian.require_approval", {"action": action_type, "rule": decision.rule_name, "reason": decision.reason})
             return {
                 "ok": False,
                 "error": f"Guardian requires approval for {decision.rule_name}",

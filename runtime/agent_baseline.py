@@ -281,7 +281,7 @@ class AgentBaseline:
         try:
             recent_span = (recent[-1] - recent[-window]).total_seconds()
             total_span = (recent[-1] - recent[0]).total_seconds()
-        except Exception:
+        except (IndexError, TypeError):
             return None
         if recent_span <= 0 or total_span <= 0:
             return None

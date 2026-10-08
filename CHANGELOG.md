@@ -1,5 +1,74 @@
 # Changelog
 
+## [6.2.0] - 2026-10-08 (Truth & Termination — audit P0s closed)
+
+The v6.2 milestone closes every P0 from `docs/AUDIT_REPORT.md`: the two
+critical findings (sandbox escape, root contamination) plus the truth-hygiene
+layer (honest `status()`, wiring-aware doctor, synced docs). All changes
+verified by the full quality gate suite.
+
+### Security
+
+- **Codemode subprocess isolation (C1 FIXED):** sandboxed source now runs in
+  a child process (`runtime/codemode/_child.py`); on timeout the child is
+  `kill()`ed — no orphaned thread keeps `call_tool` in scope. Parent-side
+  enforcement (`enforce_tool_call_root`) preserved via the call/result proxy.
+- **Security-stack strict mode (H3 FIXED):** `AIZEE_SECURITY_STRICT=1` makes
+  every kernel init guard fail-closed (raises on load failure). In default
+  lenient mode failed stacks are recorded in `kernel.disabled_defenses`,
+  surfaced via `status()["disabled_defenses"]` and a red `DEGRADED` line in
+  `aizee doctor`.
+- **Loud budget quarantine (H4 FIXED):** corrupt/undecryptable `budget.json`
+  now logs `ERROR` with the remediation hint and sets
+  `budget.state_quarantined` → `status()["budget_state_quarantined"]` + red
+  WARNING in doctor. `AIOS_ENCRYPTION_KEY`/`AIOS_ENCRYPTION_KEY_FILE`
+  documented in `.env.example`.
+- **Audit signing wired (P1.2 DONE):** `AuditLogger` accepts `signer=`;
+  kernel wires `audit_signer` so every entry is Ed25519-signed.
+  `verify_chain()` verifies signatures and reports `signatures_checked`/
+  `signatures_unchecked`; `aizee audit verify` exposes it.
+
+### Fixed
+
+- **Test hermeticity (C2 FIXED):** `conftest.py` pins `AIZEE_ROOT` to the
+  repo root before kernel/memory imports — the suite can no longer read or
+  mutate the deployment mirror. `aizee doctor` prints a divergence note when
+  env root ≠ code root. `aizee test` and `eval/harness.py` now execute
+  against the tree containing the invoked code (explicit `--root` still
+  wins) — previously both silently ran the *mirror's* suite whenever
+  `AIZEE_ROOT` pointed at a deployment, which is how the mirror-suite
+  results were produced.
+- **`status()` truth (H1/P0.3):** constructed-but-uncalled services report
+  `"constructed"` (was `"active"`); `policy_linter` reports `"cli-wired"`;
+  `constructed_only_services` is exposed machine-readably (source:
+  `kernel.CONSTRUCTED_ONLY_SERVICES`).
+- **Doctor wiring checks (H5 FIXED):** `aizee doctor` prints a "Module
+  wiring (call-site truth)" table — `orphan (no callers)` / `constructed
+  only (no callers)` / `absent` from `kernel.ORPHAN_MODULES` — instead of
+  treating file existence as a health signal.
+- **`aizee policy lint` (NEW):** runs PolicyLinter (PL001–PL007) over
+  `runtime/policies/`; findings table + non-zero exit on errors. PL002
+  disjunction false-positives fixed (`a==X or a==Y` is no longer a
+  contradiction).
+- **MCP `clientInfo.version`** now reads `config.VERSION` — can no longer
+  drift from the release version.
+
+### Docs / truth sync (M7 FIXED)
+
+- `spec.md`: 201 mypy files, 7637 tests @ 100% enforced coverage (was
+  "345 files / 3888 tests / ~69%").
+- pyproject coverage comment corrected: floor is 100% (was "pinned to 68%").
+- README/AGENTS/rules: 39 enabled MCP tools (was 43), counts resynced via
+  `scripts/sync_docs.py` + `scripts/sync-agent-configs.py`.
+- `docs/AUDIT_REPORT.md`: statuses updated; the incorrect "24 rootless
+  `Kernel()` test sites" evidence corrected (real vector: direct env reads).
+- `docs/WORLD_CLASS_GAP.md`: P0.1–P0.4 + P1.1–P1.3 marked DONE.
+
+### Version
+
+- 6.2.0 everywhere: `pyproject.toml`, `config.py`, `.aizee-version`,
+  `manifest.json`, README badges, `validate-globals.*`.
+
 ## [6.1.0] - 2026-10-06 (Lean Surface — fewer MCPs, dead code out, upgrade hygiene)
 
 The v6.1 milestone: the default surface is reduced to what is actually

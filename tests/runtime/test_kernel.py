@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import config
@@ -142,6 +143,22 @@ def test_act_invalid_args_returns_error(tmp_path):
     result = k.act("", approved=True)
     assert not result["ok"]
     assert "Invalid action arguments" in result["error"]
+
+
+def test_act_invalid_args_logs_audit(tmp_path):
+    """Cover that invalid arguments are logged to audit."""
+    k = _kernel(tmp_path)
+    k.act("", approved=True)  # trigger ValidationError
+    audit_log = k.project_root / "state" / "audit.log"
+    assert audit_log.exists()
+    lines = audit_log.read_text(encoding="utf-8").strip().splitlines()
+    assert lines, "audit log should have at least one entry"
+    last_line = lines[-1]
+    entry = json.loads(last_line)
+    assert entry["type"] == "action.invalid_arguments"
+    assert entry["details"]["action"] == ""
+    # error should be present in details
+    assert "error" in entry["details"]
 
 
 def test_save_persists_budget(tmp_path):

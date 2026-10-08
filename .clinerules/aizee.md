@@ -64,9 +64,9 @@ Before declaring done, run from the OS root:
 
 - `ruff check .`
 
-- `mypy` (strict, 293 files)
+- `mypy` (strict, 201 files)
 
-- `aizee test --full` (full suite with coverage, parallel by default — ~127s, 7633 tests, 100% cov)
+- `aizee test --full` (full suite with coverage, parallel by default — ~127s, 7637 tests, 100% cov)
 
 - `python eval/harness.py` (read-only: ruff + mypy + pytest + validate-globals)
 
@@ -136,7 +136,7 @@ aiZee follows a layered design:
 
 - **Runtime Modules** — 129 governance modules in `runtime/`.
 
-- **MCP Server** — `aizee_mcp/` exposes 43 tools via FastMCP (marketing tool modules gated via `disabledToolModules`).
+- **MCP Server** — `aizee_mcp/` exposes 39 tools via FastMCP (marketing tool modules gated via `disabledToolModules`).
 
 - **Memory** — `memory/` SQLite + FTS5 + vector store.
 
@@ -192,7 +192,7 @@ aizee/                         # Sovereign root (AIZEE_ROOT)
 │   ├── service_catalog.py     # ServiceDescriptor + multi-index catalog
 │   ├── schemas.py             # Pydantic + exceptions + pagination
 │   └── ...                    # 129 governance modules
-├── aizee_mcp/                 # MCP server (43 tools enabled)
+├── aizee_mcp/                 # MCP server (39 tools enabled)
 ├── memory/                    # SQLite + FTS5 + vector
 ├── skills/                    # 140 persona + lord skills
 ├── workflows/                 # 63 trigger-based execution protocols

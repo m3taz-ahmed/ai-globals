@@ -393,6 +393,7 @@ class BudgetManager:
         self.usage: dict[str, dict[str, Any]] = {}
         self._lock = threading.RLock()
         self._dirty = False
+        self.state_quarantined = False
         self.window_manager: BudgetWindowManager | None = None
         self._load()
         # Wire a default BudgetWindowManager so time-scoped windows are
@@ -418,14 +419,19 @@ class BudgetManager:
         except (ValueError, json.JSONDecodeError) as exc:
             # Corrupted or undecryptable state (e.g. encryption key rotated).
             # Quarantine the bad file and fall back to defaults so the OS
-            # stays usable instead of crashing every CLI command.
+            # stays usable instead of crashing every CLI command. H4: this
+            # resets budget limits to defaults, so it must be loud — error
+            # level plus a flag surfaced via kernel.status().
             import logging
 
             quarantine = self.state_file.with_suffix(".json.corrupt.bak")
             with contextlib.suppress(OSError):
                 self.state_file.replace(quarantine)
-            logging.getLogger(__name__).warning(
-                "budget.json unreadable (%s); quarantined to %s, using defaults",
+            self.state_quarantined = True
+            logging.getLogger(__name__).error(
+                "SECURITY: budget.json unreadable (%s); quarantined to %s and "
+                "budget limits reset to defaults. Likely encryption-key drift "
+                "- check AIOS_ENCRYPTION_KEY and <root>/state/.encryption_key.",
                 exc, quarantine,
             )
             self.budgets = self._default_budgets()
