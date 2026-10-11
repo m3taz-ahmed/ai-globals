@@ -91,7 +91,7 @@ def run_source(source: str, inp: TextIO, out: TextIO) -> dict[str, Any]:
         # to IO[str] for redirect_stdout's parameter — duck-typing is correct
         # here (redirect only needs write()).
         with redirect_stdout(cast(TextIO, _PipeStdout(out))):
-            exec(compile(source, "<codemode>", "exec"), ns)
+            exec(compile(source, "<codemode>", "exec"), ns)  # aizee-scan: ignore INJ-EVAL — sandboxed child execs AST-scanned source in a restricted namespace; exec is this module's purpose
     except BaseException as exc:
         return {
             "type": "done", "ok": False,

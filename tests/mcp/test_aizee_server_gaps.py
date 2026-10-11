@@ -279,3 +279,91 @@ class TestDisabledToolModules:
              ):
             srv._register_tools_fallback()
         assert called == []
+
+
+class TestManifestLockWiring:
+    """_verify_manifest_lock: first-run lock, clean verify, drift warn,
+    enforce exit, degraded on lock failure."""
+
+    @staticmethod
+    def _patch_tools(srv_mod, descriptions: dict[str, str]):
+        tools = {
+            name: SimpleNamespace(description=desc)
+            for name, desc in descriptions.items()
+        }
+        return patch.object(
+            srv_mod, "_tool_manager", SimpleNamespace(_tools=tools)
+        )
+
+    def test_first_run_creates_lock(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("AIZEE_MCP_LOCK", raising=False)
+        from runtime.mcp_manifest_lock import ManifestLock
+
+        lock = ManifestLock(lock_dir=tmp_path / "locks")
+        fake_kernel = SimpleNamespace(mcp_manifest_lock=lock)
+        with patch.object(srv, "kernel", return_value=fake_kernel), \
+             self._patch_tools(srv, {"a": "d1", "b": "d2"}):
+            srv._verify_manifest_lock()
+        fp = lock.get_lock("aizee")
+        assert fp is not None
+        assert set(fp.tools_hash) == {"a", "b"}
+        assert fp.locked_by == "aizee_mcp"
+
+    def test_clean_verify_no_drift(self, tmp_path, caplog, monkeypatch):
+        monkeypatch.delenv("AIZEE_MCP_LOCK", raising=False)
+        import logging
+
+        from runtime.mcp_manifest_lock import ManifestLock
+
+        lock = ManifestLock(lock_dir=tmp_path / "locks")
+        lock.lock("aizee", "aizee_mcp.aizee_server",
+                  sorted(srv._disabled_tool_modules()), {"a": "d1"})
+        fake_kernel = SimpleNamespace(mcp_manifest_lock=lock)
+        with patch.object(srv, "kernel", return_value=fake_kernel), \
+             self._patch_tools(srv, {"a": "d1"}), \
+             caplog.at_level(logging.WARNING, logger="aizee_mcp.aizee_server"):
+            srv._verify_manifest_lock()
+        assert "drift" not in caplog.text.lower()
+
+    def test_drift_warns_when_not_enforce(self, tmp_path, caplog, monkeypatch):
+        monkeypatch.delenv("AIZEE_MCP_LOCK", raising=False)
+        import logging
+
+        from runtime.mcp_manifest_lock import ManifestLock
+
+        lock = ManifestLock(lock_dir=tmp_path / "locks")
+        lock.lock("aizee", "aizee_mcp.aizee_server",
+                  sorted(srv._disabled_tool_modules()), {"a": "old"})
+        fake_kernel = SimpleNamespace(mcp_manifest_lock=lock)
+        with patch.object(srv, "kernel", return_value=fake_kernel), \
+             self._patch_tools(srv, {"a": "tampered"}), \
+             caplog.at_level(logging.WARNING, logger="aizee_mcp.aizee_server"):
+            srv._verify_manifest_lock()
+        assert "drift" in caplog.text.lower()
+
+    def test_drift_fatal_when_enforce(self, tmp_path, monkeypatch):
+        from runtime.mcp_manifest_lock import ManifestLock
+
+        monkeypatch.setenv("AIZEE_MCP_LOCK", "enforce")
+        lock = ManifestLock(lock_dir=tmp_path / "locks")
+        lock.lock("aizee", "aizee_mcp.aizee_server",
+                  sorted(srv._disabled_tool_modules()), {"a": "old"})
+        fake_kernel = SimpleNamespace(mcp_manifest_lock=lock)
+        with patch.object(srv, "kernel", return_value=fake_kernel), \
+             self._patch_tools(srv, {"a": "tampered"}), \
+             pytest.raises(SystemExit):
+            srv._verify_manifest_lock()
+
+    def test_lock_failure_degraded_warns(self, caplog):
+        import logging
+
+        with patch.object(srv, "kernel", side_effect=RuntimeError("no kernel")), \
+             caplog.at_level(logging.WARNING, logger="aizee_mcp.aizee_server"):
+            srv._verify_manifest_lock()
+        assert "degraded" in caplog.text.lower()
+
+    def test_lock_failure_fatal_when_enforce(self, monkeypatch):
+        monkeypatch.setenv("AIZEE_MCP_LOCK", "enforce")
+        with patch.object(srv, "kernel", side_effect=RuntimeError("no kernel")), \
+             pytest.raises(SystemExit):
+            srv._verify_manifest_lock()

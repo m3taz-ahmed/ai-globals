@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 from aizee_mcp._compat import FastMCP
@@ -12,6 +13,8 @@ from runtime.guardian import ActionRequest, DecisionStatus
 from runtime.metrics import format_metrics
 
 from .common import _MAX_INPUT_LENGTH, is_safe_name, kernel
+
+_logger = logging.getLogger(__name__)
 
 
 def register_policy_tools(mcp: FastMCP) -> None:
@@ -97,4 +100,27 @@ def register_policy_tools(mcp: FastMCP) -> None:
             max_params = 7
         linter = AstryxLinter(max_lines=max_lines, max_params=max_params)
         findings = linter.lint_text(code)
-        return json.dumps({"ok": True, "findings": [finding.__dict__ for finding in findings]}, indent=2)
+        # Advisory AI-code checks: hallucinated imports + stale API usage.
+        # Advisory only - heuristics augment lint findings, never block.
+        advisory: list[dict[str, Any]] = []
+        try:
+            k = kernel()
+            advisory.extend(
+                {"kind": "hallucinated_import", **f.to_dict()}
+                for f in k.hallucination_detector.detect_python(code, "<lint>")
+            )
+            advisory.extend(
+                {"kind": "stale_api", **f.to_dict()}
+                for f in k.stale_api_detector.detect(code, "python", "<lint>")
+            )
+        except Exception as exc:
+            _logger.warning("advisory detectors unavailable (degraded): %s", exc)
+        return json.dumps(
+            {
+                "ok": True,
+                "findings": [finding.__dict__ for finding in findings],
+                "advisory": advisory,
+            },
+            indent=2,
+            default=str,
+        )

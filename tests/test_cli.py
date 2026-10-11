@@ -288,6 +288,28 @@ class TestCliMemoryIngest:
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_ingest_auto_compacts_oversized_memory(self, capsys):
+        tmp = _tmp_root()
+        try:
+            sections = []
+            for i in range(12):
+                body = "\n".join(f"- fact {i}-{j}" for j in range(45))
+                sections.append(f"[UPDATED] 2025-{i + 1:02d}-01\n{body}")
+            mem = tmp / "Memory.md"
+            mem.write_text("[FILE] Memory.md\n[OBJ] test\n\n" + "\n".join(sections), encoding="utf-8")
+            before = len(mem.read_text(encoding="utf-8").splitlines())
+            assert before > 500
+
+            rc = main(["--root", str(tmp), "memory", "ingest"])
+            captured = capsys.readouterr()
+            assert rc == 0
+            assert "auto-compacted" in captured.out
+            assert len(mem.read_text(encoding="utf-8").splitlines()) <= 500
+            archives = list((tmp / "memory" / "archive").glob("Memory-*.md"))
+            assert archives, "dropped sections must be archived"
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 
 # ---------------------------------------------------------------------------
 # query (hybrid search)

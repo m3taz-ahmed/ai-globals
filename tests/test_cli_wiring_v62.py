@@ -108,8 +108,8 @@ class TestDoctorWiring:
             out = capsys.readouterr().out
             assert "Module wiring" in out
             # Minimal tmp root has no runtime/*.py — orphans report "absent",
-            # kernel-constructed services still report constructed-only.
-            assert "absent" in out and "constructed only" in out
+            # no-caller services still report lazy/on-demand.
+            assert "absent" in out and "lazy/on-demand" in out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 

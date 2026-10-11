@@ -1,5 +1,52 @@
 # Changelog
 
+## [Unreleased]
+
+Maintenance pass — surgical upgrades from `implementation_plan.md`. All
+changes verified by the full quality gate suite.
+
+### Security
+
+- **MCP manifest lock enforced at boot (P0-a):** `aizee_mcp` now locks all
+  registered tool manifests (name + description hashes) on first start via
+  `ManifestLock` and re-verifies on every subsequent start. Drift is logged
+  as a warning by default; `AIZEE_MCP_LOCK=enforce` makes drift fail-closed
+  (abort startup). Lock state lives in `state/mcp_locks/`.
+- **Advisory lint wiring (P0-b):** `lint_python` now also runs
+  `HallucinationDetector` and `StaleApiDetector` over submitted code and
+  returns their findings under an `"advisory"` key — hallucinated imports
+  and stale API usage surface in the editor before code is written.
+- **Scanner hygiene (P0-c):** the intentional sandboxed `exec` in
+  `runtime/codemode/_child.py` carries an inline `aizee-scan` suppression;
+  empty `except` bodies in the codemode executor now log with context.
+  `aizee security scan runtime` reports **0 findings** (+9 suppressed).
+
+### Performance
+
+- **Lazy `runtime` package (P1-a):** `runtime/__init__.py` uses PEP 562
+  `__getattr__` + lazy submodule loading. `import runtime` cost drops
+  ~0.46s → ~0.01s; every CLI call and test pays it no longer.
+- **Lazy kernel services (P1-b):** the 17 constructed-only services
+  (manifest lock, detectors, routers, marketing governance) are built on
+  first attribute access via `Kernel.__getattr__` instead of eagerly in
+  `_init_core_services()`. `Kernel()` init drops ~0.59s → ~0.13s.
+  Security-critical stacks (taint, guardrails, injection, design) stay
+  eager so strict-mode semantics are unchanged.
+
+### Added
+
+- **Auto-compaction on ingest (P2-b):** `aizee memory ingest` now runs
+  `compact_memory()` against `Memory.md` afterwards — when the file
+  exceeds its 500-line charter it is compacted in place and dropped
+  sections are archived under `memory/archive/`. `aizee memory compact`
+  remains available for manual/dry-run use.
+
+### Changed
+
+- **Status truth labels:** lazily-constructed services report `"mcp-lazy"`
+  (previously `"constructed"`); `aizee doctor`'s wiring table wording
+  updated to match. `status()["constructed_only_services"]` unchanged.
+
 ## [6.2.0] - 2026-10-08 (Truth & Termination — audit P0s closed)
 
 The v6.2 milestone closes every P0 from `docs/AUDIT_REPORT.md`: the two

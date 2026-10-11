@@ -197,3 +197,11 @@ class TestLintPython:
         data = json.loads(result)
         assert data["ok"] is True
         assert isinstance(data["findings"], list)
+
+    def test_lint_advisory_degraded_when_detectors_unavailable(self):
+        """Advisory detector failure is logged and lint still succeeds."""
+        with patch("aizee_mcp.tools.policy_tools.kernel", side_effect=RuntimeError("no kernel")):
+            result = _call("lint_python", {"code": "x = 1\n"})
+        data = json.loads(result)
+        assert data["ok"] is True
+        assert data["advisory"] == []

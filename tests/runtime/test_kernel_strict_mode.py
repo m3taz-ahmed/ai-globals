@@ -93,11 +93,16 @@ class TestTruthfulStatus:
         status = _kernel(tmp_path).status()
         for key in (
             "mcp_auditor", "model_router", "fairness_detector",
-            "hallucination_detector", "stale_api_detector",
             "laravel_policy_linter", "filament_access_auditor",
             "db_migration_safety", "ui_a11y_checker", "blade_template_linter",
         ):
-            assert status[key] == "constructed", key
+            assert status[key] == "lazy", key
+
+    def test_mcp_wired_labels(self, tmp_path) -> None:
+        status = _kernel(tmp_path).status()
+        assert status["mcp_manifest_lock"] == "mcp-wired"
+        assert status["hallucination_detector"] == "mcp-wired"
+        assert status["stale_api_detector"] == "mcp-wired"
 
     def test_cli_wired_label(self, tmp_path) -> None:
         assert _kernel(tmp_path).status()["policy_linter"] == "cli-wired"
@@ -108,6 +113,9 @@ class TestTruthfulStatus:
         assert "mcp_auditor" in listed
         # Wired services must not be listed as constructed-only.
         assert "audit_signer" not in listed and "policy_linter" not in listed
+        assert "mcp_manifest_lock" not in listed
+        assert "hallucination_detector" not in listed
+        assert "stale_api_detector" not in listed
 
     def test_budget_quarantine_flag_in_status(self, tmp_path) -> None:
         assert _kernel(tmp_path).status()["budget_state_quarantined"] is False
@@ -140,3 +148,48 @@ class TestBudgetQuarantineFlag:
 
     def test_flag_unset_on_clean_state(self, tmp_path) -> None:
         assert BudgetManager(tmp_path).state_quarantined is False
+
+
+class TestLazyServiceResolution:
+    """Kernel.__getattr__ lazy paths + strict-boot force-build coverage."""
+
+    def test_strict_boot_constructs_all_lazy_services(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setenv("AIZEE_SECURITY_STRICT", "1")
+        kernel = _kernel(tmp_path)
+        for name in Kernel._LAZY_SERVICE_NAMES:
+            assert name in kernel.__dict__, f"{name} not force-built at strict boot"
+        assert kernel.disabled_defenses == []
+
+    def test_getattr_no_builder_raises(self, tmp_path, monkeypatch) -> None:
+        kernel = _kernel(tmp_path)
+        monkeypatch.setattr(
+            Kernel, "_LAZY_SERVICE_NAMES",
+            Kernel._LAZY_SERVICE_NAMES | {"nonexistent_svc"},
+        )
+        with pytest.raises(AttributeError, match="no builder"):
+            _ = kernel.nonexistent_svc
+
+    def test_lazy_module_attr_imports_and_caches(self, tmp_path) -> None:
+        kernel = _kernel(tmp_path)
+        import runtime.attribution_model as expected
+
+        mod = kernel.attribution_model
+        assert mod is expected
+        assert kernel.__dict__["attribution_model"] is mod
+
+    def test_lazy_module_attr_import_failure_marks_degraded(self, tmp_path) -> None:
+        kernel = _kernel(tmp_path)
+        with patch("importlib.import_module", side_effect=ImportError("boom")), \
+             pytest.raises(ImportError):
+            _ = kernel.crm_manager
+        assert "crm_manager" in kernel.disabled_defenses
+        # A repeated failure must not duplicate the degraded marker.
+        with patch("importlib.import_module", side_effect=ImportError("boom")), \
+             pytest.raises(ImportError):
+            _ = kernel.crm_manager
+        assert kernel.disabled_defenses.count("crm_manager") == 1
+
+    def test_unknown_attr_still_raises_attributeerror(self, tmp_path) -> None:
+        kernel = _kernel(tmp_path)
+        with pytest.raises(AttributeError):
+            _ = kernel.definitely_not_a_service

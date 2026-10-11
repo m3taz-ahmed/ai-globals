@@ -232,8 +232,8 @@ class CodeModeExecutor:
             if stream is not None:
                 for line in stream:
                     sink.put(line)
-        except (OSError, ValueError):
-            pass
+        except (OSError, ValueError) as exc:
+            _logger.debug("pipe reader stopped abnormally: %s", exc)
         finally:
             sink.put(None)
 
@@ -243,8 +243,8 @@ class CodeModeExecutor:
             if stream is not None:
                 for line in stream:
                     sink.append(line)
-        except (OSError, ValueError):
-            pass
+        except (OSError, ValueError) as exc:
+            _logger.debug("pipe drain stopped abnormally: %s", exc)
 
     @staticmethod
     def _reap(proc: subprocess.Popen[str]) -> None:

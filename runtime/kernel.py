@@ -7,7 +7,7 @@ import json
 import logging
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -80,10 +80,10 @@ class ActionSchema(BaseModel):
 # Single source of truth for status() and `aizee doctor` wiring checks
 # (AUDIT_REPORT H1/H5). Remove a name here when it gains a real caller.
 CONSTRUCTED_ONLY_SERVICES: tuple[str, ...] = (
-    "mcp_auditor", "mcp_manifest_lock", "cross_tool_taint",
+    "mcp_auditor", "cross_tool_taint",
     "budget_advanced", "approval_sla", "agent_sli",
     "circuit_breaker", "durable_executor", "llm_attestor",
-    "blast_radius", "hallucination_detector", "stale_api_detector",
+    "blast_radius",
     "model_router", "fairness_detector", "laravel_policy_linter",
     "filament_access_auditor", "db_migration_safety",
     "ui_a11y_checker", "blade_template_linter",
@@ -135,37 +135,11 @@ def _init_core_services(kernel: Kernel) -> None:
 
     kernel.hook_registry = HookRegistry()
     kernel.loop_detector = LoopDetector(window=20, threshold=5)
-    # -- Modernization v5.13: advanced governance services --
-    # MCP security: deterministic auditor + manifest lock + cross-tool taint
-    kernel.mcp_auditor = kernel._build_mcp_auditor()
-    kernel.mcp_manifest_lock = kernel._build_mcp_manifest_lock()
-    kernel.cross_tool_taint = kernel._build_cross_tool_taint()
-    # Budget: progressive throttling + reserve/settle + burn forecast + anomaly
-    kernel.budget_advanced = kernel._build_budget_advanced()
-    # HITL: SLA manager (audit_signer is built earlier and wired into audit)
-    kernel.approval_sla = kernel._build_approval_sla()
-    # Observability: agent SLIs + semantic circuit breaker
-    kernel.agent_sli = kernel._build_agent_sli()
-    kernel.circuit_breaker = kernel._build_circuit_breaker()
-    # Durable execution
-    kernel.durable_executor = kernel._build_durable_executor()
-    # Supply chain: LLM attestation + blast radius
-    kernel.llm_attestor = kernel._build_llm_attestor()
-    kernel.blast_radius = kernel._build_blast_radius()
-    # Code review: hallucination + stale API detection
-    kernel.hallucination_detector = kernel._build_hallucination_detector()
-    kernel.stale_api_detector = kernel._build_stale_api_detector()
-    # Policy: policy linter
-    kernel.policy_linter = kernel._build_policy_linter()
-    # Model routing + fairness
-    kernel.model_router = kernel._build_model_router()
-    kernel.fairness_detector = kernel._build_fairness_detector()
-    # -- Modernization v5.14: Laravel/Filament/UI governance services --
-    kernel.laravel_policy_linter = kernel._build_laravel_policy_linter()
-    kernel.filament_access_auditor = kernel._build_filament_access_auditor()
-    kernel.db_migration_safety = kernel._build_db_migration_safety()
-    kernel.ui_a11y_checker = kernel._build_ui_a11y_checker()
-    kernel.blade_template_linter = kernel._build_blade_template_linter()
+    # -- Modernization v5.13/v5.14 governance services --
+    # These are LAZY: Kernel.__getattr__ builds them via _build_<name>() on
+    # first access instead of paying construction cost on every Kernel().
+    # Under AIZEE_SECURITY_STRICT they are force-built below (fail-closed
+    # boot semantics: a broken service must fail at startup, not mid-gate).
     # User-facing settings (dashboard override layer). Process-wide cached so
     # the dashboard, McpClient, and PluginManager share one source of truth.
     kernel.settings_manager = get_settings_manager(kernel.root)
@@ -216,8 +190,8 @@ def _init_core_services(kernel: Kernel) -> None:
         kernel.injection_detector = InjectionDetector()  # type: ignore[attr-defined]
         kernel.defensive_injector = DefensiveInjector()  # type: ignore[attr-defined]
         kernel.tool_output_sanitizer = ToolOutputSanitizer(  # type: ignore[attr-defined]
-            detector=kernel.injection_detector,  # type: ignore[attr-defined]
-            injector=kernel.defensive_injector,  # type: ignore[attr-defined]
+            detector=kernel.injection_detector,
+            injector=kernel.defensive_injector,
         )
         kernel.baseline_registry = BaselineRegistry()  # type: ignore[attr-defined]
     except Exception as exc:
@@ -247,38 +221,14 @@ def _init_core_services(kernel: Kernel) -> None:
         if _security_strict():
             raise
 
-    # Initialize freelance + marketing/emarkeitng runtime modules (lazy).
-    # These are stateless helpers (functions/small classes); import the
-    # module so callers can access them via ``kernel.<module>``.
-    try:
-        import runtime.attribution_model as _attr
-        import runtime.billing_ledger as _billing
-        import runtime.crm_manager as _crm
-        import runtime.drip_engine as _drip
-        import runtime.experiment_tracker as _exp
-        import runtime.feature_flags as _flags
-        import runtime.funnel_tracker as _funnel
-        import runtime.lead_scorer as _lead
-        import runtime.marketing_compliance as _mcomp
-        import runtime.pipeline_analytics as _pipe
-        import runtime.post_queue as _queue
-        import runtime.pricing_calculator as _pricing
+    # Freelance + marketing module attrs (kernel.attribution_model etc.) are
+    # lazy too — resolved through __getattr__ on first access.
 
-        kernel.attribution_model = _attr  # type: ignore[attr-defined]
-        kernel.billing_ledger = _billing  # type: ignore[attr-defined]
-        kernel.crm_manager = _crm  # type: ignore[attr-defined]
-        kernel.drip_engine = _drip  # type: ignore[attr-defined]
-        kernel.experiment_tracker = _exp  # type: ignore[attr-defined]
-        kernel.feature_flags = _flags  # type: ignore[attr-defined]
-        kernel.funnel_tracker = _funnel  # type: ignore[attr-defined]
-        kernel.lead_scorer = _lead  # type: ignore[attr-defined]
-        kernel.marketing_compliance = _mcomp  # type: ignore[attr-defined]
-        kernel.pipeline_analytics = _pipe  # type: ignore[attr-defined]
-        kernel.post_queue = _queue  # type: ignore[attr-defined]
-        kernel.pricing_calculator = _pricing  # type: ignore[attr-defined]
-    except Exception as exc:
-        kernel.disabled_defenses.append("marketing_modules")
-        _logger.warning("Marketing/freelance modules failed to load (non-critical): %s", exc)
+    if _security_strict():
+        # Fail-closed boot: construct every lazy governance service now so a
+        # broken service fails at startup, not mid-session.
+        for _lazy_name in Kernel._LAZY_SERVICE_NAMES:
+            getattr(kernel, _lazy_name)
 
 
 def _init_managers(kernel: Kernel) -> None:
@@ -587,6 +537,39 @@ class Kernel:
     blade_template_linter: Any
     task_contract: TaskContractManager
     skill_lifecycle: Any
+    # Lazily constructed governance services: built by _build_<name>() on
+    # first attribute access (Kernel.__getattr__), not during __init__.
+    # AIZEE_SECURITY_STRICT force-builds them in _init_core_services so
+    # strict mode keeps its fail-closed boot semantics.
+    _LAZY_SERVICE_NAMES: ClassVar[frozenset[str]] = frozenset({
+        "mcp_auditor", "mcp_manifest_lock", "cross_tool_taint",
+        "budget_advanced", "approval_sla", "agent_sli", "circuit_breaker",
+        "durable_executor", "llm_attestor", "blast_radius",
+        "hallucination_detector", "stale_api_detector", "policy_linter",
+        "model_router", "fairness_detector", "laravel_policy_linter",
+        "filament_access_auditor", "db_migration_safety",
+        "ui_a11y_checker", "blade_template_linter",
+    })
+    # Freelance/marketing helper modules exposed as kernel.<module> attrs —
+    # imported on first access, not eagerly at init.
+    _LAZY_MODULE_ATTRS: ClassVar[frozenset[str]] = frozenset({
+        "attribution_model", "billing_ledger", "crm_manager", "drip_engine",
+        "experiment_tracker", "feature_flags", "funnel_tracker",
+        "lead_scorer", "marketing_compliance", "pipeline_analytics",
+        "post_queue", "pricing_calculator",
+    })
+    attribution_model: Any
+    billing_ledger: Any
+    crm_manager: Any
+    drip_engine: Any
+    experiment_tracker: Any
+    feature_flags: Any
+    funnel_tracker: Any
+    lead_scorer: Any
+    marketing_compliance: Any
+    pipeline_analytics: Any
+    post_queue: Any
+    pricing_calculator: Any
     policy_mgr: PolicyManager
     workflow_mgr: WorkflowManager
     agent_mgr: AgentManager
@@ -638,6 +621,36 @@ class Kernel:
 
             self._plugins = PluginManager(self, self.root)
         return self._plugins
+
+    def __getattr__(self, name: str) -> Any:
+        """Build lazy services / import lazy module attrs on first access.
+
+        Fires only for attributes absent from ``__dict__``; resolved values
+        are cached there so subsequent access is direct. Unknown names get
+        the standard AttributeError (hasattr()/getattr() semantics kept).
+        NOTE: __getattr__ returning Any means mypy cannot flag misspelled
+        undeclared attributes — declared attrs above stay fully checked.
+        """
+        if name in Kernel._LAZY_SERVICE_NAMES:
+            builder = getattr(self, f"_build_{name}", None)
+            if builder is None:
+                raise AttributeError(f"no builder for lazy service {name!r}")
+            value = builder()
+        elif name in Kernel._LAZY_MODULE_ATTRS:
+            import importlib
+
+            try:
+                value = importlib.import_module(f"runtime.{name}")
+            except Exception:
+                if name not in self.disabled_defenses:
+                    self.disabled_defenses.append(name)
+                raise
+        else:
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {name!r}"
+            ) from None
+        self.__dict__[name] = value
+        return value
 
     # --- Builders ---
     def _build_telemetry_collector(self) -> TelemetryCollector:
@@ -1071,29 +1084,31 @@ class Kernel:
             "mcp_firewall_rules": len(self.mcp_firewall.rules),
             "agent_gateway_guardrails": len(self.agent_gateway.list_guardrails()),
             "loop_detector": self.loop_detector.stats(),
-            # Modernization v5.13 — labels report construction truth (H1/P0.3):
-            # these services are built and healthy, but constructed-only means
-            # no production call site invokes them (gate, CLI, MCP, manager).
-            "mcp_auditor": "constructed",
+            # Modernization v5.13 — labels report wiring truth (H1/P0.3):
+            # "lazy" = built on first access but no production call site
+            # invokes it (gate, CLI, MCP, manager); "cli-wired"/"mcp-wired"
+            # = reachable through a real call path.
+            "mcp_auditor": "lazy",
+            "mcp_manifest_lock": "mcp-wired",
             "mcp_manifest_locks": self.mcp_manifest_lock.list_locks(),
             "cross_tool_taint": self.cross_tool_taint.stats(),
             "circuit_breaker": self.circuit_breaker.stats(),
             "agent_sli": self.agent_sli.summary(),
             "blast_radius": self.blast_radius.stats(),
-            "model_router": "constructed",
-            "fairness_detector": "constructed",
+            "model_router": "lazy",
+            "fairness_detector": "lazy",
             "policy_linter": "cli-wired",
-            "hallucination_detector": "constructed",
-            "stale_api_detector": "constructed",
+            "hallucination_detector": "mcp-wired",
+            "stale_api_detector": "mcp-wired",
             "durable_workflows": self.durable_executor.list_workflows(),
             "llm_attestations": len(self.llm_attestor.list_attestations()),
             # v5.14 Laravel/Filament/UI governance
-            "laravel_policy_linter": "constructed",
-            "filament_access_auditor": "constructed",
-            "db_migration_safety": "constructed",
-            "ui_a11y_checker": "constructed",
-            "blade_template_linter": "constructed",
-            # Machine-readable list of constructed-but-uncalled services
+            "laravel_policy_linter": "lazy",
+            "filament_access_auditor": "lazy",
+            "db_migration_safety": "lazy",
+            "ui_a11y_checker": "lazy",
+            "blade_template_linter": "lazy",
+            # Machine-readable list of services without production callers
             # (wire-or-delete candidates, see docs/AUDIT_REPORT.md H1/H2).
             "constructed_only_services": sorted(CONSTRUCTED_ONLY_SERVICES),
             # Loud signal when budget state was quarantined (H4).

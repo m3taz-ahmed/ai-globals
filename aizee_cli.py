@@ -177,6 +177,18 @@ def cmd_memory(args: argparse.Namespace) -> int:
             ids = ingestor.ingest_all()
         console.print(f"[green]Ingested {len(ids)} memories[/green]")
 
+        # Auto-compact Memory.md when it exceeds its own 500-line charter;
+        # dropped sections are archived under memory/archive/, never lost.
+        from memory.compactor import compact_memory
+
+        compact_res = compact_memory(_root(args) / "Memory.md", dry_run=False)
+        if compact_res.needed:
+            console.print(
+                f"[yellow]Memory.md auto-compacted: {compact_res.before_lines} -> "
+                f"{compact_res.after_lines} lines "
+                f"({compact_res.archived_sections} sections archived)[/yellow]"
+            )
+
         # Auto-ingest: watch for changes in tech-stack/, rules/, workflows/
         if getattr(args, "watch", False):
             import time
@@ -1138,7 +1150,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         present = (os_root / "runtime" / f"{name}.py").exists()
         wiring.add_row(name, "orphan (no callers)" if present else "[dim]absent[/dim]")
     for name in sorted(CONSTRUCTED_ONLY_SERVICES):
-        wiring.add_row(name, "constructed only (no callers)")
+        wiring.add_row(name, "lazy/on-demand (no callers)")
     console.print(wiring)
 
     # Degraded defenses (H3) and quarantined budget state (H4) are loud

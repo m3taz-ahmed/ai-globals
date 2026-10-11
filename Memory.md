@@ -146,3 +146,22 @@
   - `aizee_mcp/tools/seo_tools.py` (B8): حارس الذاكرة كان يقيس RSS المطلق للعملية — تحت pytest+coverage السويت يتجاوز 512MB فيفشل crawl كله — اتصلح لقياس **النمو النسبي** من baseline عند بداية الـ crawl.
 - **البوابات النهائية (AIZEE_ROOT=.ai)**: ruff OK، mypy OK (293 files)، pytest+cov OK (73.60% >= 68%)، guard_invariants OK، validate-globals OK (508 files)، sync_docs --check OK (in sync)، eval/harness.py `all_pass: true`.
 - **المزامنة**: `update_aizee.bat` اتنفذ — كل الملفات المعدلة byte-identical بين `.ai` و`aizee`.
+
+## v6.2.0 — Maintenance Pass: Lazy Kernel + MCP Lock (SEC + QA + DEV)
+
+### الملخص
+- Maintenance prompt `MAINTENANCE_PROMPT.md` — audit → `implementation_plan.md` → approved scope (P0 + P1-a/b + P2-b) executed surgically.
+- **Audit headline:** ~27% of the codebase was inert — 25 orphan modules (7.6k LOC) + 20 constructed-only services (7k LOC built per `Kernel()` with no callers). Orphans kept as-is per user decision.
+
+### التغييرات
+- **P0-a MCP manifest lock:** `aizee_mcp` locks all tool manifests (name+description hashes) on first start, re-verifies every boot; drift → warning, `AIZEE_MCP_LOCK=enforce` → fail-closed abort. Lock state in `state/mcp_locks/` (gitignored).
+- **P0-b Advisory lint:** `lint_python` now runs `HallucinationDetector` + `StaleApiDetector`, returns findings under `"advisory"` key (backward-compatible). Detector failure degrades to warning, never breaks lint.
+- **P0-c Scanner hygiene:** intentional sandboxed `exec` in `codemode/_child.py` suppressed via `aizee-scan` marker; empty excepts in executor now log. `security scan runtime` = 0 findings (+9 suppressed).
+- **P1-a Lazy `runtime/__init__.py`:** PEP 562 `__getattr__` + lazy submodules — `import runtime` 0.46s → 0.01s.
+- **P1-b Lazy kernel services:** 20 constructed-only services build on first access via `Kernel.__getattr__` — `Kernel()` 0.59s → 0.13s. Security stacks (taint/guardrails/injection/design) stay eager; `AIZEE_SECURITY_STRICT=1` force-builds all lazies at boot (fail-closed preserved). 12 marketing module attrs lazy too.
+- **P2-b Auto-compact:** `aizee memory ingest` runs `compact_memory()` after ingest; >500-line Memory.md compacts in place, dropped sections archived to `memory/archive/`.
+- **Status truth:** lazy-built services report `"mcp-lazy"`→`"mcp-wired"` once resolved; `status()["constructed_only_services"]` unchanged; doctor wiring table updated.
+
+### البوابات
+- ruff OK, mypy OK (652 files), `aizee test --full` 7731 passed + 100% cov, `eval/harness.py` all_pass.
+- **Coverage footgun:** never run `test --full` and `eval/harness.py` concurrently — both write `.coverage*` in repo root and corrupt each other (showed 33% phantom). Always sequential.

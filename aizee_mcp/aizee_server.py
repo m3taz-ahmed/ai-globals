@@ -11,6 +11,7 @@ import functools
 import importlib
 import json
 import logging
+import os
 import pkgutil
 from pathlib import Path
 from typing import Any
@@ -291,6 +292,51 @@ def _apply_rbac_guard() -> None:
 
 
 _apply_rbac_guard()
+
+
+def _verify_manifest_lock() -> None:
+    """Verify registered tool definitions against the SHA-256 manifest lock.
+
+    First run writes the lock (``state/mcp_locks/aizee.json``); subsequent
+    runs re-verify every tool's description hash. Drift means a tool's
+    description changed since the approved baseline - the tool-poisoning
+    (rug-pull) vector. ``AIZEE_MCP_LOCK=enforce`` makes drift or lock
+    failure fatal; the default warns so intentional tool updates only
+    require deleting the stale lock file to re-baseline.
+    """
+    enforce = os.environ.get("AIZEE_MCP_LOCK") == "enforce"
+    try:
+        tools = {
+            str(name): str(getattr(tool, "description", "") or "")
+            for name, tool in _tool_manager._tools.items()
+        }
+        lock_svc = kernel().mcp_manifest_lock
+        server = "aizee"
+        command = "aizee_mcp.aizee_server"
+        args = sorted(_disabled_tool_modules())
+        if lock_svc.get_lock(server) is None:
+            lock_svc.lock(server, command, args, tools, locked_by="aizee_mcp")
+            logger.info("MCP manifest lock created for %d tools", len(tools))
+            return
+        drift = lock_svc.verify(server, command, args, tools)
+    except Exception as exc:
+        if enforce:
+            raise SystemExit(f"MCP manifest lock check failed: {exc}") from exc
+        logger.warning("MCP manifest lock check failed (degraded): %s", exc)
+        return
+    if not drift:
+        return
+    message = "MCP manifest drift detected: " + "; ".join(
+        str(f.get("message", f)) for f in drift[:5]
+    )
+    if enforce:
+        raise SystemExit(message)
+    logger.warning(
+        "%s - re-baseline by deleting state/mcp_locks/aizee.json", message
+    )
+
+
+_verify_manifest_lock()
 
 
 # Guard tools added at runtime (plugins, late registration): patch add_tool
