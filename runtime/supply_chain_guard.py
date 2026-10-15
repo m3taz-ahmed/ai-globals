@@ -15,7 +15,9 @@ Rust (``Cargo.toml``).
 from __future__ import annotations
 
 import ast
+import logging
 import re
+import sys
 import threading
 from dataclasses import dataclass
 from enum import Enum
@@ -23,6 +25,8 @@ from pathlib import Path
 from typing import Any
 
 from runtime.schemas import AizeeError, ErrorSeverity, ValidationError
+
+_log = logging.getLogger(__name__)
 
 
 class DependencyEcosystem(str, Enum):
@@ -55,18 +59,49 @@ class UndeclaredImport:
 
 
 # Python standard-library modules excluded from undeclared detection.
-_PYTHON_STDLIB: frozenset[str] = frozenset(
-    {
-        "os", "sys", "re", "json", "pathlib", "typing", "dataclasses", "enum",
-        "collections", "functools", "ast", "threading", "hashlib", "datetime",
-        "abc", "io", "csv", "math", "itertools", "warnings", "contextlib",
-        "urllib", "logging", "time", "copy", "inspect", "unittest",
-        "configparser", "sqlite3", "xml", "html", "base64", "uuid", "secrets",
-        "hmac", "ssl", "socket", "select", "signal", "struct", "codecs",
-        "locale", "pprint", "textwrap", "shutil", "tempfile", "subprocess",
-        "platform", "getpass", "argparse",
-    }
-)
+# sys.stdlib_module_names (3.10+) is the authoritative, complete list — a
+# hand-rolled subset inevitably misses modules (gc, ipaddress, __future__…)
+# and turns the guard into a false-positive machine.
+_PYTHON_STDLIB: frozenset[str] = frozenset(sys.stdlib_module_names)
+
+# Import name -> distribution package name for the common cases where they
+# differ (``import yaml`` is satisfied by the ``pyyaml`` dependency).
+_PY_IMPORT_TO_PKG: dict[str, str] = {
+    "yaml": "pyyaml",
+    "PIL": "pillow",
+    "cv2": "opencv-python",
+    "sklearn": "scikit-learn",
+    "bs4": "beautifulsoup4",
+    "serial": "pyserial",
+    "dotenv": "python-dotenv",
+    "jose": "python-jose",
+    "Crypto": "pycryptodome",
+    "attr": "attrs",
+    "dateutil": "python-dateutil",
+    "googleapiclient": "google-api-python-client",
+    "huggingface_hub": "huggingface-hub",
+    "OpenSSL": "pyopenssl",
+    "usb": "pyusb",
+    "git": "gitpython",
+    "magic": "python-magic",
+    "cairo": "pycairo",
+    "wx": "wxpython",
+    "dns": "dnspython",
+    "ldap": "python-ldap",
+    "nats": "nats-py",
+    "websocket": "websocket-client",
+    "yamlloader": "yamlloader",
+}
+
+# Sibling-file extensions per ecosystem — ``import helpers`` next to a
+# ``helpers.ts``/``helpers.py`` is first-party, not an external package.
+_SIBLING_EXTS: dict[DependencyEcosystem, tuple[str, ...]] = {
+    DependencyEcosystem.PYTHON: (".py",),
+    DependencyEcosystem.NODE: (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"),
+    DependencyEcosystem.PHP: (".php",),
+    DependencyEcosystem.GO: (".go",),
+    DependencyEcosystem.RUST: (".rs",),
+}
 
 # Regex for TS/JS import/require statements.
 _TS_IMPORT_RE = re.compile(
@@ -108,6 +143,10 @@ class SupplyChainGuard:
         self.project_root = Path(project_root)
         self._declared: dict[DependencyEcosystem, set[str]] | None = None
         self._lock = threading.RLock()
+        self._fp_dirs: set[str] | None = None
+        self._go_module: str | None = None
+        self._php_roots: set[str] | None = None
+        self._sibling_cache: dict[Path, dict[DependencyEcosystem, set[str]]] = {}
 
     # -- declared dependency loading ----------------------------------------
 
@@ -168,24 +207,43 @@ class SupplyChainGuard:
                 raise ValidationError(f"File not found: {path}")
             suffix = path.suffix.lower()
             source = path.read_text(encoding="utf-8")
-            if suffix == ".py":
-                ecosystem = DependencyEcosystem.PYTHON
-                modules = self._extract_python_imports(source)
-            elif suffix in (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"):
-                ecosystem = DependencyEcosystem.NODE
-                modules = self._extract_ts_imports(source)
-            elif suffix == ".php":
-                ecosystem = DependencyEcosystem.PHP
-                modules = self._extract_php_imports(source)
-            elif suffix == ".go":
-                ecosystem = DependencyEcosystem.GO
-                modules = self._extract_go_imports(source)
-            elif suffix == ".rs":
-                ecosystem = DependencyEcosystem.RUST
-                modules = self._extract_rust_imports(source)
-            else:
+            extracted = self._extract_for_suffix(source, suffix)
+            if extracted is None:
                 return []
+            ecosystem, modules = extracted
             return self._build_findings(modules, ecosystem, str(path))
+
+    def scan_source(
+        self, source: str, filename: str = "<source>"
+    ) -> list[UndeclaredImport]:
+        """Scan in-memory source text for undeclared imports.
+
+        Used by ``lint_python`` (pre-write advisory): the submitted code has
+        no file on disk, so imports are extracted from the string and checked
+        against the project manifests exactly like ``scan_imports``.
+        """
+        with self._lock:
+            extracted = self._extract_for_suffix(source, Path(filename).suffix.lower())
+            if extracted is None:
+                return []
+            ecosystem, modules = extracted
+            return self._build_findings(modules, ecosystem, filename)
+
+    def _extract_for_suffix(
+        self, source: str, suffix: str
+    ) -> tuple[DependencyEcosystem, list[tuple[str, int]]] | None:
+        """Dispatch source text to the per-ecosystem import extractor."""
+        if suffix == ".py":
+            return DependencyEcosystem.PYTHON, self._extract_python_imports(source)
+        if suffix in (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"):
+            return DependencyEcosystem.NODE, self._extract_ts_imports(source)
+        if suffix == ".php":
+            return DependencyEcosystem.PHP, self._extract_php_imports(source)
+        if suffix == ".go":
+            return DependencyEcosystem.GO, self._extract_go_imports(source)
+        if suffix == ".rs":
+            return DependencyEcosystem.RUST, self._extract_rust_imports(source)
+        return None
 
     def check_file(self, file_path: Path) -> list[UndeclaredImport]:
         """Alias for :meth:`scan_imports` (single-file check)."""
@@ -242,10 +300,15 @@ class SupplyChainGuard:
         declared = self._ensure_declared()
         allowed = declared.get(ecosystem, set())
         findings: list[UndeclaredImport] = []
+        base_dir = (
+            None if file_str.startswith("<") else Path(file_str).parent
+        )
+        seen: set[str] = set()
         for module, line_no in modules:
             top = self._top_level_name(module, ecosystem)
-            if self._is_allowed(top, ecosystem, allowed):
+            if top in seen or self._is_allowed(top, ecosystem, allowed, base_dir):
                 continue
+            seen.add(top)
             findings.append(
                 UndeclaredImport(
                     module=module,
@@ -274,18 +337,29 @@ class SupplyChainGuard:
             return module
         return module.split(".", 1)[0]
 
-    @staticmethod
     def _is_allowed(
+        self,
         top: str,
         ecosystem: DependencyEcosystem,
         declared: set[str],
+        base_dir: Path | None = None,
     ) -> bool:
+        if not top:
+            return True
+        if self._is_first_party(top, ecosystem, base_dir):
+            return True
         if ecosystem == DependencyEcosystem.PYTHON:
-            if top in _PYTHON_STDLIB:
+            if top in _PYTHON_STDLIB or top.startswith("."):
                 return True
-            if top.startswith("."):
+            normalized = {d.replace("-", "_").lower() for d in declared}
+            if top.replace("-", "_").lower() in normalized:
                 return True
-        if ecosystem == DependencyEcosystem.NODE and (top.startswith(".") or top.startswith("/") or top.startswith("node:")):
+            alias = _PY_IMPORT_TO_PKG.get(top)
+            return alias is not None and alias.replace("-", "_").lower() in normalized
+        if ecosystem == DependencyEcosystem.NODE and (
+            top.startswith(".") or top.startswith("/")
+            or top.startswith("node:") or top.startswith("@/")
+        ):
             return True
         if ecosystem == DependencyEcosystem.PHP:
             # PHP `use` namespaces map to composer vendor prefixes case-insensitively.
@@ -299,6 +373,118 @@ class SupplyChainGuard:
             # Go stdlib detection is non-trivial; only declared deps are allowed.
             return top in declared
         return top in declared
+
+    # -- first-party detection ---------------------------------------------
+
+    def _is_first_party(
+        self,
+        top: str,
+        ecosystem: DependencyEcosystem,
+        base_dir: Path | None = None,
+    ) -> bool:
+        """True when ``top`` resolves inside the project tree itself.
+
+        Local packages (``runtime/``, ``memory/``, ``config.py`` ...) are not
+        external dependencies — without this check every first-party import
+        is a false positive. Sibling modules (``import core`` next to
+        ``core.py``) count too via ``base_dir``. Go internal imports share
+        the ``module`` path; PHP first-party namespaces come from composer
+        ``autoload`` psr-4 roots.
+        """
+        if base_dir is not None and top in self._sibling_names(base_dir, ecosystem):
+            return True
+        if ecosystem is DependencyEcosystem.GO:
+            module = self._go_module_path()
+            return bool(module) and (top == module or top.startswith(module + "/"))
+        if ecosystem is DependencyEcosystem.PHP:
+            return top.lower() in self._php_autoload_roots()
+        roots = self._first_party_dirs()
+        return top in roots or top.replace("-", "_") in roots
+
+    def _first_party_dirs(self) -> set[str]:
+        """Top-level dir names + ``*.py`` stems + src-layout package names."""
+        if self._fp_dirs is not None:
+            return self._fp_dirs
+        names: set[str] = set()
+        try:
+            for p in self.project_root.iterdir():
+                if p.is_dir() and not p.name.startswith((".", "_")):
+                    names.add(p.name)
+                elif p.suffix == ".py":
+                    names.add(p.stem)
+            for layout in ("src", "app", "lib"):
+                sub = self.project_root / layout
+                if sub.is_dir():
+                    names.update(c.name for c in sub.iterdir() if c.is_dir())
+                    names.update(c.stem for c in sub.glob("*.py"))
+        except OSError as exc:
+            _log.debug("supply-chain: root scan failed for %s: %s", self.project_root, exc)
+        self._fp_dirs = names
+        return names
+
+    def _sibling_names(self, base_dir: Path, ecosystem: DependencyEcosystem) -> set[str]:
+        """Importable names beside the importing file (and one subdir deep).
+
+        Catches ``import helpers`` next to ``helpers.py`` and the common
+        ``scripts/``-style layout where a tool imports modules it placed in
+        an adjacent directory. Cached per directory.
+        """
+        cache = self._sibling_cache.setdefault(base_dir, {})
+        if ecosystem in cache:
+            return cache[ecosystem]
+        exts = _SIBLING_EXTS.get(ecosystem, (".py",))
+        names: set[str] = set()
+        try:
+            dirs = [base_dir]
+            dirs.extend(p for p in base_dir.iterdir() if p.is_dir() and not p.name.startswith((".", "_")))
+            for d in dirs:
+                names.update(
+                    p.stem for ext in exts for p in d.glob(f"*{ext}")
+                )
+                names.update(p.name for p in d.iterdir() if p.is_dir() and not p.name.startswith((".", "_")))
+        except OSError as exc:
+            _log.debug("supply-chain: sibling scan failed for %s: %s", base_dir, exc)
+        cache[ecosystem] = names
+        return names
+
+    def _go_module_path(self) -> str:
+        """The ``module`` path declared in go.mod (``""`` when absent)."""
+        if self._go_module is not None:
+            return self._go_module
+        module = ""
+        gomod = self.project_root / "go.mod"
+        if gomod.is_file():
+            try:
+                for line in gomod.read_text(encoding="utf-8").splitlines():
+                    stripped = line.strip()
+                    if stripped.startswith("module "):
+                        module = stripped[len("module "):].strip()
+                        break
+            except OSError:
+                module = ""
+        self._go_module = module
+        return module
+
+    def _php_autoload_roots(self) -> set[str]:
+        """First-party PHP namespace roots from composer.json autoload psr-4."""
+        if self._php_roots is not None:
+            return self._php_roots
+        import json as _json
+
+        roots: set[str] = set()
+        composer = self.project_root / "composer.json"
+        if composer.is_file():
+            try:
+                data = _json.loads(composer.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                data = {}
+            for key in ("autoload", "autoload-dev"):
+                section = data.get(key) or {}
+                if isinstance(section, dict):
+                    for ns in section.get("psr-4") or {}:
+                        roots.add(str(ns).strip("\\").split("\\")[0].lower())
+        self._php_roots = roots
+        return roots
 
     # -- per-language extractors --------------------------------------------
 

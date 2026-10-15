@@ -6,17 +6,6 @@ from unittest.mock import patch
 
 import pytest
 
-from runtime.mobile_patterns import (
-    MobileAuditConfig,
-    MobilePattern,
-    MobilePatternAuditor,
-    MobilePlatform,
-    _applicable_patterns,
-    _dir_contains_recursive,
-    _iter_files_bounded,
-    _rglob_exists,
-)
-from runtime.schemas import ValidationError
 from runtime.storage_backend import (
     JsonFileStorage,
     MemoryStoreAdapter,
@@ -203,79 +192,3 @@ class TestAdapterGaps:
         assert got is not None and got.content == "42"
 
 
-class TestMobileGaps:
-    def test_kmp_swift_kotlin_patterns(self):
-        assert _applicable_patterns(MobilePlatform.KOTLIN_MULTIPLATFORM)
-        assert _applicable_patterns(MobilePlatform.SWIFT)
-        assert _applicable_patterns(MobilePlatform.KOTLIN_NATIVE)
-
-    def test_config_validation(self, tmp_path):
-        with pytest.raises(ValidationError):
-            MobileAuditConfig(MobilePlatform.FLUTTER, tmp_path / "nope")
-        f = tmp_path / "file"
-        f.write_text("x")
-        with pytest.raises(ValidationError):
-            MobileAuditConfig(MobilePlatform.FLUTTER, f)
-
-    def test_iter_skip_dirs(self, tmp_path):
-        (tmp_path / "node_modules").mkdir()
-        (tmp_path / "node_modules" / "x.ts").write_text("x")
-        (tmp_path / "src").mkdir()
-        (tmp_path / "src" / "ok.ts").write_text("x")
-        files = _iter_files_bounded(tmp_path)
-        assert any("ok.ts" in str(f) for f in files)
-        assert not any("node_modules" in str(f) for f in files)
-
-    def test_iter_pattern(self, tmp_path):
-        (tmp_path / "a.dart").write_text("x")
-        (tmp_path / "b.ts").write_text("x")
-        files = _iter_files_bounded(tmp_path, "*.dart")
-        assert len(files) == 1 and files[0].name == "a.dart"
-
-    def test_dir_contains_recursive_file_base(self, tmp_path):
-        (tmp_path / "x.dart").write_text("needle")
-        assert _dir_contains_recursive(tmp_path, ["x.dart"], "NEEDLE")
-
-    def test_dir_contains_missing(self, tmp_path):
-        assert not _dir_contains_recursive(tmp_path, ["missing"], "x")
-
-    def test_dir_contains_ts_suffix(self, tmp_path):
-        (tmp_path / "src").mkdir()
-        (tmp_path / "src" / "a.tsx").write_text("NEEDLE")
-        assert _dir_contains_recursive(tmp_path, ["src"], "needle", suffix=".ts")
-
-    def test_rglob_exists(self, tmp_path):
-        (tmp_path / "d").mkdir()
-        (tmp_path / "d" / "f.go_router.dart").write_text("x")
-        assert _rglob_exists(tmp_path, ["d"], "*router*.dart")
-        assert not _rglob_exists(tmp_path, ["d"], "*.rs")
-        assert not _rglob_exists(tmp_path, ["missing"], "*")
-
-    def test_audit_all_platforms(self, tmp_path):
-        for plat in (MobilePlatform.KOTLIN_MULTIPLATFORM,
-                     MobilePlatform.SWIFT, MobilePlatform.KOTLIN_NATIVE):
-            cfg = MobileAuditConfig(plat, tmp_path)
-            summary = MobilePatternAuditor(cfg).audit_summary()
-            assert summary["platform"] == plat.value
-            assert summary["total"] > 0
-
-    def test_audit_subset_patterns(self, tmp_path):
-        cfg = MobileAuditConfig(
-            MobilePlatform.FLUTTER, tmp_path,
-            check_patterns={MobilePattern.FEATURE_FIRST_ARCHITECTURE})
-        results = MobilePatternAuditor(cfg).audit()
-        assert len(results) == 1
-
-    def test_feature_first_flutter(self, tmp_path):
-        (tmp_path / "lib" / "features").mkdir(parents=True)
-        cfg = MobileAuditConfig(MobilePlatform.FLUTTER, tmp_path,
-                                check_patterns={MobilePattern.FEATURE_FIRST_ARCHITECTURE})
-        r = MobilePatternAuditor(cfg).audit()[0]
-        assert r.passed
-
-    def test_feature_first_rn(self, tmp_path):
-        (tmp_path / "app.json").write_text("{}")
-        cfg = MobileAuditConfig(MobilePlatform.REACT_NATIVE, tmp_path,
-                                check_patterns={MobilePattern.FEATURE_FIRST_ARCHITECTURE})
-        r = MobilePatternAuditor(cfg).audit()[0]
-        assert r.passed

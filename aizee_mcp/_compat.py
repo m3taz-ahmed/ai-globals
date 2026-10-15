@@ -20,7 +20,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 
 # mypy: ignore-errors
-# ruff: noqa: I001
 try:
     from mcp.server.mcpserver import MCPServer as _FastMCPImpl  # pyright: ignore[import-error,reportMissingImports]
 except ImportError:  # pragma: no cover - fallback for older mcp versions

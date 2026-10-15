@@ -80,7 +80,7 @@ class ActionSchema(BaseModel):
 # Single source of truth for status() and `aizee doctor` wiring checks
 # (AUDIT_REPORT H1/H5). Remove a name here when it gains a real caller.
 CONSTRUCTED_ONLY_SERVICES: tuple[str, ...] = (
-    "mcp_auditor", "cross_tool_taint",
+    "cross_tool_taint",
     "budget_advanced", "approval_sla", "agent_sli",
     "circuit_breaker", "durable_executor", "llm_attestor",
     "blast_radius",
@@ -93,15 +93,11 @@ CONSTRUCTED_ONLY_SERVICES: tuple[str, ...] = (
 # Orphan runtime modules: exported and tested, but never invoked from any
 # production path (AUDIT_REPORT H2). Reported by `aizee doctor` so the file
 # checks below are no longer mistaken for health signals.
-ORPHAN_MODULES: tuple[str, ...] = (
-    "admission", "approval_channels", "agent_catalog", "budget_escalation",
-    "closure_evaluator", "commands", "composite_identity", "confidence_gate",
-    "context_manager", "contract_emitter", "cost_attribution", "dual_llm",
-    "layers", "learning_loop", "mcp_securable", "mobile_patterns",
-    "output_gate", "quality", "reasoning_graph", "scoped_manager",
-    "service_catalog", "skill_routing", "skill_scanner", "supply_chain_guard",
-    "trajectory",
-)
+# Empty since v6.3: the 22 true orphans were deleted, `budget_escalation`
+# and `service_catalog` turned out to have real callers (budget.py,
+# agent_discovery.py), and `supply_chain_guard`/`mcp_auditor` gained
+# production call sites (security scan / `aizee security mcp` / lint_python).
+ORPHAN_MODULES: tuple[str, ...] = ()
 
 
 def _security_strict() -> bool:
@@ -527,6 +523,7 @@ class Kernel:
     hallucination_detector: Any
     stale_api_detector: Any
     policy_linter: Any
+    supply_chain_guard: Any
     model_router: Any
     fairness_detector: Any
     # v5.14 Laravel/Filament/UI governance
@@ -546,6 +543,7 @@ class Kernel:
         "budget_advanced", "approval_sla", "agent_sli", "circuit_breaker",
         "durable_executor", "llm_attestor", "blast_radius",
         "hallucination_detector", "stale_api_detector", "policy_linter",
+        "supply_chain_guard",
         "model_router", "fairness_detector", "laravel_policy_linter",
         "filament_access_auditor", "db_migration_safety",
         "ui_a11y_checker", "blade_template_linter",
@@ -814,6 +812,12 @@ class Kernel:
         from runtime.stale_api_detector import StaleApiDetector
 
         return StaleApiDetector()
+
+    def _build_supply_chain_guard(self) -> Any:
+        """Build the undeclared-import supply-chain guard."""
+        from runtime.supply_chain_guard import SupplyChainGuard
+
+        return SupplyChainGuard(self.project_root)
 
     def _build_policy_linter(self) -> Any:
         """Build the policy linter."""

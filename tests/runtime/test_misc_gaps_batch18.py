@@ -23,11 +23,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from runtime.approval_service import ApprovalRequest, ApprovalStatus
-from runtime.confidence_gate import ConfidenceGate, Evidence
 from runtime.design_library import DesignLibrary
 from runtime.funnel_tracker import Funnel
 from runtime.llm_attestation import LlmAttestor
-from runtime.mobile_patterns import _iter_files_bounded
 from runtime.settings import _validate_section
 from runtime.spec import engine as spec_engine
 from runtime.spec.models import SpecDelta
@@ -56,15 +54,6 @@ class TestApprovalService:
         req = ApprovalRequest.from_dict({"id": "r1", "action": "deploy", "args": {}})
         assert req.status == ApprovalStatus.PENDING
 
-class TestConfidenceGate:
-    def test_add_evidence_weight_out_of_range_raises(self) -> None:
-        # Evidence.__post_init__ validates at construction; the gate's own
-        # check fires when a valid Evidence is mutated afterwards (non-frozen).
-        gate = ConfidenceGate(0.5)
-        evidence = Evidence(source="s", passed=True, weight=0.5)
-        evidence.weight = 1.5
-        with pytest.raises(ValueError, match="weight"):
-            gate.add_evidence(evidence)
 
 class _FakeScandir:
     """Stand-in for os.scandir yielding a path that is neither dir nor file."""
@@ -93,13 +82,6 @@ class TestDesignLibraryWalk:
         result = DesignLibrary().detect_project_type(tmp_path)
         assert result is not None
 
-class TestMobilePatternsWalk:
-    def test_walk_skips_neither_dir_nor_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            "os.scandir", lambda p: _FakeScandir([_phantom_entry(tmp_path)])
-        )
-        results = _iter_files_bounded(tmp_path)
-        assert results == []
 
 class TestFunnelTracker:
     def test_reached_non_int_non_str_elements_ignored(self) -> None:

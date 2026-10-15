@@ -635,3 +635,86 @@ class TestCliMainHandlers:
                         main(["--root", str(tmp), "status"])
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# security mcp — MCP config audit via mcp_auditor
+# ---------------------------------------------------------------------------
+
+
+class TestCliSecurityMcp:
+    def test_mcp_audit_flags_unpinned(self, capsys):
+        tmp = _tmp_root()
+        try:
+            cfg = tmp / "mcp.json"
+            cfg.write_text(
+                '{"mcpServers": {"evil": {"command": "npx", "args": ["evilpkg"]}}}',
+                encoding="utf-8",
+            )
+            rc = main(["--root", str(tmp), "security", "mcp", str(cfg)])
+            out = capsys.readouterr().out
+            assert rc == 1
+            assert "UNPINNED_PACKAGE" in out
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_mcp_audit_clean_config(self, capsys):
+        tmp = _tmp_root()
+        try:
+            cfg = tmp / "mcp.json"
+            cfg.write_text(
+                '{"mcpServers": {"safe": {"command": "python", "args": ["-m", "srv"]}}}',
+                encoding="utf-8",
+            )
+            rc = main(["--root", str(tmp), "security", "mcp", str(cfg)])
+            out = capsys.readouterr().out
+            assert rc == 0
+            assert "Audited 1 MCP server" in out
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_mcp_audit_jsonc_trailing_comma(self, capsys):
+        tmp = _tmp_root()
+        try:
+            cfg = tmp / "mcp.json"
+            cfg.write_text(
+                '{\n  // comment\n  "mcpServers": {\n'
+                '    "safe": {"command": "python", "args": []},\n  }\n}\n',
+                encoding="utf-8",
+            )
+            rc = main(["--root", str(tmp), "security", "mcp", str(cfg)])
+            out = capsys.readouterr().out
+            assert rc == 0
+            assert "Audited 1 MCP server" in out
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_mcp_audit_no_servers(self, capsys):
+        tmp = _tmp_root()
+        try:
+            cfg = tmp / "empty.json"
+            cfg.write_text('{"mcpServers": {}}', encoding="utf-8")
+            rc = main(["--root", str(tmp), "security", "mcp", str(cfg)])
+            out = capsys.readouterr().out
+            assert rc == 0
+            assert "No mcpServers" in out
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_mcp_audit_json_flag(self, capsys):
+        tmp = _tmp_root()
+        try:
+            cfg = tmp / "mcp.json"
+            cfg.write_text(
+                '{"mcpServers": {"evil": {"command": "npx", "args": ["pkg@latest"]}}}',
+                encoding="utf-8",
+            )
+            rc = main(["--root", str(tmp), "security", "mcp", str(cfg), "--json"])
+            out = capsys.readouterr().out
+            assert rc == 1
+            import json as _json
+
+            findings = _json.loads(out)
+            assert any(f["detector"] == "UNPINNED_PACKAGE" for f in findings)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)

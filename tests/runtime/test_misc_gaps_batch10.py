@@ -1,4 +1,4 @@
-﻿"""Gap coverage batch 10: settings, taint, reasoning_graph, plugin, budget_escalation,
+"""Gap coverage batch 10: settings, taint, reasoning_graph, plugin, budget_escalation,
 blast_radius, middleware, service_catalog residuals, ci."""
 
 from __future__ import annotations
@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import runtime.settings as settings_mod
+import runtime.taint  # noqa: F401 - import registers taint_flow_check guardrail (kernel.py does the same)
 from runtime.blast_radius import (
     BlastEdge,
     BlastNode,
@@ -25,7 +26,6 @@ from runtime.budget_escalation import (
 from runtime.ci import run_command
 from runtime.middleware import MiddlewareResult
 from runtime.plugin import PluginManager, _is_plugin_source_safe
-from runtime.reasoning_graph import NodeKind, ReasoningGraph
 from runtime.schemas import ValidationError
 from runtime.service_catalog import (
     REL_DEPENDS_ON,
@@ -85,55 +85,6 @@ class TestTaintGuardrail:
         assert res.tripwire_triggered is False
 
 
-class TestReasoningGraph:
-    def _g(self) -> ReasoningGraph:
-        g = ReasoningGraph()
-        g.add_node("a", NodeKind.FINDING)
-        g.add_node("b", NodeKind.ACTION)
-        g.add_node("c", NodeKind.ACTION)
-        return g
-
-    def test_add_edge_unknown_target(self) -> None:
-        g = self._g()
-        with pytest.raises(KeyError):
-            g.add_edge("a", "ghost")
-
-    def test_propagate_cycle_and_paths(self) -> None:
-        g = self._g()
-        g.add_node("r", NodeKind.FINDING)
-        g.add_edge("a", "b")
-        g.add_edge("b", "a")  # cycle back-edge
-        g.add_edge("a", "c")
-        g.add_edge("r", "a")  # root reaches the cycle -> exercises visited guard
-        g.activate("a")
-        g.activate("r")
-        newly = g.propagate()
-        assert set(newly) >= {"b", "c"}
-        assert g.active_path()  # must not recurse forever on the cycle
-
-    def test_longest_path_inactive_edge(self) -> None:
-        g = self._g()
-        g.add_node("d", NodeKind.ACTION)
-        g.add_edge("a", "b")
-        g.add_edge("b", "c")
-        g.add_edge("a", "c")  # shorter sibling -> sub path not longer
-        g.add_edge("a", "d")  # inactive target edge
-        g.activate("a")
-        g.propagate()
-        path = g.active_path()
-        assert path[0] == "a"
-        assert len(path) == 3
-
-    def test_two_roots_longest(self) -> None:
-        g = ReasoningGraph()
-        g.add_node("r1", NodeKind.FINDING)
-        g.add_node("r2", NodeKind.FINDING)
-        g.add_node("x", NodeKind.ACTION)
-        g.add_edge("r2", "x")
-        for n in ("r1", "r2", "x"):
-            g.activate(n)
-        g.propagate()
-        assert len(g.active_path()) >= 2
 
 
 class TestPluginGaps:

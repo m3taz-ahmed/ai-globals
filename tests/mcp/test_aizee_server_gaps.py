@@ -341,6 +341,33 @@ class TestManifestLockWiring:
             srv._verify_manifest_lock()
         assert "drift" in caplog.text.lower()
 
+    def test_schema_change_detected_as_drift(self, tmp_path, caplog, monkeypatch):
+        """Same description + changed input schema must still trip drift."""
+        monkeypatch.delenv("AIZEE_MCP_LOCK", raising=False)
+        import logging
+
+        from runtime.mcp_manifest_lock import ManifestLock
+
+        lock = ManifestLock(lock_dir=tmp_path / "locks")
+        fake_kernel = SimpleNamespace(mcp_manifest_lock=lock)
+        tool_v1 = SimpleNamespace(
+            description="d", parameters={"type": "object", "properties": {"a": {}}}
+        )
+        tool_v2 = SimpleNamespace(
+            description="d",
+            parameters={"type": "object", "properties": {"a": {}, "b": {}}},
+        )
+        tools = {"a": tool_v1}
+        with patch.object(srv, "kernel", return_value=fake_kernel), \
+             patch.object(srv, "_tool_manager", SimpleNamespace(_tools=tools)):
+            srv._verify_manifest_lock()
+        tools["a"] = tool_v2
+        with patch.object(srv, "kernel", return_value=fake_kernel), \
+             patch.object(srv, "_tool_manager", SimpleNamespace(_tools=tools)), \
+             caplog.at_level(logging.WARNING, logger="aizee_mcp.aizee_server"):
+            srv._verify_manifest_lock()
+        assert "drift" in caplog.text.lower()
+
     def test_drift_fatal_when_enforce(self, tmp_path, monkeypatch):
         from runtime.mcp_manifest_lock import ManifestLock
 
@@ -367,3 +394,20 @@ class TestManifestLockWiring:
         with patch.object(srv, "kernel", side_effect=RuntimeError("no kernel")), \
              pytest.raises(SystemExit):
             srv._verify_manifest_lock()
+
+
+class TestAnnotationAndFingerprintEdges:
+    """Cover defensive branches in _annotate_tools + _tool_fingerprint."""
+
+    def test_annotate_tools_non_dict_tools(self, monkeypatch) -> None:
+        monkeypatch.setattr(
+            srv._tool_manager, "_tools", None, raising=False
+        )
+        srv._annotate_tools()  # must not raise
+
+    def test_fingerprint_unserializable_params(self) -> None:
+        circular: dict = {}
+        circular["self"] = circular
+        tool = SimpleNamespace(description="d", parameters=circular)
+        fp = srv._tool_fingerprint(tool)
+        assert fp.startswith("d\x00")

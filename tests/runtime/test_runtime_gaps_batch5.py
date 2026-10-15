@@ -13,13 +13,11 @@ import runtime.defensive_injection as di
 import runtime.guardian as gd
 from runtime.design_library import DesignLibrary
 from runtime.design_slop_verifier import DesignSlopError, DesignSlopVerifier
-from runtime.dual_llm import DualLLMError, DualLLMOrchestrator
 from runtime.durable import DurableExecutor, DurableStep, DurableWorkflow, StepStatus
 from runtime.feature_flags import FeatureFlagger
 from runtime.governance import GovernanceHooks
 from runtime.guardian import Guardian, KillSwitchError, KillSwitchRule
 from runtime.hook_lifecycle import HookContext, HookError, HookPhase, HookRegistry
-from runtime.injection_detector import InjectionVerdict
 
 
 class TestDefensiveInjection:
@@ -274,18 +272,6 @@ class TestHookLifecycle:
         assert any("hook boom" in e for e in ctx.errors)
 
 
-class TestDualLLM:
-    def test_error_init(self):
-        e = DualLLMError("x")
-        assert "x" in str(e)
-
-    def test_suspicious_verdict_path(self):
-        det = SimpleNamespace(
-            detect=lambda text: InjectionVerdict(text, total_score=6),
-        )
-        orch = DualLLMOrchestrator(detector=det)
-        res = orch.process("do the thing", "mildly sus content")
-        assert "suspicious" in res.privileged_response.lower() or res.blocked is False
 
 
 class TestFeatureFlags:

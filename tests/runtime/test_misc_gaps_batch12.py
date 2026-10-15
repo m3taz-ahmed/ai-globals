@@ -1,4 +1,4 @@
-﻿"""Coverage gap tests - batch 12.
+"""Coverage gap tests - batch 12.
 
 Targets: marketing_compliance channels, tool_output_bounder UTF-8 walkback,
 seo_issue_registry sort/count edges, self_healing health paths,
@@ -17,16 +17,10 @@ from typing import Any
 
 import pytest
 
-from runtime.agent_catalog import (
-    AgentCatalog,
-    AgentStatus,
-    CatalogAgent,
-)
 from runtime.blade_template_linter import BladeTemplateLinter
 from runtime.crm_manager import Task, TaskStage
 from runtime.filament_access_auditor import FilamentAccessAuditor
 from runtime.marketing_compliance import check_compliance
-from runtime.mobile_patterns import _iter_files_bounded
 from runtime.schemas import ValidationError
 from runtime.self_healing import HealthMonitor
 from runtime.seo_issue_registry import (
@@ -236,23 +230,6 @@ class TestApprovalService:
         req = ApprovalRequest(id="r", action="a", args={})
         assert svc.notify(req) == ["ok"]
 
-class TestAgentCatalogResiduals:
-    def test_flow_not_registered(self) -> None:
-        cat = AgentCatalog()
-        cat.register_agent(CatalogAgent(
-            agent_id="a1", name="A", status=AgentStatus.ALLOWED,
-            allowed_flows=["f1"],
-        ))
-        # f1 in agent allowlist but not registered -> flow is None -> False
-        assert cat.is_flow_allowed_for_agent("a1", "f1") is False
-
-    def test_model_agent_blocked(self) -> None:
-        cat = AgentCatalog()
-        cat.register_agent(CatalogAgent(
-            agent_id="a1", name="A", status=AgentStatus.BLOCKED,
-            allowed_models=["m1"],
-        ))
-        assert cat.is_model_allowed_for_agent("a1", "m1") is False
 
 class TestMemoryStoreIntegrity:
     def test_external_key_file(
@@ -325,56 +302,4 @@ class TestSupplyChainEdges:
         names = _parse_go_mod("module x\nrequire \n")
         assert names == set()
 
-class TestMobileWalkEdges:
-    def test_entry_symlink_oserror(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        d = tmp_path / "d"
-        d.mkdir()
-        (d / "a.py").write_text("x")
-
-        import os as _os
-
-        class _Entry:
-            def __init__(self, path: str) -> None:
-                self.path = path
-
-            def is_symlink(self) -> bool:
-                raise OSError("flaky")
-
-        class _It:
-            def __enter__(self) -> list[_Entry]:
-                return [_Entry(str(d / "a.py"))]
-
-            def __exit__(self, *a: Any) -> None:
-                return None
-
-        monkeypatch.setattr(_os, "scandir", lambda p: _It())
-        # entry.is_symlink raising OSError -> entry skipped, no crash
-        assert _iter_files_bounded(d) == []
-
-    def test_isdir_oserror(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        d = tmp_path / "d"
-        d.mkdir()
-        target = d / "x.py"
-        target.write_text("x")
-        orig = Path.is_dir
-
-        def flaky(self: Path) -> bool:
-            if self == target:
-                raise OSError("boom")
-            return orig(self)
-
-        monkeypatch.setattr(Path, "is_dir", flaky)
-        assert _iter_files_bounded(d) == []
-
-    def test_non_file_entry_skipped(self, tmp_path: Path) -> None:
-        d = tmp_path / "d"
-        d.mkdir()
-        (d / "sub").mkdir()  # dir entry -> appended to stack, not results
-        (d / "f.py").write_text("x")
-        out = _iter_files_bounded(d)
-        assert [p.name for p in out] == ["f.py"]
 

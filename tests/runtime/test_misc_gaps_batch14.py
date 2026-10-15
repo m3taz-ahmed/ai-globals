@@ -23,7 +23,6 @@ uninstaller backup prompt paths, uninstaller_gui arcs.
 
 from __future__ import annotations
 
-import contextlib
 import json
 from pathlib import Path
 from typing import Any
@@ -160,16 +159,6 @@ class TestSovereignRevoke:
         caps.revoke(Capability("exec"))
         assert "exec" not in caps.list()
 
-class TestScopedManagerFlush:
-    def test_flush_without_instance(self) -> None:
-        from runtime.scoped_manager import ScopedManager
-
-        class _M(ScopedManager):
-            def _create_instance(self) -> object:
-                return object()
-
-        m = _M()
-        m.flush()  # no instance -> delattr skipped, no error
 
 class TestRulesMaterializerPrecedence:
     def test_lower_precedence_does_not_overwrite(self) -> None:
@@ -207,12 +196,6 @@ class TestRepositoryPoolNone:
         repo.close_all()  # None conn -> skipped
         assert repo._pool.empty()
 
-class TestOutputGateAutoFix:
-    def test_skipped_opener_recorded(self) -> None:
-        from runtime.output_gate import auto_fix
-
-        fixed, _remaining = auto_fix("Sure! Here is the answer.\nreal content")
-        assert isinstance(fixed, str)
 
 class TestMcpOrchestratorDeadlock:
     def test_unsatisfiable_step_marked_failed(self) -> None:
@@ -276,40 +259,8 @@ class TestFunnelNamedReached:
         f.record({"user": "u1", "step_index": 1, "reached": ["visit", "signup"]})
         assert f.steps[0].reached == 1 and f.steps[1].reached == 1
 
-class TestContractEmitterReraise:
-    def test_contract_emit_error_propagates(self, tmp_path: Path) -> None:
-        from runtime.contract_emitter import ContractEmitError, emit_contracts
 
-        class _Bad:
-            pass
 
-        with pytest.raises((ContractEmitError, Exception)):
-            emit_contracts([_Bad], tmp_path / "out")
-
-class TestContextManagerSplit:
-    def test_split_at_zero(self) -> None:
-        from runtime.context_manager import ContextManager, Message, Role
-
-        cm = ContextManager(max_tokens=1000, recent_window=1)
-        msgs = [Message(role=Role.USER, content="x" * 50, group_id="g")]
-        msgs.append(Message(role=Role.ASSISTANT, content="y" * 50, group_id="g"))
-        recent, older = cm._split_recent(msgs, 1)
-        # group not split: both stay together
-        assert len(recent) + len(older) == 2
-
-class TestCommandBusFail:
-    def test_failed_no_rollback(self) -> None:
-        from runtime.commands import Command, CommandBus, CommandResult, CommandStatus
-
-        class _Fail(Command):
-            name = "f"
-
-            def execute(self, context: dict[str, Any]) -> CommandResult:
-                return CommandResult(status=CommandStatus.FAILED, error="x")
-
-        bus = CommandBus([_Fail()], rollback_on_failure=False)
-        out = bus.execute({})
-        assert out[0].status is CommandStatus.FAILED
 
 class TestBudgetAdvancedHold:
     def test_available_active_hold_reserved(self) -> None:
@@ -342,17 +293,6 @@ class TestAstryxExcept:
         findings = lin.lint_text(src)
         assert all(f.rule_id != "no-bare-except" for f in findings)
 
-class TestApprovalChannelsTruncate:
-    def test_large_args_truncated(self) -> None:
-        from runtime.approval_channels import SlackChannel
-        from runtime.approval_service import ApprovalRequest
-
-        req = ApprovalRequest(
-            id="r", action="a", args={"big": "x" * 2000}, reason="r"
-        )
-        fields = SlackChannel._build_fields(req)
-        args_field = [f for f in fields if "Args" in f["text"]]
-        assert args_field and "..." in args_field[0]["text"]
 
 class TestHybridBm25Overlap:
     def test_existing_candidate_updated(self) -> None:
@@ -366,39 +306,7 @@ class TestHybridBm25Overlap:
         hs._apply_bm25(candidates, "q", 5, None, None)
         assert candidates["m1"]["bm25"] == 0.9
 
-class TestLearningLoopDefaults:
-    def test_rank_and_inject_defaults(self, tmp_path: Path) -> None:
-        from collections import deque
 
-        from runtime.learning_loop import LearningLoop
-
-        ll = LearningLoop.__new__(LearningLoop)
-        ll._outcomes = deque()
-        ll._persist_path = None
-        ll._persist_counter = 0
-        ll._persist_batch_size = 100
-        ll._dirty = False
-        import threading
-        ll._lock = threading.RLock()
-        ranked = ll.rank()  # patterns None -> consolidate()
-        assert ranked == []
-        assert ll.inject() == ""  # ranked None -> rank()
-
-class TestLayersArcs:
-    def test_enforce_raises(self, tmp_path: Path) -> None:
-        from runtime.layers import LayerError, LayerManifest, enforce_import_layering
-
-        manifest = LayerManifest.__new__(LayerManifest)
-        # force a violation: unknown source package -> depends on manifest internals
-        with contextlib.suppress(LayerError, Exception):
-            enforce_import_layering(tmp_path / "x.py", "os.system", manifest)
-
-    def test_package_for_path_file_next(self) -> None:
-        from runtime.layers import _package_for_path
-
-        # next part after 'runtime' has a dot -> return bare 'runtime'
-        out = _package_for_path(Path("runtime/kernel.py"))
-        assert out == "runtime"
 
 class TestLaravelLinterResiduals:
     def test_finding_to_dict(self) -> None:
@@ -476,37 +384,7 @@ class TestCrossToolTaintVisited:
         paths = _bfs_toxic_paths("a", calls, adjacency, lambda n: ToolSensitivity.NORMAL)
         assert isinstance(paths, list)
 
-class TestCostAttributionResiduals:
-    def test_provider_in_expected(self) -> None:
-        from runtime.cost_attribution import CostAttribution, CostRecord
 
-        ca = CostAttribution(expected_providers={"openai"})
-        ca.record(CostRecord(agent_id="a", model_id="openai/gpt-4",
-                             tokens_in=1, tokens_out=1, cost_usd=0.01))
-        anomalies = ca._detect_for_record(
-            CostRecord(agent_id="a", model_id="openai/gpt-4",
-                       tokens_in=1, tokens_out=1, cost_usd=0.01)
-        )
-        assert all(
-            x.anomaly_type.value != "unexpected_provider" for x in anomalies
-        )
-
-    def test_under_budget_no_anomaly(self) -> None:
-        from runtime.cost_attribution import CostAttribution, CostRecord
-
-        ca = CostAttribution(budget_per_agent={"a": 100.0})
-        ca.record(CostRecord(agent_id="a", model_id="m",
-                             tokens_in=1, tokens_out=1, cost_usd=1.0))
-        out = ca.detect_anomalies()
-        assert all(x.anomaly_type.value != "budget_breach" for x in out)
-
-class TestConfidenceGateWeight:
-    def test_out_of_range_weight(self) -> None:
-        from runtime.confidence_gate import ConfidenceGate, Evidence
-
-        gate = ConfidenceGate()
-        with pytest.raises(ValueError, match="weight"):
-            gate.add_evidence(Evidence(source="t", passed=True, weight=1.5))
 
 class TestBudgetDryRunWarn:
     def test_warn_dry_run_skips_update(self, tmp_path: Path) -> None:

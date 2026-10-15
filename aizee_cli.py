@@ -125,10 +125,11 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_memory(args: argparse.Namespace) -> int:
+    from memory.handoff import scope_root
     from memory.store import MemoryStore
 
     root = _project_root(args)
-    store = MemoryStore(root)
+    store = MemoryStore(scope_root(getattr(args, "scope", "project"), root))
     if args.subcommand == "search":
         table = Table(title="Memory Search")
         table.add_column("Kind", style="cyan")
@@ -169,6 +170,88 @@ def cmd_memory(args: argparse.Namespace) -> int:
             return 1
         m = store.add(args.kind, args.content, source=args.source or "cli", bank=args.bank or "global")
         console.print(f"[green]Added memory:[/green] {m.id} (bank={m.bank})")
+    elif args.subcommand == "handoff":
+        from memory.handoff import write_handoff
+
+        body = args.body
+        if args.body_file:
+            body = Path(args.body_file).read_text(encoding="utf-8")
+        if not args.to_harness or not body.strip():
+            console.print("[red]handoff requires --to-harness and --body/--body-file[/red]")
+            return 1
+        try:
+            hoff = write_handoff(
+                root, args.from_harness, args.to_harness,
+                args.title or "untitled", body, scope=args.scope,
+            )
+        except ValueError as exc:
+            console.print(f"[red]{exc}[/red]")
+            return 1
+        console.print(
+            f"[green]Handoff written:[/green] {hoff['id']} → {hoff['path']} "
+            f"(scope={hoff['scope']}, memory={hoff['memory_id']})"
+        )
+    elif args.subcommand == "handoffs":
+        from memory.handoff import list_handoffs
+
+        rows = list_handoffs(root, scope=args.scope)
+        if not rows:
+            console.print("[yellow]No handoffs found.[/yellow]")
+            return 0
+        table = Table(title=f"Handoffs ({args.scope})")
+        table.add_column("ID", style="cyan")
+        table.add_column("Title")
+        table.add_column("Path", style="dim")
+        for h in rows:
+            table.add_row(h["id"], h["title"], h["path"])
+        console.print(table)
+    elif args.subcommand == "instinct-add":
+        from memory.instincts import add_instinct
+
+        if not args.trigger or not args.action:
+            console.print("[red]instinct-add requires --trigger and --action[/red]")
+            return 2
+        inst = add_instinct(root, args.trigger, args.action, scope=args.scope)
+        console.print(
+            f"[green]Instinct '{inst['id']}' recorded[/green] "
+            f"(scope={inst['scope']}, confidence={inst['confidence']})"
+        )
+    elif args.subcommand == "instinct-reinforce":
+        from memory.instincts import reinforce
+
+        if not args.instinct_id:
+            console.print("[red]instinct-reinforce requires --instinct-id[/red]")
+            return 2
+        try:
+            inst = reinforce(root, args.instinct_id, scope=args.scope)
+        except KeyError as exc:
+            console.print(f"[red]{exc}[/red]")
+            return 1
+        msg = (
+            f"[green]Instinct reinforced[/green] hits={inst['hits']} "
+            f"confidence={inst['confidence']}"
+        )
+        if inst["promoted"]:
+            msg += " [cyan](promoted to user scope)[/cyan]"
+        console.print(msg)
+    elif args.subcommand == "instincts":
+        from memory.instincts import list_instincts
+
+        rows = list_instincts(root, scope=args.scope, min_confidence=args.min_confidence)
+        if not rows:
+            console.print("[yellow]No instincts found.[/yellow]")
+            return 0
+        table = Table(title=f"Instincts ({args.scope})")
+        table.add_column("Confidence", style="cyan")
+        table.add_column("Trigger → Action")
+        table.add_column("Hits", justify="right")
+        for i in rows:
+            table.add_row(
+                str(i.get("confidence", "")),
+                i.get("content", ""),
+                str(i.get("hits", "")),
+            )
+        console.print(table)
     elif args.subcommand == "ingest":
         from memory.ingest import Ingestor
 
@@ -942,7 +1025,123 @@ def cmd_security(args: argparse.Namespace) -> int:
                if report.suppressed else "")
         )
         return 0 if report.ok else 1
+    if args.security_subcommand == "mcp":
+        return _cmd_security_mcp(args)
     return 0
+
+
+_MCP_CONFIG_NAMES = (
+    ".cursor/mcp.json", ".vscode/mcp.json", ".mcp.json",
+    "mcp.json", ".devin/mcp_config.json",
+)
+
+
+def _jsonc_loads(text: str) -> dict[str, Any]:
+    """Parse JSONC: strict JSON plus // and /* */ comments and trailing commas.
+
+    IDE MCP configs (Cursor/VSCode) are commonly JSONC. Single pass with a
+    string-state tracker so ``//`` inside URLs/strings is never mangled.
+    """
+    out: list[str] = []
+    i, n = 0, len(text)
+    in_str = False
+    while i < n:
+        ch = text[i]
+        if in_str:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if ch == '"':
+                in_str = False
+            i += 1
+            continue
+        if ch == '"':
+            in_str = True
+            out.append(ch)
+        elif ch == "/" and i + 1 < n and text[i + 1] == "/":
+            while i < n and text[i] != "\n":
+                i += 1
+            continue
+        elif ch == "/" and i + 1 < n and text[i + 1] == "*":
+            end = text.find("*/", i + 2)
+            i = n if end == -1 else end + 2
+            continue
+        elif ch == ",":
+            j = i + 1
+            while j < n and text[j] in " \t\r\n":
+                j += 1
+            if j < n and text[j] in "}]":
+                i += 1
+                continue
+            out.append(ch)
+        else:
+            out.append(ch)
+        i += 1
+    parsed: Any = json.loads("".join(out))
+    return parsed if isinstance(parsed, dict) else {}
+_MCP_HOME_CONFIGS = (
+    ".cursor/mcp.json", ".claude.json", ".devin/mcp_config.json",
+    ".codeium/windsurf/mcp_config.json",
+)
+
+
+def _mcp_config_files(args: argparse.Namespace) -> list[Path]:
+    """Resolve MCP config files: explicit path, else well-known locations."""
+    if args.path:
+        return [Path(args.path).resolve()]
+    base = _project_root(args)
+    candidates = [*(base / n for n in _MCP_CONFIG_NAMES)]
+    home = Path.home()
+    if home != base:
+        candidates.extend(home / n for n in _MCP_HOME_CONFIGS)
+    return [p for p in candidates if p.is_file()]
+
+
+def _cmd_security_mcp(args: argparse.Namespace) -> int:
+    """Audit MCP server configs via mcp_auditor's 14 detectors + rug-pull baselines."""
+    servers: dict[str, dict[str, Any]] = {}
+    files = _mcp_config_files(args)
+    for cfg_file in files:
+        try:
+            data = _jsonc_loads(cfg_file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            console.print(f"[yellow]skipping unreadable config {cfg_file}: {exc}[/yellow]")
+            continue
+        raw = data.get("mcpServers") or data.get("mcp_servers") or {}
+        if isinstance(raw, dict):
+            for name, cfg in raw.items():
+                if isinstance(cfg, dict):
+                    servers.setdefault(str(name), cfg)
+    if not servers:
+        console.print("[yellow]No mcpServers found in discovered config files.[/yellow]")
+        return 0
+    auditor = _kernel(args).mcp_auditor
+    findings = auditor.scan_config(servers)
+    for name, cfg in servers.items():
+        command = str(cfg.get("command", ""))
+        cargs = [str(a) for a in (cfg.get("args") or [])]
+        findings.extend(auditor.check_rugpull(name, command, cargs, {}))
+        if args.lock:
+            auditor.lock_server(name, command, cargs, {})
+    if args.json:
+        print(json.dumps([f.to_dict() for f in findings], indent=2, ensure_ascii=False))
+    else:
+        colors = {"critical": "red", "high": "red", "medium": "yellow", "low": "dim"}
+        console.print(
+            f"[cyan]Audited[/cyan] {len(servers)} MCP server(s) from {len(files)} config file(s)"
+        )
+        for f in findings:
+            console.print(
+                f"[{colors[f.severity.value]}]{f.severity.value.upper():8}[/{colors[f.severity.value]}] "
+                f"[{f.detector}] {f.server_name}: {f.reason} ({f.path})"
+            )
+        verdict = "red]FAIL" if any(
+            f.severity.value in ("critical", "high") for f in findings
+        ) else "green]PASS"
+        console.print(f"[{verdict}[/] — {len(findings)} finding(s)")
+    return 1 if any(f.severity.value in ("critical", "high") for f in findings) else 0
 
 
 def cmd_hook(args: argparse.Namespace) -> int:
@@ -1435,7 +1634,7 @@ def main(argv: list[str] | None = None) -> int:
     p_query.add_argument("--explain", action="store_true")
 
     p_mem = sub.add_parser("memory", help="Memory commands")
-    p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest", "compact", "banks", "reflect"])
+    p_mem.add_argument("subcommand", choices=["search", "vector", "add", "ingest", "compact", "banks", "reflect", "handoff", "handoffs", "instinct-add", "instinct-reinforce", "instincts"])
     p_mem.add_argument("--query", default="")
     p_mem.add_argument("--bank", default=None, help="Memory bank namespace (default: all/global)")
     p_mem.add_argument("--apply", action="store_true", help="compact: apply (default is dry-run)")
@@ -1445,6 +1644,16 @@ def main(argv: list[str] | None = None) -> int:
     p_mem.add_argument("--source", default="")
     p_mem.add_argument("--limit", type=int, default=10)
     p_mem.add_argument("--watch", action="store_true", help="Auto re-ingest on tech-stack/rules/workflows changes")
+    p_mem.add_argument("--scope", default="project", choices=["project", "user"], help="Vault scope (project=repo brain/, user=~/.aizee)")
+    p_mem.add_argument("--from-harness", default="devin", dest="from_harness", help="handoff: source harness")
+    p_mem.add_argument("--to-harness", default="", dest="to_harness", help="handoff: target harness (required)")
+    p_mem.add_argument("--title", default="", help="handoff: title")
+    p_mem.add_argument("--body", default="", help="handoff: inline markdown body")
+    p_mem.add_argument("--body-file", default="", dest="body_file", help="handoff: read body from file")
+    p_mem.add_argument("--trigger", default="", help="instinct: trigger condition")
+    p_mem.add_argument("--action", default="", help="instinct: action to take")
+    p_mem.add_argument("--instinct-id", default="", dest="instinct_id", help="instinct: id to reinforce")
+    p_mem.add_argument("--min-confidence", type=float, default=0.0, dest="min_confidence", help="instincts: min confidence filter")
 
     p_policy = sub.add_parser("policy", help="Policy commands")
     p_policy.add_argument("subcommand", choices=["test", "lint"])
@@ -1653,6 +1862,10 @@ def main(argv: list[str] | None = None) -> int:
     p_sec_scan.add_argument("--no-tools", action="store_true", help="Built-in rules only (skip external scanners)")
     p_sec_scan.add_argument("--limit", type=int, default=50, help="Max findings shown (default: 50)")
     p_sec_scan.add_argument("--json", action="store_true", help="Machine-readable output")
+    p_sec_mcp = sp_sec.add_parser("mcp", help="Audit MCP server configs (14 detectors + rug-pull baselines)")
+    p_sec_mcp.add_argument("path", nargs="?", default="", help="Config file (default: discover .cursor/.vscode/.mcp.json etc.)")
+    p_sec_mcp.add_argument("--lock", action="store_true", help="Persist rug-pull baselines for discovered servers")
+    p_sec_mcp.add_argument("--json", action="store_true", help="Machine-readable output")
 
     # --- hook ---
     p_hook = sub.add_parser("hook", help="IDE lifecycle hook entry point (reads event JSON on stdin)")

@@ -1,6 +1,107 @@
 # Changelog
 
-## [Unreleased]
+## [6.4.0] - 2026-10-15 (Research Integration Pass — ECC / agent-reach / auth-for-laravel)
+
+External-research integration pass (ECC, agent-reach, auth-for-laravel —
+selective adoption, no wholesale import), on top of the second
+maintenance cycle below.
+
+### Security
+
+- **`security mcp` secret scan deepened:** findings now cover secrets in
+  `args` (flag/value pairs), token-shaped values (`ghp_`, `github_pat_`,
+  `sk-`, `xox[baprs]-`, `AIza`, `pk_live`, …), unpinned `npx`/`uvx`
+  packages, and writable command paths — with redacted values and no
+  duplicate reporting when a flag consumes its value.
+- **Prompt-defense baseline in emitted rules:** `rules_materializer`
+  injects a fixed anti-injection section into every generated harness
+  rules file (identity lock, secret non-disclosure, untrusted external
+  content, unicode/urgency suspicion) — emitted as text, not counted in
+  `rules_emitted`.
+- **`fact_force` guardrail in `AgentGateway`:** catastrophic commands
+  stay unconditionally blocked; recoverable-but-dangerous operations
+  (force-push, hard reset, …) now require explicit `facts` (target +
+  rollback) supplied inline or via metadata.
+
+### Added
+
+- **Memory handoffs (`aizee.handoff.v1`):** `aizee memory handoff
+  --to-harness <h> --body <md>` writes a portable Markdown doc into the
+  scoped vault (`brain/handoffs/`) and indexes it; `handoffs` lists them.
+- **Memory scopes + fail-closed vault guard:** `--scope project|user` on
+  memory commands; the project vault refuses writes unless `brain/` is
+  git-ignored (auto-created/appended; explicit `!brain/` → refuse).
+- **Instincts (`aizee.instinct.v1`):** `instinct-add`/`instinct-reinforce`/
+  `instincts` — atomic trigger→action pairs with confidence 0.3→0.9;
+  observed in ≥2 projects → auto-promotes project→user scope. Built on
+  `MemoryStore.update_meta` (re-signs mutated metadata).
+- **`tech-stack/auth-for-laravel.md`** and
+  **`docs/INSTALL_CONTRACT.md`** (agent-readable `aizee.install.v1`
+  boundaries for install/update/uninstall scripts).
+
+### Maintenance cycle (same release)
+
+Periodic evolution pass — second maintenance cycle (see
+`implementation_plan.md`, 2026-10-15).
+
+### Security
+
+- **Schema-aware MCP manifest lock:** `_verify_manifest_lock` now
+  fingerprints `description + parameters` (input schema) per tool, not the
+  description alone — a rug-pull that silently redefines a tool's
+  parameters now trips drift detection.
+- **`aizee security mcp`:** new subcommand wiring `McpAuditor` (14
+  deterministic detectors) against discovered MCP configs
+  (`.cursor/mcp.json`, `.vscode/mcp.json`, `.mcp.json`, `.devin/…`,
+  `~/.claude.json`, …) — JSONC-tolerant parsing, `--lock` persists
+  rug-pull baselines under `state/mcp_locks/` — the service is now
+  cli-wired instead of lazy-only.
+- **Undeclared-import detection in `security scan`:** `SupplyChainGuard`
+  now runs as a built-in scanner stage over Python/TS/JS/PHP/Go/Rust
+  sources — imports missing from the project's declared dependency
+  manifests surface as A03 supply-chain findings. The same check is
+  available pre-write inside `lint_python` via the new
+  `SupplyChainGuard.scan_source` (advisory findings).
+- **Scanner dedup:** identical (rule, file, line) hits collapse, and
+  bandit/ruff-S flagging the same sink line as each other now report once.
+- **Supply-chain false positives fixed:** `SupplyChainGuard` now uses
+  `sys.stdlib_module_names` (the authoritative 300+ stdlib list instead of
+  a 50-entry subset), recognizes first-party modules (project dirs/`*.py`
+  roots, sibling files, go.mod `module` path, composer psr-4 roots), and
+  maps import→distribution names (`yaml`↔`pyyaml`, `PIL`↔`pillow`, …).
+
+### Added
+
+- **MCP tool annotations:** 31 registered tools now carry
+  `ToolAnnotations` (`readOnlyHint`/`destructiveHint`/`idempotentHint`/
+  `openWorldHint`) via `_annotate_tools()` in `aizee_server.py`, applied
+  post-registration alongside the RBAC guard — IDE clients can
+  auto-approve safe reads.
+
+### Removed
+
+- **22 orphan runtime modules deleted** with ~33 dedicated test files:
+  modules that were exported and tested but had no production call site
+  (kept visible under `ORPHAN_MODULES` since v6.2). Two list entries were
+  mislabeled — `budget_escalation` (imported by `budget.py`) and
+  `service_catalog` (imported by `agent_discovery.py`) stay;
+  `supply_chain_guard`/`mcp_auditor` earned real call sites and stay.
+  Canonical count: 129 → 107 modules; everything is retrievable from git
+  history if ever needed.
+
+### Fixed
+
+- **Version drift:** `dde73b2` claimed a 6.3.0 bump but `pyproject.toml`
+  was left at 6.2.0 — now actually 6.3.0, so `config.VERSION`, MCP
+  `clientInfo`, `aizee version`, and doctor all agree.
+
+### Changed
+
+- **Dependencies refreshed within pins:** mcp 2.3.0, pydantic 2.14.1,
+  cryptography 50.0.2, turbovec 1.1.2, graphifyy 0.9.91, ruff 0.17.1,
+  mypy 2.4.0.
+
+## [6.3.0] - 2026-10-11 (Maintenance Pass — lazy runtime, manifest lock, advisory lint)
 
 Maintenance pass — surgical upgrades from `implementation_plan.md`. All
 changes verified by the full quality gate suite.

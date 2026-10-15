@@ -14,13 +14,6 @@ import pytest
 import runtime.daemon as daemon_mod
 from runtime.daemon import AizeeDaemon
 from runtime.daemon import main as daemon_main
-from runtime.layers import (
-    LayerError,
-    LayerManifest,
-    _package_for_import,
-    _package_for_path,
-    enforce_import_layering,
-)
 from runtime.local_responder import LocalResponder
 from runtime.saga import Saga, SagaOrchestrator, SagaStep
 
@@ -98,25 +91,6 @@ class TestDaemonGaps:
         assert daemon_main(["--root", str(tmp_path)]) == 0
         fake.start.assert_called_once()
 
-class TestLayersGaps:
-    def test_enforce_raises_on_violation(self, tmp_path: Path) -> None:
-        manifest = LayerManifest()
-        src = tmp_path / "low.py"
-        src.write_text("x")
-        with pytest.raises((LayerError, Exception)):
-            enforce_import_layering(src, "runtime.kernel", manifest)
-
-    def test_package_for_import_runtime(self) -> None:
-        assert _package_for_import("runtime.kernel") == "runtime/kernel"
-        assert _package_for_import("plain") == "plain"
-
-    def test_package_for_path_variants(self, tmp_path: Path) -> None:
-        assert _package_for_path(tmp_path / "kernel.py") != ""
-        deep = tmp_path / "runtime" / "managers" / "policy.py"
-        deep.parent.mkdir(parents=True)
-        deep.write_text("x")
-        out = _package_for_path(deep)
-        assert isinstance(out, str) and out
 
 class TestLocalResponderGaps:
     def test_rules_intent_bad_types(self) -> None:

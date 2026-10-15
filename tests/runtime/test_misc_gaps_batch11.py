@@ -1,4 +1,4 @@
-﻿"""Coverage gap tests - batch 11.
+"""Coverage gap tests - batch 11.
 
 Targets: spec/models from_dict validators, skill_routing confidence branches,
 rule_frontmatter matchers, prompt_gate residual branches,
@@ -26,7 +26,6 @@ from runtime.rule_frontmatter import (
     matches_context,
 )
 from runtime.schemas import GateDecision
-from runtime.skill_routing import PersonaDetectorV2
 from runtime.spec.models import Spec
 
 
@@ -54,41 +53,6 @@ class _StubDetector:
     def detect_multiple(self, text: str, max_personas: int = 3) -> dict[str, Any]:
         return self._raw
 
-class TestSkillRoutingDetect:
-    def _detect(self, raw: dict[str, Any]) -> Any:
-        det = PersonaDetectorV2(detector=_StubDetector(raw))  # type: ignore[arg-type]
-        return det.detect("anything")
-
-    def test_ambiguous_when_scores_close(self) -> None:
-        out = self._detect({
-            "persona": "dev", "personas": ["dev"],
-            "scores": {"dev": 0.55, "ops": 0.50},
-        })
-        assert out.ambiguous is True
-        assert "Ambiguous" in out.reason
-
-    def test_single_score_not_ambiguous(self) -> None:
-        out = self._detect({
-            "persona": "dev", "personas": ["dev"],
-            "scores": {"dev": 0.8},
-        })
-        assert out.ambiguous is False
-        assert out.confidence == pytest.approx(0.8)
-        assert "High confidence" in out.reason
-
-    def test_no_scores_zero_confidence(self) -> None:
-        out = self._detect({"persona": "dev", "personas": [], "scores": {}})
-        assert out.confidence == 0.0
-        assert out.ambiguous is False
-        assert "Low confidence" in out.reason
-
-    def test_moderate_confidence_reason(self) -> None:
-        out = self._detect({
-            "persona": "dev", "personas": ["dev"],
-            "scores": {"dev": 0.4, "ops": 0.1},
-        })
-        assert out.ambiguous is False
-        assert "Moderate confidence" in out.reason
 
 class TestRuleFrontmatterMatchers:
     def test_match_personas_non_str_entry_skipped(self) -> None:

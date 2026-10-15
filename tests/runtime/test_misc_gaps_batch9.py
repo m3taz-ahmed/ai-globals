@@ -4,7 +4,6 @@ agent_circuit_breaker, tracing, ci."""
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -18,7 +17,6 @@ from runtime.rule_frontmatter import (
     _match_triggers,
     matches_context,
 )
-from runtime.skill_routing import PersonaDetectorV2
 from runtime.spec.models import Spec
 from runtime.tracing import ConsoleSpanExporter, Span
 
@@ -45,25 +43,6 @@ class TestSpecFromDict:
             Spec.from_dict({"id": "s", "title": "t", "deltas": "x"})
 
 
-class TestSkillRouting:
-    def test_single_score_confidence(self) -> None:
-        det = PersonaDetectorV2()
-        result = det.detect("review my laravel code")
-        assert result.confidence >= 0.0
-
-    def test_empty_scores(self) -> None:
-        det = PersonaDetectorV2(detector=MagicMock())
-        det.detector.detect_multiple.return_value = {"scores": {}, "persona": None}
-        result = det.detect("zzz nothing matches at all qqq")
-        assert result.confidence == 0.0 and result.ambiguous is False
-
-    def test_single_score_branch(self) -> None:
-        det = PersonaDetectorV2(detector=MagicMock())
-        det.detector.detect_multiple.return_value = {
-            "scores": {"DEV": 0.9}, "persona": "DEV",
-        }
-        result = det.detect("x")
-        assert result.confidence == 0.9 and result.ambiguous is False
 
 
 class TestRuleFrontmatter:

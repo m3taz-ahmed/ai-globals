@@ -26,6 +26,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .supply_chain_guard import DependencyEcosystem, SupplyChainGuard
+
 _MAX_FILE_BYTES = 512_000
 _TOOL_TIMEOUT_S = 120
 # Inline suppression markers (bandit-style). `aizee-scan: ignore` suppresses
@@ -48,6 +50,19 @@ _ALLOWLIST = (re.compile(r"AKIAIOSFODNN7EXAMPLE"),)
 _SCAN_EXTS = {
     ".py", ".js", ".jsx", ".ts", ".tsx", ".php", ".env", ".ini",
     ".cfg", ".conf", ".yml", ".yaml", ".json", ".toml", ".sh",
+}
+# Suffixes the supply-chain guard can extract imports from.
+_SCG_SUFFIX_ECO: dict[str, DependencyEcosystem] = {
+    ".py": DependencyEcosystem.PYTHON,
+    ".ts": DependencyEcosystem.NODE,
+    ".tsx": DependencyEcosystem.NODE,
+    ".js": DependencyEcosystem.NODE,
+    ".jsx": DependencyEcosystem.NODE,
+    ".mjs": DependencyEcosystem.NODE,
+    ".cjs": DependencyEcosystem.NODE,
+    ".php": DependencyEcosystem.PHP,
+    ".go": DependencyEcosystem.GO,
+    ".rs": DependencyEcosystem.RUST,
 }
 
 
@@ -211,15 +226,25 @@ class SecurityScanner:
             return report
         report.files_scanned = self._scan_files(root, report)
         self._check_env_files(root, report)
+        self._scan_supply_chain(root, report)
         if use_tools:
             self._run_tools(root, report)
+        # Dedupe: identical (rule, file, line) hits, plus tool scanners
+        # (bandit/ruff) double-flagging the same sink line as each other.
         seen: set[tuple[str, str, int]] = set()
+        seen_line: set[tuple[str, int]] = set()
         uniq: list[ScanFinding] = []
         for f in report.findings:
             key = (f.rule_id, f.file, f.line)
-            if key not in seen:
-                seen.add(key)
-                uniq.append(f)
+            if key in seen:
+                continue
+            seen.add(key)
+            if f.scanner in ("bandit", "ruff"):
+                line_key = (f.file, f.line)
+                if line_key in seen_line:
+                    continue
+                seen_line.add(line_key)
+            uniq.append(f)
         report.findings = uniq
         report.findings.sort(
             key=lambda f: (
@@ -282,6 +307,12 @@ class SecurityScanner:
         start = text.rfind("\n", 0, pos) + 1
         end = text.find("\n", pos)
         line = text[start:end if end != -1 else len(text)]
+        return self._line_suppressed(line, rid, report)
+
+    def _line_suppressed(
+        self, line: str, rid: str, report: ScanReport
+    ) -> bool:
+        """True when the given source line carries a suppression marker."""
         marker = _SUPPRESS_RE.search(line)
         if marker is None:
             return False
@@ -333,6 +364,54 @@ class SecurityScanner:
                     "SEC-ENV-COMMITTED", ScanSeverity.BLOCKER, "A02-misconfig",
                     ".env present in project tree — verify it is gitignored",
                     file=str(env),
+                ))
+
+    def _scan_supply_chain(self, root: Path, report: ScanReport) -> None:
+        """Flag imports of packages missing from declared manifests (A03).
+
+        An ecosystem is only checked when the project declares dependencies
+        for it — no manifest means there is no baseline to be undeclared
+        against. Honors the same ``aizee-scan: ignore`` line markers as the
+        built-in rules.
+        """
+        try:
+            guard = SupplyChainGuard(root)
+            declared = guard.load_declared()
+        except Exception:
+            return
+        active = {eco for eco, names in declared.items() if names}
+        if not active:
+            return
+        for path in sorted(root.rglob("*")):
+            if not path.is_file() or self._skipped(path) or path.name in _SKIP_FILES:
+                continue
+            eco = _SCG_SUFFIX_ECO.get(path.suffix.lower())
+            if eco is None or eco not in active:
+                continue
+            try:
+                findings = guard.check_file(path)
+            except Exception:
+                continue
+            if not findings:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                text = ""
+            if _SUPPRESS_FILE in text[:4096]:
+                report.suppressed += 1
+                continue
+            lines = text.splitlines()
+            for finding in findings:
+                pos_line = finding.line - 1
+                if 0 <= pos_line < len(lines) and self._line_suppressed(
+                    lines[pos_line], "A03-UNDECLARED-IMPORT", report
+                ):
+                    continue
+                report.findings.append(ScanFinding(
+                    "A03-UNDECLARED-IMPORT", ScanSeverity.MEDIUM, "A03-supply-chain",
+                    f"import '{finding.module}' not declared in project manifests",
+                    file=str(path), line=finding.line, scanner="supply-chain",
                 ))
 
     def _run_tools(self, root: Path, report: ScanReport) -> None:

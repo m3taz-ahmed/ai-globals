@@ -25,7 +25,6 @@ from runtime.mcp_auditor import (
 )
 from runtime.mcp_firewall import _eval_node, _safe_eval
 from runtime.mcp_manifest_lock import ManifestLock
-from runtime.mcp_securable import McpSecurableRegistry, McpServer
 from runtime.middleware import (
     ActionContext,
     MiddlewarePipeline,
@@ -162,11 +161,6 @@ class TestManifestLockGaps:
 # ---------------------------------------------------------------------------
 
 
-class TestMcpSecurableGaps:
-    def test_register_server_empty_id_raises(self):
-        reg = McpSecurableRegistry()
-        with pytest.raises(ValueError, match="server_id"):
-            reg.register_server(McpServer("", "n", "ep"))
 
 
 # ---------------------------------------------------------------------------

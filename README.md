@@ -4,8 +4,8 @@
   <p><strong>The policy layer for AI coding.</strong></p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-6.2.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 6.2.0">
-    <img src="https://img.shields.io/badge/Tests-7559%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7559 passed">
+    <img src="https://img.shields.io/badge/Version-6.4.0-6C63FF?style=for-the-badge&logo=buffer&logoColor=white&labelColor=1a1a2e" alt="Version 6.4.0">
+    <img src="https://img.shields.io/badge/Tests-7061%20passed-00C896?style=for-the-badge&logo=pytest&logoColor=white&labelColor=1a1a2e" alt="Tests: 7061 passed">
     <img src="https://img.shields.io/badge/Coverage-100%25-10B981?style=for-the-badge&logo=codecov&logoColor=white&labelColor=1a1a2e" alt="Coverage 100%">
     <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=1a1a2e" alt="License: MIT">
   </p>
@@ -88,6 +88,11 @@ Enforcement moved onto the execution path in v6.0.0:
 - **Code Mode** — `aizee codemode` executes sandboxed Python snippets that call MCP tools directly (AST scan + restricted builtins + governed bridge + timeout).
 - **`aizee bootstrap`** — materialize a minimal OS root after `pip install aizee` (idempotent, dry-run default).
 - **Advisory audits** — `aizee task overcheck` (over-engineering signals from plan + graph), `aizee task curriculum` (staged learning plan from tech-stack refs).
+- **Cross-harness handoffs** — `aizee memory handoff --to-harness <h>` stamps a portable `aizee.handoff.v1` doc into the scoped vault (`brain/handoffs/`, fail-closed gitignore guard) so another agent picks up exactly where this one stopped.
+- **Instincts** — `aizee memory instinct-*` records atomic trigger→action behaviors with confidence 0.3→0.9; observed in ≥2 projects → auto-promotes project→user scope.
+- **MCP supply-chain audit** — `aizee security mcp` scans discovered MCP configs (JSONC-tolerant) for plaintext/token-shaped secrets in `env` *and* `args`, unpinned `npx`/`uvx` packages, writable command paths, and rug-pull drift vs locked baselines.
+- **Fact-forcing guardrail** — recoverable destructive commands (force-push, hard reset) pass only with explicit `{target, rollback}` facts; catastrophic ones stay hard-blocked.
+- **Prompt-defense baseline** — every materialized harness rules file carries a fixed anti-injection section (identity lock, secret non-disclosure, untrusted external content, unicode-trick suspicion).
 
 Full detail: [CHANGELOG.md](CHANGELOG.md)
 
@@ -161,7 +166,7 @@ aizee status    # Current persona, skills, budget
 ├── AGENTS.md                # Cross-tool canonical bootloader
 ├── global-roles.md          # 29 personas + operational rules
 ├── global-workflow.md       # Cognitive loading & execution protocol
-├── runtime/                 # Kernel: policy, budget, audit, 129 governance modules
+├── runtime/                 # Kernel: policy, budget, audit, 107 governance modules
 │   ├── kernel.py            # Facade — Probity → Guardian → Policy → Loop → Budget → Audit
 │   ├── enforcement.py       # Unified firewall+gateway enforcement helper
 │   ├── agent_gateway.py     # Request/response guardrails (ALLOW/REDACT/BLOCK)

@@ -10,13 +10,6 @@ import pytest
 
 import runtime.tech_stack as ts
 from runtime.attribution_model import first_click, last_click, linear, position_based
-from runtime.quality import (
-    Bounder,
-    CostProvider,
-    ReflexionEntry,
-    ReflexionLog,
-    WitnessRecorder,
-)
 from runtime.repository import BaseRepository
 from runtime.schemas import ValidationError
 from runtime.telemetry import TelemetryCollector
@@ -124,31 +117,6 @@ class TestAttributionGaps:
         pb = position_based(tps)
         assert set(pb) == {"x", "y"}
 
-class TestQualityGaps:
-    def test_base_cost_provider(self) -> None:
-        p = CostProvider()
-        assert p.cost_per_token("m", 10, 10) == 0.0
-        assert p.cost_per_call("m", 5) == 0.0
-
-    def test_bounder_list_value(self) -> None:
-        b = Bounder(max_items=2)
-        out = b.bound_dict({"k": [1, 2, 3, 4]})
-        assert len(out["k"]) == 2
-
-    def test_witness_recorder_clear(self) -> None:
-        w = WitnessRecorder()
-        w.clear()
-        assert w.all() == []
-
-    def test_reflexion_entry_dict(self) -> None:
-        e = ReflexionEntry(task="t", outcome="o", reflection="r", lesson="l")
-        assert e.to_dict()["task"] == "t"
-
-    def test_reflexion_log_clear(self) -> None:
-        log = ReflexionLog()
-        log.add("t", "o", "r", "l")
-        log.clear()
-        assert log.all() == []
 
 class TestRepositoryGaps:
     def test_close_all_closes_pooled(self, tmp_path: Path) -> None:

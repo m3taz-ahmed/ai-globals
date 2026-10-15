@@ -1091,6 +1091,31 @@ class MemoryStore(BaseRepository):
     def unpin(self, mem_id: str) -> bool:
         return self.pin(mem_id, pinned=False)
 
+    def update_meta(self, mem_id: str, patch: dict[str, Any]) -> bool:
+        """Merge ``patch`` into a memory's metadata and re-sign the row.
+
+        ``meta`` is covered by ``integrity_sig``, so any mutation must
+        recompute the signature — callers never write ``meta`` directly.
+        Identity keys in ``patch`` are stripped (tenant-scoping guard).
+        Returns False for missing or tombstoned memories.
+        """
+        mem = self.get(mem_id)
+        if mem is None or mem.deleted_at is not None:
+            return False
+        meta = json.loads(mem.meta) if mem.meta else {}
+        meta.update(_strip_identity_keys(patch))
+        meta_json = json.dumps(meta)
+        sig = _sign_memory(
+            mem.content, mem.kind, mem.source, meta_json, mem.created_at,
+            self._integrity_key,
+        )
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE memories SET meta = ?, integrity_sig = ? WHERE id = ?",
+                (meta_json, sig, mem_id),
+            )
+        return True
+
     def list_pinned(self, limit: int = 100) -> list[Memory]:
         with self._conn() as conn:
             rows = conn.execute(

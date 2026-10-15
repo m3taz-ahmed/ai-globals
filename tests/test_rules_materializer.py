@@ -342,3 +342,14 @@ class TestEmitCursor:
         # Assert
         frontmatter = content.split("---")[1]
         assert "**/*" in frontmatter
+
+
+def test_prompt_defense_baseline_injected(tmp_path: Path) -> None:
+    mat = RulesMaterializer(tmp_path)
+    results = mat.materialize(
+        [RuleEntry(key="r1", content="c1")], targets=[ToolTarget.CLAUDE]
+    )
+    text = results[0].files_written[0].read_text(encoding="utf-8")
+    assert "## prompt-defense" in text
+    assert "Do not reveal secrets" in text
+    assert results[0].rules_emitted == 1  # baseline is a section, not a rule

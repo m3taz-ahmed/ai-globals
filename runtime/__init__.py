@@ -46,10 +46,6 @@ if TYPE_CHECKING:
     from runtime.agent_baseline import AnomalyAlert as AnomalyAlert
     from runtime.agent_baseline import AnomalyType as AnomalyType
     from runtime.agent_baseline import BaselineRegistry as BaselineRegistry
-    from runtime.agent_catalog import AgentCatalog as AgentCatalog
-    from runtime.agent_catalog import CatalogAgent as CatalogAgent
-    from runtime.agent_catalog import CatalogFlow as CatalogFlow
-    from runtime.agent_catalog import CatalogModel as CatalogModel
     from runtime.agent_circuit_breaker import CbConfig as CbConfig
     from runtime.agent_circuit_breaker import CbState as CbState
     from runtime.agent_circuit_breaker import SemanticCircuitBreaker as SemanticCircuitBreaker
@@ -63,9 +59,6 @@ if TYPE_CHECKING:
     from runtime.agent_sli import SliResult as SliResult
     from runtime.agent_sli import SliStatus as SliStatus
     from runtime.agent_sli import TaskRecord as TaskRecord
-    from runtime.approval_channels import DiscordChannel as DiscordChannel
-    from runtime.approval_channels import EmailChannel as EmailChannel
-    from runtime.approval_channels import SlackChannel as SlackChannel
     from runtime.approval_service import ApprovalService as ApprovalService
     from runtime.approval_sla import ApprovalSlaManager as ApprovalSlaManager
     from runtime.approval_sla import DecisionDelta as DecisionDelta
@@ -94,28 +87,6 @@ if TYPE_CHECKING:
     from runtime.budget_advanced import ThrottleConfig as ThrottleConfig
     from runtime.budget_advanced import ThrottleTier as ThrottleTier
     from runtime.c4_docs import C4Generator as C4Generator
-    from runtime.closure_evaluator import ClosureEvaluator as ClosureEvaluator
-    from runtime.closure_evaluator import GuardianClosureEvaluator as GuardianClosureEvaluator
-    from runtime.commands import Command as Command
-    from runtime.commands import CommandBus as CommandBus
-    from runtime.commands import CommandResult as CommandResult
-    from runtime.commands import CommandStatus as CommandStatus
-    from runtime.composite_identity import CompositeIdentity as CompositeIdentity
-    from runtime.composite_identity import CompositeIdentityRegistry as CompositeIdentityRegistry
-    from runtime.composite_identity import Principal as Principal
-    from runtime.composite_identity import PrincipalRole as PrincipalRole
-    from runtime.confidence_gate import ConfidenceGate as ConfidenceGate
-    from runtime.confidence_gate import ConfidenceLevel as ConfidenceLevel
-    from runtime.confidence_gate import ConfidenceVerdict as ConfidenceVerdict
-    from runtime.confidence_gate import Evidence as Evidence
-    from runtime.context_manager import ContextManager as ContextManager
-    from runtime.contract_emitter import ContractArtifact as ContractArtifact
-    from runtime.contract_emitter import emit_contract as emit_contract
-    from runtime.contract_emitter import emit_contracts as emit_contracts
-    from runtime.cost_attribution import CostAnomaly as CostAnomaly
-    from runtime.cost_attribution import CostAnomalyType as CostAnomalyType
-    from runtime.cost_attribution import CostAttribution as CostAttribution
-    from runtime.cost_attribution import CostRecord as CostRecord
     from runtime.cross_tool_taint import CrossToolTaintTracker as CrossToolTaintTracker
     from runtime.cross_tool_taint import DataClassification as DataClassification
     from runtime.cross_tool_taint import ToolCall as ToolCall
@@ -139,10 +110,6 @@ if TYPE_CHECKING:
     from runtime.design_slop_verifier import SlopFinding as SlopFinding
     from runtime.design_slop_verifier import SlopSeverity as SlopSeverity
     from runtime.design_slop_verifier import SlopVerdict as SlopVerdict
-    from runtime.dual_llm import DualLLMError as DualLLMError
-    from runtime.dual_llm import DualLLMOrchestrator as DualLLMOrchestrator
-    from runtime.dual_llm import DualLLMResult as DualLLMResult
-    from runtime.dual_llm import LLMRole as LLMRole
     from runtime.durable import DurableExecutor as DurableExecutor
     from runtime.durable import DurableStep as DurableStep
     from runtime.durable import DurableWorkflow as DurableWorkflow
@@ -174,9 +141,6 @@ if TYPE_CHECKING:
     from runtime.laravel_policy_linter import LaravelFinding as LaravelFinding
     from runtime.laravel_policy_linter import LaravelLintSeverity as LaravelLintSeverity
     from runtime.laravel_policy_linter import LaravelPolicyLinter as LaravelPolicyLinter
-    from runtime.layers import Layer as Layer
-    from runtime.layers import LayerManifest as LayerManifest
-    from runtime.learning_loop import LearningLoop as LearningLoop
     from runtime.llm_attestation import AttestationEnvelope as AttestationEnvelope
     from runtime.llm_attestation import AttestationStatement as AttestationStatement
     from runtime.llm_attestation import AttestationType as AttestationType
@@ -189,19 +153,9 @@ if TYPE_CHECKING:
     from runtime.mcp_firewall import McpFirewall as McpFirewall
     from runtime.mcp_manifest_lock import ManifestFingerprint as ManifestFingerprint
     from runtime.mcp_manifest_lock import ManifestLock as ManifestLock
-    from runtime.mcp_securable import Grant as Grant
-    from runtime.mcp_securable import McpPermission as McpPermission
-    from runtime.mcp_securable import McpSecurableRegistry as McpSecurableRegistry
-    from runtime.mcp_securable import McpServer as McpServer
     from runtime.middleware import ActionContext as ActionContext
     from runtime.middleware import MiddlewarePipeline as MiddlewarePipeline
     from runtime.middleware import MiddlewareResult as MiddlewareResult
-    from runtime.mobile_patterns import MobileAuditConfig as MobileAuditConfig
-    from runtime.mobile_patterns import MobilePattern as MobilePattern
-    from runtime.mobile_patterns import MobilePatternAuditor as MobilePatternAuditor
-    from runtime.mobile_patterns import MobilePlatform as MobilePlatform
-    from runtime.mobile_patterns import PatternResult as PatternResult
-    from runtime.mobile_patterns import PatternSeverity as PatternSeverity
     from runtime.model_router import ModelCapability as ModelCapability
     from runtime.model_router import ModelInfo as ModelInfo
     from runtime.model_router import ModelRouter as ModelRouter
@@ -219,24 +173,11 @@ if TYPE_CHECKING:
     from runtime.prompt_injection_detector import DetectionLevel as DetectionLevel
     from runtime.prompt_injection_detector import PromptInjectionDetector as PromptInjectionDetector
     from runtime.prompt_injection_detector import SemanticDetectionResult as SemanticDetectionResult
-    from runtime.quality import Bounder as Bounder
-    from runtime.quality import CostProvider as CostProvider
-    from runtime.quality import FixedRateCostProvider as FixedRateCostProvider
-    from runtime.quality import LazyImport as LazyImport
-    from runtime.quality import OutputEnvelope as OutputEnvelope
-    from runtime.quality import ReflexionEntry as ReflexionEntry
-    from runtime.quality import ReflexionLog as ReflexionLog
-    from runtime.quality import Witness as Witness
-    from runtime.quality import WitnessRecorder as WitnessRecorder
-    from runtime.reasoning_graph import ReasoningGraph as ReasoningGraph
     from runtime.rules_materializer import MaterializationResult as MaterializationResult
     from runtime.rules_materializer import RuleEntry as RuleEntry
     from runtime.rules_materializer import RulesMaterializer as RulesMaterializer
     from runtime.rules_materializer import ScopeLevel as ScopeLevel
     from runtime.rules_materializer import ToolTarget as ToolTarget
-    from runtime.scoped_manager import ScopedManager as ScopedManager
-    from runtime.scoped_manager import ScopedRegistry as ScopedRegistry
-    from runtime.scoped_manager import scoped_factory as scoped_factory
     from runtime.security_scanner import ScanFinding as ScanFinding
     from runtime.security_scanner import ScanReport as ScanReport
     from runtime.security_scanner import ScanSeverity as ScanSeverity
@@ -246,15 +187,6 @@ if TYPE_CHECKING:
     from runtime.skill_lifecycle import SkillLifecycleManager as SkillLifecycleManager
     from runtime.skill_lifecycle import SkillMember as SkillMember
     from runtime.skill_lifecycle import evaluate as evaluate_skill_lifecycle
-    from runtime.skill_routing import PersonaDetectionResult as PersonaDetectionResult
-    from runtime.skill_routing import PersonaDetectorV2 as PersonaDetectorV2
-    from runtime.skill_routing import SkillRouter as SkillRouter
-    from runtime.skill_scanner import Baseline as Baseline
-    from runtime.skill_scanner import Finding as SkillFinding
-    from runtime.skill_scanner import PatternSeverity as ScanPatternSeverity
-    from runtime.skill_scanner import ScanResult as ScanResult
-    from runtime.skill_scanner import ScanRiskLevel as ScanRiskLevel
-    from runtime.skill_scanner import SkillScanner as SkillScanner
     from runtime.skill_validator import SkillReport as SkillReport
     from runtime.skill_validator import validate_skills as validate_skills
     from runtime.stale_api_detector import StaleApiDetector as StaleApiDetector
@@ -279,8 +211,6 @@ if TYPE_CHECKING:
     from runtime.task_contract import classify_prompt as classify_prompt
     from runtime.tool_output_sanitizer import ToolOutputSanitizer as ToolOutputSanitizer
     from runtime.tool_output_sanitizer import ToolSanitizeResult as ToolSanitizeResult
-    from runtime.trajectory import FailureCategory as FailureCategory
-    from runtime.trajectory import TrajectoryTracker as TrajectoryTracker
     from runtime.ui_a11y_checker import A11yChecker as A11yChecker
     from runtime.ui_a11y_checker import A11yFinding as A11yFinding
     from runtime.ui_a11y_checker import A11ySeverity as A11ySeverity
@@ -292,10 +222,6 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("AnomalyAlert", "runtime.agent_baseline", "AnomalyAlert"),
     ("AnomalyType", "runtime.agent_baseline", "AnomalyType"),
     ("BaselineRegistry", "runtime.agent_baseline", "BaselineRegistry"),
-    ("AgentCatalog", "runtime.agent_catalog", "AgentCatalog"),
-    ("CatalogAgent", "runtime.agent_catalog", "CatalogAgent"),
-    ("CatalogFlow", "runtime.agent_catalog", "CatalogFlow"),
-    ("CatalogModel", "runtime.agent_catalog", "CatalogModel"),
     ("CbConfig", "runtime.agent_circuit_breaker", "CbConfig"),
     ("CbState", "runtime.agent_circuit_breaker", "CbState"),
     ("SemanticCircuitBreaker", "runtime.agent_circuit_breaker", "SemanticCircuitBreaker"),
@@ -309,9 +235,6 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("SliResult", "runtime.agent_sli", "SliResult"),
     ("SliStatus", "runtime.agent_sli", "SliStatus"),
     ("TaskRecord", "runtime.agent_sli", "TaskRecord"),
-    ("DiscordChannel", "runtime.approval_channels", "DiscordChannel"),
-    ("EmailChannel", "runtime.approval_channels", "EmailChannel"),
-    ("SlackChannel", "runtime.approval_channels", "SlackChannel"),
     ("ApprovalService", "runtime.approval_service", "ApprovalService"),
     ("ApprovalSlaManager", "runtime.approval_sla", "ApprovalSlaManager"),
     ("DecisionDelta", "runtime.approval_sla", "DecisionDelta"),
@@ -340,28 +263,6 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("ThrottleConfig", "runtime.budget_advanced", "ThrottleConfig"),
     ("ThrottleTier", "runtime.budget_advanced", "ThrottleTier"),
     ("C4Generator", "runtime.c4_docs", "C4Generator"),
-    ("ClosureEvaluator", "runtime.closure_evaluator", "ClosureEvaluator"),
-    ("GuardianClosureEvaluator", "runtime.closure_evaluator", "GuardianClosureEvaluator"),
-    ("Command", "runtime.commands", "Command"),
-    ("CommandBus", "runtime.commands", "CommandBus"),
-    ("CommandResult", "runtime.commands", "CommandResult"),
-    ("CommandStatus", "runtime.commands", "CommandStatus"),
-    ("CompositeIdentity", "runtime.composite_identity", "CompositeIdentity"),
-    ("CompositeIdentityRegistry", "runtime.composite_identity", "CompositeIdentityRegistry"),
-    ("Principal", "runtime.composite_identity", "Principal"),
-    ("PrincipalRole", "runtime.composite_identity", "PrincipalRole"),
-    ("ConfidenceGate", "runtime.confidence_gate", "ConfidenceGate"),
-    ("ConfidenceLevel", "runtime.confidence_gate", "ConfidenceLevel"),
-    ("ConfidenceVerdict", "runtime.confidence_gate", "ConfidenceVerdict"),
-    ("Evidence", "runtime.confidence_gate", "Evidence"),
-    ("ContextManager", "runtime.context_manager", "ContextManager"),
-    ("ContractArtifact", "runtime.contract_emitter", "ContractArtifact"),
-    ("emit_contract", "runtime.contract_emitter", "emit_contract"),
-    ("emit_contracts", "runtime.contract_emitter", "emit_contracts"),
-    ("CostAnomaly", "runtime.cost_attribution", "CostAnomaly"),
-    ("CostAnomalyType", "runtime.cost_attribution", "CostAnomalyType"),
-    ("CostAttribution", "runtime.cost_attribution", "CostAttribution"),
-    ("CostRecord", "runtime.cost_attribution", "CostRecord"),
     ("CrossToolTaintTracker", "runtime.cross_tool_taint", "CrossToolTaintTracker"),
     ("DataClassification", "runtime.cross_tool_taint", "DataClassification"),
     ("ToolCall", "runtime.cross_tool_taint", "ToolCall"),
@@ -385,10 +286,6 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("SlopFinding", "runtime.design_slop_verifier", "SlopFinding"),
     ("SlopSeverity", "runtime.design_slop_verifier", "SlopSeverity"),
     ("SlopVerdict", "runtime.design_slop_verifier", "SlopVerdict"),
-    ("DualLLMError", "runtime.dual_llm", "DualLLMError"),
-    ("DualLLMOrchestrator", "runtime.dual_llm", "DualLLMOrchestrator"),
-    ("DualLLMResult", "runtime.dual_llm", "DualLLMResult"),
-    ("LLMRole", "runtime.dual_llm", "LLMRole"),
     ("DurableExecutor", "runtime.durable", "DurableExecutor"),
     ("DurableStep", "runtime.durable", "DurableStep"),
     ("DurableWorkflow", "runtime.durable", "DurableWorkflow"),
@@ -420,9 +317,6 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("LaravelFinding", "runtime.laravel_policy_linter", "LaravelFinding"),
     ("LaravelLintSeverity", "runtime.laravel_policy_linter", "LaravelLintSeverity"),
     ("LaravelPolicyLinter", "runtime.laravel_policy_linter", "LaravelPolicyLinter"),
-    ("Layer", "runtime.layers", "Layer"),
-    ("LayerManifest", "runtime.layers", "LayerManifest"),
-    ("LearningLoop", "runtime.learning_loop", "LearningLoop"),
     ("AttestationEnvelope", "runtime.llm_attestation", "AttestationEnvelope"),
     ("AttestationStatement", "runtime.llm_attestation", "AttestationStatement"),
     ("AttestationType", "runtime.llm_attestation", "AttestationType"),
@@ -435,19 +329,9 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("McpFirewall", "runtime.mcp_firewall", "McpFirewall"),
     ("ManifestFingerprint", "runtime.mcp_manifest_lock", "ManifestFingerprint"),
     ("ManifestLock", "runtime.mcp_manifest_lock", "ManifestLock"),
-    ("Grant", "runtime.mcp_securable", "Grant"),
-    ("McpPermission", "runtime.mcp_securable", "McpPermission"),
-    ("McpSecurableRegistry", "runtime.mcp_securable", "McpSecurableRegistry"),
-    ("McpServer", "runtime.mcp_securable", "McpServer"),
     ("ActionContext", "runtime.middleware", "ActionContext"),
     ("MiddlewarePipeline", "runtime.middleware", "MiddlewarePipeline"),
     ("MiddlewareResult", "runtime.middleware", "MiddlewareResult"),
-    ("MobileAuditConfig", "runtime.mobile_patterns", "MobileAuditConfig"),
-    ("MobilePattern", "runtime.mobile_patterns", "MobilePattern"),
-    ("MobilePatternAuditor", "runtime.mobile_patterns", "MobilePatternAuditor"),
-    ("MobilePlatform", "runtime.mobile_patterns", "MobilePlatform"),
-    ("PatternResult", "runtime.mobile_patterns", "PatternResult"),
-    ("PatternSeverity", "runtime.mobile_patterns", "PatternSeverity"),
     ("ModelCapability", "runtime.model_router", "ModelCapability"),
     ("ModelInfo", "runtime.model_router", "ModelInfo"),
     ("ModelRouter", "runtime.model_router", "ModelRouter"),
@@ -465,24 +349,11 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("DetectionLevel", "runtime.prompt_injection_detector", "DetectionLevel"),
     ("PromptInjectionDetector", "runtime.prompt_injection_detector", "PromptInjectionDetector"),
     ("SemanticDetectionResult", "runtime.prompt_injection_detector", "SemanticDetectionResult"),
-    ("Bounder", "runtime.quality", "Bounder"),
-    ("CostProvider", "runtime.quality", "CostProvider"),
-    ("FixedRateCostProvider", "runtime.quality", "FixedRateCostProvider"),
-    ("LazyImport", "runtime.quality", "LazyImport"),
-    ("OutputEnvelope", "runtime.quality", "OutputEnvelope"),
-    ("ReflexionEntry", "runtime.quality", "ReflexionEntry"),
-    ("ReflexionLog", "runtime.quality", "ReflexionLog"),
-    ("Witness", "runtime.quality", "Witness"),
-    ("WitnessRecorder", "runtime.quality", "WitnessRecorder"),
-    ("ReasoningGraph", "runtime.reasoning_graph", "ReasoningGraph"),
     ("MaterializationResult", "runtime.rules_materializer", "MaterializationResult"),
     ("RuleEntry", "runtime.rules_materializer", "RuleEntry"),
     ("RulesMaterializer", "runtime.rules_materializer", "RulesMaterializer"),
     ("ScopeLevel", "runtime.rules_materializer", "ScopeLevel"),
     ("ToolTarget", "runtime.rules_materializer", "ToolTarget"),
-    ("ScopedManager", "runtime.scoped_manager", "ScopedManager"),
-    ("ScopedRegistry", "runtime.scoped_manager", "ScopedRegistry"),
-    ("scoped_factory", "runtime.scoped_manager", "scoped_factory"),
     ("ScanFinding", "runtime.security_scanner", "ScanFinding"),
     ("ScanReport", "runtime.security_scanner", "ScanReport"),
     ("ScanSeverity", "runtime.security_scanner", "ScanSeverity"),
@@ -492,15 +363,6 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("SkillLifecycleManager", "runtime.skill_lifecycle", "SkillLifecycleManager"),
     ("SkillMember", "runtime.skill_lifecycle", "SkillMember"),
     ("evaluate_skill_lifecycle", "runtime.skill_lifecycle", "evaluate"),
-    ("PersonaDetectionResult", "runtime.skill_routing", "PersonaDetectionResult"),
-    ("PersonaDetectorV2", "runtime.skill_routing", "PersonaDetectorV2"),
-    ("SkillRouter", "runtime.skill_routing", "SkillRouter"),
-    ("Baseline", "runtime.skill_scanner", "Baseline"),
-    ("SkillFinding", "runtime.skill_scanner", "Finding"),
-    ("ScanPatternSeverity", "runtime.skill_scanner", "PatternSeverity"),
-    ("ScanResult", "runtime.skill_scanner", "ScanResult"),
-    ("ScanRiskLevel", "runtime.skill_scanner", "ScanRiskLevel"),
-    ("SkillScanner", "runtime.skill_scanner", "SkillScanner"),
     ("SkillReport", "runtime.skill_validator", "SkillReport"),
     ("validate_skills", "runtime.skill_validator", "validate_skills"),
     ("StaleApiDetector", "runtime.stale_api_detector", "StaleApiDetector"),
@@ -525,8 +387,6 @@ _LAZY_TABLE: tuple[tuple[str, str, str], ...] = (
     ("classify_prompt", "runtime.task_contract", "classify_prompt"),
     ("ToolOutputSanitizer", "runtime.tool_output_sanitizer", "ToolOutputSanitizer"),
     ("ToolSanitizeResult", "runtime.tool_output_sanitizer", "ToolSanitizeResult"),
-    ("FailureCategory", "runtime.trajectory", "FailureCategory"),
-    ("TrajectoryTracker", "runtime.trajectory", "TrajectoryTracker"),
     ("A11yChecker", "runtime.ui_a11y_checker", "A11yChecker"),
     ("A11yFinding", "runtime.ui_a11y_checker", "A11yFinding"),
     ("A11ySeverity", "runtime.ui_a11y_checker", "A11ySeverity")

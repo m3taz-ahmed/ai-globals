@@ -3,112 +3,12 @@ laravel_policy_linter, ui_a11y_checker."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
-from runtime.contract_emitter import (
-    ContractEmitError,
-    _field_def_to_ts,
-    _py_type_to_ts,
-    emit_contract,
-    emit_contracts,
-    validate_contract,
-)
 from runtime.db_migration_safety import MigrationSafetyChecker
 from runtime.laravel_policy_linter import LaravelPolicyLinter
 from runtime.ui_a11y_checker import A11yChecker
-
-
-class TestContractEmitter:
-    def test_py_type_map(self):
-        assert _py_type_to_ts("str") == "string"
-        assert _py_type_to_ts("int") == "number"
-        assert _py_type_to_ts("bool") == "boolean"
-        assert _py_type_to_ts("list") == "Array<any>"
-        assert _py_type_to_ts("dict") == "Record<string, any>"
-        assert _py_type_to_ts("Any") == "any"
-        assert _py_type_to_ts("None") == "null"
-        assert _py_type_to_ts("Weird") == "any"
-
-    def test_field_def_ref(self):
-        assert _field_def_to_ts({"$ref": "#/$defs/User"}, {}) == "User"
-        assert _field_def_to_ts({"$ref": "#/definitions/"}, {}) == "any"
-
-    def test_field_def_anyof(self):
-        out = _field_def_to_ts(
-            {"anyOf": [{"type": "string"}, {"type": "string"}, {"type": "integer"}]}, {})
-        assert out == "string | number"
-
-    def test_field_def_type_list(self):
-        assert _field_def_to_ts({"type": ["string", "null"]}, {}) == "string | null"
-
-    def test_field_def_empty_anyof(self):
-        assert _field_def_to_ts({"anyOf": [{"$ref": "#/"}, ]}, {}) == "any"
-
-    def test_field_def_no_type(self):
-        assert _field_def_to_ts({}, {}) == "any"
-
-    def test_emit_dataclass(self):
-        @dataclass
-        class Foo:
-            name: str
-            count: int
-        art = emit_contract(Foo)
-        assert art.name == "Foo"
-        assert "name: string" in art.typescript_stub
-        assert "count: number" in art.typescript_stub
-
-    def test_emit_pydantic(self):
-        from pydantic import BaseModel
-
-        class M(BaseModel):
-            x: int
-            y: str | None = None
-        art = emit_contract(M)
-        assert "x: number" in art.typescript_stub
-        assert "y?:" in art.typescript_stub
-
-    def test_emit_non_schema_raises(self):
-        class Bare:
-            pass
-        with pytest.raises(ContractEmitError):
-            emit_contract(Bare)
-
-    def test_emit_custom_name(self):
-        @dataclass
-        class Foo:
-            x: int
-        assert emit_contract(Foo, name="Bar").name == "Bar"
-
-    def test_emit_contracts_writes_files(self, tmp_path):
-        @dataclass
-        class Foo:
-            x: int
-        arts = emit_contracts([Foo], output_dir=tmp_path / "out")
-        assert "Foo" in arts
-        assert (tmp_path / "out" / "Foo.json").exists()
-        assert (tmp_path / "out" / "Foo.d.ts").exists()
-
-    def test_emit_contracts_bad_dir(self, tmp_path):
-        # output_dir points at an existing file → mkdir fails with OSError
-        f = tmp_path / "afile"
-        f.write_text("x")
-        with pytest.raises(ContractEmitError):
-            emit_contracts([], output_dir=f / "sub")
-
-    def test_validate_contract(self):
-        @dataclass
-        class Foo:
-            name: str
-        art = emit_contract(Foo)
-        assert validate_contract(art, {"name": "x"}) == []
-        errs = validate_contract(art, {})
-        assert any("missing required field" in e for e in errs)
-        errs = validate_contract(art, {"name": "x", "extra": 1})
-        assert any("unknown field" in e for e in errs)
 
 
 class TestMigrationSafety:

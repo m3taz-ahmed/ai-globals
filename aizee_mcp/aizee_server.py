@@ -161,6 +161,52 @@ _register_plugins()
 _tool_manager = mcp._tool_manager
 
 
+# MCP tool annotations (readOnlyHint & friends) — lets clients auto-detect
+# pure readers vs state-mutating tools. Applied post-registration via the
+# same private ``_tool_manager`` the RBAC wrapper already relies on.
+_READ_ONLY_TOOLS: frozenset[str] = frozenset({
+    "check_policy", "analyze_budget", "run_guardian_check", "get_metrics",
+    "get_os_status", "list_capabilities", "lint_python",
+    "search_memory", "list_memory_banks", "search_memory_vector",
+    "query_context", "get_related_memories", "build_schema_graph",
+    "get_tech_stack", "search_skills", "get_changelog",
+    "get_active_context", "get_agents",
+    "query_rules", "list_rules", "get_rule", "list_workflows",
+    "get_workflow", "get_rule_resource", "get_workflow_resource",
+    "task_classify", "task_status", "task_scope",
+})
+_IDEMPOTENT_TOOLS: frozenset[str] = frozenset({
+    "task_start", "task_complete", "task_block", "task_finish",
+    "task_abandon", "invalidate_memory",
+})
+_DESTRUCTIVE_TOOLS: frozenset[str] = frozenset({"invalidate_memory"})
+
+
+def _annotate_tools() -> None:
+    """Set MCP ToolAnnotations on registered tools (read-only / idempotent / destructive)."""
+    try:
+        from mcp.types import ToolAnnotations
+    except ImportError:  # pragma: no cover - older SDKs lack annotations
+        return
+    tools = getattr(_tool_manager, "_tools", None)
+    if not isinstance(tools, dict):
+        return
+    for name, tool in tools.items():
+        if name in _READ_ONLY_TOOLS:
+            tool.annotations = ToolAnnotations(
+                read_only_hint=True, open_world_hint=False,
+            )
+        elif name in _DESTRUCTIVE_TOOLS:
+            tool.annotations = ToolAnnotations(
+                read_only_hint=False, destructive_hint=True,
+                idempotent_hint=True, open_world_hint=False,
+            )
+        elif name in _IDEMPOTENT_TOOLS:
+            tool.annotations = ToolAnnotations(
+                read_only_hint=False, idempotent_hint=True,
+            )
+
+
 def _get_tool_fn(name: str) -> Any:
     """Get a registered tool function by name."""
     tool = _tool_manager.get_tool(name)
@@ -292,22 +338,42 @@ def _apply_rbac_guard() -> None:
 
 
 _apply_rbac_guard()
+_annotate_tools()
+
+
+def _tool_fingerprint(tool: Any) -> str:
+    """Fingerprint a tool definition for the manifest lock.
+
+    Covers description AND input schema (``parameters``): hashing only the
+    description leaves a rug-pull hole where a tool's parameters are
+    silently redefined without tripping drift detection. Tools without
+    parameters keep the legacy description-only fingerprint so existing
+    baselines and description-stubbed tests stay stable.
+    """
+    desc = str(getattr(tool, "description", "") or "")
+    params = getattr(tool, "parameters", None)
+    if not params:
+        return desc
+    try:
+        return desc + "\x00" + json.dumps(params, sort_keys=True, default=str)
+    except (TypeError, ValueError):
+        return desc + "\x00" + str(params)
 
 
 def _verify_manifest_lock() -> None:
     """Verify registered tool definitions against the SHA-256 manifest lock.
 
     First run writes the lock (``state/mcp_locks/aizee.json``); subsequent
-    runs re-verify every tool's description hash. Drift means a tool's
-    description changed since the approved baseline - the tool-poisoning
-    (rug-pull) vector. ``AIZEE_MCP_LOCK=enforce`` makes drift or lock
-    failure fatal; the default warns so intentional tool updates only
-    require deleting the stale lock file to re-baseline.
+    runs re-verify every tool's fingerprint (description + input schema).
+    Drift means a tool's definition changed since the approved baseline -
+    the tool-poisoning (rug-pull) vector. ``AIZEE_MCP_LOCK=enforce`` makes
+    drift or lock failure fatal; the default warns so intentional tool
+    updates only require deleting the stale lock file to re-baseline.
     """
     enforce = os.environ.get("AIZEE_MCP_LOCK") == "enforce"
     try:
         tools = {
-            str(name): str(getattr(tool, "description", "") or "")
+            str(name): _tool_fingerprint(tool)
             for name, tool in _tool_manager._tools.items()
         }
         lock_svc = kernel().mcp_manifest_lock

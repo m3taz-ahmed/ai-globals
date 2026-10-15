@@ -110,12 +110,15 @@ class TestTruthfulStatus:
     def test_constructed_only_list(self, tmp_path) -> None:
         listed = set(_kernel(tmp_path).status()["constructed_only_services"])
         assert listed == set(CONSTRUCTED_ONLY_SERVICES)
-        assert "mcp_auditor" in listed
         # Wired services must not be listed as constructed-only.
         assert "audit_signer" not in listed and "policy_linter" not in listed
         assert "mcp_manifest_lock" not in listed
         assert "hallucination_detector" not in listed
         assert "stale_api_detector" not in listed
+        # mcp_auditor gained a real call site (`aizee security mcp`) in v6.3.
+        assert "mcp_auditor" not in listed
+        # supply_chain_guard gained real call sites (security scan, lint_python).
+        assert "supply_chain_guard" not in listed
 
     def test_budget_quarantine_flag_in_status(self, tmp_path) -> None:
         assert _kernel(tmp_path).status()["budget_state_quarantined"] is False

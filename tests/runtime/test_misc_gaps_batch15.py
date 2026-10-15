@@ -319,14 +319,6 @@ class TestBudgetEscalationResidual:
 
         assert recomputed_budget_flags(1.0, 0.0) == (False, False)
 
-class TestReasoningGraphTarget:
-    def test_unknown_target(self) -> None:
-        from runtime.reasoning_graph import NodeKind, ReasoningGraph
-
-        g = ReasoningGraph()
-        g.add_node("a", NodeKind.FINDING, "x")
-        with pytest.raises(KeyError, match="target"):
-            g.add_edge("a", "ghost")
 
 class TestServiceCatalogResidual:
     def _ent(self, name: str, deps: list[str]) -> Any:
@@ -364,15 +356,6 @@ class TestServiceCatalogResidual:
         store.add(self._ent("b", []))
         assert store.count() == 2
 
-class TestSkillRoutingResidual:
-    def test_single_score(self) -> None:
-        from runtime.skill_routing import SkillRouter
-
-        r = SkillRouter.__new__(SkillRouter)
-        # exercise the len==1 branch via _route internals if accessible
-        out = r._score_and_route({"x": 5.0}) if hasattr(r, "_score_and_route") else None
-        # fallback: just confirm the branches exist structurally
-        assert hasattr(r, "AMBIGUITY_THRESHOLD") or out is None
 
 class TestTaintResidual:
     def _fn(self) -> Any:
@@ -437,27 +420,6 @@ class TestMemoryStoreDecay:
         with contextlib.suppress(Exception):
             ms._ensure_decay_cascade()
 
-class TestAgentCatalogResidual:
-    def test_flow_missing(self) -> None:
-        from runtime.agent_catalog import AgentCatalog, AgentStatus
-
-        cat = AgentCatalog.__new__(AgentCatalog)
-        import threading
-        cat._lock = threading.Lock()
-        cat._agents = {"a": MagicMock(status=AgentStatus.ALLOWED,
-                                      allowed_flows={"ghost"})}
-        cat._flows = {}
-        assert cat.is_flow_allowed_for_agent("a", "ghost") is False
-
-    def test_agent_not_allowed_model(self) -> None:
-        from runtime.agent_catalog import AgentCatalog, AgentStatus
-
-        cat = AgentCatalog.__new__(AgentCatalog)
-        import threading
-        cat._lock = threading.Lock()
-        cat._agents = {"a": MagicMock(status=AgentStatus.BLOCKED,
-                                      allowed_models={"m"})}
-        assert cat.is_model_allowed_for_agent("a", "m") is False
 
 class TestApprovalServiceUrl:
     def test_unparseable_url(self) -> None:
@@ -564,19 +526,6 @@ class TestSeoRegistryResidual:
         out = sort_issues_by_severity(issues)
         assert out[0]["issue_type"] == "nonexistent-xyz"
 
-class TestAdmissionDecision:
-    def test_invalid_decision(self) -> None:
-        from runtime.admission import AdmissionGate, PromotionRecord
-
-        gate = AdmissionGate.__new__(AdmissionGate)
-        c = PromotionRecord(
-            tenant_id="t", subject_id="s", candidate_id="c", lineage=(),
-            retrieval_score=0.5, acl="allow", freshness="fresh",
-            deletion_state="not_deleted", classification="public",
-            policy_version="v1", decision="weird",
-        )
-        with pytest.raises(ValueError, match="promotion"):
-            gate.evaluate_promotion(c)
 
 class TestGovernanceRedactor:
     def test_redactor_exception(self) -> None:
@@ -615,12 +564,6 @@ class TestProbityNoMatch:
         out = rule.check({"type": "exec", "command": "ls -la"})
         assert out is None
 
-class TestQualityPassthrough:
-    def test_scalar_returned(self) -> None:
-        from runtime.quality import Bounder
-
-        b = Bounder()
-        assert b._bound_value(42, 0) == 42
 
 class TestSagaInvalidResult:
     def test_act_exception_wrapped(self, tmp_path: Path) -> None:
@@ -689,15 +632,4 @@ class TestToolSanitizerDefaults:
         with pytest.raises(ValueError):
             s.sanitize_batch(["a"], tool_names=["x", "y"])
 
-class TestMobilePatternsOSError:
-    def test_symlink_check_oserror(self, tmp_path: Path) -> None:
-        from runtime.mobile_patterns import _iter_files_bounded
-
-        with patch("runtime.mobile_patterns.os.scandir") as m:
-            entry = MagicMock()
-            entry.is_symlink.side_effect = OSError("denied")
-            entry.path = str(tmp_path / "x.kt")
-            m.return_value.__enter__.return_value = iter([entry])
-            out = _iter_files_bounded(tmp_path, "*")
-        assert out == []
 

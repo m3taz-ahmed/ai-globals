@@ -245,13 +245,6 @@ class TestCrossToolTaintVisited:
         out = _find_path_through_sensitive("S", "", set(), calls, adj)
         assert out is None
 
-class TestConfidenceGateWeight:
-    def test_weight_out_of_range(self) -> None:
-        from runtime.confidence_gate import ConfidenceGate, Evidence
-
-        g = ConfidenceGate(threshold=0.5)
-        with pytest.raises(ValueError):
-            g.add_evidence(Evidence(source="s", passed=True, weight=1.5))
 
 class TestPromptInjectionSuiteResidual:
     def test_detected_but_escalate_not_contained(self) -> None:
@@ -320,47 +313,9 @@ class TestApprovalServiceResidual:
         )
         assert svc.notify(req) == []
 
-class TestLayersResidual:
-    def test_enforce_no_violation(self) -> None:
-        from runtime.layers import enforce_import_layering
 
-        # aizee_cli (CLI, L6) may depend on runtime (RUNTIME, L2)
-        enforce_import_layering(Path("proj/aizee_cli/x.py"), "runtime.kernel")
 
-    def test_package_key_at_path_end(self) -> None:
-        from runtime.layers import _package_for_path
 
-        assert _package_for_path(Path("x/runtime")) == "runtime"
-
-class TestLearningLoopExplicitArgs:
-    def test_rank_and_inject_explicit(self) -> None:
-        from runtime.learning_loop import LearningLoop, Pattern
-
-        ll = LearningLoop.__new__(LearningLoop)
-        p = Pattern(action="a", gate="g", total=3, successes=2, last_seen="t")
-        ranked = ll.rank(patterns=[p])
-        assert ranked == [p]
-        out = ll.inject(ranked=[p])
-        assert "Learned Patterns" in out
-
-class TestContractEmitterReraise:
-    def test_contract_emit_error_reraised(self, tmp_path: Path) -> None:
-        import runtime.contract_emitter as ce
-
-        with patch.object(ce, "emit_contract", side_effect=ce.ContractEmitError("bad")):
-            with pytest.raises(ce.ContractEmitError):
-                ce.emit_contracts([object], output_dir=tmp_path)
-
-class TestCommandsPending:
-    def test_pending_result_continues(self) -> None:
-        from runtime.commands import CommandBus, CommandResult, CommandStatus
-
-        bus = CommandBus()
-        cmd = MagicMock()
-        cmd.execute.return_value = CommandResult(status=CommandStatus.PENDING)
-        bus.add(cmd)
-        results = bus.execute({})
-        assert len(results) == 1
 
 class TestBudgetEscalationConfig:
     def test_explicit_config(self) -> None:
@@ -405,17 +360,6 @@ class TestAuditFallbackBlankLines:
         last = logger._last_hash_nolock()
         assert last != "" and last is not None
 
-class TestApprovalChannelsSmallArgs:
-    def test_args_under_800(self) -> None:
-        from runtime.approval_channels import SlackChannel
-        from runtime.approval_service import ApprovalRequest, ApprovalStatus
-
-        req = ApprovalRequest(
-            id="r", action="a", args={"k": "v"}, reason="r",
-            status=ApprovalStatus.PENDING,
-        )
-        fields = SlackChannel._build_fields(req)
-        assert any("Args" in f.get("text", "") for f in fields)
 
 class TestHybridBm25Miss:
     def test_bm25_row_not_in_candidates(self) -> None:

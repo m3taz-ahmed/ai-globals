@@ -113,6 +113,15 @@ def register_policy_tools(mcp: FastMCP) -> None:
                 {"kind": "stale_api", **f.to_dict()}
                 for f in k.stale_api_detector.detect(code, "python", "<lint>")
             )
+            advisory.extend(
+                {
+                    "kind": "undeclared_import",
+                    "module": f.module,
+                    "line": f.line,
+                    "file": f.file,
+                }
+                for f in k.supply_chain_guard.scan_source(code, "<lint>.py")
+            )
         except Exception as exc:
             _logger.warning("advisory detectors unavailable (degraded): %s", exc)
         return json.dumps(

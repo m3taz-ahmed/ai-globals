@@ -243,6 +243,27 @@ def prompt_injection_guardrail(ctx: GuardrailContext) -> GuardrailResult:
     return GuardrailResult(Verdict.ALLOW, "prompt_injection")
 
 
+# Unconditional block: catastrophic, non-recoverable commands.
+_CATASTROPHIC_PATTERNS = (
+    "rm -rf /", "rm -rf ~", "mkfs", "dd if=/dev/zero",
+    ":(){:|:&};:", "drop database", "truncate table",
+)
+
+# Recoverable-but-dangerous commands: blocked unless the request carries
+# investigation evidence (``facts.targets`` + ``facts.rollback``) — the
+# fact-forcing model: demand concrete facts instead of asking "are you sure?".
+_RECOVERABLE_PATTERNS = (
+    "rm -rf", "git push --force", "git push -f", "git reset --hard",
+    "chmod 777", "chown ", "sudo ", "curl ", "wget ",
+)
+
+_FACT_FORCE_QUESTIONS = (
+    "targets (what exactly will be deleted/changed?)",
+    "rollback (how is this undone if wrong?)",
+    "evidence (what did you inspect — callers, dry-run, diff?)",
+)
+
+
 def destructive_command_guardrail(ctx: GuardrailContext) -> GuardrailResult:
     """Block destructive shell commands in generated code/tool payloads.
 
@@ -255,14 +276,8 @@ def destructive_command_guardrail(ctx: GuardrailContext) -> GuardrailResult:
     code = ctx.generated_code or ""
     payload = ctx.tool_payload or {}
     text = code + " " + str(payload.get("command", ""))
-    destructive = [
-        "rm -rf /", "rm -rf ~", "mkfs", "dd if=/dev/zero",
-        ":(){:|:&};:", "drop database", "truncate table",
-        "git push --force", "git push -f", "git reset --hard",
-        "chmod 777", "chown ", "sudo ", "curl ", "wget ",
-    ]
     lowered = text.lower()
-    hits = [d for d in destructive if d in lowered]
+    hits = [d for d in _CATASTROPHIC_PATTERNS if d in lowered]
     if hits:
         return GuardrailResult(
             Verdict.BLOCK, "destructive_command",
@@ -272,10 +287,41 @@ def destructive_command_guardrail(ctx: GuardrailContext) -> GuardrailResult:
     return GuardrailResult(Verdict.ALLOW, "destructive_command")
 
 
+def fact_force_guardrail(ctx: GuardrailContext) -> GuardrailResult:
+    """Gate recoverable-destructive commands on investigation evidence.
+
+    Facts are read from ``tool_payload["facts"]`` or ``metadata["facts"]``
+    as ``{"targets": [...], "rollback": [...], "evidence": [...]}`` — the act
+    of producing them is the awareness the gate exists to create.
+    """
+    code = ctx.generated_code or ""
+    payload = ctx.tool_payload or {}
+    text = code + " " + str(payload.get("command", ""))
+    lowered = text.lower()
+    cat_hits = [d for d in _CATASTROPHIC_PATTERNS if d in lowered]
+    if cat_hits:
+        return GuardrailResult(Verdict.ALLOW, "fact_force")  # catastrophic gate owns these
+    hits = [d for d in _RECOVERABLE_PATTERNS if d in lowered]
+    if not hits:
+        return GuardrailResult(Verdict.ALLOW, "fact_force")
+    facts = payload.get("facts") or ctx.metadata.get("facts") or {}
+    if isinstance(facts, dict) and facts.get("targets") and facts.get("rollback"):
+        return GuardrailResult(Verdict.ALLOW, "fact_force")
+    return GuardrailResult(
+        Verdict.BLOCK, "fact_force",
+        reason=(
+            f"Recoverable-destructive pattern {hits} requires facts: "
+            + "; ".join(_FACT_FORCE_QUESTIONS)
+        ),
+        severity=ErrorSeverity.HIGH,
+    )
+
+
 _BUILTIN_GUARDRAILS: dict[str, tuple[GuardrailPhase, GuardrailFn]] = {
     "secret_leak": (GuardrailPhase.PRE_LLM, secret_leak_guardrail),
     "prompt_injection": (GuardrailPhase.POST_EXECUTION, prompt_injection_guardrail),
     "destructive_command": (GuardrailPhase.POST_EXECUTION, destructive_command_guardrail),
+    "fact_force": (GuardrailPhase.POST_EXECUTION, fact_force_guardrail),
 }
 
 

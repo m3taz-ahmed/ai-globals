@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aizee"
-version = "6.2.0"
+version = "6.4.0"
 description = "aiZee — sovereign AI engineering control plane"
 readme = "README.md"
 license = {text = "MIT"}

@@ -29,9 +29,6 @@ from runtime.enums import StepType
 from runtime.funnel_tracker import Funnel
 from runtime.llm_attestation import PrivacyMode
 from runtime.mcp_orchestrator import McpOrchestrator, Plan, Step, StepStatus
-from runtime.mobile_patterns import _iter_files_bounded
-from runtime.output_gate import auto_fix
-from runtime.reasoning_graph import NodeKind, ReasoningGraph
 from runtime.rule_compiler import _parse_rules
 from runtime.tracing_otel import record_span
 from runtime.uninstaller import CategoryAction, UninstallCategory, _ask_backup
@@ -84,32 +81,8 @@ class TestRuleCompiler:
         entries = _parse_rules("[KINDX] [NOPE] description here")
         assert entries
 
-class TestReasoningGraph:
-    def test_second_root_not_longer_than_best(self) -> None:
-        g = ReasoningGraph()
-        g.add_node("r1", NodeKind.FINDING)
-        g.add_node("x", NodeKind.ACTION)
-        g.add_node("r2", NodeKind.FINDING)
-        g.add_edge("r1", "x")
-        g.activate("r1")
-        g.activate("x")
-        g.activate("r2")
-        path = g.active_path()
-        # r1->x (len 2) is best; r2 alone (len 1) loses the comparison.
-        assert path == ["r1", "x"]
 
-class TestOutputGate:
-    def test_auto_fix_blank_first_line_no_opener_flag(self) -> None:
-        fixed, issues = auto_fix("\nsome body text")
-        assert "some body text" in fixed
-        assert isinstance(issues, list)
 
-class TestMobilePatterns:
-    def test_iter_files_bounded_real_file(self, tmp_path: Path) -> None:
-        f = tmp_path / "app.dart"
-        f.write_text("void main() {}\n", encoding="utf-8")
-        results = _iter_files_bounded(tmp_path)
-        assert f in results
 
 class _FailAgent:
     async def call_tool(self, tool: str, args: dict) -> SimpleNamespace:

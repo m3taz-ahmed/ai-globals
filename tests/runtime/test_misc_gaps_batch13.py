@@ -1,4 +1,4 @@
-﻿"""Coverage gap tests - batch 13.
+"""Coverage gap tests - batch 13.
 
 Targets: sarif_emitter provenance branches, probity RequireCommand/check,
 hallucination_detector scoped require, governance hooks redactor edges,
@@ -252,33 +252,6 @@ class TestAgentBaselineResiduals:
         assert out is None or out.anomaly_type is not None
 
 
-class TestAdmissionResiduals:
-    def _record(self, **kw: Any) -> Any:
-        from runtime.admission import PromotionRecord
-
-        base = {
-            "tenant_id": "t", "subject_id": "s", "candidate_id": "c",
-            "lineage": (), "retrieval_score": 0.5, "acl": "allow",
-            "freshness": "fresh", "deletion_state": "not_deleted",
-            "classification": "public", "policy_version": "p",
-            "decision": "promote",
-        }
-        base.update(kw)
-        return PromotionRecord(**base)
-
-    def test_invalid_decision_raises(self) -> None:
-        from runtime.admission import AdmissionGate
-
-        gate = AdmissionGate()
-        with pytest.raises(ValueError, match="Invalid promotion"):
-            gate.evaluate_promotion(self._record(decision="weird"))
-
-    def test_reject_rate_skips_admits(self) -> None:
-        from runtime.admission import AdmissionGate
-
-        gate = AdmissionGate()
-        gate._records = [MagicMock(decision="admit", reason_code="x")]
-        assert gate.reject_rate_by_reason() == {}
 
 
 class TestSanitizerBatch:
@@ -385,14 +358,6 @@ class TestSagaInvalidResult:
         assert out["ok"] is False
 
 
-class TestQualityBounderValues:
-    def test_bound_value_list_and_scalar(self) -> None:
-        from runtime.quality import Bounder
-
-        b = Bounder(max_items=2)
-        out = b._bound_value([1, 2, 3], 0)
-        assert isinstance(out, list) and len(out) <= 3
-        assert b._bound_value(42, 0) == 42
 
 
 class TestPricingZeroCapacity:

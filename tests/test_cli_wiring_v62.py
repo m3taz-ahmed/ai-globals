@@ -107,9 +107,10 @@ class TestDoctorWiring:
             main(["--root", str(tmp), "doctor"])
             out = capsys.readouterr().out
             assert "Module wiring" in out
-            # Minimal tmp root has no runtime/*.py — orphans report "absent",
+            # v6.3: all orphans deleted — no "orphan"/"absent" rows remain;
             # no-caller services still report lazy/on-demand.
-            assert "absent" in out and "lazy/on-demand" in out
+            assert "lazy/on-demand" in out
+            assert "orphan" not in out
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
@@ -117,4 +118,7 @@ class TestDoctorWiring:
         repo = Path(__file__).resolve().parent.parent
         main(["--root", str(repo), "doctor"])
         out = capsys.readouterr().out
-        assert "orphan" in out and "trajectory" in out
+        # Orphans were deleted in v6.3 — the wiring table must not
+        # resurrect them; lazy/on-demand services are still reported.
+        assert "orphan" not in out
+        assert "lazy/on-demand" in out

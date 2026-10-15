@@ -482,3 +482,142 @@ def test_manifest_gated_tools_skip_without_files(tmp_path: Path) -> None:
     scanner._npm_audit(tmp_path, report)
     scanner._composer_audit(tmp_path, report)
     assert not report.findings
+
+
+# ---------------------------------------------------------------------------
+# Supply-chain stage (A03-UNDECLARED-IMPORT) — wired via SupplyChainGuard
+# ---------------------------------------------------------------------------
+
+
+def _pyproject(root: Path, deps: str = '"requests"') -> None:
+    _write(root, "pyproject.toml", f'[project]\nname = "x"\ndependencies = [{deps}]\n')
+
+
+def test_supply_chain_flags_undeclared(tmp_path: Path) -> None:
+    _pyproject(tmp_path)
+    _write(tmp_path, "app.py", "import requests\nimport evilpkg\n")
+    report = scan_project(tmp_path, use_tools=False)
+    scg = [f for f in report.findings if f.rule_id == "A03-UNDECLARED-IMPORT"]
+    assert [f.message for f in scg] == [
+        "import 'evilpkg' not declared in project manifests"
+    ]
+    assert scg[0].severity == ScanSeverity.MEDIUM
+
+
+def test_supply_chain_skips_ecosystem_without_manifest(tmp_path: Path) -> None:
+    _write(tmp_path, "app.py", "import totally_undeclared_pkg_xyz\n")
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" not in _rule_ids(report)
+
+
+def test_supply_chain_suppression_marker(tmp_path: Path) -> None:
+    _pyproject(tmp_path)
+    _write(tmp_path, "app.py", "import evilpkg  # aizee-scan: ignore\n")
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" not in _rule_ids(report)
+    assert report.suppressed >= 1
+
+
+def test_supply_chain_scoped_suppression(tmp_path: Path) -> None:
+    _pyproject(tmp_path)
+    _write(
+        tmp_path, "app.py",
+        "import evilpkg  # aizee-scan: ignore SEC-OTHER\n",
+    )
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" in _rule_ids(report)
+
+
+def test_supply_chain_first_party_allowed(tmp_path: Path) -> None:
+    _pyproject(tmp_path)
+    _write(tmp_path, "mypkg/__init__.py", "")
+    _write(tmp_path, "app.py", "import mypkg\nimport requests\n")
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" not in _rule_ids(report)
+
+
+def test_supply_chain_ignore_file_marker(tmp_path: Path) -> None:
+    _pyproject(tmp_path)
+    _write(
+        tmp_path, "app.py",
+        "# aizee-scan: ignore-file\nimport evilpkg\n",
+    )
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" not in _rule_ids(report)
+
+
+def test_supply_chain_load_declared_failure(tmp_path: Path, monkeypatch) -> None:
+    _pyproject(tmp_path)
+    _write(tmp_path, "app.py", "import evilpkg\n")
+    import runtime.supply_chain_guard as scg
+
+    monkeypatch.setattr(
+        scg.SupplyChainGuard, "load_declared",
+        lambda self: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" not in _rule_ids(report)
+
+
+def test_supply_chain_check_file_failure(tmp_path: Path, monkeypatch) -> None:
+    _pyproject(tmp_path)
+    _write(tmp_path, "app.py", "import evilpkg\n")
+    import runtime.supply_chain_guard as scg
+
+    monkeypatch.setattr(
+        scg.SupplyChainGuard, "check_file",
+        lambda self, p: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" not in _rule_ids(report)
+
+
+def test_supply_chain_text_read_oserror(tmp_path: Path, monkeypatch) -> None:
+    _pyproject(tmp_path)
+    _write(tmp_path, "app.py", "import evilpkg\n")
+    import runtime.supply_chain_guard as scg
+    from runtime.supply_chain_guard import DependencyEcosystem, UndeclaredImport
+
+    monkeypatch.setattr(
+        scg.SupplyChainGuard, "check_file",
+        lambda self, p: [UndeclaredImport("evilpkg", str(p), DependencyEcosystem.PYTHON, 1)],
+    )
+    real = Path.read_text
+    target = tmp_path / "app.py"
+
+    def boom(self: Path, *a, **k):
+        if self == target:
+            raise OSError("denied")
+        return real(self, *a, **k)
+
+    monkeypatch.setattr(Path, "read_text", boom)
+    report = scan_project(tmp_path, use_tools=False)
+    assert "A03-UNDECLARED-IMPORT" in _rule_ids(report)
+
+
+def test_tool_scanners_same_line_dedupe(tmp_path: Path, monkeypatch) -> None:
+    """bandit + ruff flagging the same sink line collapse to one finding."""
+    _write(tmp_path, "app.py", "eval(x)\n")
+    scanner = SecurityScanner()
+    from runtime.security_scanner import ScanFinding, ScanSeverity
+
+    def fake_tools(root: Path, report) -> None:
+        report.findings.append(ScanFinding(
+            "B307", ScanSeverity.MEDIUM, "A03", "bandit eval",
+            file="app.py", line=1, scanner="bandit",
+        ))
+        report.findings.append(ScanFinding(
+            "S307", ScanSeverity.MEDIUM, "A03", "ruff eval",
+            file="app.py", line=1, scanner="ruff",
+        ))
+        report.findings.append(ScanFinding(
+            "S307", ScanSeverity.MEDIUM, "A03", "ruff other line",
+            file="app.py", line=2, scanner="ruff",
+        ))
+
+    monkeypatch.setattr(scanner, "_run_tools", fake_tools)
+    report = scanner.scan(tmp_path, use_tools=True)
+    tool_hits = [f for f in report.findings if f.scanner in ("bandit", "ruff")]
+    assert len(tool_hits) == 2
+    assert {f.rule_id for f in tool_hits} == {"B307", "S307"}
+    assert all(f.line in (1, 2) for f in tool_hits)

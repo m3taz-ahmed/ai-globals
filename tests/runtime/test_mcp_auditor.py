@@ -110,6 +110,28 @@ class TestConfigDetectors:
             "s": _cfg(command="x", env={"HARMLESS": "AKIAIOSFODNN7EXAMPLE"})})
         assert "PLAINTEXT_SECRET" in _names(f)
 
+    def test_secret_flag_in_args(self):
+        f = McpAuditor().scan_config({
+            "s": _cfg(command="x", args=["--api-key", "github_pat_11ABCDEFGHIJKLMNOP"])})
+        hits = [x for x in f if x.detector == "PLAINTEXT_SECRET"]
+        assert len(hits) == 1  # flag + value collapse into one finding
+        assert hits[0].path == "args[0]"
+        assert "github_pat" not in hits[0].value
+
+    def test_secret_flag_inline_form(self):
+        f = McpAuditor().scan_config({
+            "s": _cfg(command="x", args=["--token=ghp_abcdefghij0123456789"])})
+        assert "PLAINTEXT_SECRET" in _names(f)
+
+    def test_bare_token_arg_flagged(self):
+        f = McpAuditor().scan_config({
+            "s": _cfg(command="x", args=["AIzaSyD4iE2xVSpkLLOXoyq2aynu1PD9KkOBpmo"])})
+        assert "PLAINTEXT_SECRET" in _names(f)
+
+    def test_flag_without_value_not_flagged(self):
+        f = McpAuditor().scan_config({"s": _cfg(command="x", args=["--token"])})
+        assert "PLAINTEXT_SECRET" not in _names(f)
+
     def test_overbroad_root(self):
         f = McpAuditor().scan_config({"s": _cfg(command="fs", args=["/"])})
         assert "OVERBROAD_ROOT" in _names(f)

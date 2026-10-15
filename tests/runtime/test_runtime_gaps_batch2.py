@@ -6,60 +6,10 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
-import runtime.output_gate as og
-from runtime.learning_loop import (
-    HookContext,
-    HookPhase,
-    HookRegistry,
-    LearningLoop,
-    Pattern,
-    _coerce_ok,
-    _parse_ts,
-)
 from runtime.persona import PersonaDetector, _load_skill_description, format_persona_status
 from runtime.plan_diff_validator import PlanDiffValidator, PlanValidationError
 from runtime.spec.engine import SpecEngine, _SpecValidator
 from runtime.spec.models import DeltaType, Spec, SpecDelta, SpecPhase
-
-
-class TestOutputGate:
-    def test_error_count_and_to_dict(self):
-        res = og.check_output("Great question! Here is the fix.\nRun the tests now.")
-        assert res.error_count >= 1
-        d = res.to_dict()
-        assert d["error_count"] == res.error_count
-
-    def test_openers_empty(self):
-        assert og._check_openers([]) == []
-
-    def test_closers_empty(self):
-        assert og._check_closers([]) == []
-
-    def test_recap_pattern(self):
-        issues = og._check_recaps("Fixed the bug\nSo to summarize, we did X")
-        assert any(i.category == "recap" for i in issues)
-
-    def test_first_line_no_action(self):
-        issues = og._check_first_last_line_test(["The results look fine overall", "done"])
-        assert any(i.category == "first-line" for i in issues)
-
-    def test_auto_fix_blank_lines(self):
-        fixed, _ = og.auto_fix("Run the tests.\n\nThen deploy.")
-        assert "\n\n" in fixed
-
-    def test_auto_fix_opener_only_line(self):
-        fixed, _ = og.auto_fix("Great question!\nRun the tests.")
-        assert "great question" not in fixed.lower()
-
-    def test_auto_fix_trailing_blank(self):
-        fixed, _ = og.auto_fix("Run the tests.\n\n")
-        assert fixed.endswith("Run the tests.")
-
-    def test_auto_fix_no_opener(self):
-        fixed, _remaining = og.auto_fix("Run the tests now.\nDone.")
-        assert "Run the tests" in fixed
 
 
 class TestPlanDiffValidator:
@@ -200,79 +150,6 @@ class TestBudgetExceededError:
         assert exc.severity is ErrorSeverity.HIGH
 
 
-class TestLearningLoop:
-    def test_parse_ts_invalid(self):
-        from datetime import datetime, timezone
-
-        assert _parse_ts("garbage") == datetime.fromtimestamp(0, tz=timezone.utc)
-
-    def test_coerce_ok_str(self):
-        assert _coerce_ok("false") is False
-        assert _coerce_ok("true") is True
-
-    def test_pattern_to_dict(self):
-        d = Pattern(action="a", gate="g", total=2, successes=1).to_dict()
-        assert d["action"] == "a" and d["total"] == 2
-
-    def test_bind_hooks_error_no_errors(self):
-        reg = HookRegistry()
-        loop = LearningLoop()
-        loop.bind_to_hooks(reg)
-        ctx = HookContext(action="act")
-        for fn in reg._hooks.get(HookPhase.ON_ERROR, []):
-            fn(ctx)
-        assert loop.outcome_count == 0
-
-    def test_bind_hooks_error_with_errors(self):
-        reg = HookRegistry()
-        loop = LearningLoop()
-        loop.bind_to_hooks(reg)
-        ctx = HookContext(action="act", errors=["boom"])
-        for fn in reg._hooks.get(HookPhase.ON_ERROR, []):
-            fn(ctx)
-        assert loop.outcome_count == 1
-
-    def test_record_non_dict_result(self):
-        loop = LearningLoop()
-        with pytest.raises(TypeError):
-            loop.record("act", result=[1, 2])  # type: ignore[arg-type]
-
-    def test_persist_batch(self, tmp_path: Path):
-        p = tmp_path / "out.json"
-        loop = LearningLoop(persist_path=p)
-        loop._persist_batch_size = 3
-        for i in range(3):
-            loop.record(f"a{i}")
-        assert p.exists()
-
-    def test_rank_none(self):
-        loop = LearningLoop()
-        loop.record("a", success=True)
-        ranked = loop.rank()
-        assert ranked and ranked[0].action == "a"
-
-    def test_inject_none(self):
-        loop = LearningLoop()
-        loop.record("a", success=True)
-        loop.record("a", success=True)
-        out = loop.inject()
-        assert "Learned Patterns" in out
-
-    def test_flush_not_dirty(self):
-        LearningLoop().flush()
-
-    def test_persist_oserror(self, tmp_path: Path):
-        p = tmp_path / "o.json"
-        loop = LearningLoop(persist_path=p)
-        loop.record("a")
-        with patch.object(Path, "write_text", side_effect=OSError("disk full")):
-            loop.flush()
-
-    def test_load_corrupt(self, tmp_path: Path):
-        p = tmp_path / "bad.json"
-        p.write_text("{not json", encoding="utf-8")
-        loop = LearningLoop(persist_path=p)
-        assert loop.outcome_count == 0
 
 
 class TestSpecEngine:

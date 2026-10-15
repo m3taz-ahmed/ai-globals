@@ -11,7 +11,7 @@ Detectors
 2.  REMOTE_SCRIPT         — curl|wget piped to shell, raw URL as command
 3.  WRITABLE_PATH         — command under group/other-writable path
 4.  NON_HTTPS_URL         — HTTP URL not on loopback
-5.  PLAINTEXT_SECRET      — API key/token in env block (redacted)
+5.  PLAINTEXT_SECRET      — API key/token in env block or CLI args (redacted)
 6.  OVERBROAD_ROOT        — filesystem server rooted at /, ~, or home
 7.  CREDENTIAL_DIR        — path includes .ssh/.aws/.config/etc.
 8.  APPROVAL_BYPASS       — flags that skip approval/sandbox
@@ -116,12 +116,22 @@ _SECRET_KEY_PATTERNS = re.compile(
 )
 _SECRET_VALUE_PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
-    re.compile(r"sk-[a-zA-Z0-9]{20,}"),
-    re.compile(r"ghp_[a-zA-Z0-9]{36}"),
+    re.compile(r"sk-[a-zA-Z0-9_-]{16,}"),
+    re.compile(r"ghp_[a-zA-Z0-9]{16,}"),
+    re.compile(r"github_pat_[a-zA-Z0-9_]{16,}"),
+    re.compile(r"gh[oprs]_[a-zA-Z0-9]{16,}"),
     re.compile(r"-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----"),
     re.compile(r"xox[baprs]-[a-zA-Z0-9-]{10,}"),
+    re.compile(r"AIza[a-zA-Z0-9_-]{16,}"),
+    re.compile(r"(?:pk|sk|rk)_(?:live|test)_[a-zA-Z0-9]{12,}", re.IGNORECASE),
     re.compile(r"[a-zA-Z0-9_\-]{32,}"),
 ]
+# CLI flags whose following value is a secret (``--api-key sk-...``).
+_SECRET_FLAG = re.compile(
+    r"^--?(?:api[-_]?key|apikey|token|secret|password|passwd|credential|"
+    r"access[-_]?key|private[-_]?key|auth[-_]?token)$",
+    re.IGNORECASE,
+)
 
 # Overbroad filesystem root
 _OVERBROAD_ROOTS = {"/", "~", "$HOME", "${HOME}", "%USERPROFILE%", "C:\\", "C:/"}
@@ -308,6 +318,38 @@ def _det_plaintext_secret(server: str, env: dict[str, Any]) -> list[Finding]:
     return findings
 
 
+def _det_secret_args(server: str, args: list[str]) -> list[Finding]:
+    """Detect secrets passed as CLI flags (``--token <value>``) or bare tokens."""
+    findings: list[Finding] = []
+    consumed: set[int] = set()
+    for i, arg in enumerate(args):
+        if i in consumed:
+            continue
+        flag, _, inline = arg.partition("=")
+        if _SECRET_FLAG.match(flag):
+            val = inline or (args[i + 1] if i + 1 < len(args) else "")
+            if val:
+                if not inline:
+                    consumed.add(i + 1)
+                findings.append(Finding(
+                    detector="PLAINTEXT_SECRET", severity=FindingSeverity.HIGH,
+                    server_name=server, path=f"args[{i}]", value=_redact(val),
+                    reason=f"Secret passed inline via flag '{flag}'.",
+                    fix="Move secrets to a secrets manager or OS keyring.",
+                ))
+            continue
+        for pat in _SECRET_VALUE_PATTERNS[:9]:
+            if pat.fullmatch(arg):
+                findings.append(Finding(
+                    detector="PLAINTEXT_SECRET", severity=FindingSeverity.HIGH,
+                    server_name=server, path=f"args[{i}]", value=_redact(arg),
+                    reason="CLI argument matches a recognized secret pattern.",
+                    fix="Move secrets to a secrets manager or OS keyring.",
+                ))
+                break
+    return findings
+
+
 def _det_overbroad_root(server: str, cmd: str, args: list[str]) -> list[Finding]:
     """Detect filesystem server rooted at overbroad path."""
     findings: list[Finding] = []
@@ -374,6 +416,7 @@ def _scan_server_config(server: str, cfg: dict[str, Any]) -> list[Finding]:
     findings.extend(_det_writable_path(server, cmd))
     findings.extend(_det_non_https_url(server, cmd, args))
     findings.extend(_det_plaintext_secret(server, env))
+    findings.extend(_det_secret_args(server, args))
     findings.extend(_det_overbroad_root(server, cmd, args))
     findings.extend(_det_credential_dir(server, cmd, args))
     findings.extend(_det_approval_bypass(server, cmd, args))
