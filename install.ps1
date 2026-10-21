@@ -6,6 +6,7 @@
 # Usage:
 #   .\install.ps1                    # Full install/update (auto-detect root)
 #   .\install.ps1 -WhatIf            # Dry-run: show what would happen
+#   .\install.ps1 -PlanJson          # Dry-run: emit the execution plan as JSON and exit
 #   .\install.ps1 -Update            # Update-only: skip file copy, run migrations + deps
 #   .\install.ps1 -InstallDir PATH   # Force a specific install target (copy mode)
 #   .\install.ps1 -SkipPip           # Skip pip install
@@ -14,6 +15,7 @@
 #   .\install.ps1 -Gui              # Launch WPF GUI installer
 param(
     [switch]$WhatIf,
+    [switch]$PlanJson,
     [switch]$SkipPip,
     [switch]$SkipGraphify,
     [switch]$SkipMCP,
@@ -37,6 +39,9 @@ if ($Gui) {
 }
 
 $ErrorActionPreference = "Stop"
+
+# -PlanJson implies dry-run: every mutation below is guarded by $WhatIf.
+if ($PlanJson) { $WhatIf = $true }
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -404,6 +409,53 @@ if ($InstalledVersion) {
 # If -Update and already at target version, exit early
 if ($Update -and $InstalledVersion -and (Compare-Version $InstalledVersion $TargetVersion) -eq 0) {
     Write-Ok "Already at $TargetVersion - no update needed"
+    exit 0
+}
+
+# ---------------------------------------------------------------------------
+# 1b. Structured plan (REA-style --dry-run --json contract)
+# Emitted before ANY filesystem mutation: paths, backups, changes, post-steps.
+# ---------------------------------------------------------------------------
+
+if ($PlanJson) {
+    $planMode = if ($CopyMode) { "copy" } elseif ($Update) { "update" } else { "in-place" }
+    $planChanges = @()
+    if ($CopyMode) {
+        $planChanges += "copy repo contents -> $Root (preserving state/, brain/, .env)"
+    } else {
+        $planChanges += "in-place install at $Root (no file copy)"
+    }
+    $planStale = @()
+    $staleList = Join-Path $Repo "scripts\stale_files.txt"
+    if (Test-Path $staleList) {
+        foreach ($line in Get-Content $staleList) {
+            $rel = $line.Trim()
+            if ($rel -eq "" -or $rel.StartsWith("#")) { continue }
+            if (Test-Path (Join-Path $Root ($rel -replace '/', '\'))) { $planStale += $rel }
+        }
+    }
+    $planBackupDir = Join-Path $Root "state\.backups"
+    $planBackups = @()
+    if ($CopyMode -and (Test-Path (Join-Path $Root "state"))) { $planBackups += "state -> $planBackupDir\state-<timestamp>" }
+    if ($CopyMode -and (Test-Path (Join-Path $Root "brain"))) { $planBackups += "brain -> $planBackupDir\brain-<timestamp>" }
+    $planSteps = @("python scripts\migrate.py --root $Root")
+    if (-not $SkipPip) { $planSteps += "pip install -e ." }
+    if (-not $SkipGraphify) { $planSteps += "graphify index" }
+    if (-not $SkipMCP) { $planSteps += "MCP config sync (aizee_mcp/config.json -> clients)" }
+    $planSteps += @("CLI shim refresh", "settings migration", "post-install verification")
+    [ordered]@{
+        action = "install"
+        repo = $Repo
+        root = $Root
+        mode = $planMode
+        installed_version = $InstalledVersion
+        target_version = $TargetVersion
+        requires = [ordered]@{ python = "$pythonVersion"; npx = $hasNpx; uvx = $hasUvx }
+        changes = $planChanges
+        stale_paths_removed = $planStale
+        backups = $planBackups
+        post_steps = $planSteps
+    } | ConvertTo-Json -Depth 6
     exit 0
 }
 

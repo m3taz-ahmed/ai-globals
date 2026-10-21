@@ -198,6 +198,7 @@ class _FakeProc:
         self._poll = poll_code
         self._wait_raises = wait_raises
         self.killed = False
+        self.pid = 4242
 
     def poll(self):
         return self._poll
@@ -264,15 +265,27 @@ class TestPlumbingHelpers:
 
     def test_terminate_kills_running(self) -> None:
         p = _FakeProc()
-        CodeModeExecutor._terminate(p)
+        assert CodeModeExecutor._terminate(p) is True
         assert p.killed
 
-    def test_terminate_swallows_wait_timeout(self) -> None:
+    def test_terminate_retains_ownership_when_reap_fails(self) -> None:
+        """Cleanup failure must not drop ownership: retry kill, report False."""
         p = _FakeProc(wait_raises=True)
-        CodeModeExecutor._terminate(p)
+        assert CodeModeExecutor._terminate(p) is False
         assert p.killed
 
     def test_terminate_done_process(self) -> None:
         p = _FakeProc(poll_code=0)
-        CodeModeExecutor._terminate(p)
+        assert CodeModeExecutor._terminate(p) is True
         assert not p.killed
+
+    def test_execute_reports_cleanup_pending_on_reap_failure(self, tmp_path: Path) -> None:
+        ex = CodeModeExecutor(tmp_path)
+        with patch.object(CodeModeExecutor, "_terminate", return_value=False):
+            r = ex.execute("print(1)")
+        assert r.cleanup_pending is True
+        assert r.to_dict()["cleanup_pending"] is True
+
+    def test_execute_clean_run_has_no_cleanup_pending(self, tmp_path: Path) -> None:
+        r = CodeModeExecutor(tmp_path).execute("print('ok')")
+        assert r.ok and r.cleanup_pending is False

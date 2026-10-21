@@ -11,6 +11,10 @@
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@3.1.0"]
+    },
+    "rea": {
+      "command": "npx",
+      "args": ["-y", "rea-agents@6.7.0", "mcp"]
     }
   },
   "disabledToolModules": [

@@ -5,6 +5,8 @@ plugins:
     enabled: true
   context7:
     enabled: true
+  rea:
+    enabled: true
   upwork:
     enabled: false
     permissions:

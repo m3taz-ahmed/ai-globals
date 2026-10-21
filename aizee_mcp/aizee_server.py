@@ -18,6 +18,7 @@ from typing import Any
 
 from aizee_mcp._compat import FastMCP
 from aizee_mcp.rbac import check_tool_permission
+from aizee_mcp.schema_profile import apply_schema_profile, compact_tool_schema
 from aizee_mcp.tools import (
     register_ads_tools,
     register_analytics_tools,
@@ -405,6 +406,12 @@ def _verify_manifest_lock() -> None:
 _verify_manifest_lock()
 
 
+# Input-schema profile (aizee_mcp/schema_profile.py): AIZEE_MCP_INPUT_SCHEMA_
+# PROFILE=compact strips advertised schemas to their validation-relevant core.
+# Runs AFTER the manifest lock so fingerprints cover the canonical schema.
+apply_schema_profile(_tool_manager)
+
+
 # Guard tools added at runtime (plugins, late registration): patch add_tool
 # so anything registered after import is guarded too. Previously late-added
 # tools silently missed RBAC entirely.
@@ -417,6 +424,7 @@ def _guarded_add_tool(tool: Any, *args: Any, **kwargs: Any) -> Any:
         added = _tool_manager.get_tool(getattr(tool, "name", ""))
         if added is not None:
             _wrap_tool_with_rbac(added)
+            compact_tool_schema(added)
     except Exception as exc:
         logger.warning("RBAC guard failed for late-added tool: %s", exc)
     return result

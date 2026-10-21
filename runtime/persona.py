@@ -96,6 +96,36 @@ _STATUS_PATTERN = re.compile(
 )
 
 
+# -- Arabic normalization ------------------------------------------------------
+# Prompts mix MSA and dialect spellings (ة/ه, ى/ي, alef variants, tatweel,  # noqa: RUF003 - intentional Arabic example
+# diacritics) and attach conjunction prefixes (و ف ب ك ل س + ال). Normalizing
+# both keyword and text, plus a small prefix/suffix allowance, keeps keyword
+# tables small while matching natural forms like "واختبرها" for "اختبار".
+_DIACRITICS_RE = re.compile(r"[ً-ٰٟـ]")
+_ALEF_MAP = str.maketrans("أإآٱ", "اااا")  # noqa: RUF001 - Arabic alef variants are intentional
+_FINAL_MAP = str.maketrans({"ى": "ي", "ة": "ه"})  # noqa: RUF001 - Arabic forms are intentional
+_ARABIC_RE = re.compile(r"[؀-ۿ]")
+_AR_PREFIX = r"(?:(?:[وفبكس]ال)|لل|[وفبكسل]|ال)?"
+_AR_SUFFIX = r"(?:هما|ها|هم|كما|كم|نا|ني|ك|ه)?"  # noqa: RUF001 - Arabic suffixes are intentional
+
+
+def _normalize_arabic(text: str) -> str:
+    """Normalize Arabic orthography for matching (no-op for non-Arabic text)."""
+    if not _ARABIC_RE.search(text):
+        return text
+    text = _DIACRITICS_RE.sub("", text)
+    return text.translate(_ALEF_MAP).translate(_FINAL_MAP)
+
+
+def _keyword_pattern(keyword: str) -> re.Pattern[str]:
+    """Compile the whole-phrase match pattern for a keyword (Arabic-aware)."""
+    norm_kw = _normalize_arabic(keyword)
+    if _ARABIC_RE.search(norm_kw):
+        body = _AR_PREFIX + re.escape(norm_kw) + _AR_SUFFIX
+        return re.compile(r"\b" + body + r"\b", re.IGNORECASE)
+    return re.compile(r"\b" + re.escape(keyword) + r"\b", re.IGNORECASE)
+
+
 def is_persona_status_command(text: str) -> bool:
     """True if *text* is a persona status query command.
 
@@ -264,12 +294,12 @@ class PersonaDetector:
     LORD_SKILLS: ClassVar[dict[str, list[str]]] = _DATA.get("lord_skills", {})
     # Pre-compiled regex cache for keyword matching (compiled once at class load)
     _COMPILED_KEYWORDS: ClassVar[dict[str, re.Pattern[str]]] = {
-        kw.lower(): re.compile(r"\b" + re.escape(kw) + r"\b", re.IGNORECASE)
+        _normalize_arabic(kw).lower(): _keyword_pattern(kw)
         for info in _DATA.get("personas", {}).values()
         if info
         for kw in info.get("keywords", [])
     } | {
-        kw.lower(): re.compile(r"\b" + re.escape(kw) + r"\b", re.IGNORECASE)
+        _normalize_arabic(kw).lower(): _keyword_pattern(kw)
         for kws in _DATA.get("lord_skills", {}).values()
         for kw in kws
     }
@@ -300,12 +330,12 @@ class PersonaDetector:
 
     def _keyword_match(self, text: str, keyword: str) -> bool:
         """Match a keyword as a whole word/phrase to avoid substring false positives."""
-        pat = self._COMPILED_KEYWORDS.get(keyword.lower())
+        norm_text = _normalize_arabic(text)
+        pat = self._COMPILED_KEYWORDS.get(_normalize_arabic(keyword).lower())
         if pat is not None:
-            return bool(pat.search(text))
+            return bool(pat.search(norm_text))
         # Fallback for keywords not in cache (dynamic lord skills)
-        pattern = r"\b" + re.escape(keyword) + r"\b"
-        return bool(re.search(pattern, text, re.IGNORECASE))
+        return bool(_keyword_pattern(keyword).search(norm_text))
 
     def _score_personas(self, text: str) -> dict[str, float]:
         scores: dict[str, float] = {}
@@ -435,6 +465,6 @@ class PersonaDetector:
         return valid
 
 
-def detect_persona(text: str, default: str = "ARCH") -> str:
+def detect_persona(text: str, default: str = PersonaDetector.DEFAULT) -> str:
     """Convenience helper that returns only the persona code."""
     return cast(str, PersonaDetector(default).detect(text)["persona"])

@@ -156,6 +156,46 @@ class TestPersonaDetector:
         assert result["skill"] == "cv-writer"
 
 
+class TestPersonaArabicEngineering:
+    """Regression: Arabic-only prompts scored 0.0 on every engineering persona
+    and always fell back to ARCH. personas.yaml now carries Arabic keywords
+    for the engineering personas."""
+
+    def test_arabic_qa_prompt_not_default(self):
+        d = PersonaDetector()
+        result = d.detect_multiple("اختبر الكود وصلح المشكله في الديتكتور")
+        assert result["persona"] == "QA"
+        assert result["scores"]["QA"] > 0
+
+    def test_arabic_sec_prompt(self):
+        d = PersonaDetector()
+        result = d.detect_multiple("راجع الكود واكتشف الثغرات الامنيه")
+        assert result["persona"] == "SEC"
+        assert result["scores"]["SEC"] > result["scores"]["ARCH"]
+
+    def test_arabic_dev_prompt_scores_nonzero(self):
+        d = PersonaDetector()
+        result = d.detect_multiple("طور الكود واعمل ريفاكتور للمشروع")
+        assert result["persona"] != "ARCH" or result["scores"]["ARCH"] > 0
+        assert any(v > 0 for v in result["scores"].values())
+
+    def test_arabic_data_prompt(self):
+        d = PersonaDetector()
+        result = d.detect("اعمل استعلام على قاعدة البيانات وراجع الجداول")
+        assert result["persona"] == "DATA"
+
+    def test_arabic_still_uses_arch_for_architecture(self):
+        d = PersonaDetector()
+        result = d.detect("صمم معمارية النظام وبنية المكونات")
+        assert result["persona"] == "ARCH"
+
+    def test_helper_respects_yaml_default_not_hardcoded(self):
+        """detect_persona() must default to personas.yaml's default, which is
+        ARCH — but via PersonaDetector.DEFAULT, not a literal string."""
+        assert PersonaDetector.DEFAULT == "ARCH"
+        assert detect_persona("zqxwv unmatchable text") == PersonaDetector.DEFAULT
+
+
 class TestKernelPersonaIntegration:
     def test_detect_persona_method(self, tmp_path: Path):
         k = _kernel(tmp_path)

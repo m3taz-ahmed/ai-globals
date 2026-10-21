@@ -19,6 +19,7 @@ and never touched by git pull.
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
@@ -181,6 +182,61 @@ def _get_changed_files(root: Path, old_head: str, new_head: str) -> list[str]:
     return []
 
 
+def _stale_targets(root: Path) -> list[str]:
+    """stale_files.txt entries that exist at root (i.e. would be removed)."""
+    stale_list = root / "scripts" / "stale_files.txt"
+    if not stale_list.exists():
+        return []
+    targets: list[str] = []
+    for raw in stale_list.read_text(encoding="utf-8").splitlines():
+        rel = raw.strip()
+        if not rel or rel.startswith("#"):
+            continue
+        if (root / rel).exists():
+            targets.append(rel)
+    return targets
+
+
+def _planned_post_steps(root: Path) -> list[str]:
+    """Post-install steps a real update would run, in order."""
+    steps = ["stale-path cleanup", "pip install -e ."]
+    if sys.platform == "win32":
+        steps.append("PATH check (user Scripts)")
+    if (root / "scripts" / "mcp_global_sync.py").exists():
+        steps.append("MCP config sync")
+    if (root / "scripts" / "install_cli_shim.py").exists():
+        steps.append("CLI shim refresh")
+    if (root / "memory" / "store.db").exists():
+        steps.append("memory ingest")
+    if (root / "state" / "settings.json").exists():
+        steps.append("settings migration")
+    steps.append("post-update verification")
+    return steps
+
+
+def _update_plan(root: Path, branch: str, info: dict[str, Any]) -> dict[str, Any]:
+    """Read-only execution plan for the update (REA-style --dry-run contract)."""
+    rc, out, _ = _run(
+        ["git", "diff", "--name-only", "HEAD", f"origin/{branch}"],
+        cwd=root, check=False,
+    )
+    files = [f for f in out.strip().splitlines() if f] if rc == 0 else []
+    return {
+        "action": "update",
+        "root": str(root),
+        "branch": branch,
+        "remote_url": info.get("remote_url", ""),
+        "behind": info["behind"],
+        "commits_behind": info["commits_behind"],
+        "ahead": info["ahead"],
+        "files_changed": files,
+        "would_stash_local_changes": _has_local_changes(root),
+        "stale_paths_removed": _stale_targets(root),
+        "post_install_steps": _planned_post_steps(root),
+        "error": info.get("error"),
+    }
+
+
 def _remove_stale_files(root: Path) -> int:
     """Delete paths listed in scripts/stale_files.txt. Returns count removed.
 
@@ -306,7 +362,7 @@ def _post_install_hooks(root: Path) -> list[str]:
     return actions
 
 
-def run_update(root: Path, assume_yes: bool = False) -> int:
+def run_update(root: Path, assume_yes: bool = False, dry_run: bool = False, as_json: bool = False) -> int:
     """Main update flow. Returns exit code."""
     print("=" * 60)
     print("  aiZee Update - Pull latest from GitHub")
@@ -330,6 +386,20 @@ def run_update(root: Path, assume_yes: bool = False) -> int:
 
     if info["remote_url"]:
         print(f"  Remote:  {info['remote_url']}")
+
+    if dry_run:
+        plan = _update_plan(root, branch, info)
+        if as_json:
+            print(json.dumps(plan, indent=2))
+        else:
+            print("\n  [DRY-RUN] No changes written.")
+            print(f"    behind: {plan['commits_behind']} commit(s), ahead: {plan['ahead']}")
+            print(f"    files_changed: {len(plan['files_changed'])}")
+            print(f"    would_stash_local_changes: {plan['would_stash_local_changes']}")
+            print(f"    stale_paths_removed: {len(plan['stale_paths_removed'])}")
+            for step in plan["post_install_steps"]:
+                print(f"    post-step: {step}")
+        return 0
 
     if not info["behind"]:
         if info["ahead"]:
@@ -554,6 +624,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Skip git pull; run only post-install hooks + verification (used by self-re-execution)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show the planned update (commits, files, stale paths, post-steps) without writing",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the --dry-run plan as JSON",
+    )
     args = parser.parse_args(argv)
 
     # Auto-detect: script is in <root>/scripts/
@@ -567,7 +647,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.post_install_only:
         return _run_post_install_only(root)
 
-    return run_update(root, assume_yes=args.yes)
+    return run_update(root, assume_yes=args.yes, dry_run=args.dry_run, as_json=args.json)
 
 
 if __name__ == "__main__":

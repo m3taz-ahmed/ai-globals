@@ -1,5 +1,60 @@
 # Changelog
 
+## [Unreleased]
+
+REA (morluto/rea, MIT) integration + Arabic persona-detection fix.
+
+### Fixed
+
+- **Arabic persona-detection blind spot:** `runtime/personas.yaml` carried
+  Arabic keywords only for marketing/design/CV/freelance personas — every
+  engineering persona scored 0.0 on Arabic-only prompts and
+  `detect_multiple` always fell back to ARCH. Added Arabic keywords to all
+  engineering personas plus Arabic orthography normalization (alef/taa
+  variants, diacritics, conjunction prefixes) in `runtime/persona.py`.
+- **Dangling `runtime.__all__` exports (70 names):** the skill_routing
+  purge left `PersonaDetectorV2`, `SkillRouter`, and ~68 more names in
+  `__all__` with no backing module — `from runtime import X` raised
+  ImportError while `from runtime import *` exploded. `__all__` now
+  advertises only resolvable names.
+- **`detect_persona()` hardcoded default:** now uses
+  `PersonaDetector.DEFAULT` (personas.yaml) instead of literal `"ARCH"`.
+
+### Added
+
+- **`runtime/evidence.py`:** `EvidenceTier` (observation / derivation /
+  inference / unknown), `Evidence` records, `EvidenceLedger` — provenance
+  model adapted from REA. `ScanFinding.evidence_tier` +
+  `ScanReport.evidence_summary()` wire it into `security scan` output;
+  gitignored-.env downgrades tag DERIVATION, advisory-db findings
+  (pip/npm/composer/trivy) tag DERIVATION, pattern matches stay
+  OBSERVATION.
+- **`AIZEE_MCP_INPUT_SCHEMA_PROFILE=compact`** (`aizee_mcp/schema_profile.py`):
+  strips advertised tool input schemas to their validation-relevant core
+  (no examples/titles/multi-line guidance) for token-budget-constrained
+  clients. `full` remains the default; applied after the manifest lock so
+  fingerprints cover the canonical schema.
+- **`skills/reverse-engineering-lord/`:** reverse-engineering workflow
+  skill adapted from REA's `reverse-engineer-anything` — evidence tiers,
+  provider authority boundaries, source-vs-artifact routing.
+- **`rea` MCP server registration** in `aizee_mcp/config.json` +
+  `plugins.yaml` (`npx -y rea-agents@6.7.0 mcp`) — governed by the same
+  firewall/RBAC/gateway gates as other external MCPs.
+- **Dry-run JSON plans:** `install.ps1 -PlanJson` and
+  `python scripts/update.py --dry-run [--json]` emit exact
+  paths/backups/changes/post-install-steps before any mutation.
+- **`check_runtime_exports` in `validate-globals.py`:** every `__all__`
+  name must resolve through `_LAZY_TABLE` (module file or package must
+  exist) or a `runtime/<name>` submodule — the check that would have
+  caught the 70-name drift.
+
+### Changed
+
+- **Codemode lifecycle invariants:** child-process cleanup now retries
+  `kill()` once and never drops ownership —
+  `CodeModeResult.cleanup_pending` reports an unreaped child instead of
+  silently succeeding.
+
 ## [6.4.0] - 2026-10-15 (Research Integration Pass — ECC / agent-reach / auth-for-laravel)
 
 External-research integration pass (ECC, agent-reach, auth-for-laravel —

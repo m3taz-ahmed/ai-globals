@@ -26,6 +26,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .evidence import EvidenceTier
 from .supply_chain_guard import DependencyEcosystem, SupplyChainGuard
 
 _MAX_FILE_BYTES = 512_000
@@ -86,6 +87,7 @@ class ScanFinding:
     file: str = ""
     line: int = 0
     scanner: str = "builtin"
+    evidence_tier: EvidenceTier = EvidenceTier.OBSERVATION
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -96,6 +98,7 @@ class ScanFinding:
             "file": self.file,
             "line": self.line,
             "scanner": self.scanner,
+            "evidence_tier": self.evidence_tier.value,
         }
 
 
@@ -124,6 +127,13 @@ class ScanReport:
             counts[f.severity.value] += 1
         return counts
 
+    def evidence_summary(self) -> dict[str, int]:
+        """Per-tier counts: how much of the report is measured vs inferred."""
+        counts = {t.value: 0 for t in EvidenceTier}
+        for f in self.findings:
+            counts[f.evidence_tier.value] += 1
+        return counts
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "target": self.target,
@@ -132,6 +142,7 @@ class ScanReport:
             "tools_skipped": self.tools_skipped,
             "suppressed": self.suppressed,
             "summary": self.summary(),
+            "evidence": self.evidence_summary(),
             "ok": self.ok,
             "findings": [f.to_dict() for f in self.findings],
         }
@@ -294,11 +305,14 @@ class SecurityScanner:
                     continue
                 severity = sev
                 note = msg
+                tier = EvidenceTier.OBSERVATION
                 if rid == "SEC-ENVFILE" and self._is_git_ignored(path):
                     severity = ScanSeverity.LOW
                     note = ".env secrets in gitignored file — ensure never committed"
+                    tier = EvidenceTier.DERIVATION
                 report.findings.append(ScanFinding(
                     rid, severity, cat, note, file=rel, line=line,
+                    evidence_tier=tier,
                 ))
 
     def _suppressed(
@@ -462,6 +476,7 @@ class SecurityScanner:
                 file=item.get("filename", ""),
                 line=int(item.get("line_number") or 0),
                 scanner="bandit",
+                evidence_tier=EvidenceTier.OBSERVATION,
             ))
 
     def _ruff_s(self, root: Path, report: ScanReport) -> None:
@@ -483,6 +498,7 @@ class SecurityScanner:
                 file=item.get("filename", ""),
                 line=int(loc.get("row") or 0),
                 scanner="ruff",
+                evidence_tier=EvidenceTier.OBSERVATION,
             ))
 
     def _pip_audit(self, root: Path, report: ScanReport) -> None:
@@ -505,6 +521,7 @@ class SecurityScanner:
                     f"{dep.get('name', '?')} {dep.get('version', '')}: "
                     f"{vuln.get('description', vuln.get('id', ''))[:140]}",
                     scanner="pip-audit",
+                    evidence_tier=EvidenceTier.DERIVATION,
                 ))
 
     def _npm_audit(self, root: Path, report: ScanReport) -> None:
@@ -530,6 +547,7 @@ class SecurityScanner:
                 name, sev, "A03-supply-chain",
                 f"npm vulnerability: {name} ({v.get('severity')})",
                 scanner="npm-audit",
+                evidence_tier=EvidenceTier.DERIVATION,
             ))
 
     def _composer_audit(self, root: Path, report: ScanReport) -> None:
@@ -553,6 +571,7 @@ class SecurityScanner:
                     "A03-supply-chain",
                     f"composer advisory: {item.get('packageName', '?')}",
                     scanner="composer-audit",
+                    evidence_tier=EvidenceTier.DERIVATION,
                 ))
 
     def _trivy(self, root: Path, report: ScanReport) -> None:
@@ -578,6 +597,7 @@ class SecurityScanner:
                     f"{vuln.get('PkgName', '?')}: {vuln.get('Title', '')[:140]}",
                     file=result.get("Target", ""),
                     scanner="trivy",
+                    evidence_tier=EvidenceTier.DERIVATION,
                 ))
 
 

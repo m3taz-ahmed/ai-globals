@@ -20,6 +20,7 @@ personas:
     - llm-evals-lord
     - problem-solving-lord
     - production-readiness-lord
+    - reverse-engineering-lord
     keywords:
     - architecture
     - scalability
@@ -44,6 +45,14 @@ personas:
     - iso 42001
     - laravel ai
     - llm eval
+    - معمارية
+    - معماري
+    - تصميم نظام
+    - بنية النظام
+    - سكيما
+    - نمط تصميم
+    - نظام موزع
+    - منصة
   QA:
     name: Software Tester
     weight: 1.2
@@ -81,6 +90,19 @@ personas:
     - reliability@k
     - multi-rollout
     - security-adjusted
+    - اختبر
+    - تست
+    - تيست
+    - ديبج
+    - خطأ
+    - غلط
+    - مشكلة
+    - عطل
+    - اختبار
+    - اختبارات
+    - اختبار وحدات
+    - افحص الكود
+    - صلح
   UX:
     name: Principal Full-Stack Designer & UX Architect
     weight: 1.1
@@ -182,6 +204,18 @@ personas:
     - content page
     - hero section
     - builder
+    - طور
+    - برمج
+    - اعمل
+    - سوي
+    - ابني
+    - كود
+    - دالة
+    - فانكشن
+    - ميثود
+    - سيرفس
+    - خدمة
+    - نفذ
   SRE:
     name: God-Tier SRE & Cloud Dictator
     weight: 1.2
@@ -232,6 +266,10 @@ personas:
     - backup
     - استضافة
     - سيرفر
+    - خادم
+    - سيرفرات
+    - نشر موقع
+    - تشغيل سيرفر
   SEC:
     name: Hardcore Linux Kernel Master & SecOps Warlord
     weight: 1.3
@@ -248,6 +286,7 @@ personas:
     - post-quantum-lord
     - server-ops-lord
     - production-readiness-lord
+    - reverse-engineering-lord
     keywords:
     - security
     - secure
@@ -280,6 +319,16 @@ personas:
     - ml-dsa
     - ml-kem
     - quantum safe
+    - امن
+    - امان
+    - حماية
+    - ثغرة
+    - ثغرات
+    - اختراق
+    - تشفير
+    - هكر
+    - فحص امني
+    - امن سيبراني
   GAME:
     name: Principal Game Architect & JavaScript Engine Master
     weight: 1.3
@@ -305,6 +354,11 @@ personas:
     - shader
     - physics engine
     - collision
+    - لعبة
+    - العاب
+    - جيمنج
+    - تطوير لعبة
+    - محرك العاب
   PLAY:
     name: Google Play Ecosystem Warlord & Android Publishing Expert
     weight: 1.3
@@ -327,6 +381,12 @@ personas:
     - targetsdk
     - app bundle
     - rollout
+    - جوجل بلاي
+    - بلاي ستور
+    - متجر بلاي
+    - نشر تطبيق
+    - ابك
+    - اي بي كي
   MOBILE:
     name: Elite Mobile Game Producer & Full-Stack Innovator
     weight: 1.2
@@ -375,6 +435,10 @@ personas:
     - codemagic
     - تطبيق موبايل
     - موبايل ابليكيشن
+    - فلاتر
+    - تطبيق اندرويد
+    - تطبيق ايفون
+    - رياكت نيتف
   DATA:
     name: Data Engineer & DBA
     weight: 1.2
@@ -406,6 +470,13 @@ personas:
     - replication
     - indexing
     - db
+    - بيانات
+    - قاعدة بيانات
+    - قاعده بيانات
+    - داتابيز
+    - استعلام
+    - جداول
+    - جدول
   ML:
     name: Machine Learning Engineer
     weight: 1.3
@@ -444,6 +515,13 @@ personas:
     - regression
     - llm eval
     - prompt regression
+    - تعلم الالي
+    - ذكاء اصطناعي
+    - موديل
+    - نموذج
+    - تدريب موديل
+    - شبكة عصبية
+    - تعلم عميق
   DEVOPS:
     name: DevOps & CI/CD Engineer
     weight: 1.2
@@ -490,6 +568,14 @@ personas:
     - migration
     - سيرفر
     - سيرفرات
+    - ديف اوبس
+    - ديفوبس
+    - نشر
+    - ديبلوي
+    - حاويات
+    - دوكر
+    - اتمتة
+    - بيب لاين
   API:
     name: API Architect & Integration Specialist
     weight: 1.1
@@ -515,6 +601,13 @@ personas:
     - webhook
     - endpoint
     - laravel ai
+    - ابي اي
+    - اندبوينت
+    - اندبوانت
+    - ريست
+    - جراف
+    - تكامل
+    - ويب هوك
   LEGAL:
     name: Legal & Compliance Officer
     weight: 1.3
@@ -537,6 +630,11 @@ personas:
     - coppa
     - hipaa
     - soc2
+    - قانوني
+    - خصوصية
+    - ترخيص
+    - شروط استخدام
+    - حماية بيانات
   PRODUCT:
     name: Product Manager
     weight: 1.1
@@ -555,6 +653,12 @@ personas:
     - user feedback
     - mvp
     - prd
+    - متطلبات
+    - ميزة
+    - فيتشر
+    - خارطة طريق
+    - برودكت
+    - قصة مستخدم
   DOC:
     name: Technical Writer & Documentation Lead
     weight: 1.0
@@ -573,6 +677,11 @@ personas:
     - guide
     - tutorial
     - how-to
+    - توثيق
+    - ريدمي
+    - شرح تقني
+    - دليل
+    - وثائق
   PERF:
     name: Performance Engineer
     weight: 1.1
@@ -596,6 +705,12 @@ personas:
     - stress test
     - caching
     - query optimization
+    - اداء
+    - بطيء
+    - بطئ
+    - سرعة
+    - تحسين اداء
+    - بطيئ
   CV:
     name: CV/Resume Specialist & Career Writer
     weight: 1.3
@@ -730,6 +845,9 @@ personas:
     - sandbox
     - boilerplate
     - scaffolding
+    - تجربة مطور
+    - ادوات المطور
+    - سكافولد
   MLOPS:
     name: ML Operations Engineer
     weight: 1.3
@@ -759,6 +877,9 @@ personas:
     - model versioning
     - inference
     - batch prediction
+    - نشر موديل
+    - ام ال اوبس
+    - مراقبة موديل
   FINOPS:
     name: Cloud Cost Optimization Engineer
     weight: 1.2
@@ -785,6 +906,9 @@ personas:
     - aws cost
     - gcp cost
     - azure cost
+    - تكلفة سحابية
+    - فاتورة سحابية
+    - توفير تكاليف
   MARKETING:
     name: Digital Marketing Strategist & E-marketing Architect
     weight: 1.3
@@ -1842,3 +1966,42 @@ lord_skills:
   - llm quality
   - eval harness
   - تقييم llm
+  reverse-engineering-lord:
+  - reverse engineering
+  - reverse engineer
+  - decompile
+  - decompiled
+  - disassemble
+  - disassembly
+  - ghidra
+  - ida pro
+  - hopper
+  - binary analysis
+  - firmware analysis
+  - apk analysis
+  - frida
+  - il2cpp
+  - jadx
+  - apktool
+  - electron app
+  - asar
+  - pyinstaller
+  - packed binary
+  - هندسة عكسية
+  - فكك
+  - فك تجميع
+  - ديكومبايل
+  - باينري
+  - فريدا
+  - جدرا
+  - فirmware
+  - obfuscated
+  - binary diff
+  - rea
+  - هندسة عكسية
+  - عكس هندسي
+  - فك تجميع
+  - تحليل ثنائي
+  - ملف تنفيذي
+  - ديكومبايل
+  - فك تشفير برنامج

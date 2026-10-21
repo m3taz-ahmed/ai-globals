@@ -69,6 +69,9 @@ class CodeModeResult:
     error: str = ""
     tool_calls: list[CodeModeToolCall] = field(default_factory=list)
     timed_out: bool = False
+    # Ownership retained: child cleanup did not complete — the process may
+    # still be alive. Callers must surface this, never treat it as clean.
+    cleanup_pending: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -76,6 +79,7 @@ class CodeModeResult:
             "output": self.output,
             "error": self.error,
             "timed_out": self.timed_out,
+            "cleanup_pending": self.cleanup_pending,
             "tool_calls": [
                 {"server": t.server, "tool": t.tool, "decision": t.decision, "ok": t.ok, "detail": t.detail}
                 for t in self.tool_calls
@@ -120,9 +124,12 @@ class CodeModeExecutor:
         except OSError as exc:
             return CodeModeResult(ok=False, error=f"sandbox spawn failed: {exc}")
         try:
-            return self._pump(proc, source, calls)
-        finally:
+            result = self._pump(proc, source, calls)
+        except BaseException:
             self._terminate(proc)
+            raise
+        result.cleanup_pending = not self._terminate(proc)
+        return result
 
     # -- Subprocess protocol pump ------------------------------------------
 
@@ -252,13 +259,37 @@ class CodeModeExecutor:
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                proc.wait(timeout=2)
 
     @staticmethod
-    def _terminate(proc: subprocess.Popen[str]) -> None:
-        if proc.poll() is None:
-            proc.kill()
-        with contextlib.suppress(subprocess.TimeoutExpired):
-            proc.wait(timeout=5)
+    def _terminate(proc: subprocess.Popen[str]) -> bool:
+        """Kill + reap the child. Returns True only when fully reaped.
+
+        Cleanup failure does NOT drop ownership: retry the kill once, then
+        retain the handle and report pending cleanup (REA lifecycle
+        invariant - a resource whose cleanup failed is still ours).
+        """
+        try:
+            if proc.poll() is None:
+                proc.kill()
+            try:
+                proc.wait(timeout=5)
+                return True
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                try:
+                    proc.wait(timeout=2)
+                    return True
+                except subprocess.TimeoutExpired:
+                    _logger.error(
+                        "codemode child %s still alive after kill retry - retaining ownership",
+                        proc.pid,
+                    )
+                    return False
+        except OSError as exc:
+            _logger.error("codemode child cleanup failed: %s", exc)
+            return False
 
     # -- Governance bridge --------------------------------------------------
 

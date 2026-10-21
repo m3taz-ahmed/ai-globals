@@ -3,6 +3,7 @@
 # Source of truth validator - PowerShell wrapper delegates to this script.
 
 import argparse
+import ast
 import hashlib
 import math
 import os
@@ -450,6 +451,66 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--interactive",        action="store_true", help="Prompt before each fix")
     return p.parse_args()
 
+def check_runtime_exports(global_path: str, ctx: ValidationContext) -> None:
+    """Fail when runtime/__init__.py ``__all__`` advertises unresolvable exports.
+
+    Each export must resolve through a ``_LAZY_TABLE`` entry (whose submodule
+    file must exist) or a ``runtime/<name>.py`` submodule - the same two paths
+    ``__getattr__`` uses. Deleted modules must drop their exports; otherwise
+    ``from runtime import X`` raises ImportError at use time. This is the check
+    that would have caught the skill_routing-purge residue (70 dangling names).
+    """
+    init_path = os.path.join(global_path, "runtime", "__init__.py")
+    if not os.path.exists(init_path):
+        return
+    try:
+        with open(init_path, encoding="utf-8") as fh:
+            tree = ast.parse(fh.read())
+    except (OSError, SyntaxError) as exc:
+        cprint(f"ERROR: cannot parse runtime/__init__.py: {exc}", Colors.RED)
+        ctx.error_count += 1
+        return
+
+    all_names: list[str] = []
+    lazy_names: set[str] = set()
+    lazy_mods: set[str] = set()
+    for node in ast.walk(tree):
+        targets = node.targets if isinstance(node, ast.Assign) else (
+            [node.target] if isinstance(node, ast.AnnAssign) else [])
+        value = getattr(node, "value", None)
+        for target in targets:
+            if not (isinstance(target, ast.Name) and isinstance(value, (ast.List, ast.Tuple))):
+                continue
+            if target.id == "__all__":
+                all_names = [e.value for e in value.elts if isinstance(e, ast.Constant)]
+            elif target.id == "_LAZY_TABLE":
+                for elt in value.elts:
+                    if isinstance(elt, ast.Tuple) and len(elt.elts) >= 2:
+                        if isinstance(elt.elts[0], ast.Constant):
+                            lazy_names.add(elt.elts[0].value)
+                        if isinstance(elt.elts[1], ast.Constant):
+                            lazy_mods.add(str(elt.elts[1].value))
+
+    runtime_dir = os.path.join(global_path, "runtime")
+    for mod in sorted(lazy_mods):
+        base = os.path.join(global_path, mod.replace(".", os.sep))
+        if not os.path.exists(base + ".py") and not os.path.exists(
+            os.path.join(base, "__init__.py")
+        ):
+            cprint(f"ERROR: _LAZY_TABLE points to missing module {mod}", Colors.RED)
+            ctx.error_count += 1
+    for name in all_names:
+        if name in lazy_names:
+            continue
+        if os.path.exists(os.path.join(runtime_dir, f"{name}.py")):
+            continue
+        if os.path.isdir(os.path.join(runtime_dir, name)):
+            continue
+        cprint(f"ERROR: runtime __all__ export '{name}' is unresolvable "
+               "(no _LAZY_TABLE entry, no submodule)", Colors.RED)
+        ctx.error_count += 1
+
+
 def check_workflow_counts(global_path: str, ctx: ValidationContext) -> None:
     """Warn if workflow/README.md numbered-workflow count matches the filesystem.
 
@@ -516,6 +577,7 @@ def main() -> None:
 
     check_version_consistency(global_path, ctx)
     check_workflow_counts(global_path, ctx)
+    check_runtime_exports(global_path, ctx)
 
     if not args.dry_run and (ctx.error_count == 0 or args.fix):
         cprint("Updating integrity.manifest...", Colors.CYAN)
